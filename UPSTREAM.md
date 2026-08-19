@@ -6,7 +6,8 @@ source of updates.
 - Repository: https://github.com/anomalyco/opencode
 - Branch: `dev`
 - Base commit: `7774461bbf7bd0600070cdede4fe8b9d9f301bf4`
-- Base tag: `base-opencode-7774461`
+- Local exact tag: `base-opencode-7774461`
+- Published marker: `openctrlc-baseline-7774461`
 - Imported: 2026-08-19
 
 ## Sync policy
