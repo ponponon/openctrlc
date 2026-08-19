@@ -538,6 +538,14 @@
         "@typescript/native-preview": "catalog:",
       },
     },
+    "packages/identity": {
+      "name": "@openctrlc/identity",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@typescript/native-preview": "catalog:",
+      },
+    },
     "packages/llm": {
       "name": "@opencode-ai/llm",
       "version": "1.18.18",
@@ -2012,6 +2020,8 @@
     "@opencode-ai/ui": ["@opencode-ai/ui@workspace:packages/ui"],
 
     "@opencode-ai/web": ["@opencode-ai/web@workspace:packages/web"],
+
+    "@openctrlc/identity": ["@openctrlc/identity@workspace:packages/identity"],
 
     "@openrouter/ai-sdk-provider": ["@openrouter/ai-sdk-provider@2.9.0", "", { "peerDependencies": { "ai": "^6.0.0", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-Seva+NCa0WUQnJIUE5GzHsUv1WTIeyqwz0ELl2VtS6NP+eF+77yCXGFVOMbvoCM7QMjlnhv7931e89R+8pJdcQ=="],
 

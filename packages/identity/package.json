@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@openctrlc/identity",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit --ignoreConfig --skipLibCheck src/index.ts test/index.test.ts"
+  },
+  "devDependencies": {
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:"
+  }
+}
