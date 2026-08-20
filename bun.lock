@@ -811,12 +811,13 @@
       "version": "1.18.18",
       "dependencies": {
         "@openctrlc/core": "workspace:*",
+        "@openctrlc/identity": "workspace:*",
         "@openctrlc/protocol": "workspace:*",
         "drizzle-orm": "catalog:",
         "effect": "catalog:",
       },
       "devDependencies": {
-        "@openctrlc/identity": "workspace:*",
+        "@effect/platform-node": "catalog:",
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
         "@typescript/native-preview": "catalog:",
