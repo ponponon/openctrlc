@@ -6,6 +6,7 @@ import { getLogger } from "./logging"
 import { getUserShell, loadShellEnv } from "./shell-env"
 import { getStore } from "./store"
 import { DEFAULT_SERVER_URL_KEY } from "./store-keys"
+import { Brand } from "@openctrlc/identity"
 
 export type HealthCheck = { wait: Promise<void> }
 
@@ -46,9 +47,9 @@ export function preferAppEnv(userDataPath: string) {
   const shellEnv = shell ? loadShellEnv(shell, getLogger()) : null
   Object.assign(process.env, {
     ...shellEnv,
-    OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: "true",
-    OPENCODE_EXPERIMENTAL_FILEWATCHER: "true",
-    OPENCODE_CLIENT: "desktop",
+    OPENCTRLC_EXPERIMENTAL_ICON_DISCOVERY: "true",
+    OPENCTRLC_EXPERIMENTAL_FILEWATCHER: "true",
+    OPENCTRLC_CLIENT: "desktop",
     XDG_STATE_HOME: process.env.XDG_STATE_HOME ?? userDataPath,
   })
   return shellEnv
@@ -193,7 +194,7 @@ export async function checkHealth(url: string, password?: string | null): Promis
 
   const headers = new Headers()
   if (password) {
-    const auth = Buffer.from(`opencode:${password}`).toString("base64")
+    const auth = Buffer.from(`${Brand.cli}:${password}`).toString("base64")
     headers.set("authorization", `Basic ${auth}`)
   }
 

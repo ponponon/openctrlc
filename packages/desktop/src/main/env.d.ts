@@ -1,5 +1,5 @@
 interface ImportMetaEnv {
-  readonly OPENCTRLC_CHANNEL: string
+  readonly VITE_OPENCTRLC_CHANNEL: string
 }
 
 interface ImportMeta {

@@ -35,7 +35,7 @@ const sentry =
 export default defineConfig({
   main: {
     define: {
-      "import.meta.env.OPENCTRLC_CHANNEL": JSON.stringify(channel),
+      "import.meta.env.VITE_OPENCTRLC_CHANNEL": JSON.stringify(channel),
     },
     build: {
       rollupOptions: {

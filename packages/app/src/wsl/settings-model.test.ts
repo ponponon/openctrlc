@@ -6,7 +6,7 @@ import {
   autoProbePlan,
   createProbeFailureGate,
   runAddableProbePlan,
-  wslOpencodeAction,
+  wslOpenctrlcAction,
   wslRuntimeRetryable,
 } from "./settings-model"
 import type { WslServersState } from "./types"
@@ -19,7 +19,7 @@ function readyState(input: Partial<WslServersState> = {}): WslServersState {
     installed: [],
     online: [],
     distroProbes: {},
-    opencodeChecks: {},
+    openctrlcChecks: {},
     pendingRestart: false,
     servers: [],
     job: null,
@@ -38,9 +38,9 @@ describe("WSL server settings presentation", () => {
   })
 
   test("offers install and update only when OpenCode needs attention", () => {
-    expect(wslOpencodeAction(undefined)).toBeUndefined()
+    expect(wslOpenctrlcAction(undefined)).toBeUndefined()
     expect(
-      wslOpencodeAction({
+      wslOpenctrlcAction({
         distro: "Debian",
         resolvedPath: null,
         version: null,
@@ -50,9 +50,9 @@ describe("WSL server settings presentation", () => {
       }),
     ).toBe("wsl.onboarding.installOpencode")
     expect(
-      wslOpencodeAction({
+      wslOpenctrlcAction({
         distro: "Debian",
-        resolvedPath: "/usr/local/bin/opencode",
+        resolvedPath: "/usr/local/bin/openctrlc",
         version: "1.2.2",
         expectedVersion: "1.2.3",
         matchesDesktop: false,
@@ -60,9 +60,9 @@ describe("WSL server settings presentation", () => {
       }),
     ).toBe("wsl.onboarding.updateOpencode")
     expect(
-      wslOpencodeAction({
+      wslOpenctrlcAction({
         distro: "Debian",
-        resolvedPath: "/usr/local/bin/opencode",
+        resolvedPath: "/usr/local/bin/openctrlc",
         version: "1.2.3",
         expectedVersion: "1.2.3",
         matchesDesktop: true,
@@ -188,14 +188,14 @@ describe("WSL server settings presentation", () => {
         distroProbes: {
           Debian: { name: "Debian", canExecute: true, hasBash: true, hasCurl: true, error: null },
         },
-        opencodeChecks: {
+        openctrlcChecks: {
           Debian: {
             distro: "Debian",
-            resolvedPath: "/home/me/.opencode/bin/opencode",
+            resolvedPath: "/home/me/.openctrlc/bin/openctrlc",
             version: null,
             expectedVersion: "1.2.3",
             matchesDesktop: null,
-            error: "opencode is installed but could not run",
+            error: "openctrlc is installed but could not run",
           },
         },
       },
@@ -211,7 +211,7 @@ describe("WSL server settings presentation", () => {
       label: { key: "wsl.onboarding.installOpencode" },
       tone: "warning",
     })
-    expect(model.primaryButton.action).toBe("install-opencode")
+    expect(model.primaryButton.action).toBe("install-openctrlc")
   })
 
   test("delegates addable probe plans to one batch command", async () => {

@@ -915,7 +915,7 @@ export const dict = {
   "debugBar.direction.tip": "Ստիպել հավելվածի ամբողջական դասավորության ուղղությունը՝ առանց ընտրված լեզուն փոխելու",
   "debugBar.direction.ltr": "LTR",
   "debugBar.direction.rtl": "RTL",
-  "app.name.desktop": "OpenCode Desktop",
+  "app.name.desktop": "OpenCtrlC Desktop",
   "settings.section.desktop": "Սեղանաշար",
   "settings.section.server": "Սերվեր",
   "settings.tab.general": "Ընդհանուր",
