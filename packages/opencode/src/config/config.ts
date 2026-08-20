@@ -2,11 +2,9 @@ import { LayerNode } from "@openctrlc/core/effect/layer-node"
 import { httpClient } from "@openctrlc/core/effect/app-node-platform"
 import { serviceUse } from "@openctrlc/core/effect/service-use"
 import path from "path"
-import { pathToFileURL } from "url"
 import os from "os"
 import { mergeDeep } from "remeda"
 import { Global } from "@openctrlc/core/global"
-import fsNode from "fs/promises"
 import { Flag } from "@openctrlc/core/flag/flag"
 import { Auth } from "../auth"
 import { Env } from "../env"
@@ -138,7 +136,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Co
 export const use = serviceUse(Service)
 
 function globalConfigFile() {
-  const candidates = [Brand.configFileJsonc, Brand.configFile, "config.json"].map((file) =>
+    const candidates = [Brand.configFileJsonc, Brand.configFile].map((file) =>
     path.join(Global.Path.config, file),
   )
   for (const file of candidates) {
@@ -256,25 +254,8 @@ const layer = Layer.effect(
             .pipe(Effect.catch(() => Effect.void))
         }
       }
-      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "config.json"), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, Brand.configFile), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, Brand.configFileJsonc), env))
-
-      const legacy = path.join(Global.Path.config, "config")
-      if (existsSync(legacy)) {
-        yield* Effect.promise(() =>
-          import(pathToFileURL(legacy).href, { with: { type: "toml" } })
-            .then(async (mod) => {
-              const { provider, model, ...rest } = mod.default
-              if (provider && model) result.model = `${provider}/${model}`
-              result["$schema"] = "https://opencode.ai/config.json"
-              result = mergeConfig(result, rest)
-              await fsNode.writeFile(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
-              await fsNode.unlink(legacy)
-            })
-            .catch(() => {}),
-        )
-      }
 
       return result
     })

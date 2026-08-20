@@ -313,8 +313,8 @@ jobs:
         run: bun ./scripts/prepare.ts
         working-directory: packages/desktop
         env:
-          OPENCTRLC_VERSION: ${{ needs.version.outputs.version }}
-          OPENCTRLC_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
+          OPENCODE_VERSION: ${{ needs.version.outputs.version }}
+          OPENCODE_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
           RUST_TARGET: ${{ matrix.settings.target }}
 
       - name: Build
@@ -322,8 +322,8 @@ jobs:
         working-directory: packages/desktop
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-          OPENCTRLC_VERSION: ${{ needs.version.outputs.version }}
-          OPENCTRLC_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
+          OPENCODE_VERSION: ${{ needs.version.outputs.version }}
+          OPENCODE_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.WEB_SENTRY_PROJECT }}
@@ -338,7 +338,7 @@ jobs:
         working-directory: packages/desktop
         timeout-minutes: 60
         env:
-          OPENCTRLC_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
+          OPENCODE_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
           GH_TOKEN: ${{ steps.committer.outputs.token }}
           CSC_KEYCHAIN: build.keychain
           APPLE_API_KEY: ${{ runner.temp }}/apple-api-key.p8
@@ -351,7 +351,7 @@ jobs:
         working-directory: packages/desktop
         timeout-minutes: 60
         env:
-          OPENCTRLC_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
+          OPENCODE_CHANNEL: ${{ (github.ref_name == 'beta' && 'beta') || 'prod' }}
 
       - name: Create macOS .app.tar.gz
         if: runner.os == 'macOS' && needs.version.outputs.release

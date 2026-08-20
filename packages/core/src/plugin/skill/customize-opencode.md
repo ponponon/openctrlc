@@ -40,13 +40,13 @@ already-loaded config until then.
 | Scope                         | Path                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Project config                | `./openctrlc.json`, `./openctrlc.jsonc`, or `.openctrlc/openctrlc.json` (OpenCtrlC walks up from the cwd to the worktree root) |
-| Global config                 | `~/.config/opencode/openctrlc.json` or `~/.config/opencode/openctrlc.jsonc` (NOT `~/.openctrlc/`)                            |
+| Global config                 | The existing global config directory under `~/.config/opencode/`, using `openctrlc.json` or `openctrlc.jsonc`                            |
 | Project agents                | `.openctrlc/agent/<name>.md` or `.openctrlc/agents/<name>.md`                                                               |
-| Global agents                 | `~/.config/opencode/agent(s)/<name>.md`                                                                                   |
+| Global agents                 | The existing global config directory's `agent(s)/<name>.md`                                                                                   |
 | Project commands              | `.openctrlc/command/<name>.md` or `.openctrlc/commands/<name>.md`                                                           |
-| Global commands               | `~/.config/opencode/command(s)/<name>.md`                                                                                 |
+| Global commands               | The existing global config directory's `command(s)/<name>.md`                                                                                 |
 | Project skills                | `.openctrlc/skill(s)/<name>/SKILL.md`                                                                                      |
-| Global skills                 | `~/.config/opencode/skill(s)/<name>/SKILL.md`                                                                             |
+| Global skills                 | The existing global config directory's `skill(s)/<name>/SKILL.md`                                                                             |
 | External skills (auto-loaded) | `~/.claude/skills/<name>/SKILL.md`, `~/.agents/skills/<name>/SKILL.md`                                                    |
 
 Configs from each scope are deep-merged. Project overrides global. Unknown

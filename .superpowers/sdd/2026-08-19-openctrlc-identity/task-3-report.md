@@ -64,6 +64,34 @@
 - External OpenCode provider/service identifiers remain intentionally unchanged, including `ProviderV2.ID.opencode`, `opencode.ai`, `models.opencode.ai`, and `OPENCODE_API_KEY`.
 - Desktop build/runtime channel variables and Desktop identity remain intentionally out of scope; workflow product build inputs were renamed only where they feed the already-migrated CLI build metadata.
 
+## Scoped Re-Review Fixes
+
+- Tracked repository project configuration was renamed from `.opencode/` to `.openctrlc/`, including config, agents, commands, skills, plugins, themes, tools, and glossaries. Product-owned test fixtures were updated while external provider recorded data and provider IDs remain unchanged.
+- Compile-time product defines now match consumers: `OPENCTRLC_MODELS_DEV`, `OPENCTRLC_WORKER_PATH`, and `OPENCTRLC_LIBC`; the app Vite channel input/consumer now uses `OPENCTRLC_CHANNEL` while retaining the existing renderer-facing channel key contract.
+- Desktop/release channel consumers remain on old variables; the publish workflow's Desktop steps were restored to `OPENCODE_VERSION`/`OPENCODE_CHANNEL` to avoid breaking the later Desktop boundary.
+- Removed global `config.json` loading and TOML migration output from opencode config loading. Global config now only loads `openctrlc.json` and `openctrlc.jsonc`.
+- Added real `Config.update()` JSON/JSONC discovery coverage, root old filename rejection coverage, SDK env injection coverage, and script namespace coverage.
+- Customized the embedded skill to describe project paths and `OPENCTRLC_*` flags without inventing an OpenCtrlC global XDG directory or changing schema URLs/provider IDs.
+
+## Scoped Re-Review Verification
+
+- `cd packages/core && bun test test/config/config.test.ts test/global.test.ts test/location-layer.test.ts`: `24 pass, 0 fail`.
+- `cd packages/opencode && bun test test/config/config.test.ts test/config/tui.test.ts test/plugin/install.test.ts test/plugin/install-concurrency.test.ts test/cli/mcp-add.test.ts test/cli/tui/plugin-loader.test.ts test/tool/registry.test.ts test/server/httpapi-provider.test.ts test/server/httpapi-sdk.test.ts test/util/filesystem.test.ts test/agent/agent.test.ts`: `314 pass, 4 skip, 0 fail`.
+- `cd packages/sdk/js && bun test test/server-config-env.test.ts test/session-history.test.ts`: `2 pass, 0 fail`.
+- `cd script && bun test ./translate-app.test.ts`: `16 pass, 0 fail`.
+- `cd packages/core && bun typecheck`: exit `0`.
+- `cd packages/opencode && bun typecheck`: exit `0`.
+- `cd packages/sdk/js && bun typecheck`: exit `0`.
+- `cd packages/server && bun typecheck`: exit `0`.
+- `cd packages/tui && bun typecheck`: exit `0`.
+- `bun install --frozen-lockfile --ignore-scripts`: exit `0`, `Checked 2424 installs across 2713 packages`.
+- `git diff --check`: exit `0`.
+
+## Scoped Re-Review Concerns
+
+- Desktop runtime identity and release metadata remain intentionally out of scope. Desktop publish workflow variables remain legacy-compatible until the Desktop boundary.
+- External `ProviderV2.ID.opencode`, `opencode.ai`, `models.opencode.ai`, schema URLs, and `OPENCODE_API_KEY` remain unchanged.
+
 ## Review Fix Commit
 
-`a4f0803 fix(config): complete OpenCtrlC namespace migration`
+`54d7d0d fix(config): finish OpenCtrlC config namespace`
