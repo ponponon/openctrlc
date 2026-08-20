@@ -15,6 +15,7 @@ const generated = await import("./generate.ts")
 
 import { Script } from "@openctrlc/script"
 import pkg from "../package.json"
+import { Brand } from "@openctrlc/identity"
 
 const singleFlag = process.argv.includes("--single")
 const baselineFlag = process.argv.includes("--baseline")
@@ -144,7 +145,7 @@ if (!skipInstall) {
 }
 for (const item of targets) {
   const name = [
-    pkg.name,
+    Brand.cli,
     // changing to win32 flags npm for some reason
     item.os === "win32" ? "windows" : item.os,
     item.arch,
@@ -174,20 +175,20 @@ for (const item of targets) {
       autoloadDotenv: false,
       autoloadTsconfig: true,
       autoloadPackageJson: true,
-      target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/opencode`,
-      execArgv: [`--user-agent=opencode/${Script.version}`, "--use-system-ca", "--"],
+      target: name.replace(Brand.cli, "bun") as any,
+      outfile: `dist/${name}/bin/${Brand.cli}`,
+      execArgv: [`--user-agent=${Brand.name}/${Script.version}`, "--use-system-ca", "--"],
       windows: {},
     },
     files: {
       [treeSitterWorkerPath]: treeSitterWorker,
-      ...(embeddedFileMap ? { "opencode-web-ui.gen.ts": embeddedFileMap } : {}),
+      ...(embeddedFileMap ? { "openctrlc-web-ui.gen.ts": embeddedFileMap } : {}),
     },
     entrypoints: [
       "./src/index.ts",
       workerPath,
       treeSitterWorkerPath,
-      ...(embeddedFileMap ? ["opencode-web-ui.gen.ts"] : []),
+      ...(embeddedFileMap ? ["openctrlc-web-ui.gen.ts"] : []),
     ],
     define: {
       FFF_LIBC: JSON.stringify(item.abi === "musl" ? "musl" : "gnu"),
@@ -203,7 +204,7 @@ for (const item of targets) {
 
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
-    const binaryPath = `dist/${name}/bin/opencode`
+    const binaryPath = `dist/${name}/bin/${Brand.cli}`
     console.log(`Running smoke test: ${binaryPath} --version`)
     try {
       const versionOutput = await $`${binaryPath} --version`.text()

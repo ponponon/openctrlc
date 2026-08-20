@@ -29,6 +29,7 @@ import {
   type SetSessionModeRequest,
   type SetSessionModeResponse,
 } from "@agentclientprotocol/sdk"
+import { Brand } from "@openctrlc/identity"
 import { InstallationVersion } from "@openctrlc/core/installation/version"
 import { AppNodeBuilder } from "@openctrlc/core/effect/app-node-builder"
 import type { AssistantMessage, Message, OpencodeClient, SessionMessageResponse } from "@openctrlc/sdk/v2"
@@ -94,15 +95,15 @@ export function make(input: {
   const initialize = Effect.fn("ACP.initialize")(function* (params: InitializeRequest) {
     const started = performance.now()
     const authMethod: AuthMethod = {
-      description: "Run `opencode auth login` in the terminal",
-      name: "Login with opencode",
+      description: `Run \`${Brand.cli} auth login\` in the terminal`,
+      name: `Login with ${Brand.name}`,
       id: AuthMethodID,
     }
 
     if (params.clientCapabilities?._meta?.["terminal-auth"] === true) {
       authMethod._meta = {
         "terminal-auth": {
-          command: "opencode",
+          command: Brand.cli,
           args: ["auth", "login"],
           label: "OpenCode Login",
         },

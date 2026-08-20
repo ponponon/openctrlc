@@ -11,6 +11,7 @@ import { InstallationChannel, InstallationVersion } from "./installation/version
 import { EventV2 } from "./event"
 import { makeGlobalNode } from "./effect/app-node"
 import { httpClient } from "./effect/app-node-platform"
+import { Brand } from "@openctrlc/identity"
 
 export const CatalogModelStatus = Schema.Literals(["alpha", "beta", "deprecated"])
 export type CatalogModelStatus = typeof CatalogModelStatus.Type
@@ -20,7 +21,7 @@ const InterleavedField = Schema.Union([
   Schema.String,
 ])
 
-const USER_AGENT = `opencode/${InstallationChannel}/${InstallationVersion}/${Flag.OPENCTRLC_CLIENT}`
+const USER_AGENT = `${Brand.cli}/${InstallationChannel}/${InstallationVersion}/${Flag.OPENCTRLC_CLIENT}`
 
 const CostTier = Schema.Struct({
   input: Schema.Finite,

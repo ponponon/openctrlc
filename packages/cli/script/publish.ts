@@ -3,6 +3,7 @@ import { $ } from "bun"
 import pkg from "../package.json"
 import { Script } from "@openctrlc/script"
 import { fileURLToPath } from "url"
+import { Brand } from "@openctrlc/identity"
 
 const dir = fileURLToPath(new URL("..", import.meta.url))
 process.chdir(dir)
@@ -27,12 +28,12 @@ console.log("binaries", binaries)
 const version = Object.values(binaries)[0]
 
 await $`mkdir -p ./dist/${pkg.name}/bin`
-await $`cp ./bin/lildax.cjs ./dist/${pkg.name}/bin/lildax`
+await $`cp ./bin/openctrlc.cjs ./dist/${pkg.name}/bin/${Brand.cli}`
 await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
     {
       name: pkg.name,
-      bin: { lildax: "./bin/lildax" },
+      bin: { [Brand.cli]: `./bin/${Brand.cli}` },
       version,
       license: pkg.license,
       repository: { type: "git", url: "git+https://github.com/anomalyco/opencode.git" },
@@ -47,7 +48,7 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
 
 await Promise.all(
   Object.entries(binaries).map(([name, version]) =>
-    publish(`./dist/${name.replace("@opencode-ai/", "")}`, name, version),
+    publish(`./dist/${name.replace("@openctrlc/", "")}`, name, version),
   ),
 )
 await publish(`./dist/${pkg.name}`, pkg.name, version)

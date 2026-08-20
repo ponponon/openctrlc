@@ -3,10 +3,11 @@ import { UI } from "../ui"
 import * as prompts from "@clack/prompts"
 import { Installation } from "../../installation"
 import { InstallationVersion } from "@openctrlc/core/installation/version"
+import { Brand } from "@openctrlc/identity"
 
 export const UpgradeCommand = {
   command: "upgrade [target]",
-  describe: "upgrade opencode to the latest or a specific version",
+  describe: `upgrade ${Brand.name} to the latest or a specific version`,
   builder: (yargs: Argv) => {
     return yargs
       .positional("target", {
@@ -28,7 +29,7 @@ export const UpgradeCommand = {
     const detectedMethod = await Installation.method()
     const method = (args.method as Installation.Method) ?? detectedMethod
     if (method === "unknown") {
-      prompts.log.error(`opencode is installed to ${process.execPath} and may be managed by a package manager`)
+      prompts.log.error(`${Brand.name} is installed to ${process.execPath} and may be managed by a package manager`)
       const install = await prompts.select({
         message: "Install anyways?",
         options: [
@@ -46,7 +47,7 @@ export const UpgradeCommand = {
     const target = args.target ? args.target.replace(/^v/, "") : await Installation.latest()
 
     if (InstallationVersion === target) {
-      prompts.log.warn(`opencode upgrade skipped: ${target} is already installed`)
+      prompts.log.warn(`${Brand.name} upgrade skipped: ${target} is already installed`)
       prompts.outro("Done")
       return
     }

@@ -7,9 +7,10 @@ import { Script } from "@openctrlc/script"
 import { createSolidTransformPlugin } from "@opentui/solid/bun-plugin"
 import pkg from "../package.json"
 import { modelsData } from "./generate"
+import { Brand } from "@openctrlc/identity"
 
 const dir = path.resolve(import.meta.dirname, "..")
-const binary = "lildax"
+const binary = Brand.cli
 process.chdir(dir)
 
 await rm("dist", { recursive: true, force: true })
@@ -102,7 +103,7 @@ for (const item of targets) {
     `./dist/${name}/package.json`,
     JSON.stringify(
       {
-        name: `@opencode-ai/${name}`,
+        name: `@openctrlc/${name}`,
         version: Script.version,
         license: "MIT",
         repository: { type: "git", url: "git+https://github.com/anomalyco/opencode.git" },

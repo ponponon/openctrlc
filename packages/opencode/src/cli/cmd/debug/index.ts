@@ -1,5 +1,6 @@
 import { Global } from "@openctrlc/core/global"
 import { InstallationVersion } from "@openctrlc/core/installation/version"
+import { Brand } from "@openctrlc/identity"
 import { Flag } from "@openctrlc/core/flag/flag"
 import os from "os"
 import { Duration, Effect } from "effect"
@@ -58,7 +59,7 @@ const InfoCommand = effectCmd({
       : undefined
     const terminal = [termProgram, process.env.TERM].filter((item): item is string => Boolean(item)).join(" / ")
 
-    console.log(`opencode version: ${InstallationVersion}`)
+    console.log(`${Brand.name} version: ${InstallationVersion}`)
     console.log(`os: ${os.type()} ${os.release()} ${os.arch()}`)
     console.log(`terminal: ${terminal || "unknown"}`)
     console.log("plugins:")

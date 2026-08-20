@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "lildax": "./bin/lildax.cjs"
+    "openctrlc": "./bin/openctrlc.cjs"
   },
   "files": [
     "bin"
@@ -28,6 +28,7 @@
     "solid-js": "catalog:"
   },
   "devDependencies": {
+    "@openctrlc/identity": "workspace:*",
     "@openctrlc/script": "workspace:*",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",

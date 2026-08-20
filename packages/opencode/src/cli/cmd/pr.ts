@@ -4,10 +4,11 @@ import { effectCmd, fail } from "../effect-cmd"
 import { Git } from "@/git"
 import { InstanceRef } from "@/effect/instance-ref"
 import { Process } from "@/util/process"
+import { Brand } from "@openctrlc/identity"
 
 export const PrCommand = effectCmd({
   command: "pr <number>",
-  describe: "fetch and checkout a GitHub PR branch, then run opencode",
+  describe: "fetch and checkout a GitHub PR branch, then run openctrlc",
   builder: (yargs) =>
     yargs.positional("number", {
       type: "number",
@@ -80,7 +81,7 @@ export const PrCommand = effectCmd({
           UI.println(`Importing session...`)
 
           const importResult = yield* Effect.promise(() =>
-            Process.text(["opencode", "import", sessionUrl], { nothrow: true }),
+            Process.text([Brand.cli, "import", sessionUrl], { nothrow: true }),
           )
           if (importResult.code === 0) {
             const sessionIdMatch = importResult.text.trim().match(/Imported session: ([a-zA-Z0-9_-]+)/)
@@ -98,10 +99,10 @@ export const PrCommand = effectCmd({
     UI.println("Starting opencode...")
     UI.println()
 
-    const opencodeArgs = sessionId ? ["-s", sessionId] : []
+    const openctrlcArgs = sessionId ? ["-s", sessionId] : []
     const code = yield* Effect.promise(
       () =>
-        Process.spawn(["opencode", ...opencodeArgs], {
+        Process.spawn([Brand.cli, ...openctrlcArgs], {
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",
@@ -110,6 +111,6 @@ export const PrCommand = effectCmd({
     )
     // Match legacy throw semantics — propagate as a defect so the top-level
     // index.ts catch handles it identically (exit 1, "Unexpected error" banner).
-    if (code !== 0) return yield* Effect.die(new Error(`opencode exited with code ${code}`))
+    if (code !== 0) return yield* Effect.die(new Error(`${Brand.cli} exited with code ${code}`))
   }),
 })

@@ -91,7 +91,7 @@ export type RunHandle = {
 
 export type SpawnOpts = { readonly timeoutMs?: number; readonly env?: Record<string, string> }
 
-// Typed equivalent of constructing argv for `opencode run`. New flags should
+// Typed equivalent of constructing argv for `openctrlc run`. New flags should
 // land here so tests stay grep-able and refactor-safe.
 export type RunOpts = SpawnOpts & {
   readonly model?: string
@@ -103,7 +103,7 @@ export type RunOpts = SpawnOpts & {
   readonly extraArgs?: string[]
 }
 
-// `opencode serve` is a long-lived process — it never exits on its own.
+  // `openctrlc serve` is a long-lived process — it never exits on its own.
 // `serve(opts)` therefore returns a handle inside the caller's Scope: the
 // subprocess is killed when the scope closes (test end), and the URL the
 // server actually bound to (port 0 means OS-assigned) is parsed off stdout.
@@ -156,11 +156,11 @@ export type OpencodeCli = {
   // High-level: run a single prompt against the test model. Short-lived.
   readonly run: (message: string, opts?: RunOpts) => Effect.Effect<RunResult>
   readonly startRun: (message: string, opts?: RunOpts) => Effect.Effect<RunHandle, never, Scope.Scope>
-  // Spawn `opencode serve` and wait until it's listening. Long-lived: the
+  // Spawn `openctrlc serve` and wait until it's listening. Long-lived: the
   // returned handle is killed when the caller's Scope closes. Fails if the
   // listening line doesn't appear within `readyTimeoutMs`.
   readonly serve: (opts?: ServeOpts) => Effect.Effect<ServeHandle, Error, Scope.Scope>
-  // Spawn `opencode acp` and return a duplex JSON-RPC handle. Long-lived:
+  // Spawn `openctrlc acp` and return a duplex JSON-RPC handle. Long-lived:
   // the subprocess exits on stdin close, which the scope finalizer triggers.
   readonly acp: (opts?: AcpOpts) => Effect.Effect<AcpHandle, Error, Scope.Scope>
   // Escape hatch: any CLI invocation with full control over argv. Used to test
@@ -506,7 +506,7 @@ function expectExit(result: RunResult, expected: number, label = "opencode") {
   throw new Error(`${label}: expected exit ${expected}, got ${result.exitCode}`)
 }
 
-// `cliIt.live(name, fixture => effect)` is the same as
+  // `cliIt.live(name, fixture => effect)` is the same as
 // `it.live(name, () => withCliFixture(fixture))` — one fewer nesting level at
 // every call site. Use this for any test that needs the opencode CLI fixture.
 //

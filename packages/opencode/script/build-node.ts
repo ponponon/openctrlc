@@ -25,7 +25,7 @@ await Bun.build({
     OPENCTRLC_CHANNEL: `'${Script.channel}'`,
   },
   files: {
-    "opencode-web-ui.gen.ts": "",
+    "openctrlc-web-ui.gen.ts": "",
   },
 })
 

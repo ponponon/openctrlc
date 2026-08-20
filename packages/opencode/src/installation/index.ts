@@ -14,6 +14,7 @@ import semver from "semver"
 import { InstallationChannel, InstallationVersion } from "@openctrlc/core/installation/version"
 import { NpmConfig } from "@openctrlc/core/npm-config"
 import { InstallationEvent } from "@openctrlc/schema/installation-event"
+import { Brand } from "@openctrlc/identity"
 
 export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "unknown"
 
@@ -39,7 +40,7 @@ export const Info = Schema.Struct({
 export type Info = Schema.Schema.Type<typeof Info>
 
 export function userAgent(client = "cli") {
-  return `opencode/${InstallationChannel}/${InstallationVersion}/${client}`
+  return `${Brand.cli}/${InstallationChannel}/${InstallationVersion}/${client}`
 }
 
 export const USER_AGENT = userAgent()

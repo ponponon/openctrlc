@@ -114,7 +114,7 @@
       "name": "@openctrlc/cli",
       "version": "1.18.18",
       "bin": {
-        "lildax": "./bin/lildax.cjs",
+        "openctrlc": "./bin/openctrlc.cjs",
       },
       "dependencies": {
         "@effect/platform-node": "catalog:",
@@ -129,6 +129,7 @@
         "solid-js": "catalog:",
       },
       "devDependencies": {
+        "@openctrlc/identity": "workspace:*",
         "@openctrlc/script": "workspace:*",
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
@@ -586,7 +587,7 @@
       "name": "opencode",
       "version": "1.18.18",
       "bin": {
-        "opencode": "./bin/opencode",
+        "openctrlc": "./bin/openctrlc",
       },
       "dependencies": {
         "@actions/core": "1.11.1",
