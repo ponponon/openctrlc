@@ -3,6 +3,7 @@ import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
 import { Global } from "@openctrlc/core/global"
 import path from "path"
+import { Brand } from "@openctrlc/identity"
 import fs from "fs/promises"
 import { Filesystem } from "@/util/filesystem"
 import matter from "gray-matter"
@@ -108,7 +109,10 @@ const AgentCreateCommand = effectCmd({
           if (prompts.isCancel(scopeResult)) throw new UI.CancelledError()
           scope = scopeResult
         }
-        targetPath = path.join(scope === "global" ? Global.Path.config : path.join(ctx.worktree, ".opencode"), "agents")
+          targetPath = path.join(
+            scope === "global" ? Global.Path.config : path.join(ctx.worktree, Brand.projectDirectory),
+            "agents",
+          )
       }
 
       // Get description

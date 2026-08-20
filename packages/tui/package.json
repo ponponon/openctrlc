@@ -66,6 +66,7 @@
     "solid-js": "catalog:"
   },
   "devDependencies": {
+    "@openctrlc/identity": "workspace:*",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
     "@typescript/native-preview": "catalog:"

@@ -20,7 +20,7 @@ import { ProviderV2 } from "@openctrlc/core/provider"
 import { ModelV2 } from "@openctrlc/core/model"
 import { EventV2 } from "@openctrlc/core/event"
 
-const disabled = process.env["OPENCODE_DISABLE_SHARE"] === "true" || process.env["OPENCODE_DISABLE_SHARE"] === "1"
+const disabled = process.env["OPENCTRLC_DISABLE_SHARE"] === "true" || process.env["OPENCTRLC_DISABLE_SHARE"] === "1"
 
 export type Api = {
   create: string

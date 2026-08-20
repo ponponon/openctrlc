@@ -18,12 +18,12 @@ const preserveExerciseDatabase = !!process.env.OPENCODE_HTTPAPI_EXERCISE_DB
 export const exerciseDatabasePath =
   process.env.OPENCODE_HTTPAPI_EXERCISE_DB ??
   path.join(process.env.TMPDIR ?? "/tmp", `opencode-httpapi-exercise-${process.pid}.db`)
-process.env.OPENCODE_DB = exerciseDatabasePath
-Flag.OPENCODE_DB = exerciseDatabasePath
+process.env.OPENCTRLC_DB = exerciseDatabasePath
+Flag.OPENCTRLC_DB = exerciseDatabasePath
 
 export const original = {
-  OPENCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
-  OPENCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
+  OPENCTRLC_SERVER_PASSWORD: Flag.OPENCTRLC_SERVER_PASSWORD,
+  OPENCTRLC_SERVER_USERNAME: Flag.OPENCTRLC_SERVER_USERNAME,
 }
 
 export const cleanupExercisePaths = Effect.promise(async () => {

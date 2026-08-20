@@ -14,6 +14,7 @@ import {
 import path from "path"
 import { fileURLToPath } from "url"
 import { TuiConfig } from "@/config/tui"
+import { Brand } from "@openctrlc/identity"
 import { AppNodeBuilder } from "@openctrlc/core/effect/app-node-builder"
 import { errorData, errorMessage } from "@openctrlc/tui/util/error"
 import { isRecord } from "@openctrlc/tui/util/record"
@@ -253,9 +254,9 @@ function createThemeInstaller(
     const name = path.basename(src, path.extname(src))
     const source_dir = path.dirname(meta.source)
     const local_dir =
-      path.basename(source_dir) === ".opencode"
+      path.basename(source_dir) === Brand.projectDirectory
         ? path.join(source_dir, "themes")
-        : path.join(source_dir, ".opencode", "themes")
+        : path.join(source_dir, Brand.projectDirectory, "themes")
     const dest_dir = meta.scope === "local" ? local_dir : path.join(Global.Path.config, "themes")
     const dest = path.join(dest_dir, `${name}.json`)
     const stat = await Filesystem.statAsync(src)
@@ -814,7 +815,7 @@ function defaultPluginOrigin(state: RuntimeState, spec: string): ConfigPlugin.Or
   return {
     spec,
     scope: "local",
-    source: state.api.state.path.config || path.join(state.directory, ".opencode", "tui.json"),
+    source: state.api.state.path.config || path.join(state.directory, Brand.projectDirectory, "tui.json"),
   }
 }
 
@@ -1086,8 +1087,8 @@ async function load(input: {
       }).pipe(Effect.provide(AppNodeBuilder.build(RuntimeFlags.node))),
     )
     const pluginOrigins = config.plugin_origins ?? (await TuiConfig.pluginOrigins())
-    const records = Flag.OPENCODE_PURE ? [] : pluginOrigins
-    if (Flag.OPENCODE_PURE && pluginOrigins.length) {
+    const records = Flag.OPENCTRLC_PURE ? [] : pluginOrigins
+    if (Flag.OPENCTRLC_PURE && pluginOrigins.length) {
     }
 
     for (const item of internalTuiPlugins(flags)) {

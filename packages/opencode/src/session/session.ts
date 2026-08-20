@@ -13,6 +13,7 @@ import { EventV2Bridge } from "@/event-v2-bridge"
 import { SessionV2 } from "@openctrlc/core/session"
 import * as SessionExecutionLocal from "@openctrlc/core/session/execution/local"
 import { locationServiceMapLayer } from "@openctrlc/core/location-services"
+import { Brand } from "@openctrlc/identity"
 
 import { NotFoundError } from "@/storage/storage"
 import { eq } from "drizzle-orm"
@@ -330,7 +331,7 @@ export const Event = {
 
 export function plan(input: { slug: string; time: { created: number } }, instance: InstanceContext) {
   const base = instance.project.vcs
-    ? path.join(instance.worktree, ".opencode", "plans")
+    ? path.join(instance.worktree, Brand.projectDirectory, "plans")
     : path.join(Global.Path.data, "plans")
   return path.join(base, [input.time.created, input.slug].join("-") + ".md")
 }
