@@ -857,7 +857,7 @@ describe("tool.shell permissions", () => {
               expect(
                 yield* fail(
                   {
-                    command: "cat /tmp/opencode-does-not-exist",
+                    command: "cat /tmp/openctrlc-does-not-exist",
                   },
                   capture(requests, err),
                 ),

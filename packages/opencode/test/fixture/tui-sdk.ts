@@ -1,7 +1,7 @@
 import type { GlobalEvent } from "@openctrlc/sdk/v2"
 import type { EventSource } from "@openctrlc/tui/context/sdk"
 
-export const worktree = "/tmp/opencode"
+export const worktree = "/tmp/openctrlc"
 export const directory = `${worktree}/packages/opencode`
 
 export function json(data: unknown, init?: ResponseInit) {

@@ -2,6 +2,7 @@ export * as ProjectV2 from "./project"
 export * as Project from "./project"
 
 import { Context, Effect, Layer, Schema } from "effect"
+import { Brand } from "@openctrlc/identity"
 import path from "path"
 import { AbsolutePath } from "./schema"
 import { FSUtil } from "./fs-util"
@@ -63,7 +64,7 @@ const layer = Layer.effect(
     })
 
     const cached = Effect.fnUntraced(function* (dir: string) {
-      return yield* fs.readFileString(path.join(dir, "opencode")).pipe(
+      return yield* fs.readFileString(path.join(dir, Brand.runtimeDirectory)).pipe(
         Effect.map((value) => value.trim()),
         Effect.map((value) => (value ? ID.make(value) : undefined)),
         Effect.catch(() => Effect.succeed(undefined)),
@@ -122,7 +123,7 @@ const layer = Layer.effect(
     })
 
     const commit = Effect.fn("Project.commit")(function* (input: { store: AbsolutePath; id: ID }) {
-      yield* fs.writeFileString(path.join(input.store, "opencode"), input.id).pipe(Effect.ignore)
+      yield* fs.writeFileString(path.join(input.store, Brand.runtimeDirectory), input.id).pipe(Effect.ignore)
     })
 
     return Service.of({ directories, resolve, commit })

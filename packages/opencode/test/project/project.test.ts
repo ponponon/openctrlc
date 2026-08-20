@@ -20,6 +20,7 @@ import { testEffect } from "../lib/effect"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { AppNodeBuilder } from "@openctrlc/core/effect/app-node-builder"
 import { LayerNode } from "@openctrlc/core/effect/layer-node"
+import { Brand } from "@openctrlc/identity"
 
 const encoder = new TextEncoder()
 
@@ -120,8 +121,8 @@ describe("Project.fromDirectory", () => {
       expect(result.project.vcs).toBe("git")
       expect(result.project.worktree).toBe(tmp)
 
-      const opencodeFile = path.join(tmp, ".git", "opencode")
-      expect(yield* Effect.promise(() => Bun.file(opencodeFile).exists())).toBe(false)
+      const cacheFile = path.join(tmp, ".git", Brand.runtimeDirectory)
+      expect(yield* Effect.promise(() => Bun.file(cacheFile).exists())).toBe(false)
     }),
   )
 
@@ -335,7 +336,7 @@ describe("Project.fromDirectory with worktrees", () => {
 
       expect(next.project.id).toBe(result.project.id)
 
-      const cache = path.join(tmp, ".git", "opencode")
+      const cache = path.join(tmp, ".git", Brand.runtimeDirectory)
       const exists = yield* Effect.promise(() => Bun.file(cache).exists())
       expect(exists).toBe(true)
     }),
@@ -736,8 +737,8 @@ describe("Project.fromDirectory with bare repos", () => {
       expect(result.project.id).not.toBe(ProjectV2.ID.global)
       expect(result.project.worktree).toBe(worktreePath)
 
-      const correctCache = path.join(barePath, "opencode")
-      const wrongCache = path.join(parentDir, ".git", "opencode")
+      const correctCache = path.join(barePath, Brand.runtimeDirectory)
+      const wrongCache = path.join(parentDir, ".git", Brand.runtimeDirectory)
 
       expect(yield* Effect.promise(() => Bun.file(correctCache).exists())).toBe(true)
       expect(yield* Effect.promise(() => Bun.file(wrongCache).exists())).toBe(false)
@@ -771,9 +772,9 @@ describe("Project.fromDirectory with bare repos", () => {
 
       expect(result.project.id).not.toBe(next.project.id)
 
-      const cacheA = path.join(bareA, "opencode")
-      const cacheB = path.join(bareB, "opencode")
-      const wrongCache = path.join(parentDir, ".git", "opencode")
+      const cacheA = path.join(bareA, Brand.runtimeDirectory)
+      const cacheB = path.join(bareB, Brand.runtimeDirectory)
+      const wrongCache = path.join(parentDir, ".git", Brand.runtimeDirectory)
 
       expect(yield* Effect.promise(() => Bun.file(cacheA).exists())).toBe(true)
       expect(yield* Effect.promise(() => Bun.file(cacheB).exists())).toBe(true)
@@ -801,7 +802,7 @@ describe("Project.fromDirectory with bare repos", () => {
       expect(result.project.id).not.toBe(ProjectV2.ID.global)
       expect(result.project.worktree).toBe(worktreePath)
 
-      const correctCache = path.join(barePath, "opencode")
+      const correctCache = path.join(barePath, Brand.runtimeDirectory)
       expect(yield* Effect.promise(() => Bun.file(correctCache).exists())).toBe(true)
     }),
   )

@@ -1,6 +1,7 @@
 export * as Database from "./database"
 
 import { EffectDrizzleSqlite } from "@openctrlc/effect-drizzle-sqlite"
+import { Brand } from "@openctrlc/identity"
 import { layer as sqliteLayer } from "#sqlite"
 import { Context, Effect, Layer } from "effect"
 import { Global } from "../global"
@@ -50,8 +51,8 @@ export function path() {
     process.env.OPENCTRLC_DISABLE_CHANNEL_DB === "1" ||
     process.env.OPENCTRLC_DISABLE_CHANNEL_DB === "true"
   )
-    return join(Global.Path.data, "opencode.db")
-  return join(Global.Path.data, `opencode-${InstallationChannel.replace(/[^a-zA-Z0-9._-]/g, "-")}.db`)
+    return join(Global.Path.data, `${Brand.runtimeDirectory}.db`)
+  return join(Global.Path.data, `${Brand.runtimeDirectory}-${InstallationChannel.replace(/[^a-zA-Z0-9._-]/g, "-")}.db`)
 }
 
 export const node = makeGlobalNode({ service: Service, layer: layerFromPath(path()), deps: [] })
