@@ -22,6 +22,7 @@ import { schemaErrorLayer } from "./middleware/schema-error"
 import { PtyEnvironment } from "./pty-environment"
 import { layer as locationLayer } from "./location"
 import { sessionLocationLayer } from "./middleware/session-location"
+import { Brand } from "@openctrlc/identity"
 
 const applicationServices = LayerNode.group([
   Database.node,
@@ -39,13 +40,13 @@ const applicationServices = LayerNode.group([
 export function createRoutes(password?: string) {
   return makeRoutes(
     password
-      ? ServerAuth.Config.configLayer({ username: "opencode", password: Option.some(password) })
+      ? ServerAuth.Config.configLayer({ username: Brand.cli, password: Option.some(password) })
       : ServerAuth.Config.layer,
   )
 }
 
 export function createEmbeddedRoutes() {
-  return makeRoutes(ServerAuth.Config.configLayer({ username: "opencode", password: Option.none() }))
+  return makeRoutes(ServerAuth.Config.configLayer({ username: Brand.cli, password: Option.none() }))
 }
 
 function makeRoutes<AuthError, AuthServices>(auth: Layer.Layer<ServerAuth.Config, AuthError, AuthServices>) {
