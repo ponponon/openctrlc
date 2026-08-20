@@ -27,6 +27,7 @@ import { initializationData } from "./initialization"
 import { DesktopFirstLaunchOnboarding } from "./onboarding"
 import { resetZoom, setPinchZoomEnabled, webviewZoom, zoomIn, zoomOut } from "./webview-zoom"
 import { windowFullscreen } from "./window-fullscreen"
+import { getLastActiveUrl, setLastActiveUrl } from "./window-state"
 import { availableStartupServer, readyWslConnections } from "./wsl/connections"
 import "./styles.css"
 import { Splash } from "@openctrlc/ui/logo"
@@ -82,31 +83,15 @@ const listenForDeepLinks = () => {
   return window.api.onDeepLink((urls) => emitDeepLinks(urls))
 }
 
-function windowLastActiveUrlKey(windowID: string) {
-  return `openctrlc.desktop.window.${windowID}.last-active-url`
-}
-
-function getLastActiveUrl(windowID: string) {
-  if (typeof localStorage !== "object") return "/"
-  try {
-    const value = localStorage.getItem(windowLastActiveUrlKey(windowID))
-    if (value?.startsWith("/") && !value.startsWith("//")) return value
-  } catch {}
-  return "/"
-}
-
-function setLastActiveUrl(windowID: string, value: string) {
-  if (typeof localStorage !== "object") return
-  try {
-    localStorage.setItem(windowLastActiveUrlKey(windowID), value)
-  } catch {}
-}
-
 function DesktopMemoryRouter(props: BaseRouterProps & { windowID: string }) {
   const history = createMemoryHistory()
-  const initialUrl = getLastActiveUrl(props.windowID)
+  const initialUrl = getLastActiveUrl(typeof localStorage === "object" ? localStorage : undefined, props.windowID)
   if (initialUrl !== "/") history.set({ value: initialUrl, replace: true, scroll: false })
-  onCleanup(history.listen((value) => setLastActiveUrl(props.windowID, value)))
+  onCleanup(
+    history.listen((value) =>
+      setLastActiveUrl(typeof localStorage === "object" ? localStorage : undefined, props.windowID, value),
+    ),
+  )
   return <MemoryRouter {...props} history={history} />
 }
 
@@ -411,7 +396,10 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
               startup={onboarding.promise}
               serverScoped={
                 <DesktopFirstLaunchOnboarding
-                  initialUrl={getLastActiveUrl(platform.windowID ?? "browser")}
+                  initialUrl={getLastActiveUrl(
+                    typeof localStorage === "object" ? localStorage : undefined,
+                    platform.windowID ?? "browser",
+                  )}
                   onLoaded={onboarding.resolve}
                 />
               }

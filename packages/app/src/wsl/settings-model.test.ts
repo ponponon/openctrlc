@@ -37,7 +37,7 @@ describe("WSL server settings presentation", () => {
     expect(wslRuntimeRetryable({ kind: "stopped" })).toBe(true)
   })
 
-  test("offers install and update only when OpenCode needs attention", () => {
+  test("offers install and update only when OpenCtrlC needs attention", () => {
     expect(wslOpenctrlcAction(undefined)).toBeUndefined()
     expect(
       wslOpenctrlcAction({
@@ -58,7 +58,7 @@ describe("WSL server settings presentation", () => {
         matchesDesktop: false,
         error: null,
       }),
-    ).toBe("wsl.onboarding.updateOpencode")
+    ).toBe("wsl.onboarding.updateOpenctrlc")
     expect(
       wslOpenctrlcAction({
         distro: "Debian",
@@ -179,7 +179,7 @@ describe("WSL server settings presentation", () => {
     expect(model.busy).toBe(true)
   })
 
-  test("does not report ready when OpenCode is present but cannot run", () => {
+  test("does not report ready when OpenCtrlC is present but cannot run", () => {
     const model = addServerViewModel({
       state: {
         ...readyWslState,

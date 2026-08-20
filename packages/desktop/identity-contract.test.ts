@@ -29,6 +29,7 @@ test("keeps renderer deep links and channel declarations on OpenCtrlC names", as
 
   expect(renderer).toContain('const deepLinkEvent = "openctrlc:deep-link"')
   expect(renderer).toContain("window.__OPENCTRLC__")
+  expect(renderer).toContain('import { getLastActiveUrl, setLastActiveUrl } from "./window-state"')
   expect(renderer).toContain("import.meta.env.VITE_OPENCTRLC_CHANNEL")
   expect(rendererEnv).toContain("__OPENCTRLC__")
   expect(appDeepLinks).toContain('`${Brand.cli}:deep-link`')

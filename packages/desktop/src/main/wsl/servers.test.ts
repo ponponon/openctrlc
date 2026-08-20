@@ -33,7 +33,7 @@ test("rejects an update that did not install the desktop version", () => {
   )
 })
 
-test("restarts an existing distro server after updating OpenCode", () => {
+test("restarts an existing distro server after updating OpenCtrlC", () => {
   expect(
     wslServerIdToRestart(
       [
@@ -55,7 +55,7 @@ test("clears cached distro probes when removing a WSL server", () => {
       {
         Debian: {
           distro: "Debian",
-      resolvedPath: "/home/luke/.openctrlc/bin/openctrlc",
+          resolvedPath: "/home/luke/.openctrlc/bin/openctrlc",
           version: "1.16.2",
           expectedVersion: "1.16.2",
           matchesDesktop: true,
@@ -104,7 +104,7 @@ test("derives a required Windows restart from the post-install runtime probe", (
   expect(pendingRestartAfterWslInstall({ available: true, version: "WSL version: 2.6.1", error: null })).toBe(false)
 })
 
-test("ignores stale background OpenCode checks after removing a WSL server", async () => {
+test("ignores stale background OpenCtrlC checks after removing a WSL server", async () => {
   persistedServers = []
   releaseOpenctrlcResolve = undefined
   const controller = createWslServersController(
@@ -131,7 +131,7 @@ test("ignores stale background OpenCode checks after removing a WSL server", asy
   expect(controller.getState().openctrlcChecks).toEqual({})
 })
 
-test("ignores stale startup OpenCode checks after removing a WSL server", async () => {
+test("ignores stale startup OpenCtrlC checks after removing a WSL server", async () => {
   persistedServers = [{ id: "wsl:Debian", distro: "Debian" }]
   releaseOpenctrlcResolve = undefined
   const controller = createWslServersController(
@@ -150,7 +150,7 @@ test("ignores stale startup OpenCode checks after removing a WSL server", async 
   expect(controller.getState().openctrlcChecks).toEqual({})
 })
 
-test("probes addable distros in parallel before checking OpenCode", async () => {
+test("probes addable distros in parallel before checking OpenCtrlC", async () => {
   persistedServers = []
   const started: string[] = []
   const release = new Map<string, () => void>()
@@ -181,7 +181,7 @@ test("probes addable distros in parallel before checking OpenCode", async () => 
   expect(Object.keys(controller.getState().openctrlcChecks)).toEqual(["Debian", "Ubuntu"])
 })
 
-test("does not check OpenCode in addable distros that cannot execute commands", async () => {
+test("does not check OpenCtrlC in addable distros that cannot execute commands", async () => {
   persistedServers = []
   const openctrlc: string[] = []
   const controller = createWslServersController("1.16.2", async () => new Promise<never>(() => undefined), {

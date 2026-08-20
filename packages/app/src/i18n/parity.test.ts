@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { desktopNativePluralCategories } from "./desktop-native"
+import { dict as english } from "./en"
 
 const appLocales = [
   "ar",
@@ -97,6 +98,19 @@ const domains = [
 ] as const
 
 describe("i18n parity", () => {
+  test("WSL product-owned values use the OpenCtrlC identity", async () => {
+    const keys = Object.keys(english).filter(
+      (key) => key.startsWith("wsl.onboarding.") || key.startsWith("desktop.wsl.error."),
+    )
+    const bundles = [english, ...(await Promise.all(appLocales.map(async (locale) => (await import(`./${locale}`)).dict)))]
+    for (const bundle of bundles) {
+      for (const key of keys) {
+        const value = String(bundle[key as keyof typeof bundle] ?? "")
+        expect(value).not.toContain("OpenCode")
+        expect(value).not.toContain("opencode")
+      }
+    }
+  })
   test("non-English locales have every English key and required plural variants", async () => {
     for (const domain of domains) {
       const source = await dictionary(domain.source)
