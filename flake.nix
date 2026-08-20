@@ -39,11 +39,11 @@
             };
           in
           rec {
-            opencode = final.callPackage ./nix/opencode.nix {
+            openctrlc = final.callPackage ./nix/opencode.nix {
               inherit node_modules;
             };
-            opencode-desktop = final.callPackage ./nix/desktop.nix {
-              inherit opencode;
+            openctrlc-desktop = final.callPackage ./nix/desktop.nix {
+              openctrlc = openctrlc;
             };
           };
       };
@@ -56,12 +56,12 @@
           };
         in
         rec {
-          default = opencode;
-          opencode = pkgs.callPackage ./nix/opencode.nix {
+          default = openctrlc;
+          openctrlc = pkgs.callPackage ./nix/opencode.nix {
             inherit node_modules;
           };
-          opencode-desktop = pkgs.callPackage ./nix/desktop.nix {
-            inherit opencode;
+          openctrlc-desktop = pkgs.callPackage ./nix/desktop.nix {
+            openctrlc = openctrlc;
           };
           # Updater derivation with fakeHash - build fails and reveals correct hash
           node_modules_updater = node_modules.override {
