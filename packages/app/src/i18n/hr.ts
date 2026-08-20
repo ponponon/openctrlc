@@ -229,11 +229,11 @@ export const dict = {
   "provider.connect.apiKey.placeholder": "Ključ API",
   "provider.connect.apiKey.required": "Potreban je ključ API",
   "provider.connect.opencodeZen.line1":
-    "OpenCtrlC Zen vam daje pristup odabranom skupu pouzdanih optimiziranih modela za agente za kodiranje.",
+    "OpenCode Zen vam daje pristup odabranom skupu pouzdanih optimiziranih modela za agente za kodiranje.",
   "provider.connect.opencodeZen.line2":
     "S jednim ključem API dobit ćete pristup modelima kao što su Claude, GPT, Gemini, GLM i još mnogo toga.",
   "provider.connect.opencodeZen.visit.prefix": "Posjetiti",
-  "provider.connect.opencodeZen.visit.link": "otvoreni kod.ai/zen",
+  "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
   "provider.connect.opencodeZen.visit.suffix": "da preuzmete svoj ključ API.",
   "provider.connect.oauth.code.visit.prefix": "Posjetiti",
   "provider.connect.oauth.code.visit.link": "ovaj link",
@@ -397,7 +397,7 @@ export const dict = {
   "dialog.mcp.description": "{{enabled}} od {{total}} omogućen",
   "dialog.mcp.empty": "Nema konfiguriranih MCP-ova",
   "dialog.lsp.empty": "LSPs automatski detektiran iz vrsta datoteka",
-  "dialog.plugins.empty": "Dodaci konfigurirani u openctrlc.json",
+  "dialog.plugins.empty": "Dodaci konfigurirani u opencode.json",
   "mcp.status.connected": "povezan",
   "mcp.status.failed": "nije uspio",
   "mcp.status.needs_auth": "treba autorizaciju",
@@ -667,7 +667,7 @@ export const dict = {
   "error.chain.responseBody": "Tijelo odgovora:\n{{body}}",
   "error.chain.didYouMean": "Jeste li mislili: {{suggestions}}",
   "error.chain.modelNotFound": "Model nije pronađen: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "Provjerite nazive dobavljača/modela svoje konfiguracije (openctrlc.json).",
+  "error.chain.checkConfig": "Provjerite nazive dobavljača/modela svoje konfiguracije (opencode.json).",
   "error.chain.mcpFailed":
     'MCP poslužitelj "{{name}}" nije uspio. Napomena, OpenCtrlC još ne podržava MCP autentifikaciju.',
   "error.chain.providerAuthFailed": "Provjera autentičnosti davatelja nije uspjela ({{provider}}): {{message}}",

@@ -229,7 +229,7 @@ export const dict = {
   "provider.connect.apiKey.placeholder": "API raktas",
   "provider.connect.apiKey.required": "Reikalingas API raktas",
   "provider.connect.opencodeZen.line1":
-    "OpenCtrlC Zen suteikia prieigą prie kuruojamo patikimų optimizuotų kodavimo agentų modelių rinkinio.",
+    "OpenCode Zen suteikia prieigą prie kuruojamo patikimų optimizuotų kodavimo agentų modelių rinkinio.",
   "provider.connect.opencodeZen.line2":
     "Su vienu API raktu galėsite pasiekti tokius modelius kaip Claude, GPT, Gemini, GLM ir kt.",
   "provider.connect.opencodeZen.visit.prefix": "Aplankykite",
@@ -398,7 +398,7 @@ export const dict = {
   "dialog.mcp.description": "Įjungtas {{enabled}} arba {{total}}",
   "dialog.mcp.empty": "MCP nesukonfigūruota",
   "dialog.lsp.empty": "LSP automatiškai aptinkami pagal failų tipus",
-  "dialog.plugins.empty": "Papildiniai sukonfigūruoti openctrlc.json",
+  "dialog.plugins.empty": "Papildiniai sukonfigūruoti opencode.json",
   "mcp.status.connected": "prijungtas",
   "mcp.status.failed": "nepavyko",
   "mcp.status.needs_auth": "reikia autentifikavimo",
@@ -666,7 +666,7 @@ export const dict = {
   "error.chain.responseBody": "Atsakymo turinys:\n{{body}}",
   "error.chain.didYouMean": "Ar turėjote omenyje: {{suggestions}}",
   "error.chain.modelNotFound": "Modelis nerastas: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "Patikrinkite konfigūracijos (openctrlc.json) teikėjo / modelio pavadinimus",
+  "error.chain.checkConfig": "Patikrinkite konfigūracijos (opencode.json) teikėjo / modelio pavadinimus",
   "error.chain.mcpFailed":
     "MCP serveris „{{name}}“ nepavyko. Atminkite, kad OpenCtrlC dar nepalaiko MCP autentifikavimo.",
   "error.chain.providerAuthFailed": "Teikėjo autentifikavimas nepavyko ({{provider}}): {{message}}",
