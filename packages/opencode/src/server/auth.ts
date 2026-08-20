@@ -3,6 +3,7 @@ export * as ServerAuth from "./auth"
 import { ConfigService } from "@/effect/config-service"
 import { Flag } from "@openctrlc/core/flag/flag"
 import { Config as EffectConfig, Context, Option, Redacted } from "effect"
+import { Brand } from "@openctrlc/identity"
 
 export type Credentials = {
   password?: string
@@ -16,7 +17,7 @@ export type DecodedCredentials = {
 
 export class Config extends ConfigService.Service<Config>()("@opencode/ServerAuthConfig", {
   password: EffectConfig.string("OPENCTRLC_SERVER_PASSWORD").pipe(EffectConfig.option),
-  username: EffectConfig.string("OPENCTRLC_SERVER_USERNAME").pipe(EffectConfig.withDefault("opencode")),
+  username: EffectConfig.string("OPENCTRLC_SERVER_USERNAME").pipe(EffectConfig.withDefault(Brand.cli)),
 }) {}
 
 export type Info = Context.Service.Shape<typeof Config>
@@ -37,7 +38,7 @@ export function header(credentials?: Credentials) {
   const password = credentials?.password ?? Flag.OPENCTRLC_SERVER_PASSWORD
   if (!password) return undefined
 
-  const username = credentials?.username ?? Flag.OPENCTRLC_SERVER_USERNAME ?? "opencode"
+  const username = credentials?.username ?? Flag.OPENCTRLC_SERVER_USERNAME ?? Brand.cli
   return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`
 }
 

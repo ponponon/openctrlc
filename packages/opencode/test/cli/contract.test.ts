@@ -39,3 +39,22 @@ test("the built current-platform binary responds to --version", async () => {
   expect(exitCode).toBe(0)
   expect(`${stdout}${stderr}`.trim()).not.toBe("")
 })
+
+test("the built current-platform binary serves both help contracts", async () => {
+  const target = `${process.platform === "win32" ? "windows" : process.platform}-${process.arch}`
+  const binary = path.join(opencodeRoot, "dist", `openctrlc-${target}`, "bin", process.platform === "win32" ? "openctrlc.exe" : "openctrlc")
+
+  for (const args of [["--help"], ["serve", "--help"]]) {
+    const child = Bun.spawn([binary, ...args], { stdout: "pipe", stderr: "pipe" })
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ])
+    const output = `${stdout}${stderr}`
+
+    expect(exitCode).toBe(0)
+    expect(output).toContain("openctrlc")
+    expect(output).not.toContain("opencode --")
+  }
+})

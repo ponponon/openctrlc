@@ -31,7 +31,7 @@ export type ServiceClass<Self, Id extends string, Service> = Context.ServiceClas
  *   "@opencode/ServerAuthConfig",
  *   {
  *     password: Config.string("OPENCTRLC_SERVER_PASSWORD").pipe(Config.option),
- *     username: Config.string("OPENCTRLC_SERVER_USERNAME").pipe(Config.withDefault("opencode")),
+ *     username: Config.string("OPENCTRLC_SERVER_USERNAME").pipe(Config.withDefault("openctrlc")),
  *   },
  * ) {}
  *
