@@ -38,7 +38,7 @@ const packageNames = [
 
 const replacements = new Map(packageNames.map((name) => [`@opencode-ai/${name}`, `@openctrlc/${name}`]))
 const ignoredFiles = [
-  ".opencode/",
+  ".openctrlc/",
   "packages/app/vendor/",
   "packages/client/src/generated/",
   "packages/client/src/generated-effect/",

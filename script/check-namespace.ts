@@ -37,7 +37,7 @@ const internalPackages = [
 ] as const
 
 const ignoredFiles = [
-  ".opencode/",
+  ".openctrlc/",
   "packages/app/vendor/",
   "packages/client/src/generated/",
   "packages/client/src/generated-effect/",

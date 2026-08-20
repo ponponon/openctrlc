@@ -57,9 +57,9 @@ Si l'application de bureau plante au lancement, se bloque ou se comporte étrang
 
 Ouvrez votre fichier de configuration global et recherchez une clé `plugin`.
 
-- **macOS/Linux** : `~/.config/opencode/opencode.jsonc` (ou `~/.config/opencode/opencode.json`)
-- **macOS/Linux** (anciennes installations) : `~/.local/share/opencode/opencode.jsonc`
-- **Windows** : appuyez sur `WIN+R` et collez `%USERPROFILE%\.config\opencode\opencode.jsonc`
+- **macOS/Linux** : `~/.config/opencode/openctrlc.jsonc` (ou `~/.config/opencode/openctrlc.json`)
+- **macOS/Linux** (anciennes installations) : `~/.local/share/opencode/openctrlc.jsonc`
+- **Windows** : appuyez sur `WIN+R` et collez `%USERPROFILE%\.config\opencode\openctrlc.jsonc`
 
 Si vous avez configuré des plugins, désactivez-les temporairement en supprimant la clé ou en la définissant sur un tableau vide :
 
@@ -78,7 +78,7 @@ OpenCode peut également charger des plugins locaux à partir du disque. Écarte
   - **macOS/Linux** : `~/.config/opencode/plugins/`
   - **Windows** : appuyez sur `WIN+R` et collez `%USERPROFILE%\.config\opencode\plugins`
 - **Plugins de projet** (uniquement si vous utilisez une configuration par projet)
-  - `<your-project>/.opencode/plugins/`
+  - `<your-project>/.openctrlc/plugins/`
 
 Si l'application recommence à fonctionner, réactivez les plugins un par un pour trouver celui à l'origine du problème.
 
@@ -111,7 +111,7 @@ Depuis l'écran d'accueil, cliquez sur le nom du serveur (avec le point d'état)
 
 #### Supprimez `server.port` / `server.hostname` de votre configuration
 
-Si votre `opencode.json(c)` contient une section `server`, supprimez-la temporairement et redémarrez l'application de bureau.
+Si votre `openctrlc.json(c)` contient une section `server`, supprimez-la temporairement et redémarrez l'application de bureau.
 
 #### Vérifier les variables d'environnement
 

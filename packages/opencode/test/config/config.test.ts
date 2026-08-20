@@ -24,6 +24,7 @@ import {
   tmpdirScoped,
   withTestInstance,
   provideInstanceEffect,
+  disposeAllInstancesEffect,
   testInstanceStoreLayer,
 } from "../fixture/fixture"
 import { InstanceRuntime } from "@/project/instance-runtime"
@@ -303,6 +304,32 @@ it.instance("does not read the old OpenCode config environment variable", () =>
       expect(config.model).not.toBe("legacy/model")
     }),
   ),
+)
+
+it.instance("uses the new config directory environment variable and ignores the old one", () =>
+  Effect.gen(function* () {
+    const legacy = yield* tmpdirScoped({ config: { model: "legacy/model" } })
+    const current = yield* tmpdirScoped({ config: { model: "current/model" } })
+    yield* withProcessEnvs(
+      { OPENCODE_CONFIG_DIR: legacy, OPENCTRLC_CONFIG_DIR: current },
+      Effect.gen(function* () {
+        const config = yield* Config.use.get()
+        expect(config.model).not.toBe("legacy/model")
+        expect(config.model).toBe("current/model")
+      }),
+    )
+  }),
+)
+
+it.instance("does not read the old project config disable environment variable", () =>
+  withProcessEnvs(
+    { OPENCODE_DISABLE_PROJECT_CONFIG: "true", OPENCTRLC_DISABLE_PROJECT_CONFIG: "false" },
+    Effect.gen(function* () {
+      const config = yield* Config.use.get()
+      expect(config.model).toBe("project/model")
+    }),
+  ),
+  { config: { model: "project/model" } },
 )
 
 it.instance("falls back to generic username when system user info is unavailable", () =>
@@ -906,6 +933,11 @@ it.instance("updates config and writes to file", () =>
 
     const writtenConfig = yield* FSUtil.use.readJson(path.join(test.directory, "openctrlc.json"))
     expect(writtenConfig).toMatchObject({ model: "updated/model" })
+    expect(yield* FSUtil.use.existsSafe(path.join(test.directory, "config.json"))).toBe(false)
+
+    yield* disposeAllInstancesEffect
+    const reopened = yield* Config.use.get().pipe(provideInstanceEffect(test.directory))
+    expect(reopened.model).toBe("updated/model")
   }),
 )
 
@@ -921,6 +953,11 @@ it.instance("updates an existing JSONC project config in place", () =>
       model: "after/model",
     })
     expect(yield* FSUtil.use.existsSafe(path.join(test.directory, "openctrlc.json"))).toBe(false)
+    expect(yield* FSUtil.use.existsSafe(path.join(test.directory, "config.json"))).toBe(false)
+
+    yield* disposeAllInstancesEffect
+    const reopened = yield* Config.use.get().pipe(provideInstanceEffect(test.directory))
+    expect(reopened.model).toBe("after/model")
   }),
 )
 
