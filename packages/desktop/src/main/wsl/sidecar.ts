@@ -6,6 +6,7 @@ import { checkHealth } from "../server"
 import { type WslCommandLine, resolveWslOpencode, shellEscape, wslArgs } from "./runtime"
 import { pollWslHealth } from "./startup"
 import { nativeT } from "../native-translations"
+import { Brand } from "@openctrlc/identity"
 
 export type WslSidecar = {
   listener: { stop: () => void; onExit: (cb: (code: number | null, signal: NodeJS.Signals | null) => void) => void }
@@ -23,7 +24,7 @@ export async function spawnWslSidecar(
 
   const port = await allocatePort()
   const password = randomUUID()
-  const username = "opencode"
+  const username = Brand.cli
   const script = [
     "set -euo pipefail",
     'cd "$HOME" || cd /',

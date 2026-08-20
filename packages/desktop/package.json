@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@actions/artifact": "4.0.0",
+    "@openctrlc/identity": "workspace:*",
     "@lydell/node-pty": "catalog:",
     "@openctrlc/app": "workspace:*",
     "@openctrlc/ui": "workspace:*",

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=OpenCtrlC
+Exec=/opt/OpenCtrlC/cn.quniv.openctrlc %U
+Terminal=false
+Type=Application
+Icon=cn.quniv.openctrlc
+StartupWMClass=cn.quniv.openctrlc
+Categories=Development;
+MimeType=x-scheme-handler/openctrlc;

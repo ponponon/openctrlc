@@ -8,7 +8,7 @@ const CLI_VERSION = "0.0.0-next-16350"
 export type Channel = "dev" | "beta" | "prod"
 
 export function resolveChannel(): Channel {
-  const raw = Bun.env.OPENCODE_CHANNEL
+  const raw = Bun.env.OPENCTRLC_CHANNEL
   if (raw === "dev" || raw === "beta" || raw === "prod") return raw
   return "dev"
 }
@@ -16,37 +16,37 @@ export function resolveChannel(): Channel {
 export const CLI_BINARIES: Array<{ rustTarget: string; package: string; os: string; cpu: string }> = [
   {
     rustTarget: "aarch64-apple-darwin",
-    package: "@openctrlc/cli-darwin-arm64",
+    package: "openctrlc-darwin-arm64",
     os: "darwin",
     cpu: "arm64",
   },
   {
     rustTarget: "x86_64-apple-darwin",
-    package: "@openctrlc/cli-darwin-x64-baseline",
+    package: "openctrlc-darwin-x64-baseline",
     os: "darwin",
     cpu: "x64",
   },
   {
     rustTarget: "aarch64-pc-windows-msvc",
-    package: "@openctrlc/cli-windows-arm64",
+    package: "openctrlc-windows-arm64",
     os: "win32",
     cpu: "arm64",
   },
   {
     rustTarget: "x86_64-pc-windows-msvc",
-    package: "@openctrlc/cli-windows-x64-baseline",
+    package: "openctrlc-windows-x64-baseline",
     os: "win32",
     cpu: "x64",
   },
   {
     rustTarget: "x86_64-unknown-linux-gnu",
-    package: "@openctrlc/cli-linux-x64-baseline",
+    package: "openctrlc-linux-x64-baseline",
     os: "linux",
     cpu: "x64",
   },
   {
     rustTarget: "aarch64-unknown-linux-gnu",
-    package: "@openctrlc/cli-linux-arm64",
+    package: "openctrlc-linux-arm64",
     os: "linux",
     cpu: "arm64",
   },

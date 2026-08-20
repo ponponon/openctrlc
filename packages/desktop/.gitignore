@@ -25,5 +25,8 @@ dist-ssr
 out/
 
 resources/opencode-cli*
+resources/openctrlc*
 resources/icons
 resources/*.metainfo.xml
+!resources/cn.quniv.openctrlc.metainfo.xml
+!resources/cn.quniv.openctrlc.dev.metainfo.xml
