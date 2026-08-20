@@ -6,6 +6,8 @@ import os from "os"
 import path from "path"
 import { fileLogger } from "../../src/observability/logging"
 import { resource } from "../../src/observability/otlp"
+import { Global } from "../../src/global"
+import { Brand } from "@openctrlc/identity"
 
 const otelResourceAttributes = process.env.OTEL_RESOURCE_ATTRIBUTES
 const opencodeClient = process.env.OPENCTRLC_CLIENT
@@ -106,4 +108,17 @@ test("file logger flattens nested objects", async () => {
   expect(line).toContain('tags="[\\\"api\\\",\\\"test\\\"]"')
   expect(line).toContain("session.id=session-1")
   expect(line).not.toContain("request={")
+})
+
+test("default file logger writes under the OpenCtrlC log path", async () => {
+  const file = path.join(Global.Path.log, `${Brand.runtimeDirectory}.log`)
+  await fs.rm(file, { force: true })
+  await Effect.logInfo("default logger path").pipe(
+    Effect.provide(Logger.layer([fileLogger()]).pipe(Layer.provide(NodeFileSystem.layer), Layer.orDie)),
+    Effect.scoped,
+    Effect.runPromise,
+  )
+
+  expect(await Bun.file(file).exists()).toBe(true)
+  await fs.rm(file, { force: true })
 })
