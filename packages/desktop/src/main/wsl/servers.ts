@@ -364,7 +364,7 @@ export function createWslServersController(
       await runJob({ kind: "install-openctrlc", distro: name, startedAt: Date.now() }, async (abort) => {
         const result = await installWslOpenctrlc(appVersion, name, { signal: abort.signal })
         if (result.code !== 0) {
-          throw new Error(summarize(result.stderr || result.stdout) || nativeT("desktop.wsl.error.installOpencode"))
+          throw new Error(summarize(result.stderr || result.stdout) || nativeT("desktop.wsl.error.installOpenctrlc"))
         }
         await refreshOpenctrlcCheck(name, { signal: abort.signal })
         expectOpenctrlcVersion(state.openctrlcChecks[name]?.version ?? null, appVersion, name)
@@ -477,7 +477,7 @@ function openctrlcCheck(
       version: null,
       expectedVersion,
       matchesDesktop: null,
-      error: nativeT("desktop.wsl.error.opencodeMissing"),
+      error: nativeT("desktop.wsl.error.openctrlcMissing"),
     }
   }
   if (!version) {
@@ -487,7 +487,7 @@ function openctrlcCheck(
       version: null,
       expectedVersion,
       matchesDesktop: null,
-      error: nativeT("desktop.wsl.error.opencodeCannotRun"),
+      error: nativeT("desktop.wsl.error.openctrlcCannotRun"),
     }
   }
   return {

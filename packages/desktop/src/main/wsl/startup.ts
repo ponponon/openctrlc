@@ -7,7 +7,7 @@ export function wslServerIdsToStartOnInitialize(servers: { id: string }[]) {
 export function expectOpenctrlcVersion(installed: string | null, expected: string, distro = "Debian") {
   if (installed === expected) return
   throw new Error(
-    nativeT("desktop.wsl.error.updateVersion", {
+    nativeT("desktop.wsl.error.updateOpenctrlcVersion", {
       distro,
       installed: installed ?? nativeT("desktop.wsl.error.noVersion"),
       expected,

@@ -10,6 +10,7 @@ test("keeps OpenCtrlC CI, artifact, and channel contracts aligned", async () => 
 
   expect(workflow).toContain("OPENCTRLC_VERSION")
   expect(workflow).toContain("OPENCTRLC_CHANNEL")
+  expect(workflow).toContain("openctrlc-preview-cli")
   expect(workflow).not.toContain("OPENCODE_VERSION")
   expect(workflow).not.toContain("OPENCODE_CHANNEL")
   expect(workflow).not.toContain("opencode-desktop")

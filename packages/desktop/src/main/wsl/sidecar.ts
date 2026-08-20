@@ -20,7 +20,7 @@ export async function spawnWslSidecar(
   opts: { onLine?: (line: WslCommandLine) => void; healthTimeoutMs?: number } = {},
 ): Promise<WslSidecar> {
   const openctrlc = await resolveWslOpenctrlc(distro)
-  if (!openctrlc) throw new Error(nativeT("desktop.wsl.error.opencodeNotInstalled", { distro }))
+  if (!openctrlc) throw new Error(nativeT("desktop.wsl.error.openctrlcNotInstalled", { distro }))
 
   const port = await allocatePort()
   const password = randomUUID()
