@@ -20,7 +20,8 @@ ts-dist
 /result
 refs
 Session.vim
-/opencode.json
+/openctrlc.json
+/openctrlc.jsonc
 a.out
 target
 .scripts

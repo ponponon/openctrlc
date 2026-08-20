@@ -306,15 +306,28 @@ it.instance("does not read the old OpenCode config environment variable", () =>
   ),
 )
 
-it.instance("uses the new config directory environment variable and ignores the old one", () =>
+it.instance("does not read the old config directory environment variable", () =>
   Effect.gen(function* () {
     const legacy = yield* tmpdirScoped({ config: { model: "legacy/model" } })
-    const current = yield* tmpdirScoped({ config: { model: "current/model" } })
-    yield* withProcessEnvs(
-      { OPENCODE_CONFIG_DIR: legacy, OPENCTRLC_CONFIG_DIR: current },
+    yield* withProcessEnv(
+      "OPENCODE_CONFIG_DIR",
+      legacy,
       Effect.gen(function* () {
         const config = yield* Config.use.get()
         expect(config.model).not.toBe("legacy/model")
+      }),
+    )
+  }),
+)
+
+it.instance("uses the new config directory environment variable", () =>
+  Effect.gen(function* () {
+    const current = yield* tmpdirScoped({ config: { model: "current/model" } })
+    yield* withProcessEnv(
+      "OPENCTRLC_CONFIG_DIR",
+      current,
+      Effect.gen(function* () {
+        const config = yield* Config.use.get()
         expect(config.model).toBe("current/model")
       }),
     )
@@ -2005,8 +2018,8 @@ test("parseManagedPlist strips MDM metadata keys", async () => {
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
           PayloadDisplayName: "OpenCode Managed",
-          PayloadIdentifier: "ai.openctrlc.managed.test",
-          PayloadType: "ai.openctrlc.managed",
+          PayloadIdentifier: "ai.opencode.managed.test",
+          PayloadType: "ai.opencode.managed",
           PayloadUUID: "AAAA-BBBB-CCCC",
           PayloadVersion: 1,
           _manualProfile: true,
