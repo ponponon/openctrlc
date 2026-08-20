@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { SnapshotFileDiff } from "@openctrlc/sdk/v2"
-import type { FileDiffInfo } from "@openctrlc/client/promise"
+import type { FileDiffInfo } from "@opencode-ai/client/promise"
 import type { Message } from "@openctrlc/sdk/v2/client"
 import { diffs, message } from "./diffs"
 

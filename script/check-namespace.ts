@@ -36,12 +36,6 @@ const internalPackages = [
   "web",
 ] as const
 
-const externalAllowlist = [
-  "@opencode-ai/ai",
-  "@opencode-ai/docs",
-  "@opencode-ai/client@",
-  "@opencode-ai/plugin@",
-] as const
 const ignoredFiles = [
   ".opencode/",
   "packages/app/vendor/",
@@ -50,9 +44,9 @@ const ignoredFiles = [
   "packages/sdk/openapi.json",
   "packages/sdk/js/src/gen/",
   "packages/sdk/js/src/v2/gen/",
+  "script/check-namespace.ts",
 ]
 const ignoredExtensions = [".md", ".mdx"]
-const ignoredLockfilePrefixes = ["@gitlab/opencode-gitlab-auth", "opencode-gitlab-auth", "opencode-poe-auth"]
 const pattern = `@opencode-ai/(${internalPackages.join("|")})([^A-Za-z0-9._-]|$)`
 const grepProcess = Bun.spawn(["git", "grep", "-I", "-n", "-E", pattern, "--", "."], {
   stdout: "pipe",
@@ -60,19 +54,31 @@ const grepProcess = Bun.spawn(["git", "grep", "-I", "-n", "-E", pattern, "--", "
 })
 const output = await new Response(grepProcess.stdout).text()
 const exitCode = await grepProcess.exited
-const violations = (output.trim() === "" ? [] : output.trim().split("\n")).filter(
-  (line) => {
-    const file = line.split(":", 1)[0]
-    return (
-      !ignoredFiles.some((ignored) => file.startsWith(ignored)) &&
-      !ignoredExtensions.some((extension) => file.endsWith(extension)) &&
-      !externalAllowlist.some((name) => line.includes(name)) &&
-      !(file.endsWith("bun.lock") && ignoredLockfilePrefixes.some((name) => line.includes(`"${name}`)))
-    )
-  },
-)
+const violations = (output.trim() === "" ? [] : output.trim().split("\n")).flatMap((line) => {
+  const file = line.split(":", 1)[0]
+  if (ignoredFiles.some((ignored) => file.startsWith(ignored))) return []
+  if (ignoredExtensions.some((extension) => file.endsWith(extension))) return []
+
+  return [...line.matchAll(/@opencode-ai\/[A-Za-z0-9._-]+/g)]
+    .map((match) => match[0])
+    .filter((name) => internalPackages.some((pkg) => name === `@opencode-ai/${pkg}`))
+    .filter((name) => !isExternalContract(file, line, name))
+    .map((name) => `${file}: ${name}`)
+})
 
 if (exitCode > 1 || violations.length > 0) {
   for (const violation of violations) console.error(violation)
   process.exit(1)
+}
+
+function isExternalContract(file: string, line: string, name: string) {
+  if (name === "@opencode-ai/client") return true
+
+  if (!file.endsWith("bun.lock")) return false
+  if (name === "@opencode-ai/sdk") return line.includes("@opencode-ai/sdk")
+  if (name === "@opencode-ai/plugin") {
+    return ["@gitlab/opencode-gitlab-auth", "opencode-gitlab-auth", "opencode-poe-auth", "@opencode-ai/plugin"].some(
+      (pkg) => line.includes(`\"${pkg}`),
+    )
+  }
 }

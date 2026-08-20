@@ -22,7 +22,7 @@ import type {
   ReferenceListInput,
   ReferenceListOutput,
   SessionApi,
-} from "@openctrlc/client/promise"
+} from "@opencode-ai/client/promise"
 import { showToast } from "@/utils/toast"
 import { getFilename } from "@openctrlc/core/util/path"
 import { retry } from "@openctrlc/core/util/retry"

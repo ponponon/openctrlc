@@ -1,5 +1,5 @@
 import { createOpencodeClient } from "@openctrlc/sdk/v2/client"
-import { OpenCode, type OpenCodeClient } from "@openctrlc/client/promise"
+import { OpenCode, type OpenCodeClient } from "@opencode-ai/client/promise"
 import type { ServerConnection } from "@/context/server"
 import { decode64 } from "@/utils/base64"
 

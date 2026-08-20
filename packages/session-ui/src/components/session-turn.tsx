@@ -4,7 +4,7 @@ import {
   Message as MessageType,
   Part as PartType,
 } from "@openctrlc/sdk/v2/client"
-import type { FileDiffInfo } from "@openctrlc/client/promise"
+import type { FileDiffInfo } from "@opencode-ai/client/promise"
 import type { SessionStatus } from "@openctrlc/sdk/v2"
 import { useData } from "../context"
 import { useFileComponent } from "@openctrlc/ui/context/file"

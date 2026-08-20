@@ -1,4 +1,4 @@
-import type { SessionApi, SessionInfo, SessionListInput } from "@openctrlc/client/promise"
+import type { SessionApi, SessionInfo, SessionListInput } from "@opencode-ai/client/promise"
 import type { Session } from "@openctrlc/sdk/v2/client"
 import { withTimestampedFallback } from "./session-title"
 

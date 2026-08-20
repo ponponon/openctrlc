@@ -24,7 +24,7 @@ import { IconButtonV2 } from "@openctrlc/ui/v2/icon-button-v2"
 import { KeybindV2 } from "@openctrlc/ui/v2/keybind-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
 import type { SnapshotFileDiff, VcsFileDiff } from "@openctrlc/sdk/v2"
-import type { FileDiffInfo } from "@openctrlc/client/promise"
+import type { FileDiffInfo } from "@opencode-ai/client/promise"
 import { ConstrainDragYAxis, getDraggableId } from "@/utils/solid-dnd"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 

@@ -1,4 +1,4 @@
-import type { IntegrationMethod, IntegrationOauthConnectOutput } from "@openctrlc/client/promise"
+import type { IntegrationMethod, IntegrationOauthConnectOutput } from "@opencode-ai/client/promise"
 import { Button } from "@openctrlc/ui/button"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { Dialog } from "@openctrlc/ui/dialog"

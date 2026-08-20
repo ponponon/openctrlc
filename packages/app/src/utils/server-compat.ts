@@ -14,7 +14,7 @@ import type {
   SessionPromptOutput,
   SessionShellInput,
   SessionShellOutput,
-} from "@openctrlc/client/promise"
+} from "@opencode-ai/client/promise"
 
 type LegacyClient = OpencodeClient
 type LegacyFor = (directory?: string) => LegacyClient

@@ -28,6 +28,7 @@
       "packages/console/*",
       "packages/stats/*",
       "packages/sdk/js",
+      "github",
       "packages/slack",
       "packages/identity"
     ],

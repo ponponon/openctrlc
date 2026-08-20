@@ -1,7 +1,7 @@
 import { parseDiffFromFile, parsePatchFiles, type FileDiffMetadata } from "@pierre/diffs"
 import { parsePatch } from "diff"
 import type { SnapshotFileDiff, VcsFileDiff } from "@openctrlc/sdk/v2"
-import type { FileDiffInfo } from "@openctrlc/client/promise"
+import type { FileDiffInfo } from "@opencode-ai/client/promise"
 
 type LegacyDiff = {
   file: string

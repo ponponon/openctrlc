@@ -14,8 +14,8 @@ import { Session } from "@/session/session"
 import { NamedError } from "@openctrlc/core/util/error"
 import { CopilotAuthPlugin } from "./github-copilot/copilot"
 import { ModalPlugin } from "./modal/modal"
-import { gitlabAuthPlugin as GitlabAuthPlugin } from "opencode-gitlab-auth"
-import { PoeAuthPlugin } from "opencode-poe-auth"
+import { gitlabAuthPlugin as GitlabAuthPluginExternal } from "opencode-gitlab-auth"
+import { PoeAuthPlugin as PoeAuthPluginExternal } from "opencode-poe-auth"
 import { CloudflareAIGatewayAuthPlugin, CloudflareWorkersAuthPlugin } from "./cloudflare"
 import { AzureAuthPlugin } from "./azure"
 import { DigitalOceanAuthPlugin } from "./digitalocean"
@@ -32,6 +32,9 @@ import type { WorkspaceAdapter } from "@/control-plane/types"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { InstallationChannel } from "@openctrlc/core/installation/version"
+
+const GitlabAuthPlugin = GitlabAuthPluginExternal as unknown as PluginInstance
+const PoeAuthPlugin = PoeAuthPluginExternal as unknown as PluginInstance
 
 type State = {
   hooks: Hooks[]

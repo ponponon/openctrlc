@@ -1,5 +1,5 @@
 import type { Message, Session, Part, SnapshotFileDiff, SessionStatus, Provider } from "@openctrlc/sdk/v2"
-import type { FileDiffInfo } from "@openctrlc/client/promise"
+import type { FileDiffInfo } from "@opencode-ai/client/promise"
 import { createSimpleContext } from "@openctrlc/ui/context"
 import { PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 

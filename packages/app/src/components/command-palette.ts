@@ -1,6 +1,6 @@
 import { getFilename } from "@openctrlc/core/util/path"
 import type { Project } from "@openctrlc/sdk/v2/client"
-import type { SessionInfo } from "@openctrlc/client/promise"
+import type { SessionInfo } from "@opencode-ai/client/promise"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { createMemo, onCleanup } from "solid-js"
 import { commandPaletteOptions, useCommand, type CommandOption } from "@/context/command"

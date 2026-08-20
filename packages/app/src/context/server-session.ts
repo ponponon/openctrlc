@@ -1,6 +1,6 @@
 import { Binary } from "@openctrlc/core/util/binary"
 import { retry } from "@openctrlc/core/util/retry"
-import type { OpenCodeEvent, SessionApi, SessionMessageInfo } from "@openctrlc/client/promise"
+import type { OpenCodeEvent, SessionApi, SessionMessageInfo } from "@opencode-ai/client/promise"
 import type {
   Message,
   OpencodeClient,
@@ -11,7 +11,7 @@ import type {
   SessionStatus,
   Todo,
 } from "@openctrlc/sdk/v2/client"
-import type { FileDiffInfo } from "@openctrlc/client/promise"
+import type { FileDiffInfo } from "@opencode-ai/client/promise"
 import { batch } from "solid-js"
 import { createStore, produce, reconcile } from "solid-js/store"
 import { message as cleanMessage } from "@/utils/diffs"

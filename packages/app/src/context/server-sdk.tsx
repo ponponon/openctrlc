@@ -1,4 +1,4 @@
-import type { OpenCodeEvent } from "@openctrlc/client/promise"
+import type { OpenCodeEvent } from "@opencode-ai/client/promise"
 import type { Event } from "@openctrlc/sdk/v2/client"
 import { createSimpleContext } from "@openctrlc/ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"

@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@kobalte/core": "catalog:",
-    "@openctrlc/client": "file:../app/vendor/opencode-ai-client-1.17.13-v2.tgz",
+    "@opencode-ai/client": "file:../app/vendor/opencode-ai-client-1.17.13-v2.tgz",
     "@openctrlc/core": "workspace:*",
     "@openctrlc/sdk": "workspace:*",
     "@openctrlc/ui": "workspace:*",
