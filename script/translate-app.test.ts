@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test"
+import fs from "fs/promises"
+import path from "path"
 import {
   findDrift,
   glossaryFile,
@@ -78,9 +80,17 @@ describe("translate app", () => {
   })
 
   test("maps product locale codes to their glossaries", () => {
-    expect(glossaryFile("fr")).toBe(".opencode/glossary/fr.md")
-    expect(glossaryFile("zh")).toBe(".opencode/glossary/zh-cn.md")
-    expect(glossaryFile("zht")).toBe(".opencode/glossary/zh-tw.md")
+    expect(glossaryFile("fr")).toBe(".openctrlc/glossary/fr.md")
+    expect(glossaryFile("zh")).toBe(".openctrlc/glossary/zh-cn.md")
+    expect(glossaryFile("zht")).toBe(".openctrlc/glossary/zh-tw.md")
+  })
+
+  test("uses the OpenCtrlC project namespace in translation tooling", async () => {
+    const source = await fs.readFile(path.join(import.meta.dir, "translate-app.ts"), "utf8")
+    expect(source).toContain("OPENCTRLC_CONFIG_CONTENT")
+    expect(source).not.toContain("OPENCODE_CONFIG_CONTENT")
+    expect(source).toContain(".openctrlc/glossary")
+    expect(source).not.toContain(".opencode/glossary")
   })
 
   test("finds key and placeholder drift", () => {

@@ -20,7 +20,7 @@ export const Plugin = define({
           skill: SkillV2.Info.make({
             name: "customize-opencode",
             description:
-               "Use ONLY when the user is editing or creating OpenCtrlC's own configuration: openctrlc.json, openctrlc.jsonc, files under .openctrlc/, or files under ~/.config/openctrlc/. Also use when creating or fixing OpenCtrlC agents, subagents, commands, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring OpenCtrlC itself.",
+              "Use ONLY when the user is editing or creating OpenCtrlC's own configuration: openctrlc.json, openctrlc.jsonc, files under .openctrlc/, or files under ~/.config/openctrlc/. Also use when creating or fixing OpenCtrlC agents, subagents, commands, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring OpenCtrlC itself.",
             location: AbsolutePath.make("/builtin/customize-opencode.md"),
             content: CustomizeOpencodeContent,
           }),

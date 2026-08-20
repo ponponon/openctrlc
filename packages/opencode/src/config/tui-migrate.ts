@@ -28,8 +28,8 @@ interface MigrateInput {
  * skips only locations where a tui.json already exists.
  */
 export async function migrateTuiConfig(input: MigrateInput) {
-  const opencode = await opencodeFiles(input)
-  for (const file of opencode) {
+  const projectFiles = await projectConfigFiles(input)
+  for (const file of projectFiles) {
     const source = await Filesystem.readText(file).catch(() => undefined)
     if (!source) continue
     const errors: JsoncParseError[] = []
@@ -113,13 +113,13 @@ async function backupAndStripLegacy(file: string, source: string) {
     .catch(() => false)
 }
 
-async function opencodeFiles(input: { directories: string[]; cwd: string }) {
+async function projectConfigFiles(input: { directories: string[]; cwd: string }) {
   const files = [
-    ...ConfigPaths.fileInDirectory(Global.Path.config, "openctrlc"),
+    ...ConfigPaths.fileInDirectory(Global.Path.config, Brand.configFile.replace(/\.json$/, "")),
     ...(await Filesystem.findUp([Brand.configFile, Brand.configFileJsonc], input.cwd, undefined, { rootFirst: true })),
   ]
   for (const dir of unique(input.directories)) {
-    files.push(...ConfigPaths.fileInDirectory(dir, "openctrlc"))
+    files.push(...ConfigPaths.fileInDirectory(dir, Brand.configFile.replace(/\.json$/, "")))
   }
   if (Flag.OPENCTRLC_CONFIG) files.push(Flag.OPENCTRLC_CONFIG)
 

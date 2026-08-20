@@ -236,16 +236,38 @@ describe("Config", () => {
     ).pipe(
       Effect.flatMap((tmp) =>
         Effect.gen(function* () {
-          yield* Effect.promise(async () => {
-            await fs.mkdir(path.join(tmp.path, ".opencode"), { recursive: true })
-            await fs.writeFile(path.join(tmp.path, ".opencode", "opencode.json"), JSON.stringify({ $schema: "legacy" }))
-          })
+          yield* Effect.promise(() => fs.writeFile(path.join(tmp.path, "opencode.json"), JSON.stringify({ $schema: "legacy" })))
 
           return yield* Effect.gen(function* () {
             const config = yield* Config.Service
             const documents = (yield* config.entries()).filter((entry) => entry.type === "document")
 
             expect(documents.some((document) => document.info.$schema === "legacy")).toBe(false)
+          }).pipe(Effect.provide(testLayer(tmp.path)))
+        }),
+      ),
+    ),
+  )
+
+  it.live("does not load root OpenCode config filenames", () =>
+    Effect.acquireRelease(
+      Effect.promise(() => tmpdir()),
+      (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
+    ).pipe(
+      Effect.flatMap((tmp) =>
+        Effect.gen(function* () {
+          yield* Effect.promise(() =>
+            Promise.all([
+              fs.writeFile(path.join(tmp.path, "opencode.json"), JSON.stringify({ $schema: "legacy-json" })),
+              fs.writeFile(path.join(tmp.path, "opencode.jsonc"), JSON.stringify({ $schema: "legacy-jsonc" })),
+            ]),
+          )
+
+          return yield* Effect.gen(function* () {
+            const config = yield* Config.Service
+            const documents = (yield* config.entries()).filter((entry) => entry.type === "document")
+
+            expect(documents.some((document) => document.info.$schema?.startsWith("legacy-"))).toBe(false)
           }).pipe(Effect.provide(testLayer(tmp.path)))
         }),
       ),

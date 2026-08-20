@@ -405,7 +405,7 @@ const layer = Layer.effect(
         }
 
         if (!Flag.OPENCTRLC_DISABLE_PROJECT_CONFIG) {
-          for (const file of yield* ConfigPaths.files("openctrlc", ctx.directory, ctx.worktree).pipe(Effect.orDie)) {
+          for (const file of yield* ConfigPaths.files(Brand.configFile.replace(/\.json$/, ""), ctx.directory, ctx.worktree).pipe(Effect.orDie)) {
             yield* merge(file, yield* loadFile(file, authEnv), "local")
           }
         }
@@ -624,7 +624,8 @@ const layer = Layer.effect(
 
     const update = Effect.fn("Config.update")(function* (config: Info) {
       const dir = yield* InstanceState.directory
-      const file = path.join(dir, "config.json")
+      const candidates = [Brand.configFileJsonc, Brand.configFile].map((name) => path.join(dir, name))
+      const file = candidates.find((candidate) => existsSync(candidate)) ?? candidates[1]
       const existing = yield* loadFile(file)
       yield* fs
         .writeFileString(file, JSON.stringify(mergeDeep(writable(existing), writable(config)), null, 2))

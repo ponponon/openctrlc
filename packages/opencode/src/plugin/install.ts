@@ -32,7 +32,7 @@ export type PatchDeps = {
   readText: (file: string) => Promise<string>
   write: (file: string, text: string) => Promise<void>
   exists: (file: string) => Promise<boolean>
-  files: (dir: string, name: "openctrlc" | "tui") => string[]
+  files: (dir: string, name: string) => string[]
 }
 
 export type PatchInput = {
@@ -338,8 +338,8 @@ function patchDir(input: PatchInput) {
   return path.join(root, Brand.projectDirectory)
 }
 
-function patchName(kind: Kind): "openctrlc" | "tui" {
-  if (kind === "server") return "openctrlc"
+function patchName(kind: Kind) {
+  if (kind === "server") return Brand.configFile.replace(/\.json$/, "")
   return "tui"
 }
 

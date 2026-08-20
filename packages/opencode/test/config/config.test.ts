@@ -369,15 +369,11 @@ it.instance(
 it.instance("updates config and preserves empty shell sentinel", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
-    yield* writeConfigEffect(
-      test.directory,
-      { $schema: "https://opencode.ai/config.json", shell: "bash" },
-      "config.json",
-    )
+    yield* writeConfigEffect(test.directory, { $schema: "https://opencode.ai/config.json", shell: "bash" })
 
     yield* Config.Service.use((svc) => svc.update(ConfigParse.schema(ConfigV1.Info, { shell: "" }, "test:config")))
 
-    const writtenConfig = yield* FSUtil.use.readJson(path.join(test.directory, "config.json"))
+    const writtenConfig = yield* FSUtil.use.readJson(path.join(test.directory, "openctrlc.json"))
     expect(writtenConfig).toMatchObject({ shell: "" })
   }),
 )
@@ -908,8 +904,23 @@ it.instance("updates config and writes to file", () =>
       svc.update(ConfigParse.schema(ConfigV1.Info, { model: "updated/model" }, "test:config")),
     )
 
-    const writtenConfig = yield* FSUtil.use.readJson(path.join(test.directory, "config.json"))
+    const writtenConfig = yield* FSUtil.use.readJson(path.join(test.directory, "openctrlc.json"))
     expect(writtenConfig).toMatchObject({ model: "updated/model" })
+  }),
+)
+
+it.instance("updates an existing JSONC project config in place", () =>
+  Effect.gen(function* () {
+    const test = yield* TestInstance
+    yield* writeConfigEffect(test.directory, { model: "before/model" }, "openctrlc.jsonc")
+    yield* Config.Service.use((svc) =>
+      svc.update(ConfigParse.schema(ConfigV1.Info, { model: "after/model" }, "test:config")),
+    )
+
+    expect(yield* FSUtil.use.readJson(path.join(test.directory, "openctrlc.jsonc"))).toMatchObject({
+      model: "after/model",
+    })
+    expect(yield* FSUtil.use.existsSafe(path.join(test.directory, "openctrlc.json"))).toBe(false)
   }),
 )
 

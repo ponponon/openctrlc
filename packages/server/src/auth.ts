@@ -28,8 +28,8 @@ export class Config extends Context.Service<Config, Info>()("@opencode/ServerAut
       Effect.gen(function* () {
         return Config.of(
           yield* EffectConfig.all({
-             password: EffectConfig.string("OPENCTRLC_SERVER_PASSWORD").pipe(EffectConfig.option),
-             username: EffectConfig.string("OPENCTRLC_SERVER_USERNAME").pipe(EffectConfig.withDefault("opencode")),
+            password: EffectConfig.string("OPENCTRLC_SERVER_PASSWORD").pipe(EffectConfig.option),
+            username: EffectConfig.string("OPENCTRLC_SERVER_USERNAME").pipe(EffectConfig.withDefault("opencode")),
           }),
         )
       }),
