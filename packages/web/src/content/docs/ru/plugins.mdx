@@ -20,7 +20,7 @@ description: Напишите свои собственные плагины д�
 Поместите файлы JavaScript или TypeScript в каталог плагина.
 
 - `.openctrlc/plugins/` – плагины уровня проекта.
-- `~/.config/opencode/plugins/` — глобальные плагины
+- `~/.config/openctrlc/plugins/` — глобальные плагины
 
 Файлы в этих каталогах автоматически загружаются при запуске.
 
@@ -55,9 +55,9 @@ description: Напишите свои собственные плагины д�
 
 Плагины загружаются из всех источников, и все хуки запускаются последовательно. Порядок загрузки следующий:
 
-1. Глобальная конфигурация (`~/.config/opencode/openctrlc.json`)
+1. Глобальная конфигурация (`~/.config/openctrlc/openctrlc.json`)
 2. Конфигурация проекта (`openctrlc.json`)
-3. Глобальный каталог плагинов (`~/.config/opencode/plugins/`)
+3. Глобальный каталог плагинов (`~/.config/openctrlc/plugins/`)
 4. Каталог плагинов проекта (`.openctrlc/plugins/`)
 
 Дубликаты пакетов npm с тем же именем и версией загружаются один раз. Однако локальный плагин и плагин npm со схожими именами загружаются отдельно.
@@ -128,7 +128,7 @@ export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
 Для плагинов TypeScript вы можете импортировать типы из пакета плагина:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -280,7 +280,7 @@ export const InjectEnvPlugin = async () => {
 Плагины также могут добавлять в opencode собственные инструменты:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -336,7 +336,7 @@ export const MyPlugin = async ({ client }) => {
 Настройте контекст, включаемый при сжатии сеанса:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -360,7 +360,7 @@ Include any state that should persist across compaction:
 Вы также можете полностью заменить запрос на уплотнение, установив `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

@@ -5,7 +5,7 @@ description: اختر سمة مدمجة أو عرّف سمة خاصة بك.
 
 مع OpenCode يمكنك الاختيار من بين عدة سمات مدمجة، أو استخدام سمة تتكيّف مع سمة terminal لديك، أو تعريف سمة مخصصة خاصة بك.
 
-افتراضيًا، يستخدم OpenCode سمتنا `opencode`.
+افتراضيًا، يستخدم OpenCode سمتنا `openctrlc`.
 
 ---
 
@@ -83,7 +83,7 @@ description: اختر سمة مدمجة أو عرّف سمة خاصة بك.
 تُحمَّل السمات من عدة مجلدات بالترتيب التالي، حيث تتجاوز المجلدات اللاحقة المجلدات السابقة:
 
 1. **السمات المدمجة** - تكون مضمنة داخل الملف التنفيذي
-2. **مجلد ضبط المستخدم** - معرّف في `~/.config/opencode/themes/*.json` أو `$XDG_CONFIG_HOME/opencode/themes/*.json`
+2. **مجلد ضبط المستخدم** - معرّف في `~/.config/openctrlc/themes/*.json` أو `$XDG_CONFIG_HOME/openctrlc/themes/*.json`
 3. **مجلد جذر المشروع** - معرّف في `<project-root>/.openctrlc/themes/*.json`
 4. **مجلد العمل الحالي** - معرّف في `./.openctrlc/themes/*.json`
 
@@ -98,8 +98,8 @@ description: اختر سمة مدمجة أو عرّف سمة خاصة بك.
 للسمات على مستوى المستخدم:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 وللسمات الخاصة بالمشروع:

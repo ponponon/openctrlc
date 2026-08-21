@@ -6,14 +6,14 @@ description: Samhandle med OpenCode-tjener over HTTP.
 import config from "../../../../config.mjs"
 export const typesUrl = `${config.github}/blob/dev/packages/sdk/js/src/gen/types.gen.ts`
 
-Kommandoen `opencode serve` kjører en hodeløs HTTP-server som eksponerer et OpenAPI-endepunkt som en OpenCode-klient kan bruke.
+Kommandoen `openctrlc serve` kjører en hodeløs HTTP-server som eksponerer et OpenAPI-endepunkt som en OpenCode-klient kan bruke.
 
 ---
 
 ### Bruk
 
 ```bash
-opencode serve [--port <number>] [--hostname <string>] [--cors <origin>]
+openctrlc serve [--port <number>] [--hostname <string>] [--cors <origin>]
 ```
 
 #### Alternativer
@@ -23,30 +23,30 @@ opencode serve [--port <number>] [--hostname <string>] [--cors <origin>]
 | `--port`        | Port å lytte på                               | `4096`           |
 | `--hostname`    | Vertsnavn å lytte på                          | `127.0.0.1`      |
 | `--mdns`        | Aktiver mDNS-oppdagelse                       | `false`          |
-| `--mdns-domain` | Egendefinert domenenavn for mDNS-tjeneste     | `opencode.local` |
+| `--mdns-domain` | Egendefinert domenenavn for mDNS-tjeneste     | `openctrlc.local` |
 | `--cors`        | Ytterligere nettleseropprinnelse som tillates | `[]`             |
 
 `--cors` kan angis flere ganger:
 
 ```bash
-opencode serve --cors http://localhost:5173 --cors https://app.example.com
+openctrlc serve --cors http://localhost:5173 --cors https://app.example.com
 ```
 
 ---
 
 ### Autentisering
 
-Sett `OPENCTRLC_SERVER_PASSWORD` for å beskytte serveren med HTTP grunnleggende autentisering. Brukernavnet er satt til `opencode` som standard, eller sett `OPENCTRLC_SERVER_USERNAME` for å overstyre det. Dette gjelder både `opencode serve` og `opencode web`.
+Sett `OPENCTRLC_SERVER_PASSWORD` for å beskytte serveren med HTTP grunnleggende autentisering. Brukernavnet er satt til `openctrlc` som standard, eller sett `OPENCTRLC_SERVER_USERNAME` for å overstyre det. Dette gjelder både `openctrlc serve` og `openctrlc web`.
 
 ```bash
-OPENCTRLC_SERVER_PASSWORD=your-password opencode serve
+OPENCTRLC_SERVER_PASSWORD=your-password openctrlc serve
 ```
 
 ---
 
 ### Slik fungerer det
 
-Når du kjører `opencode` starter den en TUI og en server. Der TUI er
+Når du kjører `openctrlc` starter den en TUI og en server. Der TUI er
 klient som snakker med serveren. Serveren viser en OpenAPI 3.1-spesifikasjon
 endepunkt. Dette endepunktet brukes også til å generere en [SDK](/docs/sdk).
 
@@ -56,8 +56,8 @@ Bruk OpenCode-serveren til å samhandle med OpenCode programmatisk.
 
 Denne arkitekturen lar OpenCode støtte flere klienter og lar deg samhandle med OpenCode programmatisk.
 
-Du kan kjøre `opencode serve` for å starte en frittstående server. Hvis du har
-OpenCode TUI kjører, vil `opencode serve` starte en ny server.
+Du kan kjøre `openctrlc serve` for å starte en frittstående server. Hvis du har
+OpenCode TUI kjører, vil `openctrlc serve` starte en ny server.
 
 ---
 

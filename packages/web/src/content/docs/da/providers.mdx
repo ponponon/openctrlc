@@ -17,7 +17,7 @@ For at tilføje en udbyder skal du:
 
 ### Legitimationsoplysninger
 
-Når du tilføjer en udbyders API-nøgler med `/connect`-kommandoen, gemmes de i `~/.local/share/opencode/auth.json`.
+Når du tilføjer en udbyders API-nøgler med `/connect`-kommandoen, gemmes de i `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -742,7 +742,7 @@ GitLab Duo giver AI-drevet agentchat med native værktøjskaldsfunktioner gennem
 
 :::note
 Du kan også specificere 'GITLAB_TOKEN' miljøvariabel, hvis du ikke vil
-gemme tokenet i opencode auth-lagring.
+gemme tokenet i openctrlc auth-lagring.
 :::
 
 ##### Selvhostet GitLab
@@ -1015,7 +1015,7 @@ I tilfælde af at du ser en funktion eller model fra Helicone som ikke konfigure
 
 Her er [Helicone's Model Directory](https://helicone.ai/models), du skal bruge denne for at hente ID'erne til de modeller du vil tilføje.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1043,7 +1043,7 @@ Her er [Helicone's Model Directory](https://helicone.ai/models), du skal bruge d
 
 Helicone understøtter tilpassede headers for funktioner som caching, brugersporing og sessionsadministration. Læg dem til din udbyderkonfiguration ved at bruge `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1970,7 +1970,7 @@ Konfigurationsdetaljer:
 
 Hvis du har problemer med at konfigurere en udbyder, tjek følgende:
 
-1. **Tjek godkendelsesopsætningen**: Kør `opencode auth list` for at se om legitimationsoplysningerne
+1. **Tjek godkendelsesopsætningen**: Kør `openctrlc auth list` for at se om legitimationsoplysningerne
    for udbyderen er tilføjet til din konfiguration.
 
    Dette gælder ikke udbydere som Amazon Bedrock, som er afhængige af miljøvariabler for godkendelse.

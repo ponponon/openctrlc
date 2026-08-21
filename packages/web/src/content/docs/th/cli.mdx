@@ -14,7 +14,7 @@ opencode
 นอกจากนี้ยังรับคำสั่งและแฟล็ก ซึ่งช่วยให้คุณใช้ OpenCode ผ่านโปรแกรมได้
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+openctrlc run "Explain how closures work in JavaScript"
 ```
 
 ---
@@ -63,17 +63,17 @@ opencode agent [command]
 เชื่อมต่อกับเซิร์ฟเวอร์แบ็กเอนด์ OpenCode ที่กำลังทำงานอยู่ ซึ่งเริ่มต้นผ่านคำสั่ง `serve` หรือ `web`
 
 ```bash
-opencode attach [url]
+openctrlc attach [url]
 ```
 
 วิธีนี้ช่วยให้คุณใช้ TUI กับแบ็กเอนด์ OpenCode ระยะไกลได้ ตัวอย่าง:
 
 ```bash
 # Start the backend server for web/mobile access
-opencode web --port 4096 --hostname 0.0.0.0
+openctrlc web --port 4096 --hostname 0.0.0.0
 
 # In another terminal, attach the TUI to the running backend
-opencode attach http://10.20.30.40:4096
+openctrlc attach http://10.20.30.40:4096
 ```
 
 #### แฟล็ก
@@ -85,7 +85,7 @@ opencode attach http://10.20.30.40:4096
 | <nobr><code>{"--session"}</code></nobr>  | `-s` | ID เซสชันเพื่อดำเนินการต่อ                                                                  |
 | <nobr><code>{"--fork"}</code></nobr>     |      | แยกเซสชันเมื่อดำเนินการต่อ (ใช้กับ `--continue` หรือ `--session`)                           |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | รหัสผ่านการยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_PASSWORD`)                   |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | ชื่อผู้ใช้การยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_USERNAME` หรือ `opencode`) |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | ชื่อผู้ใช้การยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_USERNAME` หรือ `openctrlc`) |
 
 ---
 
@@ -116,17 +116,17 @@ opencode agent list
 จัดการการตรวจสอบสิทธิ์และข้อมูลรับรอง
 
 ```bash
-opencode auth [command]
+openctrlc auth [command]
 ```
 
 ---
 
 #### login
 
-OpenCode ได้รับการกำหนดค่าไว้ล่วงหน้าด้วยรายชื่อผู้ให้บริการทั่วไปที่ [Models.dev](https://models.dev) ดังนั้นคุณเพียงแค่ต้องใส่คีย์ API สำหรับผู้ให้บริการที่คุณต้องการใช้ ข้อมูลนี้จะถูกเก็บไว้ที่ `~/.local/share/opencode/auth.json`
+OpenCode ได้รับการกำหนดค่าไว้ล่วงหน้าด้วยรายชื่อผู้ให้บริการทั่วไปที่ [Models.dev](https://models.dev) ดังนั้นคุณเพียงแค่ต้องใส่คีย์ API สำหรับผู้ให้บริการที่คุณต้องการใช้ ข้อมูลนี้จะถูกเก็บไว้ที่ `~/.local/share/openctrlc/auth.json`
 
 ```bash
-opencode auth login
+openctrlc auth login
 ```
 
 เมื่อ OpenCode เริ่มต้น ระบบจะโหลดข้อมูลรับรองจากไฟล์นี้ ดังนั้นคุณจึงไม่ต้องกังวลกับการตั้งค่าตัวแปรสภาพแวดล้อมหรือไฟล์ `.env` ในโปรเจ็กต์ของคุณ
@@ -138,13 +138,13 @@ opencode auth login
 แสดงรายการข้อมูลรับรองการตรวจสอบสิทธิ์ทั้งหมดที่กำหนดค่าไว้
 
 ```bash
-opencode auth list
+openctrlc auth list
 ```
 
 หรือใช้นามแฝงสั้น
 
 ```bash
-opencode auth ls
+openctrlc auth ls
 ```
 
 ---
@@ -154,7 +154,7 @@ opencode auth ls
 ออกจากระบบของผู้ให้บริการและลบข้อมูลรับรองออกจากไฟล์ auth
 
 ```bash
-opencode auth logout
+openctrlc auth logout
 ```
 
 ---
@@ -203,7 +203,7 @@ opencode github run
 จัดการเซิร์ฟเวอร์ Model Context Protocol (MCP)
 
 ```bash
-opencode mcp [command]
+openctrlc mcp [command]
 ```
 
 ---
@@ -213,7 +213,7 @@ opencode mcp [command]
 เพิ่มเซิร์ฟเวอร์ MCP ลงในการกำหนดค่าของคุณ
 
 ```bash
-opencode mcp add
+openctrlc mcp add
 ```
 
 คำสั่งนี้จะแนะนำคุณผ่านวิซาร์ดเพื่อกำหนดค่าเซิร์ฟเวอร์ MCP ใหม่
@@ -225,13 +225,13 @@ opencode mcp add
 แสดงรายชื่อเซิร์ฟเวอร์ MCP ทั้งหมดที่กำหนดค่าไว้และสถานะ
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 หรือใช้นามแฝงสั้น
 
 ```bash
-opencode mcp ls
+openctrlc mcp ls
 ```
 
 ---
@@ -241,7 +241,7 @@ opencode mcp ls
 ยืนยันตัวตนกับเซิร์ฟเวอร์ MCP ที่ต้องการ OAuth
 
 ```bash
-opencode mcp auth [name]
+openctrlc mcp auth [name]
 ```
 
 หากไม่ระบุชื่อเซิร์ฟเวอร์ คุณจะได้รับแจ้งให้เลือกจากเซิร์ฟเวอร์ที่รองรับ OAuth ที่พร้อมใช้งาน
@@ -249,13 +249,13 @@ opencode mcp auth [name]
 คุณยังสามารถแสดงรายการสถานะการตรวจสอบสิทธิ์ OAuth ได้:
 
 ```bash
-opencode mcp auth list
+openctrlc mcp auth list
 ```
 
 หรือใช้นามแฝงสั้น
 
 ```bash
-opencode mcp auth ls
+openctrlc mcp auth ls
 ```
 
 ---
@@ -265,7 +265,7 @@ opencode mcp auth ls
 ลบข้อมูลรับรอง OAuth สำหรับเซิร์ฟเวอร์ MCP
 
 ```bash
-opencode mcp logout [name]
+openctrlc mcp logout [name]
 ```
 
 ---
@@ -275,7 +275,7 @@ opencode mcp logout [name]
 ดีบักการเชื่อมต่อเซิร์ฟเวอร์ MCP
 
 ```bash
-opencode mcp debug <name>
+openctrlc mcp debug <name>
 ```
 
 ---
@@ -285,7 +285,7 @@ opencode mcp debug <name>
 แสดงรายการโมเดลที่พร้อมใช้งานทั้งหมดจากผู้ให้บริการที่กำหนดค่าไว้
 
 ```bash
-opencode models [provider]
+openctrlc models [provider]
 ```
 
 คำสั่งนี้จะแสดง ID โมเดลทั้งหมดในรูปแบบ `provider/model`
@@ -295,7 +295,7 @@ opencode models [provider]
 คุณยังสามารถส่งผ่านรหัสผู้ให้บริการเพื่อกรองโมเดลตามผู้ให้บริการรายนั้นได้
 
 ```bash
-opencode models anthropic
+openctrlc models anthropic
 ```
 
 #### แฟล็ก
@@ -309,7 +309,7 @@ opencode models anthropic
 ใช้แฟล็ก `--refresh` เพื่ออัปเดตรายการโมเดลที่แคชไว้ มีประโยชน์เมื่อมีการเพิ่มโมเดลใหม่ให้กับผู้ให้บริการและคุณต้องการเห็นใน OpenCode
 
 ```bash
-opencode models --refresh
+openctrlc models --refresh
 ```
 
 ---
@@ -319,23 +319,23 @@ opencode models --refresh
 รัน OpenCode โดยไม่ต้องใช้ TUI โดยส่งพรอมต์โดยตรง
 
 ```bash
-opencode run [message..]
+openctrlc run [message..]
 ```
 
 มีประโยชน์สำหรับการทำงานอัตโนมัติหรือเมื่อต้องการคำตอบอย่างรวดเร็วโดยไม่ต้องเปิด TUI ตัวอย่าง:
 
-```bash "opencode run"
-opencode run Explain the use of context in Go
+```bash "openctrlc run"
+openctrlc run Explain the use of context in Go
 ```
 
-คุณยังสามารถแนบไปกับเซิร์ฟเวอร์ `opencode serve` ที่ทำงานอยู่ หรือใช้เซิร์ฟเวอร์ MCP แบบ headless:
+คุณยังสามารถแนบไปกับเซิร์ฟเวอร์ `openctrlc serve` ที่ทำงานอยู่ หรือใช้เซิร์ฟเวอร์ MCP แบบ headless:
 
 ```bash
 # Start a headless server in one terminal
-opencode serve
+openctrlc serve
 
 # In another terminal, run commands that attach to it
-opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
+openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 ```
 
 #### แฟล็ก
@@ -354,7 +354,7 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--title"}</code></nobr>    |      | ชื่อสำหรับเซสชัน (หากไม่ได้ระบุ จะสร้างจากพรอมต์)                                           |
 | <nobr><code>{"--attach"}</code></nobr>   |      | แนบไปกับเซิร์ฟเวอร์ opencode ที่ทำงานอยู่ (เช่น http://localhost:4096)                      |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | รหัสผ่านการยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_PASSWORD`)                   |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | ชื่อผู้ใช้การยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_USERNAME` หรือ `opencode`) |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | ชื่อผู้ใช้การยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_USERNAME` หรือ `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |      | ไดเร็กทอรีสำหรับรัน หรือเส้นทางบนเซิร์ฟเวอร์ระยะไกลเมื่อแนบ                                 |
 | <nobr><code>{"--variant"}</code></nobr>  |      | ตัวแปรโมเดล (ระดับการใช้เหตุผลเฉพาะผู้ให้บริการ)                                            |
 | <nobr><code>{"--thinking"}</code></nobr> |      | แสดงบล็อกความคิด                                                                            |
@@ -367,10 +367,10 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 เริ่มต้นเซิร์ฟเวอร์ OpenCode headless ที่ให้บริการ API HTTP ดู [เอกสารเซิร์ฟเวอร์](/docs/server) สำหรับรายละเอียด API เต็มรูปแบบ
 
 ```bash
-opencode serve
+openctrlc serve
 ```
 
-คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP ให้ API เข้าถึงฟังก์ชันการทำงานของ OpenCode ได้โดยไม่ต้องมี TUI นอกจากนี้ยังรองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `opencode` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
+คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP ให้ API เข้าถึงฟังก์ชันการทำงานของ OpenCode ได้โดยไม่ต้องมี TUI นอกจากนี้ยังรองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `openctrlc` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
 
 #### แฟล็ก
 
@@ -463,10 +463,10 @@ opencode import https://opncd.ai/s/abc123
 เริ่ม OpenCode ในโหมดเซิร์ฟเวอร์พร้อมเว็บอินเตอร์เฟส
 
 ```bash
-opencode web
+openctrlc web
 ```
 
-คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP และเปิดเว็บเบราว์เซอร์เพื่อเข้าถึง OpenCode ผ่านทางเว็บอินเตอร์เฟส รองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `opencode` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
+คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP และเปิดเว็บเบราว์เซอร์เพื่อเข้าถึง OpenCode ผ่านทางเว็บอินเตอร์เฟส รองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `openctrlc` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
 
 #### แฟล็ก
 
@@ -484,7 +484,7 @@ opencode web
 เริ่มต้นเซิร์ฟเวอร์ ACP (Agent Client Protocol)
 
 ```bash
-opencode acp
+openctrlc acp
 ```
 
 คำสั่งนี้เริ่มต้นเซิร์ฟเวอร์ ACP ที่สื่อสารผ่าน stdin/stdout ด้วย nd-JSON
@@ -504,7 +504,7 @@ opencode acp
 ถอนการติดตั้ง OpenCode และลบข้อมูลการกำหนดค่าทั้งหมด
 
 ```bash
-opencode uninstall
+openctrlc uninstall
 ```
 
 #### แฟล็ก
@@ -523,19 +523,19 @@ opencode uninstall
 อัปเกรด OpenCode เป็นเวอร์ชันล่าสุดหรือเวอร์ชันที่ระบุ
 
 ```bash
-opencode upgrade [target]
+openctrlc upgrade [target]
 ```
 
 อัปเกรดเป็นเวอร์ชันล่าสุด
 
 ```bash
-opencode upgrade
+openctrlc upgrade
 ```
 
 อัปเกรดเป็นเวอร์ชันที่ระบุ
 
 ```bash
-opencode upgrade v0.1.48
+openctrlc upgrade v0.1.48
 ```
 
 #### แฟล็ก
@@ -587,7 +587,7 @@ OpenCode สามารถกำหนดค่าโดยใช้ตัว�
 | `OPENCTRLC_CLIENT`                     | String  | ตัวระบุไคลเอนต์ (ค่าเริ่มต้นคือ `cli`)                           |
 | `OPENCTRLC_ENABLE_EXA`                 | Boolean | เปิดใช้งานการใช้ Exa แทน ls หากมี                                |
 | `OPENCTRLC_SERVER_PASSWORD`            | String  | รหัสผ่านสำหรับการตรวจสอบสิทธิ์พื้นฐาน `serve`/`web`              |
-| `OPENCTRLC_SERVER_USERNAME`            | String  | ชื่อผู้ใช้สำหรับการตรวจสอบสิทธิ์พื้นฐาน (ค่าเริ่มต้น `opencode`) |
+| `OPENCTRLC_SERVER_USERNAME`            | String  | ชื่อผู้ใช้สำหรับการตรวจสอบสิทธิ์พื้นฐาน (ค่าเริ่มต้น `openctrlc`) |
 | `OPENCTRLC_MODELS_URL`                 | String  | URL ที่กำหนดเองสำหรับการดึงรายการโมเดล                           |
 
 ---

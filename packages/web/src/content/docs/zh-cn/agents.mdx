@@ -188,10 +188,10 @@ _模式_：`primary`
 
 您还可以使用 Markdown 文件定义代理。将它们放在：
 
-- 全局：`~/.config/opencode/agents/`
+- 全局：`~/.config/openctrlc/agents/`
 - 项目级：`.openctrlc/agents/`
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Reviews code for quality and best practices
 mode: subagent
@@ -454,7 +454,7 @@ OpenCode 配置中的模型 ID 使用 `provider/model-id` 格式。例如，如�
 
 您还可以在 Markdown 代理中设置权限。
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent
@@ -664,7 +664,7 @@ Only analyze code and suggest changes.
 这些附加选项是模型和提供商特定的。请查阅您的提供商文档以获取可用参数。
 
 :::tip
-运行 `opencode models` 查看可用模型列表。
+运行 `openctrlc models` 查看可用模型列表。
 :::
 
 ---
@@ -711,7 +711,7 @@ opencode agent create
 
 ### 文档代理
 
-```markdown title="~/.config/opencode/agents/docs-writer.md"
+```markdown title="~/.config/openctrlc/agents/docs-writer.md"
 ---
 description: Writes and maintains project documentation
 mode: subagent
@@ -733,7 +733,7 @@ Focus on:
 
 ### 安全审计代理
 
-```markdown title="~/.config/opencode/agents/security-auditor.md"
+```markdown title="~/.config/openctrlc/agents/security-auditor.md"
 ---
 description: Performs security audits and identifies vulnerabilities
 mode: subagent

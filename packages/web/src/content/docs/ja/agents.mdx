@@ -188,10 +188,10 @@ _モード_: `primary`
 
 Markdown ファイルを使用してエージェントを定義することもできます。それらを次の場所に置きます。
 
-- グローバル: `~/.config/opencode/agents/`
+- グローバル: `~/.config/openctrlc/agents/`
 - プロジェクトごと: `.openctrlc/agents/`
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Reviews code for quality and best practices
 mode: subagent
@@ -453,7 +453,7 @@ MCP サーバーからすべてのツールを無効にするには、次のよ�
 
 Markdown エージェントで権限を設定することもできます。
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent
@@ -661,7 +661,7 @@ Only analyze code and suggest changes.
 これらの追加オプションはモデルとプロバイダーに固有です。使用可能なパラメータについては、プロバイダのドキュメントを確認してください。
 
 :::tip
-`opencode models` を実行して、利用可能なモデルのリストを表示します。
+`openctrlc models` を実行して、利用可能なモデルのリストを表示します。
 :::
 
 ---
@@ -708,7 +708,7 @@ opencode agent create
 
 ### ドキュメント作成エージェント
 
-```markdown title="~/.config/opencode/agents/docs-writer.md"
+```markdown title="~/.config/openctrlc/agents/docs-writer.md"
 ---
 description: Writes and maintains project documentation
 mode: subagent
@@ -730,7 +730,7 @@ Focus on:
 
 ### セキュリティ監査エージェント
 
-```markdown title="~/.config/opencode/agents/security-auditor.md"
+```markdown title="~/.config/openctrlc/agents/security-auditor.md"
 ---
 description: Performs security audits and identifies vulnerabilities
 mode: subagent

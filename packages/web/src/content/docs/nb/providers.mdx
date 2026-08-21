@@ -18,7 +18,7 @@ For å legge til en leverandør må du:
 ### Legitimasjon
 
 Når du legger til en leverandørs API-nøkler med `/connect`-kommandoen, lagres de
-i `~/.local/share/opencode/auth.json`.
+i `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -1023,7 +1023,7 @@ I tilfelle du ser en funksjon eller modell fra Helicone som ikke konfigureres au
 
 Her er [Helicone's Model Directory](https://helicone.ai/models), du trenger denne for å hente ID-ene til modellene du vil legge til.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1051,7 +1051,7 @@ Her er [Helicone's Model Directory](https://helicone.ai/models), du trenger denn
 
 Helicone støtter tilpassede headere for funksjoner som bufring, brukersporing og øktadministrasjon. Legg dem til leverandørkonfigurasjonen din ved å bruke `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1945,7 +1945,7 @@ Konfigurasjonsdetaljer:
 
 Hvis du har problemer med å konfigurere en leverandør, sjekk følgende:
 
-1. **Sjekk autentiseringsoppsettet**: Kjør `opencode auth list` for å se om legitimasjonen
+1. **Sjekk autentiseringsoppsettet**: Kjør `openctrlc auth list` for å se om legitimasjonen
    for leverandøren legges til konfigurasjonen din.
 
    Dette gjelder ikke leverandører som Amazon Bedrock, som er avhengige av miljøvariabler for godkjenning.

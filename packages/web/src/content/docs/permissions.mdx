@@ -27,10 +27,10 @@ Start OpenCode with `--auto` to automatically approve permission requests that a
 openctrlc --auto
 ```
 
-You can also use auto mode with [`opencode run`](/docs/cli#run).
+You can also use auto mode with [`openctrlc run`](/docs/cli#run).
 
 ```bash
-opencode run --auto "Refactor this module"
+openctrlc run --auto "Refactor this module"
 ```
 
 Explicit `"deny"` rules are still enforced. Auto mode only changes requests that would otherwise ask for approval.
@@ -238,7 +238,7 @@ Refer to the [Granular Rules (Object Syntax)](#granular-rules-object-syntax) sec
 
 You can also configure agent permissions in Markdown:
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent

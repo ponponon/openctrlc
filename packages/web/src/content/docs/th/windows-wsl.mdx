@@ -26,7 +26,7 @@ WSL ให้ประสิทธิภาพระบบไฟล์ที่�
    เมื่อตั้งค่า WSL เสร็จแล้ว ให้เปิด terminal WSL และติดตั้ง OpenCode ด้วย [วิธีติดตั้ง](/docs/) แบบใดแบบหนึ่ง
 
    ```bash
-   curl -fsSL https://opencode.ai/install | bash
+   curl -fsSL https://openctrlc.ai/install | bash
    ```
 
 3. **ใช้งาน OpenCode จาก WSL**
@@ -49,7 +49,7 @@ WSL ให้ประสิทธิภาพระบบไฟล์ที่�
 1. **เริ่มเซิร์ฟเวอร์ใน WSL** โดยใช้ `--hostname 0.0.0.0` เพื่อให้เชื่อมต่อจากภายนอกได้:
 
    ```bash
-   opencode serve --hostname 0.0.0.0 --port 4096
+   openctrlc serve --hostname 0.0.0.0 --port 4096
    ```
 
 2. **เชื่อมต่อเดสก์ท็อปแอป** ไปที่ `http://localhost:4096`
@@ -62,7 +62,7 @@ WSL ให้ประสิทธิภาพระบบไฟล์ที่�
 เมื่อใช้ `--hostname 0.0.0.0` ให้ตั้งค่า `OPENCTRLC_SERVER_PASSWORD` เพื่อป้องกันเซิร์ฟเวอร์
 
 ```bash
-OPENCTRLC_SERVER_PASSWORD=your-password opencode serve --hostname 0.0.0.0
+OPENCTRLC_SERVER_PASSWORD=your-password openctrlc serve --hostname 0.0.0.0
 ```
 
 :::
@@ -73,15 +73,15 @@ OPENCTRLC_SERVER_PASSWORD=your-password opencode serve --hostname 0.0.0.0
 
 เพื่อประสบการณ์เว็บที่ดีที่สุดบน Windows:
 
-1. **รัน `opencode web` ใน terminal WSL** แทน PowerShell:
+1. **รัน `openctrlc web` ใน terminal WSL** แทน PowerShell:
 
    ```bash
-   opencode web --hostname 0.0.0.0
+   openctrlc web --hostname 0.0.0.0
    ```
 
 2. **เข้าจากเบราว์เซอร์บน Windows** ที่ `http://localhost:<port>` (OpenCode จะแสดง URL ให้)
 
-การรัน `opencode web` จาก WSL ช่วยให้เข้าถึงระบบไฟล์และใช้งาน terminal ได้ถูกต้อง พร้อมเปิดใช้งานผ่านเบราว์เซอร์ Windows ได้เหมือนเดิม
+การรัน `openctrlc web` จาก WSL ช่วยให้เข้าถึงระบบไฟล์และใช้งาน terminal ได้ถูกต้อง พร้อมเปิดใช้งานผ่านเบราว์เซอร์ Windows ได้เหมือนเดิม
 
 ---
 
@@ -110,4 +110,4 @@ opencode
 
 - แม้โปรเจกต์จะอยู่บนไดรฟ์ Windows ก็ควรรัน OpenCode ใน WSL เพื่อการเข้าถึงไฟล์ที่ลื่นกว่า
 - ใช้ OpenCode ควบคู่กับ [WSL extension ของ VS Code](https://code.visualstudio.com/docs/remote/wsl) เพื่อเวิร์กโฟลว์ที่ต่อเนื่อง
-- การตั้งค่าและเซสชันของ OpenCode จะถูกเก็บในสภาพแวดล้อม WSL ที่ `~/.local/share/opencode/`
+- การตั้งค่าและเซสชันของ OpenCode จะถูกเก็บในสภาพแวดล้อม WSL ที่ `~/.local/share/openctrlc/`

@@ -20,7 +20,7 @@ There are two ways to load plugins.
 Place JavaScript or TypeScript files in the plugin directory.
 
 - `.openctrlc/plugins/` - Project-level plugins
-- `~/.config/opencode/plugins/` - Global plugins
+- `~/.config/openctrlc/plugins/` - Global plugins
 
 Files in these directories are automatically loaded at startup.
 
@@ -55,9 +55,9 @@ Browse available plugins in the [ecosystem](/docs/ecosystem#plugins).
 
 Plugins are loaded from all sources and all hooks run in sequence. The load order is:
 
-1. Global config (`~/.config/opencode/openctrlc.json`)
+1. Global config (`~/.config/openctrlc/openctrlc.json`)
 2. Project config (`openctrlc.json`)
-3. Global plugin directory (`~/.config/opencode/plugins/`)
+3. Global plugin directory (`~/.config/openctrlc/plugins/`)
 4. Project plugin directory (`.openctrlc/plugins/`)
 
 Duplicate npm packages with the same name and version are loaded once. However, a local plugin and an npm plugin with similar names are both loaded separately.

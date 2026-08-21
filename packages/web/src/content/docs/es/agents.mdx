@@ -189,10 +189,10 @@ Configure agentes en su archivo de configuración `openctrlc.json`:
 
 También puede definir agentes utilizando archivos de Markdown. Colócalos en:
 
-- Global: `~/.config/opencode/agents/`
+- Global: `~/.config/openctrlc/agents/`
 - Por proyecto: `.openctrlc/agents/`
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Reviews code for quality and best practices
 mode: subagent
@@ -455,7 +455,7 @@ Puede anular estos permisos por agente.
 
 También puede establecer permisos en los agentes de Markdown.
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent
@@ -665,7 +665,7 @@ Por ejemplo, con los modelos de razonamiento de OpenAI, puedes controlar el esfu
 Estas opciones adicionales son específicas del modelo y del proveedor. Consulte la documentación de su proveedor para conocer los parámetros disponibles.
 
 :::tip
-Ejecute `opencode models` para ver una lista de los modelos disponibles.
+Ejecute `openctrlc models` para ver una lista de los modelos disponibles.
 :::
 
 ---
@@ -712,7 +712,7 @@ A continuación se muestran algunos agentes de ejemplo que pueden resultarle út
 
 ### Agente de documentación
 
-```markdown title="~/.config/opencode/agents/docs-writer.md"
+```markdown title="~/.config/openctrlc/agents/docs-writer.md"
 ---
 description: Writes and maintains project documentation
 mode: subagent
@@ -734,7 +734,7 @@ Focus on:
 
 ### Auditor de seguridad
 
-```markdown title="~/.config/opencode/agents/security-auditor.md"
+```markdown title="~/.config/openctrlc/agents/security-auditor.md"
 ---
 description: Performs security audits and identifies vulnerabilities
 mode: subagent

@@ -20,7 +20,7 @@ description: เขียนปลั๊กอินของคุณเอง�
 วางไฟล์ JavaScript หรือ TypeScript ในไดเร็กทอรีปลั๊กอิน
 
 - `.openctrlc/plugins/` - ​​ปลั๊กอินระดับโครงการ
-- `~/.config/opencode/plugins/` - ​​ปลั๊กอินทั่วโลก
+- `~/.config/openctrlc/plugins/` - ​​ปลั๊กอินทั่วโลก
 
 ไฟล์ในไดเร็กทอรีเหล่านี้จะถูกโหลดโดยอัตโนมัติเมื่อเริ่มต้นระบบ
 
@@ -55,9 +55,9 @@ description: เขียนปลั๊กอินของคุณเอง�
 
 ปลั๊กอินถูกโหลดจากทุกแหล่งและ hooks ทั้งหมดทำงานตามลำดับ ลำดับการโหลดคือ:
 
-1. การกำหนดค่าส่วนกลาง (`~/.config/opencode/openctrlc.json`)
+1. การกำหนดค่าส่วนกลาง (`~/.config/openctrlc/openctrlc.json`)
 2. การกำหนดค่าโครงการ (`openctrlc.json`)
-3. ไดเร็กทอรีปลั๊กอินสากล (`~/.config/opencode/plugins/`)
+3. ไดเร็กทอรีปลั๊กอินสากล (`~/.config/openctrlc/plugins/`)
 4. ไดเรกทอรีปลั๊กอินโครงการ (`.openctrlc/plugins/`)
 
 แพ็กเกจ npm ที่ซ้ำกันซึ่งมีชื่อและเวอร์ชันเดียวกันจะถูกโหลดหนึ่งครั้ง อย่างไรก็ตาม ทั้งปลั๊กอินในเครื่องและปลั๊กอิน npm ที่มีชื่อคล้ายกันจะโหลดแยกกัน
@@ -128,7 +128,7 @@ export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
 สำหรับปลั๊กอิน TypeScript คุณสามารถนำเข้าประเภทจากแพ็คเกจปลั๊กอินได้:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -280,7 +280,7 @@ export const InjectEnvPlugin = async () => {
 ปลั๊กอินยังสามารถเพิ่มเครื่องมือที่กำหนดเองให้กับ opencode:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -340,7 +340,7 @@ export const MyPlugin = async ({ client }) => {
 ปรับแต่งบริบทที่รวมไว้เมื่อมีการกระชับเซสชัน:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -364,7 +364,7 @@ Include any state that should persist across compaction:
 คุณยังสามารถแทนที่พรอมต์การกระชับข้อมูลทั้งหมดได้โดยตั้งค่า `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

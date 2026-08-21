@@ -43,7 +43,7 @@ OpenCode は、**JSON** と **JSONC** (コメント付きの JSON) 形式の両�
 設定ソースは次の順序でロードされます (後のソースは前のソースをオーバーライドします)。
 
 1. **リモート設定** (`.well-known/opencode` から) - 組織のデフォルト
-2. **グローバル設定** (`~/.config/opencode/openctrlc.json`) - ユーザー設定
+2. **グローバル設定** (`~/.config/openctrlc/openctrlc.json`) - ユーザー設定
 3. **カスタム設定** (`OPENCTRLC_CONFIG` 環境変数) - カスタムオーバーライド
 4. **プロジェクト設定** (プロジェクト内の `openctrlc.json`) - プロジェクト固有の設定
 5. **`.openctrlc` ディレクトリ** - エージェント、コマンド、プラグイン
@@ -52,7 +52,7 @@ OpenCode は、**JSON** と **JSONC** (コメント付きの JSON) 形式の両�
 つまり、プロジェクト設定はグローバルのデフォルトをオーバーライドでき、グローバル設定はリモート組織のデフォルトをオーバーライドできます。
 
 :::note
-`.openctrlc` および `~/.config/opencode` ディレクトリでは、サブディレクトリに **複数名** が使用されています: `agents/`、`commands/`、`modes/`、`plugins/`、`skills/`、`tools/`、および `themes/`。下位互換性のために、単数形の名前 (`agent/` など) もサポートされています。
+`.openctrlc` および `~/.config/openctrlc` ディレクトリでは、サブディレクトリに **複数名** が使用されています: `agents/`、`commands/`、`modes/`、`plugins/`、`skills/`、`tools/`、および `themes/`。下位互換性のために、単数形の名前 (`agent/` など) もサポートされています。
 :::
 
 ---
@@ -95,9 +95,9 @@ OpenCode は、**JSON** と **JSONC** (コメント付きの JSON) 形式の両�
 
 ### グローバル
 
-グローバル OpenCode 設定を `~/.config/opencode/openctrlc.json` に配置します。プロバイダー、モデル、権限などのユーザー全体の設定にはグローバル設定を使用します。
+グローバル OpenCode 設定を `~/.config/openctrlc/openctrlc.json` に配置します。プロバイダー、モデル、権限などのユーザー全体の設定にはグローバル設定を使用します。
 
-TUI 固有の設定には、`~/.config/opencode/tui.json` を使用します。
+TUI 固有の設定には、`~/.config/openctrlc/tui.json` を使用します。
 
 グローバル設定はリモート組織のデフォルトをオーバーライドします。
 
@@ -125,7 +125,7 @@ OpenCode が起動すると、現在のディレクトリで設定ファイル�
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 カスタム設定は、優先順位でグローバル設定とプロジェクト設定の間にロードされます。
@@ -141,7 +141,7 @@ opencode run "Hello world"
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 カスタムディレクトリはグローバル config ディレクトリと `.openctrlc` ディレクトリの後にロードされるため、それらの設定を**オーバーライド**できます。
@@ -183,7 +183,7 @@ TUI 固有の設定には、専用の `tui.json` (または `tui.jsonc`) ファ�
 
 ### サーバー
 
-`opencode serve` オプションを使用して、`opencode web` および `server` コマンドのサーバー設定を構成できます。
+`openctrlc serve` オプションを使用して、`openctrlc web` および `server` コマンドのサーバー設定を構成できます。
 
 ```json title="openctrlc.json"
 {
@@ -203,7 +203,7 @@ TUI 固有の設定には、専用の `tui.json` (または `tui.jsonc`) ファ�
 - `port` - リッスンするポート。
 - `hostname` - リッスンするホスト名。 `mdns` が有効でホスト名が設定されていない場合、デフォルトは `0.0.0.0` になります。
 - `mdns` - mDNS サービス検出を有効にします。これにより、ネットワーク上の他のデバイスが OpenCode サーバーを検出できるようになります。
-- `mdnsDomain` - mDNS サービスのカスタムドメイン名。デフォルトは `opencode.local` です。同じネットワーク上で複数のインスタンスを実行する場合に便利です。
+- `mdnsDomain` - mDNS サービスのカスタムドメイン名。デフォルトは `openctrlc.local` です。同じネットワーク上で複数のインスタンスを実行する場合に便利です。
 - `cors` - ブラウザベースのクライアントから HTTP サーバーを使用するときに CORS を許可する追加のオリジン。値は完全なオリジン (スキーム + ホスト + オプションのポート) である必要があります (例: `https://app.example.com`)。
 
 [サーバーの詳細については、こちら](/docs/server)をご覧ください。
@@ -338,7 +338,7 @@ UI テーマを `tui.json` で設定します。
 }
 ```
 
-`~/.config/opencode/agents/` または `.openctrlc/agents/` の Markdown ファイルを使用してエージェントを定義することもできます。 [詳細はこちら](/docs/agents)。
+`~/.config/openctrlc/agents/` または `.openctrlc/agents/` の Markdown ファイルを使用してエージェントを定義することもできます。 [詳細はこちら](/docs/agents)。
 
 ---
 
@@ -355,7 +355,7 @@ UI テーマを `tui.json` で設定します。
 
 デフォルトのエージェントはプライマリエージェントである必要があります (サブエージェントではありません)。これは、`"build"` や `"plan"` のような組み込みエージェント、または定義した[カスタムエージェント](/docs/agents) にすることができます。指定されたエージェントが存在しないか、サブエージェントである場合、OpenCode は警告とともに `"build"` にフォールバックします。
 
-この設定は、TUI、CLI (`opencode run`)、デスクトップアプリ、および GitHub Action のすべてのインターフェイスに適用されます。
+この設定は、TUI、CLI (`openctrlc run`)、デスクトップアプリ、および GitHub Action のすべてのインターフェイスに適用されます。
 
 ---
 
@@ -402,7 +402,7 @@ UI テーマを `tui.json` で設定します。
 }
 ```
 
-`~/.config/opencode/commands/` または `.openctrlc/commands/` の Markdown ファイルを使用してコマンドを定義することもできます。 [詳細はこちら](/docs/commands)。
+`~/.config/openctrlc/commands/` または `.openctrlc/commands/` の Markdown ファイルを使用してコマンドを定義することもできます。 [詳細はこちら](/docs/commands)。
 
 ---
 
@@ -538,7 +538,7 @@ OpenCode は起動時に新しいアップデートを自動的にダウンロ�
 
 [Plugins](/docs/plugins) は、カスタムツール、フック、統合を使用して OpenCode を拡張します。
 
-プラグインファイルを `.openctrlc/plugins/` または `~/.config/opencode/plugins/` に配置します。 `plugin` オプションを使用して npm からプラグインをロードすることもできます。
+プラグインファイルを `.openctrlc/plugins/` または `~/.config/openctrlc/plugins/` に配置します。 `plugin` オプションを使用して npm からプラグインをロードすることもできます。
 
 ```json title="openctrlc.json"
 {

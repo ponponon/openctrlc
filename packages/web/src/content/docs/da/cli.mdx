@@ -14,7 +14,7 @@ opencode
 Men den accepterer også kommandoer som dokumenteret på denne side. Dette giver dig mulighed for at interagere med OpenCode programmatisk.
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+openctrlc run "Explain how closures work in JavaScript"
 ```
 
 ---
@@ -63,17 +63,17 @@ opencode agent [command]
 Tilslut en terminal til en allerede kørende OpenCode backend-server startet via `serve` eller `web` kommandoer.
 
 ```bash
-opencode attach [url]
+openctrlc attach [url]
 ```
 
 Dette gør det muligt at bruge TUI med en ekstern OpenCode backend. For eksempel:
 
 ```bash
 # Start the backend server for web/mobile access
-opencode web --port 4096 --hostname 0.0.0.0
+openctrlc web --port 4096 --hostname 0.0.0.0
 
 # In another terminal, attach the TUI to the running backend
-opencode attach http://10.20.30.40:4096
+openctrlc attach http://10.20.30.40:4096
 ```
 
 #### Flag
@@ -85,7 +85,7 @@ opencode attach http://10.20.30.40:4096
 | <nobr><code>{"--session"}</code></nobr>  | `-s` | Sessions-id for at fortsætte                                                      |
 | <nobr><code>{"--fork"}</code></nobr>     |      | Forgren sessionen ved fortsættelse (brug med `--continue` eller `--session`)      |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCTRLC_SERVER_PASSWORD`)                 |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `opencode`) |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`) |
 
 ---
 
@@ -116,17 +116,17 @@ opencode agent list
 Kommando til at administrere legitimationsoplysninger og login for udbydere.
 
 ```bash
-opencode auth [command]
+openctrlc auth [command]
 ```
 
 ---
 
 #### login
 
-OpenCode drives af udbyderlisten på [Models.dev](https://models.dev), så du kan bruge `opencode auth login` til at konfigurere API-nøgler for enhver udbyder, du vil bruge. Dette er gemt i `~/.local/share/opencode/auth.json`.
+OpenCode drives af udbyderlisten på [Models.dev](https://models.dev), så du kan bruge `openctrlc auth login` til at konfigurere API-nøgler for enhver udbyder, du vil bruge. Dette er gemt i `~/.local/share/openctrlc/auth.json`.
 
 ```bash
-opencode auth login
+openctrlc auth login
 ```
 
 Når OpenCode starter op, indlæser den udbyderne fra legitimationsfilen. Og hvis der er nogen nøgler defineret i dine miljøer eller en `.env` fil i dit projekt.
@@ -138,13 +138,13 @@ Når OpenCode starter op, indlæser den udbyderne fra legitimationsfilen. Og hvi
 Viser alle de godkendte udbydere som gemt i legitimationsfilen.
 
 ```bash
-opencode auth list
+openctrlc auth list
 ```
 
 Eller den korte version.
 
 ```bash
-opencode auth ls
+openctrlc auth ls
 ```
 
 ---
@@ -154,7 +154,7 @@ opencode auth ls
 Logger dig ud af en udbyder ved at rydde den fra legitimationsfilen.
 
 ```bash
-opencode auth logout
+openctrlc auth logout
 ```
 
 ---
@@ -203,7 +203,7 @@ opencode github run
 Administrator Model Context Protocol-servere.
 
 ```bash
-opencode mcp [command]
+openctrlc mcp [command]
 ```
 
 ---
@@ -213,7 +213,7 @@ opencode mcp [command]
 Tilføj en MCP-server til din konfiguration.
 
 ```bash
-opencode mcp add
+openctrlc mcp add
 ```
 
 Denne kommando vil guide dig gennem tilføjelse af enten en lokal eller ekstern MCP-server.
@@ -225,13 +225,13 @@ Denne kommando vil guide dig gennem tilføjelse af enten en lokal eller ekstern 
 Liste over alle konfigurerede MCP-servere og deres forbindelsesstatus.
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 Eller brug den korte version.
 
 ```bash
-opencode mcp ls
+openctrlc mcp ls
 ```
 
 ---
@@ -241,7 +241,7 @@ opencode mcp ls
 Godkendt med en OAuth-aktiveret MCP-server.
 
 ```bash
-opencode mcp auth [name]
+openctrlc mcp auth [name]
 ```
 
 Hvis du ikke angiver et servernavn, bliver du bedt om at vælge blandt tilgængelige OAuth-kompatible servere.
@@ -249,13 +249,13 @@ Hvis du ikke angiver et servernavn, bliver du bedt om at vælge blandt tilgænge
 Du kan også angive OAuth-kompatible servere og deres godkendelsesstatus.
 
 ```bash
-opencode mcp auth list
+openctrlc mcp auth list
 ```
 
 Eller brug den korte version.
 
 ```bash
-opencode mcp auth ls
+openctrlc mcp auth ls
 ```
 
 ---
@@ -265,7 +265,7 @@ opencode mcp auth ls
 Fjern OAuth-legitimationsoplysninger for en MCP-server.
 
 ```bash
-opencode mcp logout [name]
+openctrlc mcp logout [name]
 ```
 
 ---
@@ -275,7 +275,7 @@ opencode mcp logout [name]
 Fejlfinding af OAuth-forbindelsesproblemer for en MCP-server.
 
 ```bash
-opencode mcp debug <name>
+openctrlc mcp debug <name>
 ```
 
 ---
@@ -285,7 +285,7 @@ opencode mcp debug <name>
 Liste over alle tilgængelige modeller fra konfigurerede udbydere.
 
 ```bash
-opencode models [provider]
+openctrlc models [provider]
 ```
 
 Denne kommando viser alle tilgængelige modeller på tværs af dine konfigurerede udbydere i formatet `provider/model`.
@@ -295,7 +295,7 @@ Dette er nyttigt til at finde ud af det nøjagtige modelnavn, der skal bruges i 
 Du kan eventuelt videregive et udbyder-id for at filtrere modeller efter den udbyder.
 
 ```bash
-opencode models anthropic
+openctrlc models anthropic
 ```
 
 #### Flag
@@ -308,7 +308,7 @@ opencode models anthropic
 Brug flaget `--refresh` til at opdatere den cachelagrede modelliste. Dette er nyttigt, når nye modeller er blevet tilføjet til en udbyder, og du vil se dem i OpenCode.
 
 ```bash
-opencode models --refresh
+openctrlc models --refresh
 ```
 
 ---
@@ -318,23 +318,23 @@ opencode models --refresh
 Kør opencode i ikke-interaktiv tilstand ved at sende en prompt direkte.
 
 ```bash
-opencode run [message..]
+openctrlc run [message..]
 ```
 
 Dette er nyttigt til scripting, automatisering, eller når du vil have et hurtigt svar uden at starte hele TUI. F.eks.
 
-```bash "opencode run"
-opencode run Explain the use of context in Go
+```bash "openctrlc run"
+openctrlc run Explain the use of context in Go
 ```
 
-Du kan også vedhæfte til en kørende `opencode serve`-instans for at undgå MCP serverens kolde opstartstider ved hver kørsel:
+Du kan også vedhæfte til en kørende `openctrlc serve`-instans for at undgå MCP serverens kolde opstartstider ved hver kørsel:
 
 ```bash
 # Start a headless server in one terminal
-opencode serve
+openctrlc serve
 
 # In another terminal, run commands that attach to it
-opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
+openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 ```
 
 #### Flag
@@ -353,7 +353,7 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--title"}</code></nobr>    |      | Titel for sessionen (bruger trunkeret prompt, hvis der ikke er angivet nogen værdi) |
 | <nobr><code>{"--attach"}</code></nobr>   |      | Tilslut til en kørende opencode-server (f.eks. http://localhost:4096)               |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCTRLC_SERVER_PASSWORD`)                   |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `opencode`)   |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`)   |
 | <nobr><code>{"--dir"}</code></nobr>      |      | Mappe at køre i, eller sti på fjernserveren ved tilkobling                          |
 | <nobr><code>{"--variant"}</code></nobr>  |      | Modelvariant (udbyder-specifik ræsonneringsindsats)                                 |
 | <nobr><code>{"--thinking"}</code></nobr> |      | Vis tænkeblokke                                                                     |
@@ -366,10 +366,10 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 Start en hovedløs OpenCode-server til API-adgang. Tjek [server docs](/docs/server) for den fulde HTTP-grænseflade.
 
 ```bash
-opencode serve
+openctrlc serve
 ```
 
-Dette starter en HTTP-server, der giver API-adgang til opencode-funktionalitet uden TUI-grænsefladen. Indstil `OPENCTRLC_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `opencode`).
+Dette starter en HTTP-server, der giver API-adgang til opencode-funktionalitet uden TUI-grænsefladen. Indstil `OPENCTRLC_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `openctrlc`).
 
 #### Flag
 
@@ -462,10 +462,10 @@ opencode import https://opncd.ai/s/abc123
 Start en hovedløs OpenCode-server med en webgrænseflade.
 
 ```bash
-opencode web
+openctrlc web
 ```
 
-Dette starter en HTTP-server og åbner en webbrowser for at få adgang til OpenCode via en webgrænseflade. Indstil `OPENCTRLC_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `opencode`).
+Dette starter en HTTP-server og åbner en webbrowser for at få adgang til OpenCode via en webgrænseflade. Indstil `OPENCTRLC_SERVER_PASSWORD` for at aktivere HTTP grundlæggende godkendelse (brugernavn er standard til `openctrlc`).
 
 #### Flag
 
@@ -483,7 +483,7 @@ Dette starter en HTTP-server og åbner en webbrowser for at få adgang til OpenC
 Start en ACP-server (Agent Client Protocol).
 
 ```bash
-opencode acp
+openctrlc acp
 ```
 
 Denne kommando starter en ACP-server, der kommunikerer via stdin/stdout ved hjælp af nd-JSON.
@@ -503,7 +503,7 @@ Denne kommando starter en ACP-server, der kommunikerer via stdin/stdout ved hjæ
 Afinstaller OpenCode og fjern alle relaterede filer.
 
 ```bash
-opencode uninstall
+openctrlc uninstall
 ```
 
 #### Flag
@@ -522,19 +522,19 @@ opencode uninstall
 Opdaterer OpenCode til den nyeste version eller en specifik version.
 
 ```bash
-opencode upgrade [target]
+openctrlc upgrade [target]
 ```
 
 For at opgradere til den nyeste version.
 
 ```bash
-opencode upgrade
+openctrlc upgrade
 ```
 
 For at opgradere til en bestemt version.
 
 ```bash
-opencode upgrade v0.1.48
+openctrlc upgrade v0.1.48
 ```
 
 #### upgrade
@@ -586,7 +586,7 @@ OpenCode kan konfigureres ved hjælp af miljøvariabler.
 | `OPENCTRLC_CLIENT`                     | string  | Klient-id (standard til `cli`)                                        |
 | `OPENCTRLC_ENABLE_EXA`                 | boolean | Aktiver Exa-websøgeværktøjer                                          |
 | `OPENCTRLC_SERVER_PASSWORD`            | string  | Aktiver grundlæggende godkendelse for `serve`/`web`                   |
-| `OPENCTRLC_SERVER_USERNAME`            | string  | Tilsidesæt grundlæggende godkendelsesbrugernavn (standard `opencode`) |
+| `OPENCTRLC_SERVER_USERNAME`            | string  | Tilsidesæt grundlæggende godkendelsesbrugernavn (standard `openctrlc`) |
 | `OPENCTRLC_MODELS_URL`                 | string  | Brugerdefineret URL til hentning af modelkonfiguration                |
 
 ---

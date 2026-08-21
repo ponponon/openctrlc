@@ -18,7 +18,7 @@ Bir sağlayıcı eklemek için şunları yapmanız gerekir:
 ### Kimlik Bilgileri
 
 Bir sağlayıcının API anahtarlarını `/connect` komutuyla eklediğinizde, bunlar saklanır
-`~/.local/share/opencode/auth.json` içinde.
+`~/.local/share/openctrlc/auth.json` içinde.
 
 ---
 
@@ -750,7 +750,7 @@ GitLab Duo, GitLab'ın Anthropic proxy'si aracılığıyla yerel araç çağırm
 
 :::note
 İstemiyorsanız 'GITLAB_TOKEN' ortam değişkenini de belirtebilirsiniz.
-to store token in opencode auth storage.
+to store token in openctrlc auth storage.
 :::
 
 ##### Kendi Kendine Barındırılan GitLab
@@ -1022,7 +1022,7 @@ Helicone'un opencode aracılığıyla otomatik olarak yapılandırılmayan bir �
 
 İşte [Helicone's Model Directory](https://helicone.ai/models), eklemek istediğiniz modellerin kimliklerini almak için buna ihtiyacınız olacak.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1050,7 +1050,7 @@ Helicone'un opencode aracılığıyla otomatik olarak yapılandırılmayan bir �
 
 Helicone, önbelleğe alma, kullanıcı izleme ve oturum yönetimi gibi özellikler için özel başlıkları destekler. `options.headers` kullanarak bunları sağlayıcınızın yapılandırmasına ekleyin:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1977,7 +1977,7 @@ Yapılandırma ayrıntıları:
 
 Sağlayıcıyı yapılandırma konusunda sorun yaşıyorsanız aşağıdakileri kontrol edin:
 
-1. **Kimlik doğrulama kurulumunu kontrol edin**: Kimlik bilgilerinin geçerli olup olmadığını görmek için `opencode auth list` komutunu çalıştırın.
+1. **Kimlik doğrulama kurulumunu kontrol edin**: Kimlik bilgilerinin geçerli olup olmadığını görmek için `openctrlc auth list` komutunu çalıştırın.
    sağlayıcı için yapılandırmanıza eklenir.
 
    Bu, kimlik doğrulaması için ortam değişkenlerine güvenen Amazon Bedrock gibi sağlayıcılar için geçerli değildir.

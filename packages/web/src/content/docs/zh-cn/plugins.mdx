@@ -20,7 +20,7 @@ description: 编写自己的插件来扩展 OpenCode。
 将 JavaScript 或 TypeScript 文件放置在插件目录中。
 
 - `.openctrlc/plugins/` - 项目级插件
-- `~/.config/opencode/plugins/` - 全局插件
+- `~/.config/openctrlc/plugins/` - 全局插件
 
 这些目录中的文件会在启动时自动加载。
 
@@ -55,9 +55,9 @@ description: 编写自己的插件来扩展 OpenCode。
 
 插件从所有来源加载，所有钩子按顺序执行。加载顺序为：
 
-1. 全局配置 (`~/.config/opencode/openctrlc.json`)
+1. 全局配置 (`~/.config/openctrlc/openctrlc.json`)
 2. 项目配置 (`openctrlc.json`)
-3. 全局插件目录 (`~/.config/opencode/plugins/`)
+3. 全局插件目录 (`~/.config/openctrlc/plugins/`)
 4. 项目插件目录 (`.openctrlc/plugins/`)
 
 名称和版本相同的重复 npm 包只会加载一次。但本地插件和名称相似的 npm 插件会分别独立加载。
@@ -127,7 +127,7 @@ export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
 对于 TypeScript 插件，你可以从插件包中导入类型：
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -279,7 +279,7 @@ export const InjectEnvPlugin = async () => {
 插件还可以为 OpenCode 添加自定义工具：
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -339,7 +339,7 @@ export const MyPlugin = async ({ client }) => {
 自定义会话压缩时包含的上下文：
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -363,7 +363,7 @@ Include any state that should persist across compaction:
 你还可以通过设置 `output.prompt` 来完全替换压缩提示词：
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

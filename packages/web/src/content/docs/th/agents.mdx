@@ -187,10 +187,10 @@ _Mode_: `primary`
 
 คุณสามารถกำหนดเอเจนต์ด้วยไฟล์ Markdown ได้ใน:
 
-- ระดับผู้ใช้ (Global): `~/.config/opencode/agents/`
+- ระดับผู้ใช้ (Global): `~/.config/openctrlc/agents/`
 - ระดับโปรเจ็กต์: `.openctrlc/agents/`
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Reviews code for quality and best practices
 mode: subagent
@@ -453,7 +453,7 @@ ID ของโมเดลใช้รูปแบบ `provider/model-id`
 
 ใน Markdown agent:
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent
@@ -656,7 +656,7 @@ Only analyze code and suggest changes.
 ตรวจสอบเอกสารของแต่ละโมเดลสำหรับตัวเลือกที่รองรับ
 
 :::tip
-ใช้ `opencode models` เพื่อดูรายการตัวเลือกทั้งหมด
+ใช้ `openctrlc models` เพื่อดูรายการตัวเลือกทั้งหมด
 :::
 
 ---
@@ -701,7 +701,7 @@ opencode agent create
 
 ### Docs Writer
 
-```markdown title="~/.config/opencode/agents/docs-writer.md"
+```markdown title="~/.config/openctrlc/agents/docs-writer.md"
 ---
 description: Writes and maintains project documentation
 mode: subagent
@@ -723,7 +723,7 @@ Focus on:
 
 ### Security Auditor
 
-```markdown title="~/.config/opencode/agents/security-auditor.md"
+```markdown title="~/.config/openctrlc/agents/security-auditor.md"
 ---
 description: Performs security audits and identifies vulnerabilities
 mode: subagent

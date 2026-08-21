@@ -5,7 +5,7 @@ description: เลือกธีมในตัวหรือกำหนด�
 
 ด้วย OpenCode คุณสามารถเลือกจากหนึ่งในธีมที่มีอยู่แล้วภายใน ใช้ธีมที่ปรับให้เข้ากับธีม terminal ของคุณ หรือกำหนดธีมที่คุณกำหนดเองได้
 
-ตามค่าเริ่มต้น OpenCode จะใช้ธีม `opencode` ของเราเอง
+ตามค่าเริ่มต้น OpenCode จะใช้ธีม `openctrlc` ของเราเอง
 
 ---
 
@@ -83,7 +83,7 @@ OpenCode รองรับระบบธีมที่ใช้ JSON ที�
 ธีมจะถูกโหลดจากหลายไดเร็กทอรีตามลำดับต่อไปนี้ โดยไดเร็กทอรีรุ่นหลังจะแทนที่ไดเร็กทอรีก่อนหน้า:
 
 1. **ธีมในตัว** - ธีมเหล่านี้ฝังอยู่ในไบนารี
-2. **ไดเรกทอรีกำหนดค่าผู้ใช้** - กำหนดใน `~/.config/opencode/themes/*.json` หรือ `$XDG_CONFIG_HOME/opencode/themes/*.json`
+2. **ไดเรกทอรีกำหนดค่าผู้ใช้** - กำหนดใน `~/.config/openctrlc/themes/*.json` หรือ `$XDG_CONFIG_HOME/openctrlc/themes/*.json`
 3. **ไดเรกทอรีรากของโครงการ** - กำหนดไว้ใน `<project-root>/.openctrlc/themes/*.json`
 4. **ไดเร็กทอรีการทำงานปัจจุบัน** - กำหนดใน `./.openctrlc/themes/*.json`
 
@@ -98,8 +98,8 @@ OpenCode รองรับระบบธีมที่ใช้ JSON ที�
 สำหรับธีมทั้งผู้ใช้:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 และสำหรับธีมเฉพาะโครงการ

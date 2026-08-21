@@ -189,7 +189,7 @@ OpenCode จะจัดการการตรวจสอบสิทธิ�
 }
 ```
 
-หากเซิร์ฟเวอร์ต้องมีการตรวจสอบสิทธิ์ OpenCode จะแจ้งให้คุณตรวจสอบความถูกต้องเมื่อคุณพยายามใช้งานครั้งแรก หากไม่เป็นเช่นนั้น คุณสามารถ[ทริกเกอร์โฟลว์ด้วยตนเอง](#การตรวจสอบสิทธิ์) ด้วย `opencode mcp auth <server-name>`
+หากเซิร์ฟเวอร์ต้องมีการตรวจสอบสิทธิ์ OpenCode จะแจ้งให้คุณตรวจสอบความถูกต้องเมื่อคุณพยายามใช้งานครั้งแรก หากไม่เป็นเช่นนั้น คุณสามารถ[ทริกเกอร์โฟลว์ด้วยตนเอง](#การตรวจสอบสิทธิ์) ด้วย `openctrlc mcp auth <server-name>`
 
 ---
 
@@ -223,22 +223,22 @@ OpenCode จะจัดการการตรวจสอบสิทธิ�
 ตรวจสอบสิทธิ์กับเซิร์ฟเวอร์ MCP เฉพาะ:
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 แสดงรายการเซิร์ฟเวอร์ MCP ทั้งหมดและสถานะการตรวจสอบสิทธิ์:
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 ลบข้อมูลรับรองที่เก็บไว้:
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-คำสั่ง `mcp auth` จะเปิดเบราว์เซอร์ของคุณเพื่อขออนุญาต หลังจากที่คุณอนุญาตแล้ว OpenCode จะจัดเก็บโทเค็นอย่างปลอดภัยใน `~/.local/share/opencode/mcp-auth.json`
+คำสั่ง `mcp auth` จะเปิดเบราว์เซอร์ของคุณเพื่อขออนุญาต หลังจากที่คุณอนุญาตแล้ว OpenCode จะจัดเก็บโทเค็นอย่างปลอดภัยใน `~/.local/share/openctrlc/mcp-auth.json`
 
 ---
 
@@ -279,10 +279,10 @@ opencode mcp logout my-oauth-server
 
 ```bash
 # View auth status for all OAuth-capable servers
-opencode mcp auth list
+openctrlc mcp auth list
 
 # Debug connection and OAuth flow for a specific server
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 คำสั่ง `mcp debug` แสดงสถานะการตรวจสอบสิทธิ์ปัจจุบัน ทดสอบการเชื่อมต่อ HTTP และพยายามใช้ขั้นตอนการค้นหา OAuth
@@ -420,7 +420,7 @@ MCP เครื่องมือเซิร์ฟเวอร์ได้ร�
 หลังจากเพิ่มการกำหนดค่าแล้ว ให้ตรวจสอบสิทธิ์กับ Sentry:
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 ซึ่งจะเป็นการเปิดหน้าต่างเบราว์เซอร์เพื่อดำเนินการโฟลว์ OAuth ให้เสร็จสมบูรณ์ และเชื่อมต่อ OpenCode กับบัญชี Sentry ของคุณ

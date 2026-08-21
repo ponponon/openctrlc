@@ -18,7 +18,7 @@ opencode использует [AI SDK](https://ai-sdk.dev/) и [Models.dev](http
 ### Учетные данные
 
 Когда вы добавляете ключи API провайдера с помощью команды `/connect`, они сохраняются
-в `~/.local/share/opencode/auth.json`.
+в `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -1021,7 +1021,7 @@ export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 
 Вот [Справочник моделей Helicone](https://helicone.ai/models), он понадобится вам, чтобы получить идентификаторы моделей, которые вы хотите добавить.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1049,7 +1049,7 @@ export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 
 Helicone поддерживает пользовательские заголовки для таких функций, как кэширование, отслеживание пользователей и управление сеансами. Добавьте их в конфигурацию вашего провайдера, используя `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1976,7 +1976,7 @@ Vercel AI Gateway позволяет получать доступ к модел
 
 Если у вас возникли проблемы с настройкой провайдера, проверьте следующее:
 
-1. **Проверьте настройку аутентификации**: запустите `opencode auth list`, чтобы проверить, верны ли учетные данные.
+1. **Проверьте настройку аутентификации**: запустите `openctrlc auth list`, чтобы проверить, верны ли учетные данные.
    для провайдера добавлены в ваш конфиг.
 
    Это не относится к таким поставщикам, как Amazon Bedrock, которые для аутентификации полагаются на переменные среды.

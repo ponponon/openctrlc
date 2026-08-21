@@ -43,7 +43,7 @@ Na primjer, ako vaša globalna konfiguracija postavlja `autoupdate: true`, a va�
 Izvori konfiguracije se učitavaju ovim redoslijedom (kasniji izvori poništavaju ranije):
 
 1. **Udaljena konfiguracija** (od `.well-known/opencode`) - organizacijske postavke
-2. **Globalna konfiguracija** (`~/.config/opencode/openctrlc.json`) - korisničke preferencije
+2. **Globalna konfiguracija** (`~/.config/openctrlc/openctrlc.json`) - korisničke preferencije
 3. **Prilagođena konfiguracija** (`OPENCTRLC_CONFIG` env var) - prilagođena preinačenja
 4. **Konfiguracija projekta** (`openctrlc.json` u projektu) - postavke specifične za projekat
 5. **`.openctrlc` direktoriji** - agenti, komande, dodaci
@@ -52,7 +52,7 @@ Izvori konfiguracije se učitavaju ovim redoslijedom (kasniji izvori poništavaj
 To znači da konfiguracije projekta mogu nadjačati globalne zadane postavke, a globalne konfiguracije mogu nadjačati postavke udaljene organizacije.
 
 :::note
-Direktoriji `.openctrlc` i `~/.config/opencode` koriste **imena u množini** za poddirektorije: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` i `themes/`. Pojedinačna imena (npr. `agent/`) su također podržana za kompatibilnost unatrag.
+Direktoriji `.openctrlc` i `~/.config/openctrlc` koriste **imena u množini** za poddirektorije: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` i `themes/`. Pojedinačna imena (npr. `agent/`) su također podržana za kompatibilnost unatrag.
 :::
 
 ---
@@ -95,9 +95,9 @@ Možete omogućiti određene servere u vašoj lokalnoj konfiguraciji:
 
 ### Globalno
 
-Postavite svoju globalnu OpenCode konfiguraciju u `~/.config/opencode/openctrlc.json`. Koristite globalnu konfiguraciju za korisničke preferencije kao što su provajderi, modeli i dozvole.
+Postavite svoju globalnu OpenCode konfiguraciju u `~/.config/openctrlc/openctrlc.json`. Koristite globalnu konfiguraciju za korisničke preferencije kao što su provajderi, modeli i dozvole.
 
-Za postavke specifične za TUI, koristite `~/.config/opencode/tui.json`.
+Za postavke specifične za TUI, koristite `~/.config/openctrlc/tui.json`.
 
 Globalna konfiguracija poništava zadane postavke udaljene organizacije.
 
@@ -125,7 +125,7 @@ Navedite prilagođenu putanju konfiguracijske datoteke koristeći varijablu okru
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 Prilagođena konfiguracija se učitava između globalne i projektne konfiguracije po redoslijedu prioriteta.
@@ -138,7 +138,7 @@ Navedite prilagođeni konfiguracijski direktorij koristeći `OPENCTRLC_CONFIG_DI
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 Prilagođeni direktorij se učitava nakon direktorija globalne konfiguracije i `.openctrlc`, tako da **može nadjačati** njihove postavke.
@@ -180,7 +180,7 @@ Stari `theme`, `keybinds`, i `tui` ključevi u `openctrlc.json` su zastarjeli i 
 
 ### Server
 
-Možete konfigurirati postavke servera za naredbe `opencode serve` i `opencode web` putem opcije `server`.
+Možete konfigurirati postavke servera za naredbe `openctrlc serve` i `openctrlc web` putem opcije `server`.
 
 ```json title="openctrlc.json"
 {
@@ -200,7 +200,7 @@ Dostupne opcije:
 - `port` - Port za slušanje.
 - `hostname` - Hostname za slušanje. Kada je `mdns` omogućen i nije postavljeno ime hosta, podrazumevano je `0.0.0.0`.
 - `mdns` - Omogući mDNS otkrivanje servisa. Ovo omogućava drugim uređajima na mreži da otkriju vaš OpenCode server.
-- `mdnsDomain` - Prilagođeno ime domene za mDNS servis. Zadano je `opencode.local`. Korisno za pokretanje više instanci na istoj mreži.
+- `mdnsDomain` - Prilagođeno ime domene za mDNS servis. Zadano je `openctrlc.local`. Korisno za pokretanje više instanci na istoj mreži.
 - `cors` - Dodatni origini koji omogućavaju CORS kada koristite HTTP server iz klijenta baziranog na pretraživaču. Vrijednosti moraju biti puni origin (shema + host + opcijski port), npr. `https://app.example.com`.
 
 [Saznajte više o serveru ovdje](/docs/server).
@@ -335,7 +335,7 @@ Možete konfigurirati specijalizirane agente za određene zadatke putem opcije `
 }
 ```
 
-Također možete definirati agente koristeći markdown datoteke u `~/.config/opencode/agents/` ili `.openctrlc/agents/`. [Saznajte više ovdje](/docs/agents).
+Također možete definirati agente koristeći markdown datoteke u `~/.config/openctrlc/agents/` ili `.openctrlc/agents/`. [Saznajte više ovdje](/docs/agents).
 
 ---
 
@@ -352,7 +352,7 @@ Možete postaviti zadanog agenta koristeći opciju `default_agent`. Ovo određuj
 
 Zadani agent mora biti primarni agent (ne podagent). Ovo može biti ugrađeni agent kao što je `"build"` ili `"plan"`, ili [prilagođeni agent](/docs/agents) koji ste definirali. Ako navedeni agent ne postoji ili je podagent, OpenCode će se vratiti na `"build"` s upozorenjem.
 
-Ova postavka se primjenjuje na sva sučelja: TUI, CLI (`opencode run`), desktop aplikaciju i GitHub Action.
+Ova postavka se primjenjuje na sva sučelja: TUI, CLI (`openctrlc run`), desktop aplikaciju i GitHub Action.
 
 ---
 
@@ -399,7 +399,7 @@ Možete konfigurirati prilagođene naredbe za ponavljanje zadataka putem opcije 
 }
 ```
 
-Također možete definirati naredbe koristeći markdown fajlove u `~/.config/opencode/commands/` ili `.openctrlc/commands/`. [Saznajte više ovdje](/docs/commands).
+Također možete definirati naredbe koristeći markdown fajlove u `~/.config/openctrlc/commands/` ili `.openctrlc/commands/`. [Saznajte više ovdje](/docs/commands).
 
 ---
 
@@ -537,7 +537,7 @@ Možete konfigurirati MCP servere koje želite koristiti putem opcije `mcp`.
 
 [Plugins](/docs/plugins) proširuju OpenCode sa prilagođenim alatima, kukicama i integracijama.
 
-Postavite datoteke dodataka u `.openctrlc/plugins/` ili `~/.config/opencode/plugins/`. Također možete učitati dodatke iz npm-a preko opcije `plugin`.
+Postavite datoteke dodataka u `.openctrlc/plugins/` ili `~/.config/openctrlc/plugins/`. Također možete učitati dodatke iz npm-a preko opcije `plugin`.
 
 ```json title="openctrlc.json"
 {

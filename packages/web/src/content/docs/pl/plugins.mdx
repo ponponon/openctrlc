@@ -20,7 +20,7 @@ Istnieją dwa sposoby ładowania wtyczek.
 Miejsce plików JavaScript lub TypeScript w katalogu wtyczki.
 
 - `.openctrlc/plugins/` - Wtyczki na poziomie projektu
-- `~/.config/opencode/plugins/` - Wtyczki globalne
+- `~/.config/openctrlc/plugins/` - Wtyczki globalne
 
 Pliki w tych katalogach są automatycznie ładowane podczas uruchamiania.
 
@@ -55,9 +55,9 @@ Przeglądaj dostępną wtyczkę w [ekosystemie](/docs/ecosystem#plugins).
 
 Wtyczki są ładowane ze wszystkich źródeł, a wszystkie hooki napisane po kolei. Kolejność ładowania do:
 
-1. Konfiguracja globalna (`~/.config/opencode/openctrlc.json`)
+1. Konfiguracja globalna (`~/.config/openctrlc/openctrlc.json`)
 2. Konfiguracja projektu (`openctrlc.json`)
-3. Globalny katalog wtyczek (`~/.config/opencode/plugins/`)
+3. Globalny katalog wtyczek (`~/.config/openctrlc/plugins/`)
 4. Katalog wtyczek projektu (`.openctrlc/plugins/`)
 
 Zduplikowane pakiety npm o tej samej nazwie i wersji są ładowane raz. Równie ważny jest dostęp lokalny i zewnętrzny npm o dodatkowych nazwach, które są zewnętrzne.
@@ -128,7 +128,7 @@ Funkcja dostępu do:
 W przypadku wtyczek TypeScript możesz importować typy z pakietu wtyczek:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -280,7 +280,7 @@ export const InjectEnvPlugin = async () => {
 Wtyczki mogą również dodawać niestandardowe narzędzia do opencode:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -336,7 +336,7 @@ Poziomy: `debug`, `info`, `warn`, `error`. Aby uzyskać szczegółowe informacje
 Dostosuj kontekst dołączony podczas kompaktowania sesji:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -360,7 +360,7 @@ Hak `experimental.session.compacting` jest uruchamiany, zanim LLM wygeneruje pod
 Można także umieścić kompletny monit o zagęszczenie, ustawiając `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

@@ -189,7 +189,7 @@ OpenCode は、リモート MCP サーバーの OAuth 認証を自動的に処�
 }
 ```
 
-サーバーが認証を必要とする場合、OpenCode を初めて使用しようとすると、認証を求めるプロンプトが表示されます。そうでない場合は、`opencode mcp auth <server-name>` を使用して [flow](#authenticating) を手動でトリガーできます。
+サーバーが認証を必要とする場合、OpenCode を初めて使用しようとすると、認証を求めるプロンプトが表示されます。そうでない場合は、`openctrlc mcp auth <server-name>` を使用して [flow](#authenticating) を手動でトリガーできます。
 
 ---
 
@@ -223,22 +223,22 @@ MCP サーバープロバイダーからクライアント認証情報を取得�
 特定の MCP サーバーで認証します。
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 すべての MCP サーバーとその認証ステータスをリストします。
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 保存されている認証情報を削除します。
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-`mcp auth` コマンドは、認証のためにブラウザを開きます。承認後、OpenCode はトークンを `~/.local/share/opencode/mcp-auth.json` に安全に保存します。
+`mcp auth` コマンドは、認証のためにブラウザを開きます。承認後、OpenCode はトークンを `~/.local/share/openctrlc/mcp-auth.json` に安全に保存します。
 
 ---
 
@@ -279,10 +279,10 @@ opencode mcp logout my-oauth-server
 
 ```bash
 # View auth status for all OAuth-capable servers
-opencode mcp auth list
+openctrlc mcp auth list
 
 # Debug connection and OAuth flow for a specific server
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 `mcp debug` コマンドは、現在の認証ステータスを表示し、HTTP 接続をテストし、OAuth 検出フローを試行します。
@@ -420,7 +420,7 @@ MCP サーバーツールはサーバー名をプレフィックスとして登�
 設定を追加した後、Sentry で認証します。
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 これにより、ブラウザウィンドウが開き、OAuth フローが完了し、OpenCode が Sentry アカウントに接続されます。

@@ -43,7 +43,7 @@ OpenCode 支持 **JSON** 和 **JSONC**（带注释的 JSON）格式。
 配置源按以下顺序加载（后面的源覆盖前面的源）：
 
 1. **远程配置**（来自 `.well-known/opencode`）- 组织默认值
-2. **全局配置**（`~/.config/opencode/openctrlc.json`）- 用户偏好
+2. **全局配置**（`~/.config/openctrlc/openctrlc.json`）- 用户偏好
 3. **自定义配置**（`OPENCTRLC_CONFIG` 环境变量）- 自定义覆盖
 4. **项目配置**（项目中的 `openctrlc.json`）- 项目特定设置
 5. **`.openctrlc` 目录** - 代理、命令、插件
@@ -52,7 +52,7 @@ OpenCode 支持 **JSON** 和 **JSONC**（带注释的 JSON）格式。
 这意味着项目配置可以覆盖全局默认值，全局配置可以覆盖远程组织默认值。
 
 :::note
-`.openctrlc` 和 `~/.config/opencode` 目录的子目录使用**复数名称**：`agents/`、`commands/`、`modes/`、`plugins/`、`skills/`、`tools/` 和 `themes/`。为了向后兼容，也支持单数名称（例如 `agent/`）。
+`.openctrlc` 和 `~/.config/openctrlc` 目录的子目录使用**复数名称**：`agents/`、`commands/`、`modes/`、`plugins/`、`skills/`、`tools/` 和 `themes/`。为了向后兼容，也支持单数名称（例如 `agent/`）。
 :::
 
 ---
@@ -95,7 +95,7 @@ OpenCode 支持 **JSON** 和 **JSONC**（带注释的 JSON）格式。
 
 ### 全局
 
-将全局 OpenCode 配置放在 `~/.config/opencode/openctrlc.json` 中。使用全局配置来设置用户级别的偏好，例如主题、提供商或快捷键。
+将全局 OpenCode 配置放在 `~/.config/openctrlc/openctrlc.json` 中。使用全局配置来设置用户级别的偏好，例如主题、提供商或快捷键。
 
 全局配置覆盖远程组织默认值。
 
@@ -121,7 +121,7 @@ OpenCode 支持 **JSON** 和 **JSONC**（带注释的 JSON）格式。
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 自定义配置在优先级顺序中位于全局配置和项目配置之间加载。
@@ -134,7 +134,7 @@ opencode run "Hello world"
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 自定义目录在全局配置和 `.openctrlc` 目录之后加载，因此**可以覆盖**它们的设置。
@@ -178,7 +178,7 @@ opencode run "Hello world"
 
 ### 服务器
 
-您可以通过 `server` 选项为 `opencode serve` 和 `opencode web` 命令配置服务器设置。
+您可以通过 `server` 选项为 `openctrlc serve` 和 `openctrlc web` 命令配置服务器设置。
 
 ```json title="openctrlc.json"
 {
@@ -198,7 +198,7 @@ opencode run "Hello world"
 - `port` - 监听端口。
 - `hostname` - 监听主机名。当 `mdns` 启用且未设置主机名时，默认为 `0.0.0.0`。
 - `mdns` - 启用 mDNS 服务发现。这允许网络上的其他设备发现您的 OpenCode 服务器。
-- `mdnsDomain` - mDNS 服务的自定义域名。默认为 `opencode.local`。适用于在同一网络上运行多个实例的场景。
+- `mdnsDomain` - mDNS 服务的自定义域名。默认为 `openctrlc.local`。适用于在同一网络上运行多个实例的场景。
 - `cors` - 从基于浏览器的客户端使用 HTTP 服务器时允许 CORS 的额外来源。值必须是完整的来源（协议 + 主机 + 可选端口），例如 `https://app.example.com`。
 
 [在此了解更多关于服务器的信息](/docs/server)。
@@ -333,7 +333,7 @@ Bearer Token（`AWS_BEARER_TOKEN_BEDROCK` 或 `/connect`）优先于基于配置
 }
 ```
 
-您还可以使用 `~/.config/opencode/agents/` 或 `.openctrlc/agents/` 中的 Markdown 文件定义代理。[在此了解更多](/docs/agents)。
+您还可以使用 `~/.config/openctrlc/agents/` 或 `.openctrlc/agents/` 中的 Markdown 文件定义代理。[在此了解更多](/docs/agents)。
 
 ---
 
@@ -350,7 +350,7 @@ Bearer Token（`AWS_BEARER_TOKEN_BEDROCK` 或 `/connect`）优先于基于配置
 
 默认代理必须是主代理（不能是子代理）。可以是内置代理（如 `"build"` 或 `"plan"`），也可以是您定义的[自定义代理](/docs/agents)。如果指定的代理不存在或是子代理，OpenCode 将回退到 `"build"` 并发出警告。
 
-此设置适用于所有界面：TUI、CLI（`opencode run`）、桌面应用和 GitHub Action。
+此设置适用于所有界面：TUI、CLI（`openctrlc run`）、桌面应用和 GitHub Action。
 
 ---
 
@@ -397,7 +397,7 @@ Bearer Token（`AWS_BEARER_TOKEN_BEDROCK` 或 `/connect`）优先于基于配置
 }
 ```
 
-您还可以使用 `~/.config/opencode/commands/` 或 `.openctrlc/commands/` 中的 Markdown 文件定义命令。[在此了解更多](/docs/commands)。
+您还可以使用 `~/.config/openctrlc/commands/` 或 `.openctrlc/commands/` 中的 Markdown 文件定义命令。[在此了解更多](/docs/commands)。
 
 ---
 
@@ -535,7 +535,7 @@ OpenCode 启动时会自动下载新版本。您可以使用 `autoupdate` 选项
 
 [插件](/docs/plugins)通过自定义工具、钩子和集成来扩展 OpenCode。
 
-将插件文件放置在 `.openctrlc/plugins/` 或 `~/.config/opencode/plugins/` 中。您还可以通过 `plugin` 选项从 npm 加载插件。
+将插件文件放置在 `.openctrlc/plugins/` 或 `~/.config/openctrlc/plugins/` 中。您还可以通过 `plugin` 选项从 npm 加载插件。
 
 ```json title="openctrlc.json"
 {

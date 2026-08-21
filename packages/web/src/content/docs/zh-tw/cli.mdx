@@ -14,7 +14,7 @@ opencode
 但它也接受本頁面中記錄的指令，使您可以透過程式方式與 OpenCode 進行互動。
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+openctrlc run "Explain how closures work in JavaScript"
 ```
 
 ---
@@ -63,17 +63,17 @@ opencode agent [command]
 將終端機連接到已透過 `serve` 或 `web` 指令啟動的 OpenCode 後端伺服器。
 
 ```bash
-opencode attach [url]
+openctrlc attach [url]
 ```
 
 這允許將 TUI 與遠端 OpenCode 後端搭配使用。例如：
 
 ```bash
 # Start the backend server for web/mobile access
-opencode web --port 4096 --hostname 0.0.0.0
+openctrlc web --port 4096 --hostname 0.0.0.0
 
 # In another terminal, attach the TUI to the running backend
-opencode attach http://10.20.30.40:4096
+openctrlc attach http://10.20.30.40:4096
 ```
 
 #### 旗標
@@ -85,7 +85,7 @@ opencode attach http://10.20.30.40:4096
 | <nobr><code>{"--session"}</code></nobr>  | `-s` | 要繼續的工作階段 ID                                                     |
 | <nobr><code>{"--fork"}</code></nobr>     |      | 繼續時分支工作階段（與 `--continue` 或 `--session` 一起使用）           |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | 基本驗證密碼（預設使用 `OPENCTRLC_SERVER_PASSWORD`）                     |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | 基本驗證使用者名稱（預設使用 `OPENCTRLC_SERVER_USERNAME` 或 `opencode`） |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | 基本驗證使用者名稱（預設使用 `OPENCTRLC_SERVER_USERNAME` 或 `openctrlc`） |
 
 ---
 
@@ -116,17 +116,17 @@ opencode agent list
 管理供應商的憑證和登入資訊的指令。
 
 ```bash
-opencode auth [command]
+openctrlc auth [command]
 ```
 
 ---
 
 #### login
 
-OpenCode 基於 [Models.dev](https://models.dev) 的供應商列表運作，因此您可以使用 `opencode auth login` 為任何想要使用的供應商設定 API 金鑰。金鑰儲存在 `~/.local/share/opencode/auth.json` 中。
+OpenCode 基於 [Models.dev](https://models.dev) 的供應商列表運作，因此您可以使用 `openctrlc auth login` 為任何想要使用的供應商設定 API 金鑰。金鑰儲存在 `~/.local/share/openctrlc/auth.json` 中。
 
 ```bash
-opencode auth login
+openctrlc auth login
 ```
 
 OpenCode 啟動時會從憑證檔案載入供應商資訊，同時也會載入環境變數或專案中 `.env` 檔案中定義的金鑰。
@@ -138,13 +138,13 @@ OpenCode 啟動時會從憑證檔案載入供應商資訊，同時也會載入�
 列出憑證檔案中儲存的所有已認證供應商。
 
 ```bash
-opencode auth list
+openctrlc auth list
 ```
 
 或使用簡寫版本。
 
 ```bash
-opencode auth ls
+openctrlc auth ls
 ```
 
 ---
@@ -154,7 +154,7 @@ opencode auth ls
 從憑證檔案中清除供應商資訊以完成登出。
 
 ```bash
-opencode auth logout
+openctrlc auth logout
 ```
 
 ---
@@ -203,7 +203,7 @@ opencode github run
 管理 Model Context Protocol 伺服器。
 
 ```bash
-opencode mcp [command]
+openctrlc mcp [command]
 ```
 
 ---
@@ -213,7 +213,7 @@ opencode mcp [command]
 將 MCP 伺服器新增到您的設定中。
 
 ```bash
-opencode mcp add
+openctrlc mcp add
 ```
 
 此指令將引導您新增本地或遠端 MCP 伺服器。
@@ -225,13 +225,13 @@ opencode mcp add
 列出所有已設定的 MCP 伺服器及其連線狀態。
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 或使用簡寫版本。
 
 ```bash
-opencode mcp ls
+openctrlc mcp ls
 ```
 
 ---
@@ -241,7 +241,7 @@ opencode mcp ls
 對支援 OAuth 的 MCP 伺服器進行認證。
 
 ```bash
-opencode mcp auth [name]
+openctrlc mcp auth [name]
 ```
 
 如果您不提供伺服器名稱，系統將提示您從可用的支援 OAuth 的伺服器中進行選擇。
@@ -249,13 +249,13 @@ opencode mcp auth [name]
 您還可以列出支援 OAuth 的伺服器及其認證狀態。
 
 ```bash
-opencode mcp auth list
+openctrlc mcp auth list
 ```
 
 或使用簡寫版本。
 
 ```bash
-opencode mcp auth ls
+openctrlc mcp auth ls
 ```
 
 ---
@@ -265,7 +265,7 @@ opencode mcp auth ls
 移除 MCP 伺服器的 OAuth 憑證。
 
 ```bash
-opencode mcp logout [name]
+openctrlc mcp logout [name]
 ```
 
 ---
@@ -275,7 +275,7 @@ opencode mcp logout [name]
 偵錯 MCP 伺服器的 OAuth 連線問題。
 
 ```bash
-opencode mcp debug <name>
+openctrlc mcp debug <name>
 ```
 
 ---
@@ -285,7 +285,7 @@ opencode mcp debug <name>
 列出已設定供應商的所有可用模型。
 
 ```bash
-opencode models [provider]
+openctrlc models [provider]
 ```
 
 此指令以 `provider/model` 的格式顯示所有已設定供應商中可用的模型。
@@ -295,7 +295,7 @@ opencode models [provider]
 您可以選擇傳入供應商 ID 來按供應商篩選模型。
 
 ```bash
-opencode models anthropic
+openctrlc models anthropic
 ```
 
 #### 旗標
@@ -308,7 +308,7 @@ opencode models anthropic
 使用 `--refresh` 旗標可以更新快取的模型列表。當供應商新增了模型並且您希望在 OpenCode 中看到它們時，此功能非常有用。
 
 ```bash
-opencode models --refresh
+openctrlc models --refresh
 ```
 
 ---
@@ -318,23 +318,23 @@ opencode models --refresh
 以非互動模式執行 OpenCode，直接傳入提示詞。
 
 ```bash
-opencode run [message..]
+openctrlc run [message..]
 ```
 
 這對於指令碼編寫、自動化或無需啟動完整 TUI 即可快速取得答案的情境非常有用。例如：
 
-```bash "opencode run"
-opencode run Explain the use of context in Go
+```bash "openctrlc run"
+openctrlc run Explain the use of context in Go
 ```
 
-您還可以連接到正在執行的 `opencode serve` 實例，以避免每次執行時 MCP 伺服器的冷啟動時間：
+您還可以連接到正在執行的 `openctrlc serve` 實例，以避免每次執行時 MCP 伺服器的冷啟動時間：
 
 ```bash
 # Start a headless server in one terminal
-opencode serve
+openctrlc serve
 
 # In another terminal, run commands that attach to it
-opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
+openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 ```
 
 #### 旗標
@@ -353,7 +353,7 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--title"}</code></nobr>    |      | 工作階段標題（未提供值時使用截斷的提示詞）                              |
 | <nobr><code>{"--attach"}</code></nobr>   |      | 連接到正在執行的 opencode 伺服器（例如 http://localhost:4096）          |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | 基本驗證密碼（預設使用 `OPENCTRLC_SERVER_PASSWORD`）                     |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | 基本驗證使用者名稱（預設使用 `OPENCTRLC_SERVER_USERNAME` 或 `opencode`） |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | 基本驗證使用者名稱（預設使用 `OPENCTRLC_SERVER_USERNAME` 或 `openctrlc`） |
 | <nobr><code>{"--dir"}</code></nobr>      |      | 執行目錄，或附加時遠端伺服器上的路徑                                    |
 | <nobr><code>{"--variant"}</code></nobr>  |      | 模型變體（特定於提供者的推理級別）                                      |
 | <nobr><code>{"--thinking"}</code></nobr> |      | 顯示思考區塊                                                            |
@@ -366,10 +366,10 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 啟動無介面的 OpenCode 伺服器以提供 API 存取。查看[伺服器文件](/docs/server)了解完整的 HTTP 介面。
 
 ```bash
-opencode serve
+openctrlc serve
 ```
 
-此指令啟動一個 HTTP 伺服器，提供對 OpenCode 功能的 API 存取，無需 TUI 介面。設定 `OPENCTRLC_SERVER_PASSWORD` 可啟用 HTTP 基本認證（使用者名稱預設為 `opencode`）。
+此指令啟動一個 HTTP 伺服器，提供對 OpenCode 功能的 API 存取，無需 TUI 介面。設定 `OPENCTRLC_SERVER_PASSWORD` 可啟用 HTTP 基本認證（使用者名稱預設為 `openctrlc`）。
 
 #### 旗標
 
@@ -462,10 +462,10 @@ opencode import https://opncd.ai/s/abc123
 啟動帶有 Web 介面的無介面 OpenCode 伺服器。
 
 ```bash
-opencode web
+openctrlc web
 ```
 
-此指令啟動一個 HTTP 伺服器並開啟瀏覽器，透過 Web 介面存取 OpenCode。設定 `OPENCTRLC_SERVER_PASSWORD` 可啟用 HTTP 基本認證（使用者名稱預設為 `opencode`）。
+此指令啟動一個 HTTP 伺服器並開啟瀏覽器，透過 Web 介面存取 OpenCode。設定 `OPENCTRLC_SERVER_PASSWORD` 可啟用 HTTP 基本認證（使用者名稱預設為 `openctrlc`）。
 
 #### 旗標
 
@@ -483,7 +483,7 @@ opencode web
 啟動 ACP（Agent Client Protocol）伺服器。
 
 ```bash
-opencode acp
+openctrlc acp
 ```
 
 此指令啟動一個透過 stdin/stdout 使用 nd-JSON 進行通訊的 ACP 伺服器。
@@ -503,7 +503,7 @@ opencode acp
 解除安裝 OpenCode 並刪除所有相關檔案。
 
 ```bash
-opencode uninstall
+openctrlc uninstall
 ```
 
 #### 旗標
@@ -522,19 +522,19 @@ opencode uninstall
 將 OpenCode 更新到最新版本或指定版本。
 
 ```bash
-opencode upgrade [target]
+openctrlc upgrade [target]
 ```
 
 更新到最新版本。
 
 ```bash
-opencode upgrade
+openctrlc upgrade
 ```
 
 更新到指定版本。
 
 ```bash
-opencode upgrade v0.1.48
+openctrlc upgrade v0.1.48
 ```
 
 #### 旗標
@@ -586,7 +586,7 @@ OpenCode 可以透過環境變數進行設定。
 | `OPENCTRLC_CLIENT`                     | string  | 用戶端識別碼（預設為 `cli`）                |
 | `OPENCTRLC_ENABLE_EXA`                 | boolean | 啟用 Exa 網路搜尋工具                       |
 | `OPENCTRLC_SERVER_PASSWORD`            | string  | 為 `serve`/`web` 啟用基本認證               |
-| `OPENCTRLC_SERVER_USERNAME`            | string  | 覆寫基本認證使用者名稱（預設為 `opencode`） |
+| `OPENCTRLC_SERVER_USERNAME`            | string  | 覆寫基本認證使用者名稱（預設為 `openctrlc`） |
 | `OPENCTRLC_MODELS_URL`                 | string  | 自訂模型設定擷取 URL                        |
 
 ---

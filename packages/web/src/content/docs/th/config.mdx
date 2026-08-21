@@ -44,7 +44,7 @@ OpenCode รองรับทั้งรูปแบบ **JSON** และ **J
 แหล่งที่มาของการกำหนดค่าถูกโหลดตามลำดับนี้ (แหล่งที่มาภายหลังจะแทนที่แหล่งที่มาก่อนหน้า):
 
 1. **การกำหนดค่าระยะไกล** (จาก `.well-known/opencode`) - ค่าเริ่มต้นขององค์กร
-2. **การกำหนดค่าสากล** (`~/.config/opencode/openctrlc.json`) - การตั้งค่าของผู้ใช้
+2. **การกำหนดค่าสากล** (`~/.config/openctrlc/openctrlc.json`) - การตั้งค่าของผู้ใช้
 3. **การกำหนดค่าแบบกำหนดเอง** (`OPENCTRLC_CONFIG` env var) - การแทนที่แบบกำหนดเอง
 4. **การกำหนดค่าโครงการ** (`openctrlc.json` ในโครงการ) - การตั้งค่าเฉพาะโครงการ
 5. **`.openctrlc` ไดเรกทอรี** - ตัวแทน คำสั่ง ปลั๊กอิน
@@ -53,7 +53,7 @@ OpenCode รองรับทั้งรูปแบบ **JSON** และ **J
 ซึ่งหมายความว่าการกำหนดค่าโปรเจ็กต์สามารถแทนที่ค่าเริ่มต้นส่วนกลางได้ และการกำหนดค่าส่วนกลางสามารถแทนที่ค่าเริ่มต้นขององค์กรระยะไกลได้
 
 :::note
-ไดเรกทอรี `.openctrlc` และ `~/.config/opencode` ใช้ **ชื่อพหูพจน์** สำหรับไดเรกทอรีย่อย: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` และ `themes/` ชื่อเอกพจน์ (เช่น `agent/`) ยังรองรับความเข้ากันได้แบบย้อนหลังด้วย
+ไดเรกทอรี `.openctrlc` และ `~/.config/openctrlc` ใช้ **ชื่อพหูพจน์** สำหรับไดเรกทอรีย่อย: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` และ `themes/` ชื่อเอกพจน์ (เช่น `agent/`) ยังรองรับความเข้ากันได้แบบย้อนหลังด้วย
 :::
 
 ---
@@ -96,9 +96,9 @@ OpenCode รองรับทั้งรูปแบบ **JSON** และ **J
 
 ### ทั่วโลก
 
-วางการกำหนดค่า OpenCode ส่วนกลางของคุณใน `~/.config/opencode/openctrlc.json` ใช้การกำหนดค่าส่วนกลางสำหรับการตั้งค่าทั้งผู้ใช้ เช่น ผู้ให้บริการ รุ่น และสิทธิ์
+วางการกำหนดค่า OpenCode ส่วนกลางของคุณใน `~/.config/openctrlc/openctrlc.json` ใช้การกำหนดค่าส่วนกลางสำหรับการตั้งค่าทั้งผู้ใช้ เช่น ผู้ให้บริการ รุ่น และสิทธิ์
 
-สำหรับการตั้งค่าเฉพาะ TUI ให้ใช้ `~/.config/opencode/tui.json`
+สำหรับการตั้งค่าเฉพาะ TUI ให้ใช้ `~/.config/openctrlc/tui.json`
 
 การกำหนดค่าส่วนกลางจะแทนที่ค่าเริ่มต้นขององค์กรระยะไกล
 
@@ -126,7 +126,7 @@ OpenCode รองรับทั้งรูปแบบ **JSON** และ **J
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 มีการโหลดการกำหนดค่าแบบกำหนดเองระหว่างการกำหนดค่าส่วนกลางและโครงการตามลำดับความสำคัญ
@@ -142,7 +142,7 @@ opencode run "Hello world"
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 ไดเร็กทอรีที่กำหนดเองถูกโหลดหลังจากไดเร็กทอรี config ส่วนกลางและ `.openctrlc` ดังนั้นจึง **สามารถแทนที่** การตั้งค่าได้
@@ -184,7 +184,7 @@ opencode run "Hello world"
 
 ### เซิร์ฟเวอร์
 
-คุณสามารถกำหนดการตั้งค่าเซิร์ฟเวอร์สำหรับคำสั่ง `opencode serve` และ `opencode web` ผ่านตัวเลือก `server`
+คุณสามารถกำหนดการตั้งค่าเซิร์ฟเวอร์สำหรับคำสั่ง `openctrlc serve` และ `openctrlc web` ผ่านตัวเลือก `server`
 
 ```json title="openctrlc.json"
 {
@@ -204,7 +204,7 @@ opencode run "Hello world"
 - `port` - ​​พอร์ตสำหรับฟัง
 - `hostname` - ​​ชื่อโฮสต์ที่จะฟัง เมื่อเปิดใช้งาน `mdns` และไม่ได้ตั้งชื่อโฮสต์ ค่าเริ่มต้นจะเป็น `0.0.0.0`
 - `mdns` - ​​เปิดใช้งานการค้นหาบริการ mDNS ซึ่งช่วยให้อุปกรณ์อื่นๆ บนเครือข่ายค้นพบเซิร์ฟเวอร์ OpenCode ของคุณได้
-- `mdnsDomain` - ​​ชื่อโดเมนที่กำหนดเองสำหรับบริการ mDNS ค่าเริ่มต้นเป็น `opencode.local` มีประโยชน์สำหรับการเรียกใช้หลายอินสแตนซ์บนเครือข่ายเดียวกัน
+- `mdnsDomain` - ​​ชื่อโดเมนที่กำหนดเองสำหรับบริการ mDNS ค่าเริ่มต้นเป็น `openctrlc.local` มีประโยชน์สำหรับการเรียกใช้หลายอินสแตนซ์บนเครือข่ายเดียวกัน
 - `cors` - ​​ต้นกำเนิดเพิ่มเติมเพื่ออนุญาต CORS เมื่อใช้เซิร์ฟเวอร์ HTTP จากไคลเอนต์ที่ใช้เบราว์เซอร์ ค่าจะต้องเป็นต้นกำเนิดแบบเต็ม (สคีมา + โฮสต์ + พอร์ตเสริม) เช่น `https://app.example.com`
 
 [เรียนรู้เพิ่มเติมเกี่ยวกับเซิร์ฟเวอร์ที่นี่](/docs/server)
@@ -339,7 +339,7 @@ Bearer Token (`AWS_BEARER_TOKEN_BEDROCK` หรือ `/connect`) มีคว�
 }
 ```
 
-คุณยังสามารถกำหนดตัวแทนโดยใช้ไฟล์ Markdown ใน `~/.config/opencode/agents/` หรือ `.openctrlc/agents/` [เรียนรู้เพิ่มเติมที่นี่](/docs/agents)
+คุณยังสามารถกำหนดตัวแทนโดยใช้ไฟล์ Markdown ใน `~/.config/openctrlc/agents/` หรือ `.openctrlc/agents/` [เรียนรู้เพิ่มเติมที่นี่](/docs/agents)
 
 ---
 
@@ -356,7 +356,7 @@ Bearer Token (`AWS_BEARER_TOKEN_BEDROCK` หรือ `/connect`) มีคว�
 
 ตัวแทนเริ่มต้นจะต้องเป็นตัวแทนหลัก (ไม่ใช่ตัวแทนย่อย) ซึ่งอาจเป็นตัวแทนในตัว เช่น `"build"` หรือ `"plan"` หรือ [ตัวแทนที่กำหนดเอง](/docs/agents) ที่คุณกำหนดไว้ หากไม่มีตัวแทนที่ระบุหรือเป็นตัวแทนย่อย OpenCode จะถอยกลับไปที่ `"build"` พร้อมคำเตือน
 
-การตั้งค่านี้ใช้กับอินเทอร์เฟซทั้งหมด: TUI, CLI (`opencode run`) แอปเดสก์ท็อป และ GitHub Action
+การตั้งค่านี้ใช้กับอินเทอร์เฟซทั้งหมด: TUI, CLI (`openctrlc run`) แอปเดสก์ท็อป และ GitHub Action
 
 ---
 
@@ -403,7 +403,7 @@ Bearer Token (`AWS_BEARER_TOKEN_BEDROCK` หรือ `/connect`) มีคว�
 }
 ```
 
-คุณยังสามารถกำหนดคำสั่งโดยใช้ไฟล์ Markdown ใน `~/.config/opencode/commands/` หรือ `.openctrlc/commands/` [เรียนรู้เพิ่มเติมที่นี่](/docs/commands)
+คุณยังสามารถกำหนดคำสั่งโดยใช้ไฟล์ Markdown ใน `~/.config/openctrlc/commands/` หรือ `.openctrlc/commands/` [เรียนรู้เพิ่มเติมที่นี่](/docs/commands)
 
 ---
 
@@ -541,7 +541,7 @@ OpenCode จะดาวน์โหลดการอัปเดตใหม�
 
 [ปลั๊กอิน](/docs/plugins) ขยาย OpenCode ด้วยเครื่องมือที่กำหนดเอง hooks และการผสานรวม
 
-วางไฟล์ปลั๊กอินใน `.openctrlc/plugins/` หรือ `~/.config/opencode/plugins/` คุณยังสามารถโหลดปลั๊กอินจาก npm ผ่านตัวเลือก `plugin`
+วางไฟล์ปลั๊กอินใน `.openctrlc/plugins/` หรือ `~/.config/openctrlc/plugins/` คุณยังสามารถโหลดปลั๊กอินจาก npm ผ่านตัวเลือก `plugin`
 
 ```json title="openctrlc.json"
 {

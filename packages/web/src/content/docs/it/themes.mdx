@@ -5,7 +5,7 @@ description: Seleziona un tema integrato o definiscine uno tuo.
 
 Con OpenCode puoi scegliere tra diversi temi integrati, usare un tema che si adatta al tema del tuo terminale oppure definire un tema personalizzato.
 
-Per impostazione predefinita, OpenCode usa il tema `opencode`.
+Per impostazione predefinita, OpenCode usa il tema `openctrlc`.
 
 ---
 
@@ -83,7 +83,7 @@ OpenCode supporta un sistema di temi flessibile basato su JSON che permette di c
 I temi vengono caricati da più directory nel seguente ordine, dove le directory successive sovrascrivono le precedenti:
 
 1. **Temi integrati** - incorporati nel binario
-2. **Directory di configurazione utente** - in `~/.config/opencode/themes/*.json` o `$XDG_CONFIG_HOME/opencode/themes/*.json`
+2. **Directory di configurazione utente** - in `~/.config/openctrlc/themes/*.json` o `$XDG_CONFIG_HOME/openctrlc/themes/*.json`
 3. **Directory root del progetto** - in `<project-root>/.openctrlc/themes/*.json`
 4. **Directory di lavoro corrente** - in `./.openctrlc/themes/*.json`
 
@@ -98,8 +98,8 @@ Per creare un tema personalizzato, crea un file JSON in una delle directory dei 
 Per temi a livello utente:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 E per temi specifici del progetto.

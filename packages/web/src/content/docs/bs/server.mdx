@@ -1,19 +1,19 @@
 ---
 title: Server
-description: Komunicirajte s opencode serverom preko HTTP-a.
+description: Komunicirajte s openctrlc serverom preko HTTP-a.
 ---
 
 import config from "../../../../config.mjs"
 export const typesUrl = `${config.github}/blob/dev/packages/sdk/js/src/gen/types.gen.ts`
 
-Komanda `opencode serve` pokrece headless HTTP server koji izlaže OpenAPI endpoint koji opencode klijent moze koristiti.
+Komanda `openctrlc serve` pokrece headless HTTP server koji izlaže OpenAPI endpoint koji opencode klijent moze koristiti.
 
 ---
 
 ### Korištenje
 
 ```bash
-opencode serve [--port <number>] [--hostname <string>] [--cors <origin>]
+openctrlc serve [--port <number>] [--hostname <string>] [--cors <origin>]
 ```
 
 #### Opcije
@@ -23,38 +23,38 @@ opencode serve [--port <number>] [--hostname <string>] [--cors <origin>]
 | `--port`        | Port na kojem slusa                 | `4096`           |
 | `--hostname`    | Hostname na kojem slusa             | `127.0.0.1`      |
 | `--mdns`        | Ukljuci mDNS otkrivanje             | `false`          |
-| `--mdns-domain` | Prilagodeni domen za mDNS servis    | `opencode.local` |
+| `--mdns-domain` | Prilagodeni domen za mDNS servis    | `openctrlc.local` |
 | `--cors`        | Dodatni browser origin-i koje dozv. | `[]`             |
 
 `--cors` mozete navesti vise puta:
 
 ```bash
-opencode serve --cors http://localhost:5173 --cors https://app.example.com
+openctrlc serve --cors http://localhost:5173 --cors https://app.example.com
 ```
 
 ---
 
 ### Autentifikacija
 
-Postavite `OPENCTRLC_SERVER_PASSWORD` da zastitite server HTTP basic auth mehanizmom. Korisnicko ime je po defaultu `opencode`, ili postavite `OPENCTRLC_SERVER_USERNAME` za nadjacavanje. Ovo vazi i za `opencode serve` i za `opencode web`.
+Postavite `OPENCTRLC_SERVER_PASSWORD` da zastitite server HTTP basic auth mehanizmom. Korisnicko ime je po defaultu `openctrlc`, ili postavite `OPENCTRLC_SERVER_USERNAME` za nadjacavanje. Ovo vazi i za `openctrlc serve` i za `openctrlc web`.
 
 ```bash
-OPENCTRLC_SERVER_PASSWORD=your-password opencode serve
+OPENCTRLC_SERVER_PASSWORD=your-password openctrlc serve
 ```
 
 ---
 
 ### Kako radi
 
-Kada pokrenete `opencode`, pokrecu se TUI i server. TUI je klijent koji komunicira sa serverom. Server izlaže OpenAPI 3.1 spec endpoint koji se koristi i za generisanje [SDK-a](/docs/sdk).
+Kada pokrenete `openctrlc`, pokrecu se TUI i server. TUI je klijent koji komunicira sa serverom. Server izlaže OpenAPI 3.1 spec endpoint koji se koristi i za generisanje [SDK-a](/docs/sdk).
 
 :::tip
-Koristite opencode server za programsku interakciju sa opencode-om.
+Koristite openctrlc server za programsku interakciju sa opencode-om.
 :::
 
 Ova arhitektura omogucava opencode podrsku za vise klijenata i programsku interakciju.
 
-Mozete pokrenuti `opencode serve` da startate standalone server. Ako je opencode TUI vec pokrenut, `opencode serve` ce pokrenuti novi server.
+Mozete pokrenuti `openctrlc serve` da startate standalone server. Ako je opencode TUI vec pokrenut, `openctrlc serve` ce pokrenuti novi server.
 
 ---
 
@@ -80,7 +80,7 @@ Na primjer, `http://localhost:4096/doc`. Koristite specifikaciju da generisete k
 
 ## API-ji
 
-opencode server izlaže sljedece API-je.
+openctrlc server izlaže sljedece API-je.
 
 ---
 

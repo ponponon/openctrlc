@@ -189,7 +189,7 @@ Per la maggior parte dei server MCP con OAuth, non serve alcuna configurazione s
 }
 ```
 
-Se il server richiede autenticazione, OpenCode ti chiedera' di autenticarti la prima volta che provi a usarlo. In caso contrario, puoi [attivare manualmente il flusso](#authenticating) con `opencode mcp auth <server-name>`.
+Se il server richiede autenticazione, OpenCode ti chiedera' di autenticarti la prima volta che provi a usarlo. In caso contrario, puoi [attivare manualmente il flusso](#authenticating) con `openctrlc mcp auth <server-name>`.
 
 ---
 
@@ -223,22 +223,22 @@ Puoi avviare manualmente l'autenticazione o gestire le credenziali.
 Autentica con un server MCP specifico:
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 Elenca tutti i server MCP e il loro stato di autenticazione:
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 Rimuovi credenziali memorizzate:
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-Il comando `mcp auth` aprira' il browser per l'autorizzazione. Dopo l'autorizzazione, OpenCode memorizzera' i token in modo sicuro in `~/.local/share/opencode/mcp-auth.json`.
+Il comando `mcp auth` aprira' il browser per l'autorizzazione. Dopo l'autorizzazione, OpenCode memorizzera' i token in modo sicuro in `~/.local/share/openctrlc/mcp-auth.json`.
 
 ---
 
@@ -279,10 +279,10 @@ Se un server MCP remoto non riesce ad autenticarsi, puoi diagnosticare i problem
 
 ```bash
 # View auth status for all OAuth-capable servers
-opencode mcp auth list
+openctrlc mcp auth list
 
 # Debug connection and OAuth flow for a specific server
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 Il comando `mcp debug` mostra lo stato di autenticazione corrente, testa la connettivita' HTTP e prova il flusso di discovery OAuth.
@@ -420,7 +420,7 @@ Aggiungi il [server MCP di Sentry](https://mcp.sentry.dev) per interagire con i 
 Dopo aver aggiunto la configurazione, autentica con Sentry:
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 Questo aprira' una finestra del browser per completare il flusso OAuth e collegare OpenCode al tuo account Sentry.

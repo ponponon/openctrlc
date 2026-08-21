@@ -5,7 +5,7 @@ description: 組み込みのテーマを選択するか、独自のテーマを�
 
 OpenCode を使用すると、いくつかの組み込みテーマから 1 つを選択したり、ターミナルのテーマに適合するテーマを使用したり、独自のカスタムテーマを定義したりできます。
 
-デフォルトでは、OpenCode は独自の `opencode` テーマを使用します。
+デフォルトでは、OpenCode は独自の `openctrlc` テーマを使用します。
 
 ---
 
@@ -83,7 +83,7 @@ OpenCode は、ユーザーがテーマを簡単に作成およびカスタマ�
 テーマは複数のディレクトリから次の順序でロードされ、後のディレクトリが前のディレクトリをオーバーライドします。
 
 1. **組み込みテーマ** - これらはバイナリに埋め込まれています
-2. **ユーザー設定ディレクトリ** - `~/.config/opencode/themes/*.json` または `$XDG_CONFIG_HOME/opencode/themes/*.json` で定義されます
+2. **ユーザー設定ディレクトリ** - `~/.config/openctrlc/themes/*.json` または `$XDG_CONFIG_HOME/openctrlc/themes/*.json` で定義されます
 3. **プロジェクトのルートディレクトリ** - `<project-root>/.openctrlc/themes/*.json` で定義されます。
 4. **現在の作業ディレクトリ** - `./.openctrlc/themes/*.json` で定義
 
@@ -98,8 +98,8 @@ OpenCode は、ユーザーがテーマを簡単に作成およびカスタマ�
 ユーザー全体のテーマの場合:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 そしてプロジェクト固有のテーマについても。
@@ -381,7 +381,7 @@ OpenCode は、ユーザーがテーマを簡単に作成およびカスタマ�
 テーマは複数のディレクトリから次の順序でロードされ、後のディレクトリが前のディレクトリをオーバーライドします。
 
 1. **組み込みテーマ** - これらはバイナリに埋め込まれています
-2. **ユーザー設定ディレクトリ** - `~/.config/opencode/themes/*.json` または `$XDG_CONFIG_HOME/opencode/themes/*.json` で定義されます
+2. **ユーザー設定ディレクトリ** - `~/.config/openctrlc/themes/*.json` または `$XDG_CONFIG_HOME/openctrlc/themes/*.json` で定義されます
 3. **プロジェクトのルート ディレクトリ** - `<project-root>/.openctrlc/themes/*.json` で定義されます。
 4. **現在の作業ディレクトリ** - `./.openctrlc/themes/*.json` で定義
 
@@ -396,8 +396,8 @@ OpenCode は、ユーザーがテーマを簡単に作成およびカスタマ�
 ユーザー全体のテーマの場合:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 そしてプロジェクト固有のテーマについても。

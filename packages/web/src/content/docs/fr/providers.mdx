@@ -18,7 +18,7 @@ Pour ajouter un fournisseur, vous devez :
 ### Informations d'identification
 
 Lorsque vous ajoutez les clés API d'un fournisseur avec la commande `/connect`, elles sont stockées
-en `~/.local/share/opencode/auth.json`.
+en `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -1029,7 +1029,7 @@ Si vous voyez une fonctionnalité ou un modèle d'Helicone qui n'est pas configu
 
 Voici le [Répertoire des modèles d'Helicone](https://helicone.ai/models), vous en aurez besoin pour récupérer les identifiants des modèles que vous souhaitez ajouter.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1057,7 +1057,7 @@ Voici le [Répertoire des modèles d'Helicone](https://helicone.ai/models), vous
 
 Helicone prend en charge les en-têtes personnalisés pour des fonctionnalités telles que la mise en cache, le suivi des utilisateurs et la gestion des sessions. Ajoutez-les à la configuration de votre fournisseur en utilisant `options.headers` :
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1985,7 +1985,7 @@ Les champs `limit` permettent à OpenCode de comprendre la quantité de contexte
 
 Si vous rencontrez des difficultés lors de la configuration d'un fournisseur, vérifiez les points suivants :
 
-1. **Vérifiez la configuration de l'authentification** : exécutez `opencode auth list` pour voir si les informations d'identification
+1. **Vérifiez la configuration de l'authentification** : exécutez `openctrlc auth list` pour voir si les informations d'identification
    pour le fournisseur sont ajoutés à votre configuration.
 
 Cela ne s'applique pas aux fournisseurs comme Amazon Bedrock, qui s'appuient sur des variables d'environnement pour leur authentification.

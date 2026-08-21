@@ -43,7 +43,7 @@ Yapılandırma dosyaları değiştirilmez, birleştirilir. Aşağıdaki yapılan
 Yapılandırma kaynakları bu sırayla yüklenir (sonraki kaynaklar öncekileri geçersiz kılar):
 
 1. **Uzak yapılandırma** (`.well-known/opencode`'dan) - kurumsal varsayılanlar
-2. **Genel yapılandırma** (`~/.config/opencode/openctrlc.json`) - kullanıcı tercihleri
+2. **Genel yapılandırma** (`~/.config/openctrlc/openctrlc.json`) - kullanıcı tercihleri
 3. **Özel yapılandırma** (`OPENCTRLC_CONFIG` env var) - özel geçersiz kılmalar
 4. **Proje yapılandırması** (projedeki `openctrlc.json`) - projeye özgü ayarlar
 5. **`.openctrlc` dizinleri** - agent'lar, komutlar, eklentiler
@@ -52,7 +52,7 @@ Yapılandırma kaynakları bu sırayla yüklenir (sonraki kaynaklar öncekileri 
 Bu, proje yapılandırmalarının genel varsayılanları geçersiz kılabileceği ve genel yapılandırmaların uzak organizasyonel varsayılanları geçersiz kılabileceği anlamına gelir.
 
 :::note
-`.openctrlc` ve `~/.config/opencode` dizinleri alt dizinler için **çoğul adlar** kullanır: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` ve `themes/`. Tekil adlar (örneğin, `agent/`) da geriye dönük uyumluluk açısından desteklenir.
+`.openctrlc` ve `~/.config/openctrlc` dizinleri alt dizinler için **çoğul adlar** kullanır: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` ve `themes/`. Tekil adlar (örneğin, `agent/`) da geriye dönük uyumluluk açısından desteklenir.
 :::
 
 ---
@@ -95,7 +95,7 @@ Yerel yapılandırmanızda belirli sunucuları etkinleştirebilirsiniz:
 
 ### Global
 
-Global opencode yapılandırmanızı `~/.config/opencode/openctrlc.json` içine yerleştirin. Temalar, sağlayıcılar veya tuş atamaları gibi kullanıcı çapındaki tercihler için genel yapılandırmayı kullanın.
+Global opencode yapılandırmanızı `~/.config/openctrlc/openctrlc.json` içine yerleştirin. Temalar, sağlayıcılar veya tuş atamaları gibi kullanıcı çapındaki tercihler için genel yapılandırmayı kullanın.
 
 Genel yapılandırma, uzak kurumsal varsayılanları geçersiz kılar.
 
@@ -121,7 +121,7 @@ Bunun Git'te kontrol edilmesi de güvenlidir ve global olanla aynı şemayı kul
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 Özel yapılandırma genel ve proje yapılandırmaları arasında öncelik sırasına göre yüklenir.
@@ -137,7 +137,7 @@ aynı yapıyı takip edin.
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 Özel dizin, genel yapılandırma ve `.openctrlc` dizinlerinden sonra yüklenir, böylece bunların ayarlarını **geçersiz kılabilir**.
@@ -181,7 +181,7 @@ Mevcut seçenekler:
 
 ### Sunucu
 
-`opencode serve` ve `opencode web` komutları için sunucu ayarlarını `server` seçeneği aracılığıyla yapılandırabilirsiniz.
+`openctrlc serve` ve `openctrlc web` komutları için sunucu ayarlarını `server` seçeneği aracılığıyla yapılandırabilirsiniz.
 
 ```json title="openctrlc.json"
 {
@@ -201,7 +201,7 @@ Mevcut seçenekler:
 - `port` - Dinlenecek port.
 - `hostname` - Dinlenecek ana bilgisayar adı. `mdns` etkinleştirildiğinde ve hiçbir ana bilgisayar adı ayarlanmadığında, varsayılan değer `0.0.0.0` olur.
 - `mdns` - mDNS hizmet bulmayı etkinleştirin. Bu, ağdaki diğer cihazların opencode sunucunuzu keşfetmesine olanak tanır.
-- `mdnsDomain` - mDNS hizmeti için özel alan adı. Varsayılan olarak `opencode.local` şeklindedir. Aynı ağda birden fazla örneği çalıştırmak için kullanışlıdır.
+- `mdnsDomain` - mDNS hizmeti için özel alan adı. Varsayılan olarak `openctrlc.local` şeklindedir. Aynı ağda birden fazla örneği çalıştırmak için kullanışlıdır.
 - `cors` - Tarayıcı tabanlı bir istemciden HTTP sunucusunu kullanırken CORS'ye izin verecek ek kaynaklar. Değerler tam kaynaklar olmalıdır (şema + ana bilgisayar + isteğe bağlı bağlantı noktası), örneğin `https://app.example.com`.
 
 [Sunucu hakkında daha fazla bilgi](/docs/server).
@@ -337,7 +337,7 @@ opencode yapılandırmanızda kullanmak istediğiniz temayı `theme` seçeneği 
 }
 ```
 
-Agent'ları `~/.config/opencode/agents/` veya `.openctrlc/agents/` içindeki Markdown dosyalarıyla da tanımlayabilirsiniz. [Daha fazla bilgi](/docs/agents).
+Agent'ları `~/.config/openctrlc/agents/` veya `.openctrlc/agents/` içindeki Markdown dosyalarıyla da tanımlayabilirsiniz. [Daha fazla bilgi](/docs/agents).
 
 ---
 
@@ -354,7 +354,7 @@ Agent'ları `~/.config/opencode/agents/` veya `.openctrlc/agents/` içindeki Mar
 
 Varsayılan agent, birincil agent olmalıdır (alt agent değil). Bu, `"build"` veya `"plan"` gibi yerleşik bir agent ya da tanımladığınız bir [özel agent](/docs/agents) olabilir. Belirtilen agent mevcut değilse veya bir alt agent ise, opencode bir uyarıyla birlikte `"build"`'ye geri döner.
 
-Bu ayar tüm arayüzler için geçerlidir: TUI, CLI (`opencode run`), masaüstü uygulaması ve GitHub Action.
+Bu ayar tüm arayüzler için geçerlidir: TUI, CLI (`openctrlc run`), masaüstü uygulaması ve GitHub Action.
 
 ---
 
@@ -401,7 +401,7 @@ Varsayılan olarak paylaşım, `/share` komutunu kullanarak konuşmaları açık
 }
 ```
 
-Komutları `~/.config/opencode/commands/` veya `.openctrlc/commands/` içindeki Markdown dosyalarıyla da tanımlayabilirsiniz. [Daha fazla bilgi](/docs/commands).
+Komutları `~/.config/openctrlc/commands/` veya `.openctrlc/commands/` içindeki Markdown dosyalarıyla da tanımlayabilirsiniz. [Daha fazla bilgi](/docs/commands).
 
 ---
 
@@ -539,7 +539,7 @@ Kullanmak istediğiniz MCP sunucularını `mcp` seçeneği aracılığıyla yap�
 
 [Eklentiler](/docs/plugins) opencode'u özel araçlar, kancalar ve entegrasyonlarla genişletin.
 
-Eklenti dosyalarını `.openctrlc/plugins/` veya `~/.config/opencode/plugins/` içine yerleştirin. Ayrıca eklentileri `plugin` seçeneği aracılığıyla npm'den de yükleyebilirsiniz.
+Eklenti dosyalarını `.openctrlc/plugins/` veya `~/.config/openctrlc/plugins/` içine yerleştirin. Ayrıca eklentileri `plugin` seçeneği aracılığıyla npm'den de yükleyebilirsiniz.
 
 ```json title="openctrlc.json"
 {

@@ -14,7 +14,7 @@ opencode
 Ma accetta anche i comandi documentati in questa pagina. Questo ti permette di interagire con OpenCode in modo programmatico.
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+openctrlc run "Explain how closures work in JavaScript"
 ```
 
 ---
@@ -63,17 +63,17 @@ opencode agent [command]
 Collega un terminale a un backend server di OpenCode già in esecuzione avviato tramite i comandi `serve` o `web`.
 
 ```bash
-opencode attach [url]
+openctrlc attach [url]
 ```
 
 Questo consente di usare la TUI con un backend OpenCode remoto. Per esempio:
 
 ```bash
 # Start the backend server for web/mobile access
-opencode web --port 4096 --hostname 0.0.0.0
+openctrlc web --port 4096 --hostname 0.0.0.0
 
 # In un altro terminale, collega la TUI al backend in esecuzione
-opencode attach http://10.20.30.40:4096
+openctrlc attach http://10.20.30.40:4096
 ```
 
 #### Flag
@@ -85,7 +85,7 @@ opencode attach http://10.20.30.40:4096
 | <nobr><code>{"--session"}</code></nobr>  | `-s`  | ID sessione da continuare                                                                       |
 | <nobr><code>{"--fork"}</code></nobr>     |       | Crea un fork della sessione durante la continuazione (usa con `--continue` o `--session`)       |
 | <nobr><code>{"--password"}</code></nobr> | `-p`  | Password per l'autenticazione di base (predefinita: `OPENCTRLC_SERVER_PASSWORD`)                 |
-| <nobr><code>{"--username"}</code></nobr> | `-u`  | Nome utente per l'autenticazione di base (predefinito: `OPENCTRLC_SERVER_USERNAME` o `opencode`) |
+| <nobr><code>{"--username"}</code></nobr> | `-u`  | Nome utente per l'autenticazione di base (predefinito: `OPENCTRLC_SERVER_USERNAME` o `openctrlc`) |
 
 ---
 
@@ -116,17 +116,17 @@ opencode agent list
 Comando per gestire le credenziali e il login dei provider.
 
 ```bash
-opencode auth [command]
+openctrlc auth [command]
 ```
 
 ---
 
 #### login
 
-OpenCode si basa sull'elenco provider di [Models.dev](https://models.dev), quindi puoi usare `opencode auth login` per configurare le API key per qualunque provider tu voglia usare. Le credenziali vengono salvate in `~/.local/share/opencode/auth.json`.
+OpenCode si basa sull'elenco provider di [Models.dev](https://models.dev), quindi puoi usare `openctrlc auth login` per configurare le API key per qualunque provider tu voglia usare. Le credenziali vengono salvate in `~/.local/share/openctrlc/auth.json`.
 
 ```bash
-opencode auth login
+openctrlc auth login
 ```
 
 Quando OpenCode si avvia, carica i provider dal file delle credenziali e, se presenti, anche eventuali key definite nell'ambiente o in un file `.env` nel progetto.
@@ -138,13 +138,13 @@ Quando OpenCode si avvia, carica i provider dal file delle credenziali e, se pre
 Elenca tutti i provider autenticati come salvati nel file delle credenziali.
 
 ```bash
-opencode auth list
+openctrlc auth list
 ```
 
 Oppure la versione corta.
 
 ```bash
-opencode auth ls
+openctrlc auth ls
 ```
 
 ---
@@ -154,7 +154,7 @@ opencode auth ls
 Esegue il logout da un provider rimuovendolo dal file delle credenziali.
 
 ```bash
-opencode auth logout
+openctrlc auth logout
 ```
 
 ---
@@ -203,7 +203,7 @@ opencode github run
 Gestisci i server Model Context Protocol.
 
 ```bash
-opencode mcp [command]
+openctrlc mcp [command]
 ```
 
 ---
@@ -213,7 +213,7 @@ opencode mcp [command]
 Aggiungi un server MCP alla tua configurazione.
 
 ```bash
-opencode mcp add
+openctrlc mcp add
 ```
 
 Questo comando ti guida nell'aggiunta di un server MCP locale o remoto.
@@ -225,13 +225,13 @@ Questo comando ti guida nell'aggiunta di un server MCP locale o remoto.
 Elenca tutti i server MCP configurati e il loro stato di connessione.
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 Oppure la versione corta.
 
 ```bash
-opencode mcp ls
+openctrlc mcp ls
 ```
 
 ---
@@ -241,7 +241,7 @@ opencode mcp ls
 Autentica con un server MCP con OAuth abilitato.
 
 ```bash
-opencode mcp auth [name]
+openctrlc mcp auth [name]
 ```
 
 Se non fornisci un nome server, ti verrà chiesto di selezionare tra i server OAuth-capable disponibili.
@@ -249,13 +249,13 @@ Se non fornisci un nome server, ti verrà chiesto di selezionare tra i server OA
 Puoi anche elencare i server OAuth-capable e il loro stato di autenticazione.
 
 ```bash
-opencode mcp auth list
+openctrlc mcp auth list
 ```
 
 Oppure la versione corta.
 
 ```bash
-opencode mcp auth ls
+openctrlc mcp auth ls
 ```
 
 ---
@@ -265,7 +265,7 @@ opencode mcp auth ls
 Rimuovi le credenziali OAuth per un server MCP.
 
 ```bash
-opencode mcp logout [name]
+openctrlc mcp logout [name]
 ```
 
 ---
@@ -275,7 +275,7 @@ opencode mcp logout [name]
 Esegui debug di problemi di connessione OAuth per un server MCP.
 
 ```bash
-opencode mcp debug <name>
+openctrlc mcp debug <name>
 ```
 
 ---
@@ -285,7 +285,7 @@ opencode mcp debug <name>
 Elenca tutti i modelli disponibili dai provider configurati.
 
 ```bash
-opencode models [provider]
+openctrlc models [provider]
 ```
 
 Questo comando mostra tutti i modelli disponibili tra i provider configurati nel formato `provider/model`.
@@ -295,7 +295,7 @@ Questo comando mostra tutti i modelli disponibili tra i provider configurati nel
 Puoi anche passare opzionalmente un ID provider per filtrare i modelli a quel provider.
 
 ```bash
-opencode models anthropic
+openctrlc models anthropic
 ```
 
 #### Flag
@@ -308,7 +308,7 @@ opencode models anthropic
 Usa `--refresh` per aggiornare l'elenco modelli in cache. È utile quando nuovi modelli vengono aggiunti a un provider e vuoi vederli in OpenCode.
 
 ```bash
-opencode models --refresh
+openctrlc models --refresh
 ```
 
 ---
@@ -318,23 +318,23 @@ opencode models --refresh
 Esegui opencode in modalità non interattiva passando un prompt direttamente.
 
 ```bash
-opencode run [message..]
+openctrlc run [message..]
 ```
 
 È utile per scripting, automazione o quando vuoi una risposta rapida senza avviare la TUI completa. Per esempio:
 
-```bash "opencode run"
-opencode run Explain the use of context in Go
+```bash "openctrlc run"
+openctrlc run Explain the use of context in Go
 ```
 
-Puoi anche collegarti a una istanza `opencode serve` già in esecuzione per evitare i cold boot dei server MCP ad ogni esecuzione:
+Puoi anche collegarti a una istanza `openctrlc serve` già in esecuzione per evitare i cold boot dei server MCP ad ogni esecuzione:
 
 ```bash
 # Avvia un server headless in un terminale
-opencode serve
+openctrlc serve
 
 # In un altro terminale, esegui comandi che si collegano ad esso
-opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
+openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 ```
 
 #### Flag
@@ -353,7 +353,7 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--title"}</code></nobr>    |       | Titolo sessione (usa prompt troncato se non viene fornito un valore)                            |
 | <nobr><code>{"--attach"}</code></nobr>   |       | Attach a un server opencode in esecuzione (es. http://localhost:4096)                           |
 | <nobr><code>{"--password"}</code></nobr> | `-p`  | Password per l'autenticazione di base (predefinita: `OPENCTRLC_SERVER_PASSWORD`)                 |
-| <nobr><code>{"--username"}</code></nobr> | `-u`  | Nome utente per l'autenticazione di base (predefinito: `OPENCTRLC_SERVER_USERNAME` o `opencode`) |
+| <nobr><code>{"--username"}</code></nobr> | `-u`  | Nome utente per l'autenticazione di base (predefinito: `OPENCTRLC_SERVER_USERNAME` o `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |       | Directory di esecuzione, o percorso sul server remoto durante il collegamento                   |
 | <nobr><code>{"--variant"}</code></nobr>  |       | Variante del modello (sforzo di ragionamento specifico del provider)                            |
 | <nobr><code>{"--thinking"}</code></nobr> |       | Mostra blocchi di pensiero                                                                      |
@@ -366,10 +366,10 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 Avvia un server OpenCode headless per accesso via API. Vedi le [server docs](/docs/server) per l'interfaccia HTTP completa.
 
 ```bash
-opencode serve
+openctrlc serve
 ```
 
-Avvia un server HTTP che espone accesso API alle funzionalità di opencode senza la TUI. Imposta `OPENCTRLC_SERVER_PASSWORD` per abilitare HTTP basic auth (username di default `opencode`).
+Avvia un server HTTP che espone accesso API alle funzionalità di opencode senza la TUI. Imposta `OPENCTRLC_SERVER_PASSWORD` per abilitare HTTP basic auth (username di default `openctrlc`).
 
 #### Flag
 
@@ -462,10 +462,10 @@ opencode import https://opncd.ai/s/abc123
 Avvia un server OpenCode headless con interfaccia web.
 
 ```bash
-opencode web
+openctrlc web
 ```
 
-Avvia un server HTTP e apre un browser per accedere a OpenCode tramite interfaccia web. Imposta `OPENCTRLC_SERVER_PASSWORD` per abilitare HTTP basic auth (username di default `opencode`).
+Avvia un server HTTP e apre un browser per accedere a OpenCode tramite interfaccia web. Imposta `OPENCTRLC_SERVER_PASSWORD` per abilitare HTTP basic auth (username di default `openctrlc`).
 
 #### Flag
 
@@ -483,7 +483,7 @@ Avvia un server HTTP e apre un browser per accedere a OpenCode tramite interfacc
 Avvia un server ACP (Agent Client Protocol).
 
 ```bash
-opencode acp
+openctrlc acp
 ```
 
 Questo comando avvia un server ACP che comunica via stdin/stdout usando nd-JSON.
@@ -503,7 +503,7 @@ Questo comando avvia un server ACP che comunica via stdin/stdout usando nd-JSON.
 Disinstalla OpenCode e rimuove tutti i file correlati.
 
 ```bash
-opencode uninstall
+openctrlc uninstall
 ```
 
 #### Flag
@@ -522,19 +522,19 @@ opencode uninstall
 Aggiorna opencode all'ultima versione o a una versione specifica.
 
 ```bash
-opencode upgrade [target]
+openctrlc upgrade [target]
 ```
 
 Per aggiornare all'ultima versione:
 
 ```bash
-opencode upgrade
+openctrlc upgrade
 ```
 
 Per aggiornare a una versione specifica:
 
 ```bash
-opencode upgrade v0.1.48
+openctrlc upgrade v0.1.48
 ```
 
 #### Flag
@@ -586,7 +586,7 @@ OpenCode può essere configurato tramite variabili d'ambiente.
 | `OPENCTRLC_CLIENT`                     | string  | Identificatore client (default `cli`)                       |
 | `OPENCTRLC_ENABLE_EXA`                 | boolean | Abilita gli strumenti di web search Exa                     |
 | `OPENCTRLC_SERVER_PASSWORD`            | string  | Abilita basic auth per `serve`/`web`                        |
-| `OPENCTRLC_SERVER_USERNAME`            | string  | Sovrascrive lo username basic auth (default `opencode`)     |
+| `OPENCTRLC_SERVER_USERNAME`            | string  | Sovrascrive lo username basic auth (default `openctrlc`)     |
 | `OPENCTRLC_MODELS_URL`                 | string  | URL personalizzato per recuperare la configurazione modelli |
 
 ---

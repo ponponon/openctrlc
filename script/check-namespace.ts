@@ -46,6 +46,7 @@ const ignoredFiles = [
   "script/check-namespace.ts",
 ]
 const ignoredExtensions = [".md", ".mdx"]
+const auditedMarkdown = [".openctrlc/", "packages/web/src/content/docs/", "packages/core/src/plugin/skill/"]
 const pattern = `@opencode-ai/(${internalPackages.join("|")})([^A-Za-z0-9._-]|$)`
 const grepProcess = Bun.spawn(["git", "grep", "-I", "-n", "-E", pattern, "--", "."], {
   stdout: "pipe",
@@ -56,7 +57,9 @@ const exitCode = await grepProcess.exited
 const violations = (output.trim() === "" ? [] : output.trim().split("\n")).flatMap((line) => {
   const file = line.split(":", 1)[0]
   if (ignoredFiles.some((ignored) => file.startsWith(ignored))) return []
-  if (ignoredExtensions.some((extension) => file.endsWith(extension))) return []
+  if (ignoredExtensions.some((extension) => file.endsWith(extension)) && !auditedMarkdown.some((prefix) => file.startsWith(prefix))) {
+    return []
+  }
 
   return [...line.matchAll(/@opencode-ai\/[A-Za-z0-9._-]+/g)]
     .map((match) => match[0])
@@ -81,6 +84,10 @@ function isExternalContract(file: string, line: string, name: string) {
       file === "bun.lock" ||
       file.startsWith("packages/web/src/content/docs/") && file.endsWith("ecosystem.mdx")
     )
+  }
+
+  if (name === "@opencode-ai/plugin") {
+    return file === "bun.lock" || file.startsWith("packages/web/src/content/docs/") || file === "packages/core/src/plugin/skill/customize-opencode.md"
   }
 
   if (!file.endsWith("bun.lock")) return false

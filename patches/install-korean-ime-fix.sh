@@ -20,7 +20,7 @@ NC='\033[0m'
 
 OPENCTRLC_DIR="${OPENCTRLC_DIR:-$HOME/.openctrlc}"
 OPENCTRLC_SRC="${OPENCTRLC_SRC:-$HOME/.openctrlc-src}"
-FORK_REPO="${FORK_REPO:-https://github.com/claudianus/opencode.git}"
+FORK_REPO="${FORK_REPO:-https://github.com/ponponon/openctrlc.git}"
 FORK_BRANCH="${FORK_BRANCH:-fix-zhipuai-coding-plan-thinking}"
 
 info()  { echo -e "${MUTED}$*${NC}"; }
@@ -114,7 +114,7 @@ echo ""
 ok "Done! Korean IME fix is now active."
 echo ""
 info "To uninstall and revert to the official release:"
-echo "  curl -fsSL https://opencode.ai/install | bash"
+echo "  curl -fsSL https://openctrlc.ai/install | bash"
 echo ""
 info "To update (re-pull and rebuild):"
 echo "  $0"

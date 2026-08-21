@@ -188,10 +188,10 @@ Agent'ları `openctrlc.json` yapılandırma dosyanızda yapılandırın:
 
 Ayrıca agent'ları Markdown dosyalarını kullanarak da tanımlayabilirsiniz. Bunları şuraya yerleştirin:
 
-- Global: `~/.config/opencode/agents/`
+- Global: `~/.config/openctrlc/agents/`
 - Proje başına: `.openctrlc/agents/`
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Reviews code for quality and best practices
 mode: subagent
@@ -454,7 +454,7 @@ Bu izinleri agent başına geçersiz kılabilirsiniz.
 
 İzinleri Markdown agent'larında da ayarlayabilirsiniz.
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent
@@ -664,7 +664,7 @@ Agent yapılandırmanızdaki diğer seçenekler, model seçenekleri olarak **do�
 Bu ek seçenekler modele ve sağlayıcıya özeldir. Kullanılabilir parametreler için sağlayıcınızın belgelerine bakın.
 
 :::tip
-Mevcut modellerin listesini görmek için `opencode models` komutunu çalıştırın.
+Mevcut modellerin listesini görmek için `openctrlc models` komutunu çalıştırın.
 :::
 
 ---
@@ -711,7 +711,7 @@ Paylaşmak istediğiniz bir agent'ınız var mı? [Submit a PR](https://github.c
 
 ### Dokümantasyon agent'ı
 
-```markdown title="~/.config/opencode/agents/docs-writer.md"
+```markdown title="~/.config/openctrlc/agents/docs-writer.md"
 ---
 description: Writes and maintains project documentation
 mode: subagent
@@ -733,7 +733,7 @@ Focus on:
 
 ### Güvenlik denetçisi
 
-```markdown title="~/.config/opencode/agents/security-auditor.md"
+```markdown title="~/.config/openctrlc/agents/security-auditor.md"
 ---
 description: Performs security audits and identifies vulnerabilities
 mode: subagent

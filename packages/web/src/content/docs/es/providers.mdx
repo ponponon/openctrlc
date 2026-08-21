@@ -18,7 +18,7 @@ Para agregar un proveedor necesita:
 ### Credenciales
 
 Cuando agrega las claves API de un proveedor con el comando `/connect`, se almacenan
-en `~/.local/share/opencode/auth.json`.
+en `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -1022,7 +1022,7 @@ En caso de que vea una característica o modelo de Helicone que no esté configu
 
 Aquí está el [Directorio de modelos de Helicone](https://helicone.ai/models), lo necesitará para obtener las ID de los modelos que desea agregar.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1050,7 +1050,7 @@ Aquí está el [Directorio de modelos de Helicone](https://helicone.ai/models), 
 
 Helicone admite encabezados personalizados para funciones como almacenamiento en caché, seguimiento de usuarios y gestión de sesiones. Agréguelos a la configuración de su proveedor usando `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1978,7 +1978,7 @@ Los campos `limit` le permiten a OpenCode comprender cuánto contexto le queda. 
 
 Si tiene problemas para configurar un proveedor, verifique lo siguiente:
 
-1. **Verifique la configuración de autenticación**: Ejecute `opencode auth list` para ver si las credenciales
+1. **Verifique la configuración de autenticación**: Ejecute `openctrlc auth list` para ver si las credenciales
    para el proveedor se agregan a su configuración.
 
    Esto no se aplica a proveedores como Amazon Bedrock, que dependen de variables de entorno para su autenticación.

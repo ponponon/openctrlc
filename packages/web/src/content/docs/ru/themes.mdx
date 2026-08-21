@@ -5,7 +5,7 @@ description: Выберите встроенную тему или опреде�
 
 С помощью opencode вы можете выбрать одну из нескольких встроенных тем, использовать тему, которая адаптируется к теме вашего терминала, или определить свою собственную тему.
 
-По умолчанию opencode использует нашу собственную тему `opencode`.
+По умолчанию opencode использует нашу собственную тему `openctrlc`.
 
 ---
 
@@ -83,7 +83,7 @@ opencode поддерживает гибкую систему тем на осн
 Темы загружаются из нескольких каталогов в следующем порядке: более поздние каталоги переопределяют предыдущие:
 
 1. **Встроенные темы** – они встроены в двоичный файл.
-2. **Каталог конфигурации пользователя** – определяется в `~/.config/opencode/themes/*.json` или `$XDG_CONFIG_HOME/opencode/themes/*.json`.
+2. **Каталог конфигурации пользователя** – определяется в `~/.config/openctrlc/themes/*.json` или `$XDG_CONFIG_HOME/openctrlc/themes/*.json`.
 3. **Корневой каталог проекта** – определено в `<project-root>/.openctrlc/themes/*.json`.
 4. **Текущий рабочий каталог** – определено в `./.openctrlc/themes/*.json`.
 
@@ -98,8 +98,8 @@ opencode поддерживает гибкую систему тем на осн
 Для глобальных тем:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 Для тем проекта:

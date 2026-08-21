@@ -20,7 +20,7 @@ description: اكتب إضافاتك الخاصة لتوسيع OpenCode.
 ضع ملفات JavaScript أو TypeScript في دليل الإضافات.
 
 - `.openctrlc/plugins/` - إضافات على مستوى المشروع
-- `~/.config/opencode/plugins/` - إضافات عامة
+- `~/.config/openctrlc/plugins/` - إضافات عامة
 
 تُحمَّل الملفات في هذه الأدلة تلقائيا عند بدء التشغيل.
 
@@ -55,9 +55,9 @@ description: اكتب إضافاتك الخاصة لتوسيع OpenCode.
 
 تُحمَّل الإضافات من جميع المصادر وتعمل جميع الخطافات بالتتابع. ترتيب التحميل هو:
 
-1. إعدادات عامة (`~/.config/opencode/openctrlc.json`)
+1. إعدادات عامة (`~/.config/openctrlc/openctrlc.json`)
 2. إعدادات المشروع (`openctrlc.json`)
-3. دليل الإضافات العام (`~/.config/opencode/plugins/`)
+3. دليل الإضافات العام (`~/.config/openctrlc/plugins/`)
 4. دليل إضافات المشروع (`.openctrlc/plugins/`)
 
 تُحمَّل حزم npm المكررة ذات الاسم والإصدار نفسيهما مرة واحدة. ومع ذلك، تُحمَّل الإضافة المحلية وإضافة npm ذات الاسم المشابه كلتاهما بشكل مستقل.
@@ -128,7 +128,7 @@ export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
 بالنسبة لإضافات TypeScript، يمكنك استيراد الأنواع من حزمة الإضافة:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -280,7 +280,7 @@ export const InjectEnvPlugin = async () => {
 يمكن للإضافات أيضا إضافة أدوات مخصصة إلى opencode:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -336,7 +336,7 @@ export const MyPlugin = async ({ client }) => {
 خصّص السياق الذي يتم تضمينه عند ضغط جلسة:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -360,7 +360,7 @@ Include any state that should persist across compaction:
 يمكنك أيضا استبدال موجّه الضغط بالكامل عبر ضبط `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

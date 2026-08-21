@@ -20,7 +20,7 @@ description: OpenCode を拡張する独自のプラグインを作成します�
 JavaScript または TypeScript ファイルをプラグインディレクトリに配置します。
 
 - `.openctrlc/plugins/` - プロジェクトレベルのプラグイン
-- `~/.config/opencode/plugins/` - グローバルプラグイン
+- `~/.config/openctrlc/plugins/` - グローバルプラグイン
 
 これらのディレクトリ内のファイルは起動時に自動的にロードされます。
 
@@ -55,9 +55,9 @@ JavaScript または TypeScript ファイルをプラグインディレクトリ
 
 プラグインはすべてのソースからロードされ、すべてのフックが順番に実行されます。ロード順序は次のとおりです。
 
-1. グローバル設定 (`~/.config/opencode/openctrlc.json`)
+1. グローバル設定 (`~/.config/openctrlc/openctrlc.json`)
 2. プロジェクト設定 (`openctrlc.json`)
-3. グローバルプラグインディレクトリ (`~/.config/opencode/plugins/`)
+3. グローバルプラグインディレクトリ (`~/.config/openctrlc/plugins/`)
 4. プロジェクトプラグインディレクトリ (`.openctrlc/plugins/`)
 
 同じ名前とバージョンを持つ重複した npm パッケージは 1 回ロードされます。ただし、似た名前のローカルプラグインと npm プラグインは両方とも別々にロードされます。
@@ -128,7 +128,7 @@ export const MyPlugin = async ({ project, client, $, directory, worktree }) => {
 TypeScript プラグインの場合、プラグインパッケージから型をインポートできます。
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -266,7 +266,7 @@ export const MyPlugin = async ({ client }) => {
 セッションが圧縮されたときに含まれるコンテキストをカスタマイズします。
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -290,7 +290,7 @@ Include any state that should persist across compaction:
 `output.prompt` を設定することで、圧縮プロンプトを完全に置き換えることもできます。
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -356,7 +356,7 @@ export const InjectEnvPlugin = async () => {
 プラグインは OpenCode にカスタムツールを追加することもできます。
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -412,7 +412,7 @@ export const MyPlugin = async ({ client }) => {
 セッションが圧縮されたときに含まれるコンテキストをカスタマイズします。
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -436,7 +436,7 @@ Include any state that should persist across compaction:
 `output.prompt` を設定することで、圧縮プロンプトを完全に置き換えることもできます。
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

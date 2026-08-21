@@ -14,7 +14,7 @@ opencode
 ただし、このページに記載されているようにコマンドも受け入れます。これにより、OpenCode をプログラム的に操作できるようになります。
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+openctrlc run "Explain how closures work in JavaScript"
 ```
 
 ---
@@ -63,17 +63,17 @@ opencode agent [command]
 `serve` または `web` コマンドを使用して起動された、すでに実行中の OpenCode バックエンドサーバーにターミナルを接続します。
 
 ```bash
-opencode attach [url]
+openctrlc attach [url]
 ```
 
 これにより、リモート OpenCode バックエンドで TUI を使用できるようになります。例えば：
 
 ```bash
 # Start the backend server for web/mobile access
-opencode web --port 4096 --hostname 0.0.0.0
+openctrlc web --port 4096 --hostname 0.0.0.0
 
 # In another terminal, attach the TUI to the running backend
-opencode attach http://10.20.30.40:4096
+openctrlc attach http://10.20.30.40:4096
 ```
 
 #### フラグ
@@ -85,7 +85,7 @@ opencode attach http://10.20.30.40:4096
 | <nobr><code>{"--session"}</code></nobr>  | `-s`     | 続行するセッション ID                                                             |
 | <nobr><code>{"--fork"}</code></nobr>     |          | 続行時にセッションをフォーク（`--continue` または `--session` と使用）            |
 | <nobr><code>{"--password"}</code></nobr> | `-p`     | Basic 認証パスワード（デフォルトは `OPENCTRLC_SERVER_PASSWORD`）                   |
-| <nobr><code>{"--username"}</code></nobr> | `-u`     | Basic 認証ユーザー名（デフォルトは `OPENCTRLC_SERVER_USERNAME` または `opencode`） |
+| <nobr><code>{"--username"}</code></nobr> | `-u`     | Basic 認証ユーザー名（デフォルトは `OPENCTRLC_SERVER_USERNAME` または `openctrlc`） |
 
 ---
 
@@ -116,17 +116,17 @@ opencode agent list
 プロバイダーの資格情報とログインを管理するコマンド。
 
 ```bash
-opencode auth [command]
+openctrlc auth [command]
 ```
 
 ---
 
 #### login
 
-OpenCode は [Models.dev](https://models.dev) のプロバイダーリストを利用しているため、`opencode auth login` を使用して、使用したいプロバイダーの API キーを構成できます。これは `~/.local/share/opencode/auth.json` に保存されます。
+OpenCode は [Models.dev](https://models.dev) のプロバイダーリストを利用しているため、`openctrlc auth login` を使用して、使用したいプロバイダーの API キーを構成できます。これは `~/.local/share/openctrlc/auth.json` に保存されます。
 
 ```bash
-opencode auth login
+openctrlc auth login
 ```
 
 OpenCode が起動すると、認証情報ファイルからプロバイダーがロードされます。また、環境またはプロジェクト内の `.env` ファイルで定義されたキーがあるかどうかも確認します。
@@ -138,13 +138,13 @@ OpenCode が起動すると、認証情報ファイルからプロバイダー�
 認証情報ファイルに保存されているすべての認証されたプロバイダーをリストします。
 
 ```bash
-opencode auth list
+openctrlc auth list
 ```
 
 またはショートバージョン。
 
 ```bash
-opencode auth ls
+openctrlc auth ls
 ```
 
 ---
@@ -154,7 +154,7 @@ opencode auth ls
 資格情報ファイルからプロバイダーをクリアすることで、プロバイダーからログアウトします。
 
 ```bash
-opencode auth logout
+openctrlc auth logout
 ```
 
 ---
@@ -203,7 +203,7 @@ opencode github run
 モデルコンテキストプロトコルサーバーを管理します。
 
 ```bash
-opencode mcp [command]
+openctrlc mcp [command]
 ```
 
 ---
@@ -213,7 +213,7 @@ opencode mcp [command]
 MCP サーバーを構成に追加します。
 
 ```bash
-opencode mcp add
+openctrlc mcp add
 ```
 
 このコマンドは、ローカルまたはリモートの MCP サーバーを追加する手順を示します。
@@ -225,13 +225,13 @@ opencode mcp add
 構成されているすべての MCP サーバーとその接続ステータスをリストします。
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 または、短いバージョンを使用してください。
 
 ```bash
-opencode mcp ls
+openctrlc mcp ls
 ```
 
 ---
@@ -241,7 +241,7 @@ opencode mcp ls
 OAuth 対応の MCP サーバーで認証します。
 
 ```bash
-opencode mcp auth [name]
+openctrlc mcp auth [name]
 ```
 
 サーバー名を指定しない場合は、利用可能な OAuth 対応サーバーから選択するように求められます。
@@ -249,13 +249,13 @@ opencode mcp auth [name]
 OAuth 対応サーバーとその認証ステータスを一覧表示することもできます。
 
 ```bash
-opencode mcp auth list
+openctrlc mcp auth list
 ```
 
 または、短いバージョンを使用してください。
 
 ```bash
-opencode mcp auth ls
+openctrlc mcp auth ls
 ```
 
 ---
@@ -265,7 +265,7 @@ opencode mcp auth ls
 MCP サーバーの OAuth 資格情報を削除します。
 
 ```bash
-opencode mcp logout [name]
+openctrlc mcp logout [name]
 ```
 
 ---
@@ -275,7 +275,7 @@ opencode mcp logout [name]
 MCP サーバーの OAuth 接続の問題をデバッグします。
 
 ```bash
-opencode mcp debug <name>
+openctrlc mcp debug <name>
 ```
 
 ---
@@ -285,7 +285,7 @@ opencode mcp debug <name>
 構成されたプロバイダーから利用可能なすべてのモデルをリストします。
 
 ```bash
-opencode models [provider]
+openctrlc models [provider]
 ```
 
 このコマンドは、構成されたプロバイダー全体で利用可能なすべてのモデルを `provider/model` の形式で表示します。
@@ -295,7 +295,7 @@ opencode models [provider]
 オプションでプロバイダー ID を渡して、そのプロバイダーによってモデルをフィルターできます。
 
 ```bash
-opencode models anthropic
+openctrlc models anthropic
 ```
 
 #### フラグ
@@ -308,7 +308,7 @@ opencode models anthropic
 `--refresh` フラグを使用して、キャッシュされたモデルリストを更新します。これは、新しいモデルがプロバイダーに追加され、それを OpenCode で確認したい場合に便利です。
 
 ```bash
-opencode models --refresh
+openctrlc models --refresh
 ```
 
 ---
@@ -318,23 +318,23 @@ opencode models --refresh
 プロンプトを直接渡して、非対話モードで opencode を実行します。
 
 ```bash
-opencode run [message..]
+openctrlc run [message..]
 ```
 
 これは、スクリプト作成、自動化、または完全な TUI を起動せずに迅速な回答が必要な場合に便利です。例えば。
 
-```bash "opencode run"
-opencode run Explain the use of context in Go
+```bash "openctrlc run"
+openctrlc run Explain the use of context in Go
 ```
 
-実行中の `opencode serve` インスタンスにアタッチして、実行ごとの MCP サーバーのコールドブート時間を回避することもできます。
+実行中の `openctrlc serve` インスタンスにアタッチして、実行ごとの MCP サーバーのコールドブート時間を回避することもできます。
 
 ```bash
 # Start a headless server in one terminal
-opencode serve
+openctrlc serve
 
 # In another terminal, run commands that attach to it
-opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
+openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 ```
 
 #### フラグ
@@ -353,7 +353,7 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--title"}</code></nobr>    |          | セッションのタイトル (値が指定されていない場合は、切り詰められたプロンプトが使用されます) |
 | <nobr><code>{"--attach"}</code></nobr>   |          | 実行中の opencode サーバー (http://localhost:4096 など) に接続します。                    |
 | <nobr><code>{"--password"}</code></nobr> | `-p`     | Basic 認証パスワード（デフォルトは `OPENCTRLC_SERVER_PASSWORD`）                           |
-| <nobr><code>{"--username"}</code></nobr> | `-u`     | Basic 認証ユーザー名（デフォルトは `OPENCTRLC_SERVER_USERNAME` または `opencode`）         |
+| <nobr><code>{"--username"}</code></nobr> | `-u`     | Basic 認証ユーザー名（デフォルトは `OPENCTRLC_SERVER_USERNAME` または `openctrlc`）         |
 | <nobr><code>{"--dir"}</code></nobr>      |          | 実行ディレクトリ、またはアタッチ時のリモートサーバー上のパス                              |
 | <nobr><code>{"--variant"}</code></nobr>  |          | モデルバリアント（プロバイダー固有の推論レベル）                                          |
 | <nobr><code>{"--thinking"}</code></nobr> |          | 思考ブロックを表示                                                                        |
@@ -366,10 +366,10 @@ opencode run --attach http://localhost:4096 "Explain async/await in JavaScript"
 API アクセスのためにヘッドレス OpenCode サーバーを起動します。完全な HTTP インターフェイスについては、[サーバーのドキュメント](/docs/server) を確認してください。
 
 ```bash
-opencode serve
+openctrlc serve
 ```
 
-これにより、TUI インターフェイスを使用せずに opencode 機能への API アクセスを提供する HTTP サーバーが起動します。 `OPENCTRLC_SERVER_PASSWORD` を設定して HTTP 基本認証を有効にします (ユーザー名のデフォルトは `opencode`)。
+これにより、TUI インターフェイスを使用せずに opencode 機能への API アクセスを提供する HTTP サーバーが起動します。 `OPENCTRLC_SERVER_PASSWORD` を設定して HTTP 基本認証を有効にします (ユーザー名のデフォルトは `openctrlc`)。
 
 #### フラグ
 
@@ -462,10 +462,10 @@ opencode import https://opncd.ai/s/abc123
 Web インターフェイスを使用してヘッドレス OpenCode サーバーを起動します。
 
 ```bash
-opencode web
+openctrlc web
 ```
 
-これにより、HTTP サーバーが起動し、Web ブラウザが開き、Web インターフェイスを通じて OpenCode にアクセスします。 `OPENCTRLC_SERVER_PASSWORD` を設定して HTTP 基本認証を有効にします (ユーザー名のデフォルトは `opencode`)。
+これにより、HTTP サーバーが起動し、Web ブラウザが開き、Web インターフェイスを通じて OpenCode にアクセスします。 `OPENCTRLC_SERVER_PASSWORD` を設定して HTTP 基本認証を有効にします (ユーザー名のデフォルトは `openctrlc`)。
 
 #### フラグ
 
@@ -483,7 +483,7 @@ opencode web
 ACP (エージェントクライアントプロトコル) サーバーを起動します。
 
 ```bash
-opencode acp
+openctrlc acp
 ```
 
 このコマンドは、nd-JSON を使用して stdin/stdout 経由で通信する ACP サーバーを起動します。
@@ -503,7 +503,7 @@ opencode acp
 OpenCode をアンインストールし、関連ファイルをすべて削除します。
 
 ```bash
-opencode uninstall
+openctrlc uninstall
 ```
 
 #### フラグ
@@ -522,19 +522,19 @@ opencode uninstall
 opencode を最新バージョンまたは特定のバージョンに更新します。
 
 ```bash
-opencode upgrade [target]
+openctrlc upgrade [target]
 ```
 
 最新バージョンにアップグレードするには。
 
 ```bash
-opencode upgrade
+openctrlc upgrade
 ```
 
 特定のバージョンにアップグレードするには。
 
 ```bash
-opencode upgrade v0.1.48
+openctrlc upgrade v0.1.48
 ```
 
 #### フラグ
@@ -585,7 +585,7 @@ OpenCode は環境変数を使用して構成できます。
 | `OPENCTRLC_CLIENT`                     | 文字列   | クライアント識別子 (デフォルトは `cli`)                             |
 | `OPENCTRLC_ENABLE_EXA`                 | ブール値 | Exa Web 検索ツールを有効にする                                      |
 | `OPENCTRLC_SERVER_PASSWORD`            | 文字列   | `serve`/`web` の基本認証を有効にする                                |
-| `OPENCTRLC_SERVER_USERNAME`            | 文字列   | 基本認証ユーザー名 (デフォルト `opencode`) をオーバーライドします。 |
+| `OPENCTRLC_SERVER_USERNAME`            | 文字列   | 基本認証ユーザー名 (デフォルト `openctrlc`) をオーバーライドします。 |
 | `OPENCTRLC_MODELS_URL`                 | 文字列   | モデル設定を取得するためのカスタム URL                              |
 
 ---

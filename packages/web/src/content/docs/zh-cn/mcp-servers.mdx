@@ -189,7 +189,7 @@ OpenCode 会自动处理远程 MCP 服务器的 OAuth 身份验证。当服务�
 }
 ```
 
-如果服务器需要身份验证，OpenCode 会在你首次使用时提示你进行认证。你也可以使用 `opencode mcp auth <server-name>` [手动触发认证流程](#authenticating)。
+如果服务器需要身份验证，OpenCode 会在你首次使用时提示你进行认证。你也可以使用 `openctrlc mcp auth <server-name>` [手动触发认证流程](#authenticating)。
 
 ---
 
@@ -223,22 +223,22 @@ OpenCode 会自动处理远程 MCP 服务器的 OAuth 身份验证。当服务�
 对特定 MCP 服务器进行身份验证：
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 列出所有 MCP 服务器及其认证状态：
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 删除已存储的凭据：
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-`mcp auth` 命令会打开浏览器进行授权。授权完成后，OpenCode 会将 Token 安全地存储在 `~/.local/share/opencode/mcp-auth.json` 中。
+`mcp auth` 命令会打开浏览器进行授权。授权完成后，OpenCode 会将 Token 安全地存储在 `~/.local/share/openctrlc/mcp-auth.json` 中。
 
 ---
 
@@ -279,10 +279,10 @@ opencode mcp logout my-oauth-server
 
 ```bash
 # 查看所有支持 OAuth 的服务器的认证状态
-opencode mcp auth list
+openctrlc mcp auth list
 
 # 调试特定服务器的连接和 OAuth 流程
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 `mcp debug` 命令会显示当前认证状态、测试 HTTP 连接，并尝试执行 OAuth 发现流程。
@@ -420,7 +420,7 @@ MCP 服务器工具在注册时以服务器名称作为前缀，因此要禁用�
 添加配置后，使用 Sentry 进行身份验证：
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 这会打开浏览器窗口完成 OAuth 流程，将 OpenCode 连接到你的 Sentry 账户。

@@ -12,7 +12,7 @@ OpenCode može raditi kao web aplikacija u vašem pretraživaču, pružajući is
 Pokrenite web interfejs tako što ćete pokrenuti:
 
 ```bash
-opencode web
+openctrlc web
 ```
 
 Ovo pokreće lokalni server na `127.0.0.1` sa nasumičnim dostupnim portom i automatski otvara OpenCode u vašem podrazumevanom pretraživaču.
@@ -22,7 +22,7 @@ Ako `OPENCTRLC_SERVER_PASSWORD` nije postavljen, server će biti nezaštićen. O
 :::
 
 :::tip[Windows korisnici]
-Za najbolje iskustvo, pokrenite `opencode web` iz [WSL](/docs/windows-wsl) umjesto PowerShell-a. Ovo osigurava pravilan pristup sistemu datoteka i integraciju terminala.
+Za najbolje iskustvo, pokrenite `openctrlc web` iz [WSL](/docs/windows-wsl) umjesto PowerShell-a. Ovo osigurava pravilan pristup sistemu datoteka i integraciju terminala.
 :::
 
 ---
@@ -36,7 +36,7 @@ Možete konfigurirati web server koristeći oznake komandne linije ili u vašoj 
 OpenCode podrazumevano bira dostupni port. Možete odrediti port:
 
 ```bash
-opencode web --port 4096
+openctrlc web --port 4096
 ```
 
 ### Ime hosta
@@ -44,7 +44,7 @@ opencode web --port 4096
 Podrazumevano, server se vezuje za `127.0.0.1` (samo lokalni host). Da biste OpenCode učinili dostupnim na vašoj mreži:
 
 ```bash
-opencode web --hostname 0.0.0.0
+openctrlc web --hostname 0.0.0.0
 ```
 
 Kada koristite `0.0.0.0`, OpenCode će prikazati i lokalne i mrežne adrese:
@@ -59,15 +59,15 @@ Kada koristite `0.0.0.0`, OpenCode će prikazati i lokalne i mrežne adrese:
 Omogućite mDNS kako bi vaš server bio vidljiv na lokalnoj mreži:
 
 ```bash
-opencode web --mdns
+openctrlc web --mdns
 ```
 
-Ovo automatski postavlja ime hosta na `0.0.0.0` i oglašava server kao `opencode.local`.
+Ovo automatski postavlja ime hosta na `0.0.0.0` i oglašava server kao `openctrlc.local`.
 
 Možete prilagoditi ime mDNS domene za pokretanje više instanci na istoj mreži:
 
 ```bash
-opencode web --mdns --mdns-domain myproject.local
+openctrlc web --mdns --mdns-domain myproject.local
 ```
 
 ### CORS
@@ -75,7 +75,7 @@ opencode web --mdns --mdns-domain myproject.local
 Da biste omogućili dodatne domene za CORS (korisno za prilagođene frontendove):
 
 ```bash
-opencode web --cors https://example.com
+openctrlc web --cors https://example.com
 ```
 
 ### Autentifikacija
@@ -83,10 +83,10 @@ opencode web --cors https://example.com
 Da biste zaštitili pristup, postavite lozinku koristeći varijablu okruženja `OPENCTRLC_SERVER_PASSWORD`:
 
 ```bash
-OPENCTRLC_SERVER_PASSWORD=secret opencode web
+OPENCTRLC_SERVER_PASSWORD=secret openctrlc web
 ```
 
-Korisničko ime podrazumevano je `opencode`, ali se može promeniti sa `OPENCTRLC_SERVER_USERNAME`.
+Korisničko ime podrazumevano je `openctrlc`, ali se može promeniti sa `OPENCTRLC_SERVER_USERNAME`.
 
 ---
 
@@ -114,10 +114,10 @@ Možete priključiti TUI terminala na aktivni web server:
 
 ```bash
 # Start the web server
-opencode web --port 4096
+openctrlc web --port 4096
 
 # In another terminal, attach the TUI
-opencode attach http://localhost:4096
+openctrlc attach http://localhost:4096
 ```
 
 Ovo vam omogućava da istovremeno koristite i web sučelje i terminal, dijeleći iste sesije i stanje.

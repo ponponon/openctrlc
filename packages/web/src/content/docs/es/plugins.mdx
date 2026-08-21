@@ -20,7 +20,7 @@ Hay dos formas de cargar complementos.
 Coloque los archivos JavaScript o TypeScript en el directorio del complemento.
 
 - `.openctrlc/plugins/` - Complementos a nivel de proyecto
-- `~/.config/opencode/plugins/` - Complementos globales
+- `~/.config/openctrlc/plugins/` - Complementos globales
 
 Los archivos en estos directorios se cargan automáticamente al inicio.
 
@@ -55,9 +55,9 @@ Los **complementos npm** se instalan automáticamente usando Bun al inicio. Los 
 
 Los complementos se cargan desde todas las fuentes y todos los enlaces se ejecutan en secuencia. El orden de carga es:
 
-1. Configuración global (`~/.config/opencode/openctrlc.json`)
+1. Configuración global (`~/.config/openctrlc/openctrlc.json`)
 2. Configuración del proyecto (`openctrlc.json`)
-3. Directorio global de complementos (`~/.config/opencode/plugins/`)
+3. Directorio global de complementos (`~/.config/openctrlc/plugins/`)
 4. Directorio de complementos del proyecto (`.openctrlc/plugins/`)
 
 Los paquetes npm duplicados con el mismo nombre y versión se cargan una vez. Sin embargo, un complemento local y un complemento npm con nombres similares se cargan por separado.
@@ -128,7 +128,7 @@ La función del complemento recibe:
 Para los complementos TypeScript, puede importar tipos desde el paquete de complementos:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -280,7 +280,7 @@ export const InjectEnvPlugin = async () => {
 Los complementos también pueden agregar herramientas personalizadas a opencode:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -340,7 +340,7 @@ Niveles: `debug`, `info`, `warn`, `error`. Consulte la [documentación del SDK](
 Personalice el contexto incluido cuando se compacta una sesión:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -364,7 +364,7 @@ El hook `experimental.session.compacting` se activa antes de que LLM genere un r
 También puede reemplazar completamente el mensaje de compactación configurando `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

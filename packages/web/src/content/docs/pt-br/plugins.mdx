@@ -20,7 +20,7 @@ Existem duas maneiras de carregar plugins.
 Coloque arquivos JavaScript ou TypeScript no diretório de plugins.
 
 - `.openctrlc/plugins/` - Plugins em nível de projeto
-- `~/.config/opencode/plugins/` - Plugins globais
+- `~/.config/openctrlc/plugins/` - Plugins globais
 
 Os arquivos nesses diretórios são carregados automaticamente na inicialização.
 
@@ -55,9 +55,9 @@ Navegue pelos plugins disponíveis no [ecossistema](/docs/ecosystem#plugins).
 
 Os plugins são carregados de todas as fontes e todos os hooks são executados em sequência. A ordem de carregamento é:
 
-1. Configuração global (`~/.config/opencode/openctrlc.json`)
+1. Configuração global (`~/.config/openctrlc/openctrlc.json`)
 2. Configuração do projeto (`openctrlc.json`)
-3. Diretório de plugins global (`~/.config/opencode/plugins/`)
+3. Diretório de plugins global (`~/.config/openctrlc/plugins/`)
 4. Diretório de plugins do projeto (`.openctrlc/plugins/`)
 
 Pacotes npm duplicados com o mesmo nome e versão são carregados uma vez. No entanto, um plugin local e um plugin npm com nomes semelhantes são carregados separadamente.
@@ -127,7 +127,7 @@ A função do plugin recebe:
 Para plugins TypeScript, você pode importar tipos do pacote de plugin:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -279,7 +279,7 @@ export const InjectEnvPlugin = async () => {
 Plugins também podem adicionar ferramentas personalizadas ao opencode:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -339,7 +339,7 @@ Níveis: `debug`, `info`, `warn`, `error`. Veja a [documentação do SDK](https:
 Personalize o contexto incluído quando uma sessão é compactada:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -363,7 +363,7 @@ O hook `experimental.session.compacting` é acionado antes que o LLM gere um res
 Você também pode substituir o prompt de compactação completamente definindo `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

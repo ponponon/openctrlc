@@ -44,7 +44,7 @@ Por exemplo, se sua configuração global define `autoupdate: true` e sua config
 As fontes de configuração são carregadas nesta ordem (fontes posteriores substituem as anteriores):
 
 1. **Configuração remota** (de `.well-known/opencode`) - padrões organizacionais
-2. **Configuração global** (`~/.config/opencode/openctrlc.json`) - preferências do usuário
+2. **Configuração global** (`~/.config/openctrlc/openctrlc.json`) - preferências do usuário
 3. **Configuração personalizada** (`OPENCTRLC_CONFIG` var de ambiente) - substituições personalizadas
 4. **Configuração do projeto** (`openctrlc.json` no projeto) - configurações específicas do projeto
 5. **Diretórios `.openctrlc`** - agentes, comandos, plugins
@@ -53,7 +53,7 @@ As fontes de configuração são carregadas nesta ordem (fontes posteriores subs
 Isso significa que as configurações do projeto podem substituir os padrões globais, e as configurações globais podem substituir os padrões organizacionais remotos.
 
 :::note
-Os diretórios `.openctrlc` e `~/.config/opencode` usam **nomes no plural** para subdiretórios: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/`, e `themes/`. Nomes no singular (por exemplo, `agent/`) também são suportados para compatibilidade retroativa.
+Os diretórios `.openctrlc` e `~/.config/openctrlc` usam **nomes no plural** para subdiretórios: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/`, e `themes/`. Nomes no singular (por exemplo, `agent/`) também são suportados para compatibilidade retroativa.
 :::
 
 ---
@@ -96,9 +96,9 @@ Você pode habilitar servidores específicos em sua configuração local:
 
 ### Global
 
-Coloque sua configuração global do opencode em `~/.config/opencode/openctrlc.json`. Use a configuração global para preferências de todo o usuário, como provedores, modelos e permissões.
+Coloque sua configuração global do opencode em `~/.config/openctrlc/openctrlc.json`. Use a configuração global para preferências de todo o usuário, como provedores, modelos e permissões.
 
-Para configurações específicas do TUI, use `~/.config/opencode/tui.json`.
+Para configurações específicas do TUI, use `~/.config/openctrlc/tui.json`.
 
 A configuração global substitui os padrões organizacionais remotos.
 
@@ -126,7 +126,7 @@ Especifique um caminho de arquivo de configuração personalizado usando a vari�
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 A configuração personalizada é carregada entre as configurações globais e do projeto na ordem de precedência.
@@ -139,7 +139,7 @@ Especifique um diretório de configuração personalizado usando a variável de 
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 O diretório personalizado é carregado após a configuração global e os diretórios `.openctrlc`, então ele **pode substituir** suas configurações.
@@ -181,7 +181,7 @@ Chaves legadas `theme`, `keybinds` e `tui` em `openctrlc.json` estão obsoletas 
 
 ### Servidor
 
-Você pode configurar as configurações do servidor para os comandos `opencode serve` e `opencode web` através da opção `server`.
+Você pode configurar as configurações do servidor para os comandos `openctrlc serve` e `openctrlc web` através da opção `server`.
 
 ```json title="openctrlc.json"
 {
@@ -201,7 +201,7 @@ Opções disponíveis:
 - `port` - Porta para escutar.
 - `hostname` - Nome do host para escutar. Quando `mdns` está habilitado e nenhum nome de host está definido, o padrão é `0.0.0.0`.
 - `mdns` - Habilitar descoberta de serviço mDNS. Isso permite que outros dispositivos na rede descubram seu servidor opencode.
-- `mdnsDomain` - Nome de domínio personalizado para o serviço mDNS. O padrão é `opencode.local`. Útil para executar várias instâncias na mesma rede.
+- `mdnsDomain` - Nome de domínio personalizado para o serviço mDNS. O padrão é `openctrlc.local`. Útil para executar várias instâncias na mesma rede.
 - `cors` - Origens adicionais a serem permitidas para CORS ao usar o servidor HTTP de um cliente baseado em navegador. Os valores devem ser origens completas (esquema + host + porta opcional), por exemplo, `https://app.example.com`.
 
 [Saiba mais sobre o servidor aqui](/docs/server).
@@ -336,7 +336,7 @@ Você pode configurar agentes especializados para tarefas específicas através 
 }
 ```
 
-Você também pode definir agentes usando arquivos markdown em `~/.config/opencode/agents/` ou `.openctrlc/agents/`. [Saiba mais aqui](/docs/agents).
+Você também pode definir agentes usando arquivos markdown em `~/.config/openctrlc/agents/` ou `.openctrlc/agents/`. [Saiba mais aqui](/docs/agents).
 
 ---
 
@@ -353,7 +353,7 @@ Você pode definir o agente padrão usando a opção `default_agent`. Isso deter
 
 O agente padrão deve ser um agente primário (não um subagente). Isso pode ser um agente embutido como `"build"` ou `"plan"`, ou um [agente personalizado](/docs/agents) que você definiu. Se o agente especificado não existir ou for um subagente, o opencode recuará para `"build"` com um aviso.
 
-Essa configuração se aplica a todas as interfaces: TUI, CLI (`opencode run`), aplicativo desktop e GitHub Action.
+Essa configuração se aplica a todas as interfaces: TUI, CLI (`openctrlc run`), aplicativo desktop e GitHub Action.
 
 ---
 
@@ -400,7 +400,7 @@ Você pode configurar comandos personalizados para tarefas repetitivas através 
 }
 ```
 
-Você também pode definir comandos usando arquivos markdown em `~/.config/opencode/commands/` ou `.openctrlc/commands/`. [Saiba mais aqui](/docs/commands).
+Você também pode definir comandos usando arquivos markdown em `~/.config/openctrlc/commands/` ou `.openctrlc/commands/`. [Saiba mais aqui](/docs/commands).
 
 ---
 
@@ -538,7 +538,7 @@ Você pode configurar servidores MCP que deseja usar através da opção `mcp`.
 
 [Plugins](/docs/plugins) estendem o opencode com ferramentas, hooks e integrações personalizadas.
 
-Coloque arquivos de plugin em `.openctrlc/plugins/` ou `~/.config/opencode/plugins/`. Você também pode carregar plugins do npm através da opção `plugin`.
+Coloque arquivos de plugin em `.openctrlc/plugins/` ou `~/.config/openctrlc/plugins/`. Você também pode carregar plugins do npm através da opção `plugin`.
 
 ```json title="openctrlc.json"
 {

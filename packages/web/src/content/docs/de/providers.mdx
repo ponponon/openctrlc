@@ -18,7 +18,7 @@ Um einen Anbieter hinzuzufügen, müssen Sie:
 ### Anmeldeinformationen
 
 Wenn Sie die API-Schlüssel eines Anbieters mit dem Befehl `/connect` hinzufügen, werden diese gespeichert
-in `~/.local/share/opencode/auth.json`.
+in `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -1021,7 +1021,7 @@ Falls Sie eine Funktion oder ein Modell von Helicone sehen, das nicht automatisc
 
 Hier ist [Helicone's Model Directory](https://helicone.ai/models). Sie benötigen dies, um die IDs der Modelle abzurufen, die Sie hinzufügen möchten.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1049,7 +1049,7 @@ Hier ist [Helicone's Model Directory](https://helicone.ai/models). Sie benötige
 
 Helicone unterstützt benutzerdefinierte Header für Funktionen wie Caching, Benutzerverfolgung und Sitzungsverwaltung. Fügen Sie sie mit `options.headers` zu Ihrer Anbieterkonfiguration hinzu:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1976,7 +1976,7 @@ Mithilfe der `limit`-Felder kann OpenCode erkennen, wie viel Kontext Sie noch ha
 
 Wenn Sie Probleme beim Konfigurieren eines Anbieters haben, überprüfen Sie Folgendes:
 
-1. **Überprüfen Sie die Authentifizierungseinrichtung**: Führen Sie `opencode auth list` aus, um zu sehen, ob die Anmeldeinformationen vorhanden sind
+1. **Überprüfen Sie die Authentifizierungseinrichtung**: Führen Sie `openctrlc auth list` aus, um zu sehen, ob die Anmeldeinformationen vorhanden sind
    für den Anbieter werden Ihrer Konfiguration hinzugefügt.
 
    Dies gilt nicht für Anbieter wie Amazon Bedrock, die für ihre Authentifizierung auf Umgebungsvariablen angewiesen sind.

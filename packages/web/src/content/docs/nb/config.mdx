@@ -44,7 +44,7 @@ For eksempel, hvis din globale konfigurasjon setter `theme: "opencode"` og `auto
 Konfigurasjonskilder lastes inn i denne rekkefølgen (senere kilder overstyrer tidligere):
 
 1. **Ekstern konfigurasjon** (fra `.well-known/opencode`) - organisasjonsstandarder
-2. **Global konfigurasjon** (`~/.config/opencode/openctrlc.json`) - brukerinnstillinger
+2. **Global konfigurasjon** (`~/.config/openctrlc/openctrlc.json`) - brukerinnstillinger
 3. **Egendefinert konfigurasjon** (`OPENCTRLC_CONFIG` env var) - egendefinerte overstyringer
 4. **Prosjektkonfigurasjon** (`openctrlc.json` i prosjekt) - prosjektspesifikke innstillinger
 5. **`.openctrlc` kataloger** - agenter, kommandoer, plugins
@@ -53,7 +53,7 @@ Konfigurasjonskilder lastes inn i denne rekkefølgen (senere kilder overstyrer t
 Dette betyr at prosjektkonfigurasjoner kan overstyre globale standardinnstillinger, og globale konfigurasjoner kan overstyre eksterne organisasjonsstandarder.
 
 :::note
-`.openctrlc` og `~/.config/opencode` katalogene bruker **flertallsnavn** på underkataloger: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` og `themes/`. Enkeltnavn (f.eks. `agent/`) støttes også for bakoverkompatibilitet.
+`.openctrlc` og `~/.config/openctrlc` katalogene bruker **flertallsnavn** på underkataloger: `agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/` og `themes/`. Enkeltnavn (f.eks. `agent/`) støttes også for bakoverkompatibilitet.
 :::
 
 ---
@@ -96,7 +96,7 @@ Du kan aktivere spesifikke servere i din lokale konfigurasjon:
 
 ### Global konfigurasjon
 
-Plasser din globale OpenCode-konfigurasjon i `~/.config/opencode/openctrlc.json`. Bruk global konfigurasjon for brukerspesifikke preferanser som temaer, leverandører eller nøkkelbindinger.
+Plasser din globale OpenCode-konfigurasjon i `~/.config/openctrlc/openctrlc.json`. Bruk global konfigurasjon for brukerspesifikke preferanser som temaer, leverandører eller nøkkelbindinger.
 
 Global konfigurasjon overstyrer eksterne organisasjonsstandarder.
 
@@ -122,7 +122,7 @@ Spesifiser en tilpasset konfigurasjonsfilbane ved å bruke miljøvariabelen `OPE
 
 ```bash
 export OPENCTRLC_CONFIG=/path/to/my/custom-config.json
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 Egendefinert konfigurasjon lastes inn mellom globale og prosjektkonfigurasjoner i prioritetsrekkefølge.
@@ -138,7 +138,7 @@ følge samme struktur.
 
 ```bash
 export OPENCTRLC_CONFIG_DIR=/path/to/my/config-directory
-opencode run "Hello world"
+openctrlc run "Hello world"
 ```
 
 Den egendefinerte katalogen lastes inn etter den globale konfigurasjonen og `.openctrlc`-katalogene, slik at den **kan overstyre** innstillingene deres.
@@ -182,7 +182,7 @@ Tilgjengelige alternativer:
 
 ### Tjener
 
-Du kan konfigurere serverinnstillinger for kommandoene `opencode serve` og `opencode web` gjennom alternativet `server`.
+Du kan konfigurere serverinnstillinger for kommandoene `openctrlc serve` og `openctrlc web` gjennom alternativet `server`.
 
 ```json title="openctrlc.json"
 {
@@ -202,7 +202,7 @@ Tilgjengelige alternativer:
 - `port` - Port å lytte på.
 - `hostname` - Vertsnavn å lytte på. Når `mdns` er aktivert og ingen vertsnavn er angitt, er standard `0.0.0.0`.
 - `mdns` - Aktiver mDNS-tjenesteoppdagelse. Dette lar andre enheter på nettverket oppdage OpenCode-serveren din.
-- `mdnsDomain` - Egendefinert domenenavn for mDNS-tjeneste. Standard er `opencode.local`. Nyttig for å kjøre flere forekomster på samme nettverk.
+- `mdnsDomain` - Egendefinert domenenavn for mDNS-tjeneste. Standard er `openctrlc.local`. Nyttig for å kjøre flere forekomster på samme nettverk.
 - `cors` - Ytterligere opprinnelser for å tillate CORS når du bruker HTTP-serveren fra en nettleserbasert klient. Verdiene må være fullstendige opprinnelser (skjema + vert + valgfri port), f.eks. `https://app.example.com`.
 
 [Les mer om serveren her](/docs/server).
@@ -337,7 +337,7 @@ Du kan konfigurere spesialiserte agenter for spesifikke oppgaver gjennom alterna
 }
 ```
 
-Du kan også definere agenter ved å bruke markdown-filer i `~/.config/opencode/agents/` eller `.openctrlc/agents/`. [Les mer her](/docs/agents).
+Du kan også definere agenter ved å bruke markdown-filer i `~/.config/openctrlc/agents/` eller `.openctrlc/agents/`. [Les mer her](/docs/agents).
 
 ---
 
@@ -354,7 +354,7 @@ Du kan angi standard agent ved å bruke alternativet `default_agent`. Dette best
 
 Standardagenten må være en primæragent (ikke en underagent). Dette kan være en innebygd agent som `"build"` eller `"plan"`, eller en [egendefinert agent](/docs/agents) du har definert. Hvis den angitte agenten ikke eksisterer eller er en subagent, vil OpenCode falle tilbake til `"build"` med en advarsel.
 
-Denne innstillingen gjelder for alle grensesnitt: TUI, CLI (`opencode run`), skrivebordsapp og GitHub Action.
+Denne innstillingen gjelder for alle grensesnitt: TUI, CLI (`openctrlc run`), skrivebordsapp og GitHub Action.
 
 ---
 
@@ -401,7 +401,7 @@ Du kan konfigurere egendefinerte kommandoer for repeterende oppgaver gjennom alt
 }
 ```
 
-Du kan også definere kommandoer ved å bruke markdown-filer i `~/.config/opencode/commands/` eller `.openctrlc/commands/`. [Les mer her](/docs/commands).
+Du kan også definere kommandoer ved å bruke markdown-filer i `~/.config/openctrlc/commands/` eller `.openctrlc/commands/`. [Les mer her](/docs/commands).
 
 ---
 
@@ -539,7 +539,7 @@ Du kan konfigurere MCP-servere du vil bruke gjennom alternativet `mcp`.
 
 [Plugins](/docs/plugins) utvider OpenCode med tilpassede verktøy, kroker og integrasjoner.
 
-Plasser plugin-filer i `.openctrlc/plugins/` eller `~/.config/opencode/plugins/`. Du kan også laste inn plugins fra npm gjennom alternativet `plugin`.
+Plasser plugin-filer i `.openctrlc/plugins/` eller `~/.config/openctrlc/plugins/`. Du kan også laste inn plugins fra npm gjennom alternativet `plugin`.
 
 ```json title="openctrlc.json"
 {

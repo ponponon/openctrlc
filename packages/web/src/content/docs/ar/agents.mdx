@@ -188,10 +188,10 @@ _الوضع_: `primary`
 
 يمكنك أيضا تعريف الوكلاء باستخدام ملفات Markdown. ضعها في:
 
-- عام: `~/.config/opencode/agents/`
+- عام: `~/.config/openctrlc/agents/`
 - لكل مشروع: `.openctrlc/agents/`
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Reviews code for quality and best practices
 mode: subagent
@@ -454,7 +454,7 @@ Provide constructive feedback without making direct changes.
 
 يمكنك أيضا ضبط الأذونات في وكلاء Markdown.
 
-```markdown title="~/.config/opencode/agents/review.md"
+```markdown title="~/.config/openctrlc/agents/review.md"
 ---
 description: Code review without edits
 mode: subagent
@@ -664,7 +664,7 @@ Only analyze code and suggest changes.
 هذه الخيارات الإضافية تعتمد على النموذج والمزود. راجع توثيق مزودك لمعرفة المعاملات المتاحة.
 
 :::tip
-شغّل `opencode models` لعرض قائمة بالنماذج المتاحة.
+شغّل `openctrlc models` لعرض قائمة بالنماذج المتاحة.
 :::
 
 ---
@@ -711,7 +711,7 @@ opencode agent create
 
 ### وكيل التوثيق
 
-```markdown title="~/.config/opencode/agents/docs-writer.md"
+```markdown title="~/.config/openctrlc/agents/docs-writer.md"
 ---
 description: Writes and maintains project documentation
 mode: subagent
@@ -733,7 +733,7 @@ Focus on:
 
 ### مدقق أمني
 
-```markdown title="~/.config/opencode/agents/security-auditor.md"
+```markdown title="~/.config/openctrlc/agents/security-auditor.md"
 ---
 description: Performs security audits and identifies vulnerabilities
 mode: subagent

@@ -20,7 +20,7 @@ Det er to måter å laste inn plugins.
 Plasser JavaScript- eller TypeScript-filer i plugin-katalogen.
 
 - `.openctrlc/plugins/` - Programtillegg på prosjektnivå
-- `~/.config/opencode/plugins/` - Globale plugins
+- `~/.config/openctrlc/plugins/` - Globale plugins
 
 Filer i disse katalogene lastes automatisk ved oppstart.
 
@@ -55,9 +55,9 @@ Bla gjennom tilgjengelige plugins i [økosystemet](/docs/ecosystem#plugins).
 
 Plugins lastes inn fra alle kilder og alle kroker kjøres i rekkefølge. Lastrekkefølgen er:
 
-1. Global konfigurasjon (`~/.config/opencode/openctrlc.json`)
+1. Global konfigurasjon (`~/.config/openctrlc/openctrlc.json`)
 2. Prosjektkonfigurasjon (`openctrlc.json`)
-3. Global plugin-katalog (`~/.config/opencode/plugins/`)
+3. Global plugin-katalog (`~/.config/openctrlc/plugins/`)
 4. Prosjektpluginkatalog (`.openctrlc/plugins/`)
 
 Dupliserte npm-pakker med samme navn og versjon lastes inn én gang. Imidlertid lastes en lokal plugin og en npm plugin med lignende navn begge separat.
@@ -128,7 +128,7 @@ Plugin-funksjonen mottar:
 For TypeScript-plugins kan du importere typer fra plugin-pakken:
 
 ```ts title="my-plugin.ts" {1}
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const MyPlugin: Plugin = async ({ project, client, $, directory, worktree }) => {
   return {
@@ -280,7 +280,7 @@ export const InjectEnvPlugin = async () => {
 Plugins kan også legge til egendefinerte verktøy til OpenCode:
 
 ```ts title=".openctrlc/plugins/custom-tools.ts"
-import { type Plugin, tool } from "@openctrlc-ai/plugin"
+import { type Plugin, tool } from "@openctrlc/plugin"
 
 export const CustomToolsPlugin: Plugin = async (ctx) => {
   return {
@@ -340,7 +340,7 @@ Nivåer: `debug`, `info`, `warn`, `error`. Se [SDK dokumentasjon](https://openco
 Tilpass konteksten inkludert når en økt komprimeres:
 
 ```ts title=".openctrlc/plugins/compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CompactionPlugin: Plugin = async (ctx) => {
   return {
@@ -364,7 +364,7 @@ Include any state that should persist across compaction:
 Du kan også erstatte komprimeringsprompten helt ved å stille inn `output.prompt`:
 
 ```ts title=".openctrlc/plugins/custom-compaction.ts"
-import type { Plugin } from "@openctrlc-ai/plugin"
+import type { Plugin } from "@openctrlc/plugin"
 
 export const CustomCompactionPlugin: Plugin = async (ctx) => {
   return {

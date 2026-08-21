@@ -18,7 +18,7 @@ To add a provider you need to:
 ### Credentials
 
 When you add a provider's API keys with the `/connect` command, they are stored
-in `~/.local/share/opencode/auth.json`.
+in `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -954,7 +954,7 @@ for full requirements.
 
 :::note
 You can also specify 'GITLAB_TOKEN' environment variable if you don't want
-to store token in opencode auth storage.
+to store token in openctrlc auth storage.
 :::
 
 ##### Self-Hosted GitLab
@@ -1270,7 +1270,7 @@ In the event you see a feature or model from Helicone that isn't configured auto
 
 Here's [Helicone's Model Directory](https://helicone.ai/models), you'll need this to grab the IDs of the models you want to add.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1298,7 +1298,7 @@ Here's [Helicone's Model Directory](https://helicone.ai/models), you'll need thi
 
 Helicone supports custom headers for features like caching, user tracking, and session management. Add them to your provider config using `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -2595,7 +2595,7 @@ The `limit` fields allow OpenCode to understand how much context you have left. 
 
 If you are having trouble with configuring a provider, check the following:
 
-1. **Check the auth setup**: Run `opencode auth list` to see if the credentials
+1. **Check the auth setup**: Run `openctrlc auth list` to see if the credentials
    for the provider are added to your config.
 
    This doesn't apply to providers like Amazon Bedrock, that rely on environment variables for their auth.

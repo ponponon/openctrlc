@@ -176,7 +176,7 @@ Za većinu MCP servera sa omogućenim OAuthom nije potrebna posebna konfiguracij
 }
 ```
 
-Ako server zahtijeva autentifikaciju, OpenCode će vas tražiti prijavu pri prvom korištenju. Ako se to ne desi, možete [ručno pokrenuti tok](#authenticating) naredbom `opencode mcp auth <server-name>`.
+Ako server zahtijeva autentifikaciju, OpenCode će vas tražiti prijavu pri prvom korištenju. Ako se to ne desi, možete [ručno pokrenuti tok](#authenticating) naredbom `openctrlc mcp auth <server-name>`.
 
 ### Prethodno registrirano
 
@@ -207,22 +207,22 @@ Možete ručno pokrenuti autentifikaciju ili upravljati vjerodajnicama.
 Autentifikacija sa određenim MCP serverom:
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 Navedite sve MCP servere i njihov status autentifikacije:
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 Uklonite pohranjene vjerodajnice:
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-Komanda `mcp auth` otvara pretraživač za autorizaciju. Nakon odobrenja, OpenCode sigurno čuva tokene u `~/.local/share/opencode/mcp-auth.json`.
+Komanda `mcp auth` otvara pretraživač za autorizaciju. Nakon odobrenja, OpenCode sigurno čuva tokene u `~/.local/share/openctrlc/mcp-auth.json`.
 
 #### Onemogućavanje OAuth-a
 
@@ -261,10 +261,10 @@ Ako udaljeni MCP server ne uspije u autentifikaciji, možete dijagnosticirati pr
 
 ```bash
 # View auth status for all OAuth-capable servers
-opencode mcp auth list
+openctrlc mcp auth list
 
 # Debug connection and OAuth flow for a specific server
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 Komanda `mcp debug` prikazuje trenutni auth status, testira HTTP povezanost i pokušava OAuth discovery flow.
@@ -393,7 +393,7 @@ Dodajte [Sentry MCP server](https://mcp.sentry.dev) za interakciju sa vašim Sen
 Nakon dodavanja konfiguracije, autentifikujte se sa Sentry:
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 Ovo će otvoriti prozor pretraživača da završite OAuth tok i povežete OpenCode sa vašim Sentry nalogom.

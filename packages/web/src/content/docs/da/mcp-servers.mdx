@@ -189,7 +189,7 @@ For de fleste OAuth-aktiverede MCP-servere kræver ingen speciel konfiguration. 
 }
 ```
 
-Hvis serveren kræver godkendelse, vil OpenCode bede dig om at godkende, når du prøver at bruge den første gang. Hvis ikke, kan du [manually trigger the flow](#authenticating) med `opencode mcp auth <server-name>`.
+Hvis serveren kræver godkendelse, vil OpenCode bede dig om at godkende, når du prøver at bruge den første gang. Hvis ikke, kan du [manually trigger the flow](#authenticating) med `openctrlc mcp auth <server-name>`.
 
 ---
 
@@ -223,22 +223,22 @@ Du kan manuelt udløse godkendelse eller administrere legitimationsoplysninger.
 Godkendt med en specifik MCP-server:
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 Liste over alle MCP-servere og deres godkendelsesstatus:
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 Fjern gemte legitimationsoplysninger:
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-Kommandoen `mcp auth` åbner din browser for godkendelse. Når du har godkendt, vil OpenCode opbevare tokens sikkert i `~/.local/share/opencode/mcp-auth.json`.
+Kommandoen `mcp auth` åbner din browser for godkendelse. Når du har godkendt, vil OpenCode opbevare tokens sikkert i `~/.local/share/openctrlc/mcp-auth.json`.
 
 ---
 
@@ -279,10 +279,10 @@ Hvis en ekstern MCP-server ikke kan godkendes, kan du diagnosticere problemer me
 
 ```bash
 # View auth status for all OAuth-capable servers
-opencode mcp auth list
+openctrlc mcp auth list
 
 # Debug connection and OAuth flow for a specific server
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 Kommandoen `mcp debug` viser den aktuelle godkendelsesstatus, tester HTTP-forbindelse og forsøger OAuth-opdagelsesflowet.
@@ -420,7 +420,7 @@ Tilføj [Sentry MCP server](https://mcp.sentry.dev) for at interagere med dine S
 Efter tilføjelse af konfigurationen skal du godkende med Sentry:
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 Dette åbner et browservindue for at fuldføre OAuth-flowet og forbinde OpenCode til din Sentry-konto.

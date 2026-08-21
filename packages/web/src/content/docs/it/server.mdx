@@ -6,14 +6,14 @@ description: Interagisci con il server opencode via HTTP.
 import config from "../../../../config.mjs"
 export const typesUrl = `${config.github}/blob/dev/packages/sdk/js/src/gen/types.gen.ts`
 
-Il comando `opencode serve` avvia un server HTTP headless che espone un endpoint OpenAPI utilizzabile da un client opencode.
+Il comando `openctrlc serve` avvia un server HTTP headless che espone un endpoint OpenAPI utilizzabile da un client opencode.
 
 ---
 
 ### Utilizzo
 
 ```bash
-opencode serve [--port <number>] [--hostname <string>] [--cors <origin>]
+openctrlc serve [--port <number>] [--hostname <string>] [--cors <origin>]
 ```
 
 #### Opzioni
@@ -23,30 +23,30 @@ opencode serve [--port <number>] [--hostname <string>] [--cors <origin>]
 | `--port`        | Porta su cui ascoltare                  | `4096`           |
 | `--hostname`    | Hostname su cui ascoltare               | `127.0.0.1`      |
 | `--mdns`        | Abilita la scoperta mDNS                | `false`          |
-| `--mdns-domain` | Nome di dominio personalizzato mDNS     | `opencode.local` |
+| `--mdns-domain` | Nome di dominio personalizzato mDNS     | `openctrlc.local` |
 | `--cors`        | Origin browser aggiuntive da permettere | `[]`             |
 
 `--cors` puo essere passato piu volte:
 
 ```bash
-opencode serve --cors http://localhost:5173 --cors https://app.example.com
+openctrlc serve --cors http://localhost:5173 --cors https://app.example.com
 ```
 
 ---
 
 ### Autenticazione
 
-Imposta `OPENCTRLC_SERVER_PASSWORD` per proteggere il server con HTTP basic auth. Lo username predefinito e `opencode`, oppure imposta `OPENCTRLC_SERVER_USERNAME` per sovrascriverlo. Questo vale sia per `opencode serve` sia per `opencode web`.
+Imposta `OPENCTRLC_SERVER_PASSWORD` per proteggere il server con HTTP basic auth. Lo username predefinito e `openctrlc`, oppure imposta `OPENCTRLC_SERVER_USERNAME` per sovrascriverlo. Questo vale sia per `openctrlc serve` sia per `openctrlc web`.
 
 ```bash
-OPENCTRLC_SERVER_PASSWORD=your-password opencode serve
+OPENCTRLC_SERVER_PASSWORD=your-password openctrlc serve
 ```
 
 ---
 
 ### Come funziona
 
-Quando esegui `opencode` avvia una TUI e un server. La TUI e il client che parla col server. Il server espone un endpoint con specifica OpenAPI 3.1. Questo endpoint viene anche usato per generare un [SDK](/docs/sdk).
+Quando esegui `openctrlc` avvia una TUI e un server. La TUI e il client che parla col server. Il server espone un endpoint con specifica OpenAPI 3.1. Questo endpoint viene anche usato per generare un [SDK](/docs/sdk).
 
 :::tip
 Usa il server opencode per interagire con opencode in modo programmatico.
@@ -54,7 +54,7 @@ Usa il server opencode per interagire con opencode in modo programmatico.
 
 Questa architettura permette a opencode di supportare piu client e di essere usato in modo programmatico.
 
-Puoi eseguire `opencode serve` per avviare un server standalone. Se la TUI di opencode e gia in esecuzione, `opencode serve` avviera un nuovo server.
+Puoi eseguire `openctrlc serve` per avviare un server standalone. Se la TUI di opencode e gia in esecuzione, `openctrlc serve` avviera un nuovo server.
 
 ---
 

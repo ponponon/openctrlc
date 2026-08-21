@@ -5,7 +5,7 @@ description: Velg et innebygd tema eller definer ditt eget.
 
 Med OpenCode kan du velge fra ett av flere innebygde temaer, bruge et tema som tilpasser seg terminaltemaet ditt, eller definere ditt eget tilpassede tema.
 
-Som standard bruger OpenCode vårt eget `opencode`-tema.
+Som standard bruger OpenCode vårt eget `openctrlc`-tema.
 
 ---
 
@@ -83,7 +83,7 @@ OpenCode støtter et fleksibelt JSON-basert temasystem som lar brugere enkelt la
 Temaer lastes inn fra flere kataloger i følgende rekkefølge der senere kataloger overstyrer tidligere:
 
 1. **Innebygde temaer** - Disse er innebygd i binæren
-2. **Brugerkonfigurasjonskatalog** - Definert i `~/.config/opencode/themes/*.json` eller `$XDG_CONFIG_HOME/opencode/themes/*.json`
+2. **Brugerkonfigurasjonskatalog** - Definert i `~/.config/openctrlc/themes/*.json` eller `$XDG_CONFIG_HOME/openctrlc/themes/*.json`
 3. **Prosjektrotkatalog** - Definert i `<project-root>/.openctrlc/themes/*.json`
 4. **Nuværende arbejdskatalog** - Definert i `./.openctrlc/themes/*.json`
 
@@ -98,8 +98,8 @@ For at lage et brugerdefineret tema, lag en JSON-fil i en av temakatalogene.
 For brugeromfattende temaer:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 Og for prosjektspesifikke temaer.

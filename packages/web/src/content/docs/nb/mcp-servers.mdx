@@ -189,7 +189,7 @@ For de fleste OAuth-aktiverte MCP-servere er ingen spesiell konfigurasjon nødve
 }
 ```
 
-Hvis serveren krever autentisering, vil OpenCode be deg om å autentisere når du prøver å bruke den for første gang. Hvis ikke, kan du [utløse flyten manuelt](#authenticating) med `opencode mcp auth <server-name>`.
+Hvis serveren krever autentisering, vil OpenCode be deg om å autentisere når du prøver å bruke den for første gang. Hvis ikke, kan du [utløse flyten manuelt](#authenticating) med `openctrlc mcp auth <server-name>`.
 
 ---
 
@@ -223,22 +223,22 @@ Du kan utløse autentisering manuelt eller administrere legitimasjon.
 Autentiser med en spesifikk MCP-server:
 
 ```bash
-opencode mcp auth my-oauth-server
+openctrlc mcp auth my-oauth-server
 ```
 
 Liste alle MCP-servere og deres autentiseringsstatus:
 
 ```bash
-opencode mcp list
+openctrlc mcp list
 ```
 
 Fjern lagret legitimasjon:
 
 ```bash
-opencode mcp logout my-oauth-server
+openctrlc mcp logout my-oauth-server
 ```
 
-Kommandoen `mcp auth` åpner nettleseren din for autorisasjon. Etter at du har godkjent, vil OpenCode lagre tokens sikkert i `~/.local/share/opencode/mcp-auth.json`.
+Kommandoen `mcp auth` åpner nettleseren din for autorisasjon. Etter at du har godkjent, vil OpenCode lagre tokens sikkert i `~/.local/share/openctrlc/mcp-auth.json`.
 
 ---
 
@@ -279,10 +279,10 @@ Hvis en ekstern MCP-server ikke klarer å autentisere, kan du diagnostisere prob
 
 ```bash
 # View auth status for all OAuth-capable servers
-opencode mcp auth list
+openctrlc mcp auth list
 
 # Debug connection and OAuth flow for a specific server
-opencode mcp debug my-oauth-server
+openctrlc mcp debug my-oauth-server
 ```
 
 Kommandoen `mcp debug` viser gjeldende autentiseringsstatus, tester HTTP-tilkoblingen og forsøker OAuth-oppdagelsesflyten.
@@ -420,7 +420,7 @@ Legg til [Sentry MCP-serveren](https://mcp.sentry.dev) for å samhandle med Sent
 Etter å ha lagt til konfigurasjonen, autentiser med Sentry:
 
 ```bash
-opencode mcp auth sentry
+openctrlc mcp auth sentry
 ```
 
 Dette åpner et nettleservindu for å fullføre OAuth-flyten og koble OpenCode til Sentry-kontoen din.
@@ -547,7 +547,7 @@ I tilfelle du ser en funksjon eller modell fra Helicone som ikke konfigureres au
 
 Her er [Helicone's Model Directory](https://helicone.ai/models), du trenger denne for å hente ID-ene til modellene du vil legge til.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -575,7 +575,7 @@ Her er [Helicone's Model Directory](https://helicone.ai/models), du trenger denn
 
 Helicone støtter tilpassede headere for funksjoner som bufring, brukersporing og øktadministrasjon. Legg dem til leverandørkonfigurasjonen din ved å bruke `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {

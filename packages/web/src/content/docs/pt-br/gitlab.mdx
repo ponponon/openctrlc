@@ -92,9 +92,9 @@ Consulte a [**documentação do GitLab**](https://docs.gitlab.com/user/duo_agent
       - echo "Configurando glab"
       - echo $GITLAB_HOST
       - echo "Criando configuração de auth do OpenCode"
-      - mkdir --parents ~/.local/share/opencode
+      - mkdir --parents ~/.local/share/openctrlc
       - |
-        cat > ~/.local/share/opencode/auth.json << EOF
+        cat > ~/.local/share/openctrlc/auth.json << EOF
         {
           "anthropic": {
             "type": "api",
@@ -109,7 +109,7 @@ Consulte a [**documentação do GitLab**](https://docs.gitlab.com/user/duo_agent
       - glab issue list
       - echo "Executando OpenCode"
       - |
-        opencode run "
+        openctrlc run "
         Você é um assistente de IA ajudando com operações do GitLab.
 
         Contexto: $AI_FLOW_CONTEXT

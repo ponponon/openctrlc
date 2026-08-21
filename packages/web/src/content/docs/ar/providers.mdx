@@ -18,7 +18,7 @@ export const console = config.console
 ### بيانات الاعتماد
 
 عند إضافة مفاتيح API الخاصة بمزوّد عبر الأمر `/connect`، يتم تخزينها
-في `~/.local/share/opencode/auth.json`.
+في `~/.local/share/openctrlc/auth.json`.
 
 ---
 
@@ -1017,7 +1017,7 @@ export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 
 هذه هي [Helicone's Model Directory](https://helicone.ai/models)، وستحتاجها للحصول على IDs الخاصة بالنماذج التي تريد إضافتها.
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1045,7 +1045,7 @@ export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 
 تدعم Helicone ترويسات مخصّصة لميزات مثل التخزين المؤقت وتتبع المستخدم وإدارة الجلسات. أضفها إلى إعداد المزوّد عبر `options.headers`:
 
-```jsonc title="~/.config/opencode/openctrlc.jsonc"
+```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
@@ -1972,7 +1972,7 @@ OpenCode Zen هي قائمة من النماذج التي تم اختبارها 
 
 إذا كنت تواجه مشكلة في تهيئة مزوّد، فتحقق مما يلي:
 
-1. **تحقق من إعداد auth**: شغّل `opencode auth list` لمعرفة ما إذا كانت بيانات الاعتماد
+1. **تحقق من إعداد auth**: شغّل `openctrlc auth list` لمعرفة ما إذا كانت بيانات الاعتماد
    الخاصة بالمزوّد قد أضيفت إلى إعداداتك.
 
    لا ينطبق هذا على مزوّدات مثل Amazon Bedrock التي تعتمد على متغيرات البيئة لـ auth.

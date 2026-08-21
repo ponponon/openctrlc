@@ -5,7 +5,7 @@ description: Yerleşik bir tema seçin veya kendiniz oluşturun.
 
 opencode ile birden fazla yerleşik tema arasından seçim yapabilir, terminal temanıza uyum sağlayan bir tema kullanabilir veya kendi özel temanızı tanımlayabilirsiniz.
 
-Varsayılan olarak opencode kendi `opencode` temasını kullanır.
+Varsayılan olarak opencode kendi `openctrlc` temasını kullanır.
 
 ---
 
@@ -83,7 +83,7 @@ opencode, kullanıcıların kolayca tema oluşturup özelleştirebilmesi için e
 Temalar birden fazla dizinden şu sırayla yüklenir; daha sonra gelen dizin öncekini ezer:
 
 1. **Yerleşik temalar** - Binary içine gömülüdür
-2. **Kullanıcı yapılandırma dizini** - `~/.config/opencode/themes/*.json` veya `$XDG_CONFIG_HOME/opencode/themes/*.json`
+2. **Kullanıcı yapılandırma dizini** - `~/.config/openctrlc/themes/*.json` veya `$XDG_CONFIG_HOME/openctrlc/themes/*.json`
 3. **Proje kök dizini** - `<project-root>/.openctrlc/themes/*.json`
 4. **Geçerli çalışma dizini** - `./.openctrlc/themes/*.json`
 
@@ -98,8 +98,8 @@ Birden fazla dizinde aynı adlı tema varsa, önceliği daha yüksek dizindeki t
 Kullanıcı geneli temalar için:
 
 ```bash no-frame
-mkdir -p ~/.config/opencode/themes
-vim ~/.config/opencode/themes/my-theme.json
+mkdir -p ~/.config/openctrlc/themes
+vim ~/.config/openctrlc/themes/my-theme.json
 ```
 
 Proje özel temalar için:
