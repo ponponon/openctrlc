@@ -164,7 +164,7 @@ export default function Home() {
             <a href="https://github.com/ponponon/openctrlc">{i18n.t("footer.github")}</a>
           </div>
           <div data-slot="cell">
-            <a href="https://opencode.ai/discord">{i18n.t("footer.discord")}</a>
+            <a href="https://discord.gg/openctrlc">{i18n.t("footer.discord")}</a>
           </div>
         </footer>
       </div>

@@ -68,6 +68,9 @@ provider/client examples or hosted-service/legal contracts.
 - Console product titles, 404 links, authentication command examples, and
   installation tabs use OpenCtrlC identity; remaining console `opencode.ai`
   references are external hosted-service, provider, or legal contracts.
+- Console API proxy, enterprise-host proxy, social/Discord links, and auth meta
+  names use the OpenCtrlC route contracts; retained legal and provider domains
+  remain external.
 - Formal `.openctrlc/openctrlc.jsonc` references use `openctrlc` names and
   `~/.local/share/openctrlc`.
 - The Korean IME patch defaults to the `ponponon/openctrlc` repository,
