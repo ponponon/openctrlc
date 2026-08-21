@@ -12,6 +12,18 @@ test("product CLI package manifests expose only openctrlc", async () => {
   expect(cliPackage.bin).toEqual({ openctrlc: "./bin/openctrlc.cjs" })
 })
 
+test("CLI wrappers use the OpenCtrlC binary override", async () => {
+  const wrapperSources = await Promise.all([
+    Bun.file(path.join(opencodeRoot, "bin/openctrlc")).text(),
+    Bun.file(path.join(workspaceRoot, "packages/cli/bin/openctrlc.cjs")).text(),
+  ])
+
+  for (const source of wrapperSources) {
+    expect(source).toContain("process.env.OPENCTRLC_BIN_PATH")
+    expect(source).not.toContain("process.env.OPENCODE_BIN_PATH")
+  }
+})
+
 test("the yargs parser uses the product CLI name", async () => {
   const child = Bun.spawn(["bun", "run", "--conditions=browser", "src/index.ts", "--help"], {
     cwd: opencodeRoot,

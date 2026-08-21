@@ -40,7 +40,7 @@ already-loaded config until then.
 | Scope                         | Path                                                                                                                      |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Project config                | `./openctrlc.json`, `./openctrlc.jsonc`, or `.openctrlc/openctrlc.json` (OpenCtrlC walks up from the cwd to the worktree root) |
-| Global config                 | The existing global config directory under `~/.config/opencode/`, using `openctrlc.json` or `openctrlc.jsonc`                            |
+| Global config                 | The existing global config directory under `~/.config/openctrlc/`, using `openctrlc.json` or `openctrlc.jsonc`                         |
 | Project agents                | `.openctrlc/agent/<name>.md` or `.openctrlc/agents/<name>.md`                                                               |
 | Global agents                 | The existing global config directory's `agent(s)/<name>.md`                                                                                   |
 | Project commands              | `.openctrlc/command/<name>.md` or `.openctrlc/commands/<name>.md`                                                           |
