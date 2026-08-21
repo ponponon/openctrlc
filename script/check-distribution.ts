@@ -43,7 +43,7 @@ const required: Array<[string, string[]]> = [
   ["packages/desktop/electron-builder.config.ts", ["owner: \"ponponon\"", "repo: \"openctrlc\"", "artifactName: \"openctrlc-"]],
   ["packages/opencode/script/publish.ts", ["ghcr.io/ponponon/openctrlc", "github.com/ponponon/openctrlc", "ponponon/homebrew-tap"]],
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
-  ["github/action.yml", ["https://openctrlc.quniv.cn/install", "echo \"$HOME/.openctrlc/bin\"", "run: openctrlc github run"]],
+  ["github/action.yml", ["https://openctrlc.quniv.cn/install", "OPENCTRLC_INSTALL_DIR=$HOME/.openctrlc/bin", "run: openctrlc github run"]],
   ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],

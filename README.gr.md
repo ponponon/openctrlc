@@ -66,7 +66,7 @@ nix run github:ponponon/openctrlc
 
 ### Εφαρμογή Desktop (BETA)
 
-Το OpenCode είναι επίσης διαθέσιμο ως εφαρμογή. Κατέβασε το απευθείας από τη [σελίδα εκδόσεων](https://github.com/anomalyco/opencode/releases) ή το [opencode.ai/download](https://opencode.ai/download).
+Το OpenCtrlC είναι επίσης διαθέσιμο ως εφαρμογή. Κατέβασε το απευθείας από τη [σελίδα εκδόσεων](https://github.com/ponponon/openctrlc/releases).
 
 | Πλατφόρμα             | Λήψη                               |
 | --------------------- | ---------------------------------- |

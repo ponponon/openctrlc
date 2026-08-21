@@ -66,7 +66,7 @@ nix run github:ponponon/openctrlc
 
 ### App Desktop (BETA)
 
-OpenCode è disponibile anche come applicazione desktop. Puoi scaricarla direttamente dalla [pagina delle release](https://github.com/anomalyco/opencode/releases) oppure da [opencode.ai/download](https://opencode.ai/download).
+OpenCtrlC è disponibile anche come applicazione desktop. Puoi scaricarla direttamente dalla [pagina delle release](https://github.com/ponponon/openctrlc/releases).
 
 | Piattaforma           | Download                           |
 | --------------------- | ---------------------------------- |

@@ -66,7 +66,7 @@ nix run github:ponponon/openctrlc
 
 ### Desktop aplikacija (BETA)
 
-OpenCode je dostupan i kao desktop aplikacija. Preuzmi je direktno sa [stranice izdanja](https://github.com/anomalyco/opencode/releases) ili sa [opencode.ai/download](https://opencode.ai/download).
+OpenCtrlC je dostupan i kao desktop aplikacija. Preuzmi je direktno sa [stranice izdanja](https://github.com/ponponon/openctrlc/releases).
 
 | Platforma             | Preuzimanje                        |
 | --------------------- | ---------------------------------- |

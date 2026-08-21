@@ -62,7 +62,7 @@ runs:
 
     - name: Add OpenCtrlC to PATH
       shell: bash
-      run: echo "$HOME/.openctrlc/bin" >> $GITHUB_PATH
+      run: echo "OPENCTRLC_INSTALL_DIR=$HOME/.openctrlc/bin" >> "$GITHUB_ENV" && echo "$HOME/.openctrlc/bin" >> "$GITHUB_PATH"
 
     - name: Run OpenCtrlC
       shell: bash

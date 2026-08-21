@@ -66,7 +66,7 @@ nix run github:ponponon/openctrlc
 
 ### Ứng dụng Desktop (BETA)
 
-OpenCode cũng có sẵn dưới dạng ứng dụng desktop. Tải trực tiếp từ [trang releases](https://github.com/anomalyco/opencode/releases) hoặc [opencode.ai/download](https://opencode.ai/download).
+OpenCtrlC cũng có sẵn dưới dạng ứng dụng desktop. Tải trực tiếp từ [trang releases](https://github.com/ponponon/openctrlc/releases).
 
 | Nền tảng              | Tải xuống                          |
 | --------------------- | ---------------------------------- |

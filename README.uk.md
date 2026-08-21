@@ -66,7 +66,7 @@ nix run github:ponponon/openctrlc
 
 ### Десктопний застосунок (BETA)
 
-OpenCode також доступний як десктопний застосунок. Завантажуйте напряму зі [сторінки релізів](https://github.com/anomalyco/opencode/releases) або [opencode.ai/download](https://opencode.ai/download).
+OpenCtrlC також доступний як десктопний застосунок. Завантажуйте напряму зі [сторінки релізів](https://github.com/ponponon/openctrlc/releases).
 
 | Платформа             | Завантаження                       |
 | --------------------- | ---------------------------------- |
