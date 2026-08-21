@@ -126,6 +126,16 @@ for (const file of readmes) {
   const source = await Bun.file(file).text()
   const installation = source.match(/### (?:Installation|安装|安裝|インストール|설치|Установка|Installasjon|Instalação|Instalación|Installazione|Εγκατάσταση|การติดตั้ง|Інсталяція)[\s\S]*?(?=### |$)/)?.[0] ?? source
   if (staleReleaseGuide.test(installation)) failures.push(`${path.relative(root, file)} contains stale product release guidance`)
+  if (source.includes("img.shields.io/github/actions/workflow/status/anomalyco/opencode/")) failures.push(`${path.relative(root, file)} contains an upstream workflow badge`)
+  const fenced = [...source.matchAll(/```(?:yaml|yml)\n([\s\S]*?)```/g)].map((match) => match[1])
+  for (const [index, block] of fenced.entries()) {
+    try {
+      const parsed = parse(block)
+      if (typeof parsed !== "object" || parsed === null) failures.push(`${path.relative(root, file)} fence ${index} is not a YAML object`)
+    } catch (error) {
+      failures.push(`${path.relative(root, file)} fence ${index} is invalid YAML: ${String(error)}`)
+    }
+  }
 }
 
 if (failures.length > 0) {

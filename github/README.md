@@ -61,10 +61,10 @@ This will walk you through installing the GitHub app, creating the workflow, and
 ### Manual Setup
 
 1. Install the GitHub app https://github.com/apps/opencode-agent. Make sure it is installed on the target repository.
-2. Add the following workflow file to `.github/workflows/opencode.yml` in your repo. Set the appropriate `model` and required API keys in `env`.
+2. Add the following workflow file to `.github/workflows/openctrlc.yml` in your repo. Set the appropriate `model` and required API keys in `env`.
 
    ```yml
-   name: opencode
+   name: openctrlc
 
    on:
      issue_comment:
@@ -73,7 +73,7 @@ This will walk you through installing the GitHub app, creating the workflow, and
        types: [created]
 
    jobs:
-     opencode:
+     openctrlc:
        if: |
          contains(github.event.comment.body, '/oc') ||
          contains(github.event.comment.body, '/opencode')
@@ -81,14 +81,14 @@ This will walk you through installing the GitHub app, creating the workflow, and
        permissions:
          id-token: write
        steps:
-          - name: Checkout repository
-            uses: actions/checkout@v6
-            with:
-              fetch-depth: 1
-              persist-credentials: false
+         - name: Checkout repository
+           uses: actions/checkout@v6
+           with:
+             fetch-depth: 1
+             persist-credentials: false
 
-           - name: Run OpenCtrlC
-            uses: ponponon/openctrlc/github@latest
+         - name: Run OpenCtrlC
+           uses: ponponon/openctrlc/github@latest
            env:
              ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
