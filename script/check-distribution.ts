@@ -51,7 +51,7 @@ const required: Array<[string, string[]]> = [
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
 ]
 
-const workflows = [".github/workflows/publish.yml", ".github/workflows/deploy.yml", ".github/workflows/stats.yml"]
+const workflows = await Array.fromAsync(new Bun.Glob(".github/workflows/*.{yml,yaml}").scan({ cwd: root }))
 for (const relative of workflows) {
   const source = await read(relative)
   try {

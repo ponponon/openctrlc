@@ -142,7 +142,7 @@ type IssueQueryResponse = {
 
 const AGENT_USERNAME = "opencode-agent[bot]"
 const AGENT_REACTION = "eyes"
-const WORKFLOW_FILE = ".github/workflows/opencode.yml"
+const WORKFLOW_FILE = ".github/workflows/openctrlc.yml"
 
 // Event categories for routing
 // USER_EVENTS: triggered by user actions, have actor/issueId, support reactions/comments
@@ -336,7 +336,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
 
         await Filesystem.write(
           path.join(app.root, WORKFLOW_FILE),
-          `name: opencode
+          `name: openctrlc
 
 on:
   issue_comment:
@@ -345,12 +345,12 @@ on:
     types: [created]
 
 jobs:
-  opencode:
+         openctrlc:
     if: |
       contains(github.event.comment.body, ' /oc') ||
       startsWith(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, ' /opencode') ||
-      startsWith(github.event.comment.body, '/opencode')
+          contains(github.event.comment.body, ' /openctrlc') ||
+          startsWith(github.event.comment.body, '/openctrlc')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -363,7 +363,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run opencode
+       - name: Run OpenCtrlC
         uses: ponponon/openctrlc/github@latest${envStr}
         with:
           model: ${provider}/${model}`,
