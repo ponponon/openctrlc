@@ -1,14 +1,14 @@
 ---
 title: Windows (WSL)
-description: Pokrenite OpenCode na Windowsu preko WSL-a.
+description: Pokrenite OpenCtrlC na Windowsu preko WSL-a.
 ---
 
 import { Steps } from "@astrojs/starlight/components"
 
-Iako OpenCode moze raditi direktno na Windowsu, preporucujemo [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) za najbolje iskustvo. WSL daje Linux okruzenje koje glatko radi sa OpenCode funkcijama.
+Iako OpenCtrlC moze raditi direktno na Windowsu, preporucujemo [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install) za najbolje iskustvo. WSL daje Linux okruzenje koje glatko radi sa OpenCtrlC funkcijama.
 
 :::tip[Zašto WSL?]
-WSL nudi bolje performanse fajl sistema, punu terminalsku podrsku i kompatibilnost s razvojnim alatima na koje se OpenCode oslanja.
+WSL nudi bolje performanse fajl sistema, punu terminalsku podrsku i kompatibilnost s razvojnim alatima na koje se OpenCtrlC oslanja.
 :::
 
 ---
@@ -21,21 +21,21 @@ WSL nudi bolje performanse fajl sistema, punu terminalsku podrsku i kompatibilno
 
    Ako vec niste, [instalirajte WSL](https://learn.microsoft.com/en-us/windows/wsl/install) prema zvanicnom Microsoft vodicu.
 
-2. **Instalirajte OpenCode u WSL-u**
+2. **Instalirajte OpenCtrlC u WSL-u**
 
-   Kad je WSL spreman, otvorite WSL terminal i instalirajte OpenCode jednom od [metoda instalacije](/docs/).
+   Kad je WSL spreman, otvorite WSL terminal i instalirajte OpenCtrlC jednom od [metoda instalacije](/docs/).
 
    ```bash
    curl -fsSL https://openctrlc.ai/install | bash
    ```
 
-3. **Koristite OpenCode iz WSL-a**
+3. **Koristite OpenCtrlC iz WSL-a**
 
-   Idite u direktorij projekta (Windows fajlovima pristupate preko `/mnt/c/`, `/mnt/d/` itd.) i pokrenite OpenCode.
+   Idite u direktorij projekta (Windows fajlovima pristupate preko `/mnt/c/`, `/mnt/d/` itd.) i pokrenite OpenCtrlC.
 
    ```bash
    cd /mnt/c/Users/YourName/project
-   opencode
+   openctrlc
    ```
 
 </Steps>
@@ -44,7 +44,7 @@ WSL nudi bolje performanse fajl sistema, punu terminalsku podrsku i kompatibilno
 
 ## Desktop aplikacija + WSL Server
 
-Ako preferirate OpenCode Desktop aplikaciju, ali zelite da server radi u WSL-u:
+Ako preferirate OpenCtrlC Desktop aplikaciju, ali zelite da server radi u WSL-u:
 
 1. **Pokrenite server u WSL-u** sa `--hostname 0.0.0.0` da dozvolite vanjske konekcije:
 
@@ -79,7 +79,7 @@ Za najbolje web iskustvo na Windowsu:
    openctrlc web --hostname 0.0.0.0
    ```
 
-2. **Otvorite iz Windows browsera** na `http://localhost:<port>` (OpenCode ispisuje URL)
+2. **Otvorite iz Windows browsera** na `http://localhost:<port>` (OpenCtrlC ispisuje URL)
 
 Pokretanje `openctrlc web` iz WSL-a osigurava ispravan pristup fajl sistemu i terminalsku integraciju, a i dalje je dostupno iz Windows browsera.
 
@@ -97,17 +97,17 @@ Primjer:
 
 ```bash
 cd /mnt/c/Users/YourName/Documents/project
-opencode
+openctrlc
 ```
 
 :::tip
-Za najgladje iskustvo, razmislite da klonirate/kopirate repo u WSL fajl sistem (npr. pod `~/code/`) i tu pokrenete OpenCode.
+Za najgladje iskustvo, razmislite da klonirate/kopirate repo u WSL fajl sistem (npr. pod `~/code/`) i tu pokrenete OpenCtrlC.
 :::
 
 ---
 
 ## Savjeti
 
-- Drzite OpenCode u WSL-u za projekte na Windows diskovima - pristup fajlovima je jednostavan
-- Koristite VS Code [WSL ekstenziju](https://code.visualstudio.com/docs/remote/wsl) uz OpenCode za integrisan tok rada
-- Vase OpenCode konfiguracije i sesije cuvaju se u WSL okruzenju na `~/.local/share/openctrlc/`
+- Drzite OpenCtrlC u WSL-u za projekte na Windows diskovima - pristup fajlovima je jednostavan
+- Koristite VS Code [WSL ekstenziju](https://code.visualstudio.com/docs/remote/wsl) uz OpenCtrlC za integrisan tok rada
+- Vase OpenCtrlC konfiguracije i sesije cuvaju se u WSL okruzenju na `~/.local/share/openctrlc/`

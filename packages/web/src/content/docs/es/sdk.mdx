@@ -1,13 +1,13 @@
 ---
 title: SDK
-description: Cliente JS con seguridad de tipos para el servidor opencode.
+description: Cliente JS con seguridad de tipos para el servidor openctrlc.
 ---
 
 import config from "../../../../config.mjs"
 export const typesUrl = `${config.github}/blob/dev/packages/sdk/js/src/gen/types.gen.ts`
 
-El SDK opencode JS/TS proporciona un cliente con seguridad de tipos para interactuar con el servidor.
-Úselo para crear integraciones y controlar opencode mediante programación.
+El SDK openctrlc JS/TS proporciona un cliente con seguridad de tipos para interactuar con el servidor.
+Úselo para crear integraciones y controlar openctrlc mediante programación.
 
 [Más información](/docs/server) sobre cómo funciona el servidor. Para ver ejemplos, consulte los [proyectos](/docs/ecosystem#projects) creados por la comunidad.
 
@@ -25,7 +25,7 @@ npm install @openctrlc/sdk
 
 ## Crear cliente
 
-Cree una instancia de opencode:
+Cree una instancia de openctrlc:
 
 ```javascript
 import { createOpencode } from "@openctrlc/sdk"
@@ -54,7 +54,7 @@ Puede pasar un objeto de configuración para personalizar el comportamiento. La 
 ```javascript
 import { createOpencode } from "@openctrlc/sdk"
 
-const opencode = await createOpencode({
+const openctrlc = await createOpencode({
   hostname: "127.0.0.1",
   port: 4096,
   config: {
@@ -62,14 +62,14 @@ const opencode = await createOpencode({
   },
 })
 
-console.log(`Server running at ${opencode.server.url}`)
+console.log(`Server running at ${openctrlc.server.url}`)
 
-opencode.server.close()
+openctrlc.server.close()
 ```
 
 ## Solo cliente
 
-Si ya tiene una instancia en ejecución de opencode, puede crear una instancia de cliente para conectarse a ella:
+Si ya tiene una instancia en ejecución de openctrlc, puede crear una instancia de cliente para conectarse a ella:
 
 ```javascript
 import { createOpencodeClient } from "@openctrlc/sdk"
@@ -376,7 +376,7 @@ await client.session.prompt({
 ```javascript
 // Search and read files
 const textResults = await client.find.text({
-  query: { pattern: "function.*opencode" },
+  query: { pattern: "function.*openctrlc" },
 })
 
 const files = await client.find.files({

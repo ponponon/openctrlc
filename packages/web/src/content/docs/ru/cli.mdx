@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: Параметры и команда opencode CLI.
+description: Параметры и команда openctrlc CLI.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-CLI opencode по умолчанию запускает [TUI](/docs/tui) при запуске без каких-либо аргументов.
+CLI openctrlc по умолчанию запускает [TUI](/docs/tui) при запуске без каких-либо аргументов.
 
 ```bash
-opencode
+openctrlc
 ```
 
-Но он также принимает команды, описанные на этой странице. Это позволяет вам программно взаимодействовать с opencode.
+Но он также принимает команды, описанные на этой странице. Это позволяет вам программно взаимодействовать с openctrlc.
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-Запустите TUI opencode.
+Запустите TUI openctrlc.
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### Флаги
@@ -44,29 +44,29 @@ opencode [project]
 
 ## Команды
 
-CLI opencode также имеет следующие команды.
+CLI openctrlc также имеет следующие команды.
 
 ---
 
 ### agent
 
-Управляйте агентами для opencode.
+Управляйте агентами для openctrlc.
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-Подключите терминал к уже работающему внутреннему серверу opencode, запущенному с помощью команд `serve` или `web`.
+Подключите терминал к уже работающему внутреннему серверу openctrlc, запущенному с помощью команд `serve` или `web`.
 
 ```bash
 openctrlc attach [url]
 ```
 
-Это позволяет использовать TUI с удаленным сервером opencode. Например:
+Это позволяет использовать TUI с удаленным сервером openctrlc. Например:
 
 ```bash
 # Start the backend server for web/mobile access
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 Создайте нового агента с пользовательской конфигурацией.
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 Эта команда поможет вам создать новый агент с настраиваемой системной подсказкой и настройкой инструмента.
@@ -106,7 +106,7 @@ opencode agent create
 Перечислите всех доступных агентов.
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-opencode использует список провайдеров с [Models.dev](https://models.dev), поэтому вы можете использовать `openctrlc auth login` для настройки ключей API для любого поставщика, которого вы хотите использовать. Это хранится в `~/.local/share/openctrlc/auth.json`.
+openctrlc использует список провайдеров с [Models.dev](https://models.dev), поэтому вы можете использовать `openctrlc auth login` для настройки ключей API для любого поставщика, которого вы хотите использовать. Это хранится в `~/.local/share/openctrlc/auth.json`.
 
 ```bash
 openctrlc auth login
 ```
 
-Когда opencode запускается, он загружает поставщиков из файла учетных данных. И если в ваших средах определены какие-либо ключи или файл `.env` в вашем проекте.
+Когда openctrlc запускается, он загружает поставщиков из файла учетных данных. И если в ваших средах определены какие-либо ключи или файл `.env` в вашем проекте.
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 Управляйте агентом GitHub для автоматизации репозитория.
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 Установите агент GitHub в свой репозиторий.
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 Это настроит необходимый рабочий процесс GitHub Actions и проведет вас через процесс настройки. [Подробнее](/docs/github).
@@ -186,7 +186,7 @@ opencode github install
 Запустите агент GitHub. Обычно это используется в действиях GitHub.
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### Флаги
@@ -305,7 +305,7 @@ openctrlc models anthropic
 | <nobr><code>{"--refresh"}</code></nobr> | Обновите кеш моделей на сайте models.dev.                                         |
 | <nobr><code>{"--verbose"}</code></nobr> | Используйте более подробный вывод модели (включая метаданные, такие как затраты). |
 
-Используйте флаг `--refresh` для обновления списка кэшированных моделей. Это полезно, когда к поставщику добавлены новые модели и вы хотите увидеть их в opencode.
+Используйте флаг `--refresh` для обновления списка кэшированных моделей. Это полезно, когда к поставщику добавлены новые модели и вы хотите увидеть их в openctrlc.
 
 ```bash
 openctrlc models --refresh
@@ -315,7 +315,7 @@ openctrlc models --refresh
 
 ### run
 
-Запустите opencode в неинтерактивном режиме, передав приглашение напрямую.
+Запустите openctrlc в неинтерактивном режиме, передав приглашение напрямую.
 
 ```bash
 openctrlc run [message..]
@@ -351,7 +351,7 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f`     | Файл(ы) для прикрепления к сообщению                                                             |
 | <nobr><code>{"--format"}</code></nobr>   |          | Формат: по умолчанию (отформатированный) или json (необработанные события JSON).                 |
 | <nobr><code>{"--title"}</code></nobr>    |          | Название сеанса (использует усеченное приглашение, если значение не указано)                     |
-| <nobr><code>{"--attach"}</code></nobr>   |          | Подключитесь к работающему серверу opencode (например, http://localhost:4096)                    |
+| <nobr><code>{"--attach"}</code></nobr>   |          | Подключитесь к работающему серверу openctrlc (например, http://localhost:4096)                    |
 | <nobr><code>{"--password"}</code></nobr> | `-p`     | Пароль базовой аутентификации (по умолчанию `OPENCTRLC_SERVER_PASSWORD`)                          |
 | <nobr><code>{"--username"}</code></nobr> | `-u`     | Имя пользователя базовой аутентификации (по умолчанию `OPENCTRLC_SERVER_USERNAME` или `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |          | Каталог для выполнения или путь на удалённом сервере при подключении                             |
@@ -363,13 +363,13 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 ### serve
 
-Запустите автономный сервер opencode для доступа к API. Полный HTTP-интерфейс можно найти в [server docs](/docs/server).
+Запустите автономный сервер openctrlc для доступа к API. Полный HTTP-интерфейс можно найти в [server docs](/docs/server).
 
 ```bash
 openctrlc serve
 ```
 
-При этом запускается HTTP-сервер, который обеспечивает доступ API к функциям opencode без интерфейса TUI. Установите `OPENCTRLC_SERVER_PASSWORD`, чтобы включить базовую аутентификацию HTTP (имя пользователя по умолчанию — `openctrlc`).
+При этом запускается HTTP-сервер, который обеспечивает доступ API к функциям openctrlc без интерфейса TUI. Установите `OPENCTRLC_SERVER_PASSWORD`, чтобы включить базовую аутентификацию HTTP (имя пользователя по умолчанию — `openctrlc`).
 
 #### Флаги
 
@@ -384,20 +384,20 @@ openctrlc serve
 
 ### session
 
-Управляйте сессиями opencode.
+Управляйте сессиями openctrlc.
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-Перечислите все сеансы opencode.
+Перечислите все сеансы openctrlc.
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### Флаги
@@ -411,10 +411,10 @@ opencode session list
 
 ### stats
 
-Покажите статистику использования токенов и затрат для ваших сеансов opencode.
+Покажите статистику использования токенов и затрат для ваших сеансов openctrlc.
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### Флаги
@@ -433,7 +433,7 @@ opencode stats
 Экспортируйте данные сеанса в формате JSON.
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 Если вы не укажете идентификатор сеанса, вам будет предложено выбрать один из доступных сеансов.
@@ -442,30 +442,30 @@ opencode export [sessionID]
 
 ### import
 
-Импортируйте данные сеанса из файла JSON или URL-адреса общего ресурса opencode.
+Импортируйте данные сеанса из файла JSON или URL-адреса общего ресурса openctrlc.
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
-Вы можете импортировать из локального файла или URL-адреса общего ресурса opencode.
+Вы можете импортировать из локального файла или URL-адреса общего ресурса openctrlc.
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-Запустите автономный сервер opencode с веб-интерфейсом.
+Запустите автономный сервер openctrlc с веб-интерфейсом.
 
 ```bash
 openctrlc web
 ```
 
-При этом запускается HTTP-сервер и открывается веб-браузер для доступа к opencode через веб-интерфейс. Установите `OPENCTRLC_SERVER_PASSWORD`, чтобы включить базовую аутентификацию HTTP (имя пользователя по умолчанию — `openctrlc`).
+При этом запускается HTTP-сервер и открывается веб-браузер для доступа к openctrlc через веб-интерфейс. Установите `OPENCTRLC_SERVER_PASSWORD`, чтобы включить базовую аутентификацию HTTP (имя пользователя по умолчанию — `openctrlc`).
 
 #### Флаги
 
@@ -500,7 +500,7 @@ openctrlc acp
 
 ### uninstall
 
-Удалите opencode и удалите все связанные файлы.
+Удалите openctrlc и удалите все связанные файлы.
 
 ```bash
 openctrlc uninstall
@@ -519,7 +519,7 @@ openctrlc uninstall
 
 ### upgrade
 
-Обновляет opencode до последней версии или определенной версии.
+Обновляет openctrlc до последней версии или определенной версии.
 
 ```bash
 openctrlc upgrade [target]
@@ -547,7 +547,7 @@ openctrlc upgrade v0.1.48
 
 ## Глобальные флаги
 
-CLI opencode принимает следующие глобальные флаги.
+CLI openctrlc принимает следующие глобальные флаги.
 
 | Флаг                                       | Короткий | Описание                                   |
 | ------------------------------------------ | -------- | ------------------------------------------ |
@@ -560,7 +560,7 @@ CLI opencode принимает следующие глобальные флаг
 
 ## Переменные среды
 
-opencode можно настроить с помощью переменных среды.
+openctrlc можно настроить с помощью переменных среды.
 
 | Переменная                            | Тип                 | Описание                                                                         |
 | ------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |

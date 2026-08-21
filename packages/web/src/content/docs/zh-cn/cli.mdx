@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: OpenCode CLI 选项和命令。
+description: OpenCtrlC CLI 选项和命令。
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-OpenCode CLI 在不带任何参数运行时，默认启动 [TUI](/docs/tui)。
+OpenCtrlC CLI 在不带任何参数运行时，默认启动 [TUI](/docs/tui)。
 
 ```bash
-opencode
+openctrlc
 ```
 
-但它也接受本页面中记录的命令，使您可以通过编程方式与 OpenCode 进行交互。
+但它也接受本页面中记录的命令，使您可以通过编程方式与 OpenCtrlC 进行交互。
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-启动 OpenCode 终端用户界面。
+启动 OpenCtrlC 终端用户界面。
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### 标志
@@ -44,29 +44,29 @@ opencode [project]
 
 ## 命令
 
-OpenCode CLI 还提供以下命令。
+OpenCtrlC CLI 还提供以下命令。
 
 ---
 
 ### agent
 
-管理 OpenCode 的代理。
+管理 OpenCtrlC 的代理。
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-将终端连接到已通过 `serve` 或 `web` 命令启动的 OpenCode 后端服务器。
+将终端连接到已通过 `serve` 或 `web` 命令启动的 OpenCtrlC 后端服务器。
 
 ```bash
 openctrlc attach [url]
 ```
 
-这允许将 TUI 与远程 OpenCode 后端配合使用。例如：
+这允许将 TUI 与远程 OpenCtrlC 后端配合使用。例如：
 
 ```bash
 # Start the backend server for web/mobile access
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 使用自定义配置创建新的代理。
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 此命令将引导您使用自定义系统提示词和工具配置来创建新的代理。
@@ -106,7 +106,7 @@ opencode agent create
 列出所有可用的代理。
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-OpenCode 基于 [Models.dev](https://models.dev) 的提供商列表运行，因此您可以使用 `openctrlc auth login` 为任何想要使用的提供商配置 API 密钥。密钥存储在 `~/.local/share/openctrlc/auth.json` 中。
+OpenCtrlC 基于 [Models.dev](https://models.dev) 的提供商列表运行，因此您可以使用 `openctrlc auth login` 为任何想要使用的提供商配置 API 密钥。密钥存储在 `~/.local/share/openctrlc/auth.json` 中。
 
 ```bash
 openctrlc auth login
 ```
 
-OpenCode 启动时会从凭据文件加载提供商信息，同时也会加载环境变量或项目中 `.env` 文件中定义的密钥。
+OpenCtrlC 启动时会从凭据文件加载提供商信息，同时也会加载环境变量或项目中 `.env` 文件中定义的密钥。
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 管理用于仓库自动化的 GitHub 代理。
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 在您的仓库中安装 GitHub 代理。
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 此命令会设置必要的 GitHub Actions 工作流并引导您完成配置过程。[了解更多](/docs/github)。
@@ -186,7 +186,7 @@ opencode github install
 运行 GitHub 代理。通常在 GitHub Actions 中使用。
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### 标志
@@ -305,7 +305,7 @@ openctrlc models anthropic
 | <nobr><code>{"--refresh"}</code></nobr> | 从 models.dev 刷新模型缓存               |
 | <nobr><code>{"--verbose"}</code></nobr> | 使用更详细的模型输出（包含费用等元数据） |
 
-使用 `--refresh` 标志可以更新缓存的模型列表。当提供商新增了模型并且您希望在 OpenCode 中看到它们时，此功能非常有用。
+使用 `--refresh` 标志可以更新缓存的模型列表。当提供商新增了模型并且您希望在 OpenCtrlC 中看到它们时，此功能非常有用。
 
 ```bash
 openctrlc models --refresh
@@ -315,7 +315,7 @@ openctrlc models --refresh
 
 ### run
 
-以非交互模式运行 OpenCode，直接传入提示词。
+以非交互模式运行 OpenCtrlC，直接传入提示词。
 
 ```bash
 openctrlc run [message..]
@@ -351,7 +351,7 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f` | 附加到消息的文件                                                    |
 | <nobr><code>{"--format"}</code></nobr>   |      | 格式：default（格式化输出）或 json（原始 JSON 事件）                |
 | <nobr><code>{"--title"}</code></nobr>    |      | 会话标题（未提供值时使用截断的提示词）                              |
-| <nobr><code>{"--attach"}</code></nobr>   |      | 连接到正在运行的 opencode 服务器（例如 http://localhost:4096）      |
+| <nobr><code>{"--attach"}</code></nobr>   |      | 连接到正在运行的 openctrlc 服务器（例如 http://localhost:4096）      |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | 基本认证密码（默认使用 `OPENCTRLC_SERVER_PASSWORD`）                 |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | 基本认证用户名（默认使用 `OPENCTRLC_SERVER_USERNAME` 或 `openctrlc`） |
 | <nobr><code>{"--dir"}</code></nobr>      |      | 运行目录，或附加时远程服务器上的路径                                |
@@ -363,13 +363,13 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 ### serve
 
-启动无界面的 OpenCode 服务器以提供 API 访问。查看[服务器文档](/docs/server)了解完整的 HTTP 接口。
+启动无界面的 OpenCtrlC 服务器以提供 API 访问。查看[服务器文档](/docs/server)了解完整的 HTTP 接口。
 
 ```bash
 openctrlc serve
 ```
 
-此命令启动一个 HTTP 服务器，提供对 OpenCode 功能的 API 访问，无需 TUI 界面。设置 `OPENCTRLC_SERVER_PASSWORD` 可启用 HTTP 基本认证（用户名默认为 `openctrlc`）。
+此命令启动一个 HTTP 服务器，提供对 OpenCtrlC 功能的 API 访问，无需 TUI 界面。设置 `OPENCTRLC_SERVER_PASSWORD` 可启用 HTTP 基本认证（用户名默认为 `openctrlc`）。
 
 #### 标志
 
@@ -384,20 +384,20 @@ openctrlc serve
 
 ### session
 
-管理 OpenCode 会话。
+管理 OpenCtrlC 会话。
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-列出所有 OpenCode 会话。
+列出所有 OpenCtrlC 会话。
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### 标志
@@ -411,10 +411,10 @@ opencode session list
 
 ### stats
 
-显示 OpenCode 会话的 Token 用量和费用统计信息。
+显示 OpenCtrlC 会话的 Token 用量和费用统计信息。
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### 标志
@@ -433,7 +433,7 @@ opencode stats
 将会话数据导出为 JSON。
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 如果您不提供会话 ID，系统将提示您从可用的会话中进行选择。
@@ -442,30 +442,30 @@ opencode export [sessionID]
 
 ### import
 
-从 JSON 文件或 OpenCode 分享链接导入会话数据。
+从 JSON 文件或 OpenCtrlC 分享链接导入会话数据。
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
-您可以从本地文件或 OpenCode 分享链接导入。
+您可以从本地文件或 OpenCtrlC 分享链接导入。
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-启动带有 Web 界面的无界面 OpenCode 服务器。
+启动带有 Web 界面的无界面 OpenCtrlC 服务器。
 
 ```bash
 openctrlc web
 ```
 
-此命令启动一个 HTTP 服务器并打开浏览器，通过 Web 界面访问 OpenCode。设置 `OPENCTRLC_SERVER_PASSWORD` 可启用 HTTP 基本认证（用户名默认为 `openctrlc`）。
+此命令启动一个 HTTP 服务器并打开浏览器，通过 Web 界面访问 OpenCtrlC。设置 `OPENCTRLC_SERVER_PASSWORD` 可启用 HTTP 基本认证（用户名默认为 `openctrlc`）。
 
 #### 标志
 
@@ -500,7 +500,7 @@ openctrlc acp
 
 ### uninstall
 
-卸载 OpenCode 并删除所有相关文件。
+卸载 OpenCtrlC 并删除所有相关文件。
 
 ```bash
 openctrlc uninstall
@@ -519,7 +519,7 @@ openctrlc uninstall
 
 ### upgrade
 
-将 OpenCode 更新到最新版本或指定版本。
+将 OpenCtrlC 更新到最新版本或指定版本。
 
 ```bash
 openctrlc upgrade [target]
@@ -547,7 +547,7 @@ openctrlc upgrade v0.1.48
 
 ## 全局标志
 
-OpenCode CLI 接受以下全局标志。
+OpenCtrlC CLI 接受以下全局标志。
 
 | 标志                                       | 简写 | 描述                                 |
 | ------------------------------------------ | ---- | ------------------------------------ |
@@ -560,7 +560,7 @@ OpenCode CLI 接受以下全局标志。
 
 ## 环境变量
 
-OpenCode 可以通过环境变量进行配置。
+OpenCtrlC 可以通过环境变量进行配置。
 
 | 变量                                  | 类型    | 描述                                    |
 | ------------------------------------- | ------- | --------------------------------------- |

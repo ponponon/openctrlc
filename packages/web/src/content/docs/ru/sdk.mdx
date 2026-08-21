@@ -1,6 +1,6 @@
 ---
 title: SDK
-description: Типобезопасный JS-клиент для сервера opencode.
+description: Типобезопасный JS-клиент для сервера openctrlc.
 ---
 
 import config from "../../../../config.mjs"
@@ -25,7 +25,7 @@ npm install @openctrlc/sdk
 
 ## Создать клиента
 
-Создайте экземпляр opencode:
+Создайте экземпляр openctrlc:
 
 ```javascript
 import { createOpencode } from "@openctrlc/sdk"
@@ -54,7 +54,7 @@ const { client } = await createOpencode()
 ```javascript
 import { createOpencode } from "@openctrlc/sdk"
 
-const opencode = await createOpencode({
+const openctrlc = await createOpencode({
   hostname: "127.0.0.1",
   port: 4096,
   config: {
@@ -62,14 +62,14 @@ const opencode = await createOpencode({
   },
 })
 
-console.log(`Server running at ${opencode.server.url}`)
+console.log(`Server running at ${openctrlc.server.url}`)
 
-opencode.server.close()
+openctrlc.server.close()
 ```
 
 ## Только клиент
 
-Если у вас уже есть работающий экземпляр opencode, вы можете создать экземпляр клиента для подключения к нему:
+Если у вас уже есть работающий экземпляр openctrlc, вы можете создать экземпляр клиента для подключения к нему:
 
 ```javascript
 import { createOpencodeClient } from "@openctrlc/sdk"
@@ -376,7 +376,7 @@ await client.session.prompt({
 ```javascript
 // Search and read files
 const textResults = await client.find.text({
-  query: { pattern: "function.*opencode" },
+  query: { pattern: "function.*openctrlc" },
 })
 
 const files = await client.find.files({

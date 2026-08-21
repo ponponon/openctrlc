@@ -1,15 +1,15 @@
 ---
 title: Server LSP
-description: OpenCode si integra con i tuoi server LSP.
+description: OpenCtrlC si integra con i tuoi server LSP.
 ---
 
-OpenCode può integrarsi con server Language Server Protocol (LSP) per usare la diagnostica come feedback per l'agente.
+OpenCtrlC può integrarsi con server Language Server Protocol (LSP) per usare la diagnostica come feedback per l'agente.
 
 ---
 
 ## Integrati
 
-OpenCode include diversi server LSP integrati per linguaggi popolari:
+OpenCtrlC include diversi server LSP integrati per linguaggi popolari:
 
 | Server LSP         | Estensioni                                                          | Requisiti                                                                |
 | ------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -57,7 +57,7 @@ Puoi disabilitare il download automatico dei server LSP impostando la variabile 
 
 ## Come funziona
 
-Quando LSP è abilitato e opencode apre un file:
+Quando LSP è abilitato e openctrlc apre un file:
 
 1. Controlla l'estensione del file rispetto a tutti i server LSP abilitati.
 2. Avvia il server LSP appropriato se non e gia in esecuzione.
@@ -74,7 +74,7 @@ I server di linguaggio possono andare fuori sincronizzazione, usare molta memori
 
 ## Configura
 
-Puoi abilitare e personalizzare i server LSP tramite la sezione `lsp` nella configurazione di opencode.
+Puoi abilitare e personalizzare i server LSP tramite la sezione `lsp` nella configurazione di openctrlc.
 
 Per abilitare tutti i server LSP integrati, imposta `lsp` a `true`.
 

@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: opencode CLI seçenekleri ve komutları.
+description: openctrlc CLI seçenekleri ve komutları.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-opencode CLI herhangi bir argüman olmadan çalıştırıldığında varsayılan olarak [TUI](/docs/tui)'yi başlatır.
+openctrlc CLI herhangi bir argüman olmadan çalıştırıldığında varsayılan olarak [TUI](/docs/tui)'yi başlatır.
 
 ```bash
-opencode
+openctrlc
 ```
 
-Ancak bu sayfada belgelendiği gibi komutları da kabul eder. Bu, opencode ile programlı olarak etkileşim kurmanıza olanak tanır.
+Ancak bu sayfada belgelendiği gibi komutları da kabul eder. Bu, openctrlc ile programlı olarak etkileşim kurmanıza olanak tanır.
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-opencode terminal kullanıcı arayüzünü başlatır.
+openctrlc terminal kullanıcı arayüzünü başlatır.
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### Bayraklar
@@ -44,29 +44,29 @@ opencode [project]
 
 ## Komutlar
 
-opencode CLI ayrıca aşağıdaki komutlara da sahiptir.
+openctrlc CLI ayrıca aşağıdaki komutlara da sahiptir.
 
 ---
 
 ### agent
 
-opencode için agent'ları yönetin.
+openctrlc için agent'ları yönetin.
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-`serve` veya `web` komutlarıyla başlatılan, halihazırda çalışan bir opencode arka uç sunucusuna bir terminal ekleyin.
+`serve` veya `web` komutlarıyla başlatılan, halihazırda çalışan bir openctrlc arka uç sunucusuna bir terminal ekleyin.
 
 ```bash
 openctrlc attach [url]
 ```
 
-Bu, TUI öğesinin uzak bir opencode arka ucuyla kullanılmasına olanak tanır. Örneğin:
+Bu, TUI öğesinin uzak bir openctrlc arka ucuyla kullanılmasına olanak tanır. Örneğin:
 
 ```bash
 # Start the backend server for web/mobile access
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 Özel yapılandırmaya sahip yeni bir agent oluşturun.
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 Bu komut, özel sistem istemi ve araç yapılandırmasıyla yeni bir agent oluşturma konusunda size yol gösterecektir.
@@ -106,7 +106,7 @@ Bu komut, özel sistem istemi ve araç yapılandırmasıyla yeni bir agent oluş
 Mevcut tüm agent'ları listeleyin.
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-opencode, [Models.dev](https://models.dev) adresindeki sağlayıcı listesi tarafından desteklenmektedir, dolayısıyla kullanmak istediğiniz herhangi bir sağlayıcı için API anahtarlarını ayarlamak üzere `openctrlc auth login` kullanabilirsiniz. Bu `~/.local/share/openctrlc/auth.json`'de saklanıyor.
+openctrlc, [Models.dev](https://models.dev) adresindeki sağlayıcı listesi tarafından desteklenmektedir, dolayısıyla kullanmak istediğiniz herhangi bir sağlayıcı için API anahtarlarını ayarlamak üzere `openctrlc auth login` kullanabilirsiniz. Bu `~/.local/share/openctrlc/auth.json`'de saklanıyor.
 
 ```bash
 openctrlc auth login
 ```
 
-opencode başlatıldığında sağlayıcıları kimlik bilgileri dosyasından yükler. Ayrıca ortam değişkenlerindeki veya projenizdeki `.env` dosyasındaki anahtarları da kullanır.
+openctrlc başlatıldığında sağlayıcıları kimlik bilgileri dosyasından yükler. Ayrıca ortam değişkenlerindeki veya projenizdeki `.env` dosyasındaki anahtarları da kullanır.
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 Depo otomasyonu için GitHub aracısını yönetin.
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 GitHub aracısını deponuza yükleyin.
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 Bu komut gerekli GitHub Actions workflow'unu kurar ve yapılandırma adımlarında size rehberlik eder. [Daha fazla bilgi](/docs/github).
@@ -186,7 +186,7 @@ Bu komut gerekli GitHub Actions workflow'unu kurar ve yapılandırma adımların
 GitHub aracısını çalıştırın. Bu genellikle GitHub Eylemlerinde kullanılır.
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### Bayraklar
@@ -305,7 +305,7 @@ openctrlc models anthropic
 | <nobr><code>{"--refresh"}</code></nobr> | Modeller.dev'den model önbelleğini yenileyin                                |
 | <nobr><code>{"--verbose"}</code></nobr> | Daha ayrıntılı model çıktısı kullanın (maliyetler gibi meta veriler içerir) |
 
-Önbelleğe alınan model listesini güncellemek için `--refresh` bayrağını kullanın. Bu, bir sağlayıcıya yeni modeller eklendiğinde ve bunları opencode'da görmek istediğinizde kullanışlıdır.
+Önbelleğe alınan model listesini güncellemek için `--refresh` bayrağını kullanın. Bu, bir sağlayıcıya yeni modeller eklendiğinde ve bunları openctrlc'da görmek istediğinizde kullanışlıdır.
 
 ```bash
 openctrlc models --refresh
@@ -315,7 +315,7 @@ openctrlc models --refresh
 
 ### run
 
-Doğrudan bir istem ileterek opencode'u etkileşimli olmayan modda çalıştırın.
+Doğrudan bir istem ileterek openctrlc'u etkileşimli olmayan modda çalıştırın.
 
 ```bash
 openctrlc run [message..]
@@ -351,7 +351,7 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f` | Mesaja eklenecek dosya(lar)                                                                   |
 | <nobr><code>{"--format"}</code></nobr>   |      | Biçim: varsayılan (biçimlendirilmiş) veya json (ham JSON olayları)                            |
 | <nobr><code>{"--title"}</code></nobr>    |      | Oturumun başlığı (değer sağlanmazsa kısaltılmış bilgi istemi kullanılır)                      |
-| <nobr><code>{"--attach"}</code></nobr>   |      | Çalışan bir opencode sunucusuna ekleyin (ör. http://localhost:4096)                           |
+| <nobr><code>{"--attach"}</code></nobr>   |      | Çalışan bir openctrlc sunucusuna ekleyin (ör. http://localhost:4096)                           |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | Temel kimlik doğrulama parolası (varsayılan: `OPENCTRLC_SERVER_PASSWORD`)                      |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | Temel kimlik doğrulama kullanıcı adı (varsayılan: `OPENCTRLC_SERVER_USERNAME` veya `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |      | Çalıştırılacak dizin veya bağlanırken uzak sunucudaki yol                                     |
@@ -363,13 +363,13 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 ### serve
 
-API erişimi için headless bir opencode sunucusu başlatır. Tam HTTP arayüzü için [server docs](/docs/server) sayfasına bakın.
+API erişimi için headless bir openctrlc sunucusu başlatır. Tam HTTP arayüzü için [server docs](/docs/server) sayfasına bakın.
 
 ```bash
 openctrlc serve
 ```
 
-Bu, TUI arayüzü olmadan opencode işlevselliğine API erişimi sağlayan bir HTTP sunucusunu başlatır. HTTP temel kimlik doğrulamasını etkinleştirmek için `OPENCTRLC_SERVER_PASSWORD` öğesini ayarlayın (kullanıcı adı varsayılan olarak `openctrlc` şeklindedir).
+Bu, TUI arayüzü olmadan openctrlc işlevselliğine API erişimi sağlayan bir HTTP sunucusunu başlatır. HTTP temel kimlik doğrulamasını etkinleştirmek için `OPENCTRLC_SERVER_PASSWORD` öğesini ayarlayın (kullanıcı adı varsayılan olarak `openctrlc` şeklindedir).
 
 #### Bayraklar
 
@@ -384,20 +384,20 @@ Bu, TUI arayüzü olmadan opencode işlevselliğine API erişimi sağlayan bir H
 
 ### session
 
-opencode oturumlarını yönetin.
+openctrlc oturumlarını yönetin.
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-Tüm opencode oturumlarını listeleyin.
+Tüm openctrlc oturumlarını listeleyin.
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### Bayraklar
@@ -411,10 +411,10 @@ opencode session list
 
 ### stats
 
-opencode oturumlarınız için belirteç kullanımı ve maliyet istatistiklerini gösterin.
+openctrlc oturumlarınız için belirteç kullanımı ve maliyet istatistiklerini gösterin.
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### Bayraklar
@@ -433,7 +433,7 @@ opencode stats
 Oturum verilerini JSON olarak dışa aktarın.
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 Bir oturum kimliği sağlamazsanız mevcut oturumlar arasından seçim yapmanız istenir.
@@ -442,30 +442,30 @@ Bir oturum kimliği sağlamazsanız mevcut oturumlar arasından seçim yapmanız
 
 ### import
 
-Bir JSON dosyasından veya opencode paylaşımından URL oturum verilerini içe aktarın.
+Bir JSON dosyasından veya openctrlc paylaşımından URL oturum verilerini içe aktarın.
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
-Yerel bir dosyadan veya opencode paylaşımından (URL) içe aktarabilirsiniz.
+Yerel bir dosyadan veya openctrlc paylaşımından (URL) içe aktarabilirsiniz.
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-Web arayüzüyle başsız bir opencode sunucusu başlatın.
+Web arayüzüyle başsız bir openctrlc sunucusu başlatın.
 
 ```bash
 openctrlc web
 ```
 
-Bu, bir HTTP sunucusunu başlatır ve bir web arayüzü aracılığıyla opencode'a erişmek için bir web tarayıcısı açar. HTTP temel kimlik doğrulamasını etkinleştirmek için `OPENCTRLC_SERVER_PASSWORD` öğesini ayarlayın (kullanıcı adı varsayılan olarak `openctrlc` şeklindedir).
+Bu, bir HTTP sunucusunu başlatır ve bir web arayüzü aracılığıyla openctrlc'a erişmek için bir web tarayıcısı açar. HTTP temel kimlik doğrulamasını etkinleştirmek için `OPENCTRLC_SERVER_PASSWORD` öğesini ayarlayın (kullanıcı adı varsayılan olarak `openctrlc` şeklindedir).
 
 #### Bayraklar
 
@@ -500,7 +500,7 @@ Bu komut, nd-JSON kullanarak stdin/stdout aracılığıyla iletişim kuran bir A
 
 ### uninstall
 
-opencode'u kaldırın ve ilgili tüm dosyaları kaldırın.
+openctrlc'u kaldırın ve ilgili tüm dosyaları kaldırın.
 
 ```bash
 openctrlc uninstall
@@ -519,7 +519,7 @@ openctrlc uninstall
 
 ### upgrade
 
-opencode'u en son sürüme veya belirli bir sürüme günceller.
+openctrlc'u en son sürüme veya belirli bir sürüme günceller.
 
 ```bash
 openctrlc upgrade [target]
@@ -547,7 +547,7 @@ openctrlc upgrade v0.1.48
 
 ## Global bayraklar
 
-opencode CLI aşağıdaki global bayrakları destekler.
+openctrlc CLI aşağıdaki global bayrakları destekler.
 
 | Bayrak                                     | Kısa | Tanım                                    |
 | ------------------------------------------ | ---- | ---------------------------------------- |
@@ -560,7 +560,7 @@ opencode CLI aşağıdaki global bayrakları destekler.
 
 ## Ortam değişkenleri
 
-opencode ortam değişkenleri kullanılarak yapılandırılabilir.
+openctrlc ortam değişkenleri kullanılarak yapılandırılabilir.
 
 | Değişken                              | Tip     | Açıklama                                                                    |
 | ------------------------------------- | ------- | --------------------------------------------------------------------------- |

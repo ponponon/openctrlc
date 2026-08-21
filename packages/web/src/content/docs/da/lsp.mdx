@@ -1,15 +1,15 @@
 ---
 title: LSP-servere
-description: OpenCode integreres med dine LSP-servere.
+description: OpenCtrlC integreres med dine LSP-servere.
 ---
 
-OpenCode kan integreres med Language Server Protocol (LSP)-servere for at bruge diagnostik som feedback til agenten.
+OpenCtrlC kan integreres med Language Server Protocol (LSP)-servere for at bruge diagnostik som feedback til agenten.
 
 ---
 
 ## Indbyggede
 
-OpenCode leveres med flere indbyggede LSP-servere til populære sprog:
+OpenCtrlC leveres med flere indbyggede LSP-servere til populære sprog:
 
 | LSP Server         | Udvidelser                                                | Krav                                                            |
 | ------------------ | --------------------------------------------------------- | --------------------------------------------------------------- |
@@ -57,7 +57,7 @@ Du kan deaktivere automatisk LSP-serverdownloads ved at indstille miljøvariable
 
 ## Sådan fungerer det
 
-Når LSP er aktiveret, og opencode åbner en fil, vil den:
+Når LSP er aktiveret, og openctrlc åbner en fil, vil den:
 
 1. Kontrollerer filtypenavnet mod alle aktiverede LSP-servere.
 2. Starter den relevante LSP-server, hvis den ikke allerede kører.
@@ -74,7 +74,7 @@ Sprogservere kan komme ud af sync, bruge meget hukommelse, variere efter version
 
 ## Konfiguration
 
-Du kan aktivere og tilpasse LSP-servere gennem sektionen `lsp` i din opencode-konfiguration.
+Du kan aktivere og tilpasse LSP-servere gennem sektionen `lsp` i din openctrlc-konfiguration.
 
 For at aktivere alle indbyggede LSP-servere skal du indstille `lsp` til `true`.
 

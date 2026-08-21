@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: Opções e comandos da CLI do opencode.
+description: Opções e comandos da CLI do openctrlc.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-A CLI do opencode, por padrão, inicia o [TUI](/docs/tui) quando executada sem argumentos.
+A CLI do openctrlc, por padrão, inicia o [TUI](/docs/tui) quando executada sem argumentos.
 
 ```bash
-opencode
+openctrlc
 ```
 
-Mas também aceita comandos conforme documentado nesta página. Isso permite que você interaja com o opencode programaticamente.
+Mas também aceita comandos conforme documentado nesta página. Isso permite que você interaja com o openctrlc programaticamente.
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-Inicie a interface de usuário do terminal do opencode.
+Inicie a interface de usuário do terminal do openctrlc.
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### Opções
@@ -44,29 +44,29 @@ opencode [project]
 
 ## Comandos
 
-A CLI do opencode também possui os seguintes comandos.
+A CLI do openctrlc também possui os seguintes comandos.
 
 ---
 
 ### agent
 
-Gerencie agentes para o opencode.
+Gerencie agentes para o openctrlc.
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-Anexe um terminal a um servidor backend do opencode já em execução, iniciado via comandos `serve` ou `web`.
+Anexe um terminal a um servidor backend do openctrlc já em execução, iniciado via comandos `serve` ou `web`.
 
 ```bash
 openctrlc attach [url]
 ```
 
-Isso permite usar o TUI com um backend opencode remoto. Por exemplo:
+Isso permite usar o TUI com um backend openctrlc remoto. Por exemplo:
 
 ```bash
 # Inicie o servidor backend para acesso web/mobile
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 Crie um novo agente com configuração personalizada.
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 Este comando irá guiá-lo na criação de um novo agente com um prompt de sistema personalizado e configuração de ferramentas.
@@ -106,7 +106,7 @@ Este comando irá guiá-lo na criação de um novo agente com um prompt de siste
 Liste todos os agentes disponíveis.
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-O opencode é alimentado pela lista de provedores em [Models.dev](https://models.dev), então você pode usar `openctrlc auth login` para configurar chaves de API para qualquer provedor que você gostaria de usar. Isso é armazenado em `~/.local/share/openctrlc/auth.json`.
+O openctrlc é alimentado pela lista de provedores em [Models.dev](https://models.dev), então você pode usar `openctrlc auth login` para configurar chaves de API para qualquer provedor que você gostaria de usar. Isso é armazenado em `~/.local/share/openctrlc/auth.json`.
 
 ```bash
 openctrlc auth login
 ```
 
-Quando o opencode é iniciado, ele carrega os provedores do arquivo de credenciais. E se houver chaves definidas em seus ambientes ou em um arquivo `.env` em seu projeto.
+Quando o openctrlc é iniciado, ele carrega os provedores do arquivo de credenciais. E se houver chaves definidas em seus ambientes ou em um arquivo `.env` em seu projeto.
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 Gerencie o agente do GitHub para automação de repositórios.
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 Instale o agente do GitHub em seu repositório.
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 Isso configura o fluxo de trabalho necessário do GitHub Actions e o guia pelo processo de configuração. [Saiba mais](/docs/github).
@@ -186,7 +186,7 @@ Isso configura o fluxo de trabalho necessário do GitHub Actions e o guia pelo p
 Execute o agente do GitHub. Isso é tipicamente usado em GitHub Actions.
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### Opções
@@ -305,7 +305,7 @@ openctrlc models anthropic
 | <nobr><code>{"--refresh"}</code></nobr> | Atualiza o cache de modelos a partir do models.dev                    |
 | <nobr><code>{"--verbose"}</code></nobr> | Use uma saída de modelo mais detalhada (inclui metadados como custos) |
 
-Use a flag `--refresh` para atualizar a lista de modelos em cache. Isso é útil quando novos modelos foram adicionados a um provedor e você deseja vê-los no opencode.
+Use a flag `--refresh` para atualizar a lista de modelos em cache. Isso é útil quando novos modelos foram adicionados a um provedor e você deseja vê-los no openctrlc.
 
 ```bash
 openctrlc models --refresh
@@ -315,7 +315,7 @@ openctrlc models --refresh
 
 ### run
 
-Execute o opencode em modo não interativo passando um prompt diretamente.
+Execute o openctrlc em modo não interativo passando um prompt diretamente.
 
 ```bash
 openctrlc run [message..]
@@ -351,7 +351,7 @@ openctrlc run --attach http://localhost:4096 "Explique async/await em JavaScript
 | <nobr><code>{"--file"}</code></nobr>     | `-f`  | Arquivo(s) a serem anexados à mensagem                                            |
 | <nobr><code>{"--format"}</code></nobr>   |       | Formato: padrão (formatado) ou json (eventos JSON brutos)                         |
 | <nobr><code>{"--title"}</code></nobr>    |       | Título para a sessão (usa o prompt truncado se nenhum valor for fornecido)        |
-| <nobr><code>{"--attach"}</code></nobr>   |       | Anexe a um servidor opencode em execução (por exemplo, http://localhost:4096)     |
+| <nobr><code>{"--attach"}</code></nobr>   |       | Anexe a um servidor openctrlc em execução (por exemplo, http://localhost:4096)     |
 | <nobr><code>{"--password"}</code></nobr> | `-p`  | Senha de autenticação básica (padrão: `OPENCTRLC_SERVER_PASSWORD`)                 |
 | <nobr><code>{"--username"}</code></nobr> | `-u`  | Usuário de autenticação básica (padrão: `OPENCTRLC_SERVER_USERNAME` ou `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |       | Diretório de execução, ou caminho no servidor remoto ao anexar                    |
@@ -363,13 +363,13 @@ openctrlc run --attach http://localhost:4096 "Explique async/await em JavaScript
 
 ### serve
 
-Inicie um servidor opencode sem cabeça para acesso à API. Confira a [documentação do servidor](/docs/server) para a interface HTTP completa.
+Inicie um servidor openctrlc sem cabeça para acesso à API. Confira a [documentação do servidor](/docs/server) para a interface HTTP completa.
 
 ```bash
 openctrlc serve
 ```
 
-Isso inicia um servidor HTTP que fornece acesso à funcionalidade do opencode sem a interface TUI. Defina `OPENCTRLC_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `openctrlc`).
+Isso inicia um servidor HTTP que fornece acesso à funcionalidade do openctrlc sem a interface TUI. Defina `OPENCTRLC_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `openctrlc`).
 
 #### Opções
 
@@ -384,20 +384,20 @@ Isso inicia um servidor HTTP que fornece acesso à funcionalidade do opencode se
 
 ### session
 
-Gerencie sessões do opencode.
+Gerencie sessões do openctrlc.
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-Liste todas as sessões do opencode.
+Liste todas as sessões do openctrlc.
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### Opções
@@ -411,10 +411,10 @@ opencode session list
 
 ### stats
 
-Mostre o uso de tokens e estatísticas de custo para suas sessões do opencode.
+Mostre o uso de tokens e estatísticas de custo para suas sessões do openctrlc.
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### Opções
@@ -433,7 +433,7 @@ opencode stats
 Exporte dados da sessão como JSON.
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 Se você não fornecer um ID de sessão, será solicitado que você selecione entre as sessões disponíveis.
@@ -442,30 +442,30 @@ Se você não fornecer um ID de sessão, será solicitado que você selecione en
 
 ### import
 
-Importe dados da sessão de um arquivo JSON ou URL de compartilhamento do opencode.
+Importe dados da sessão de um arquivo JSON ou URL de compartilhamento do openctrlc.
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
-Você pode importar de um arquivo local ou de uma URL de compartilhamento do opencode.
+Você pode importar de um arquivo local ou de uma URL de compartilhamento do openctrlc.
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-Inicie um servidor opencode sem cabeça com uma interface web.
+Inicie um servidor openctrlc sem cabeça com uma interface web.
 
 ```bash
 openctrlc web
 ```
 
-Isso inicia um servidor HTTP e abre um navegador para acessar o opencode através de uma interface web. Defina `OPENCTRLC_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `openctrlc`).
+Isso inicia um servidor HTTP e abre um navegador para acessar o openctrlc através de uma interface web. Defina `OPENCTRLC_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `openctrlc`).
 
 #### Opções
 
@@ -500,7 +500,7 @@ Este comando inicia um servidor ACP que se comunica via stdin/stdout usando nd-J
 
 ### uninstall
 
-Desinstale o opencode e remova todos os arquivos relacionados.
+Desinstale o openctrlc e remova todos os arquivos relacionados.
 
 ```bash
 openctrlc uninstall
@@ -519,7 +519,7 @@ openctrlc uninstall
 
 ### upgrade
 
-Atualiza o opencode para a versão mais recente ou uma versão específica.
+Atualiza o openctrlc para a versão mais recente ou uma versão específica.
 
 ```bash
 openctrlc upgrade [target]
@@ -547,7 +547,7 @@ openctrlc upgrade v0.1.48
 
 ## Opções Globais
 
-A CLI do opencode aceita as seguintes flags globais.
+A CLI do openctrlc aceita as seguintes flags globais.
 
 | Flag                                       | Curto | Descrição                               |
 | ------------------------------------------ | ----- | --------------------------------------- |
@@ -560,7 +560,7 @@ A CLI do opencode aceita as seguintes flags globais.
 
 ## Variáveis de ambiente
 
-O opencode pode ser configurado usando variáveis de ambiente.
+O openctrlc pode ser configurado usando variáveis de ambiente.
 
 | Variável                              | Tipo    | Descrição                                                             |
 | ------------------------------------- | ------- | --------------------------------------------------------------------- |

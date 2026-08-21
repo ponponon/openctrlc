@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: OpenCode CLI-alternativer og kommandoer.
+description: OpenCtrlC CLI-alternativer og kommandoer.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-OpenCode CLI starter som standard [TUI](/docs/tui) når den kjøres uten noen argumenter.
+OpenCtrlC CLI starter som standard [TUI](/docs/tui) når den kjøres uten noen argumenter.
 
 ```bash
-opencode
+openctrlc
 ```
 
-Men den godtar også kommandoer som dokumentert på denne siden. Dette lar deg samhandle med OpenCode programmatisk.
+Men den godtar også kommandoer som dokumentert på denne siden. Dette lar deg samhandle med OpenCtrlC programmatisk.
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-Start OpenCode-terminalbrukergrensesnittet.
+Start OpenCtrlC-terminalbrukergrensesnittet.
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### Flagg
@@ -44,29 +44,29 @@ opencode [project]
 
 ## Kommandoer
 
-OpenCode CLI har også følgende kommandoer.
+OpenCtrlC CLI har også følgende kommandoer.
 
 ---
 
 ### agent
 
-Administrer agenter for OpenCode.
+Administrer agenter for OpenCtrlC.
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-Koble en terminal til en allerede kjørende OpenCode-backend-server startet via `serve` eller `web` kommandoer.
+Koble en terminal til en allerede kjørende OpenCtrlC-backend-server startet via `serve` eller `web` kommandoer.
 
 ```bash
 openctrlc attach [url]
 ```
 
-Dette gjør det mulig å bruke TUI med en ekstern OpenCode-backend. For eksempel:
+Dette gjør det mulig å bruke TUI med en ekstern OpenCtrlC-backend. For eksempel:
 
 ```bash
 # Start the backend server for web/mobile access
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 Opprett en ny agent med tilpasset konfigurasjon.
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 Denne kommandoen vil veilede deg gjennom å lage en ny agent med en tilpasset systemmelding og verktøykonfigurasjon.
@@ -106,7 +106,7 @@ Denne kommandoen vil veilede deg gjennom å lage en ny agent med en tilpasset sy
 List opp alle tilgjengelige agenter.
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-OpenCode drives av leverandørlisten på [Models.dev](https://models.dev), så du kan bruke `openctrlc auth login` til å konfigurere API-nøkler for enhver leverandør du vil bruke. Dette er lagret i `~/.local/share/openctrlc/auth.json`.
+OpenCtrlC drives av leverandørlisten på [Models.dev](https://models.dev), så du kan bruke `openctrlc auth login` til å konfigurere API-nøkler for enhver leverandør du vil bruke. Dette er lagret i `~/.local/share/openctrlc/auth.json`.
 
 ```bash
 openctrlc auth login
 ```
 
-Når OpenCode starter opp, laster den leverandørene fra filen med påloggingsinformasjon. Og hvis det er noen nøkler definert i miljøene dine eller en `.env`-fil i prosjektet ditt.
+Når OpenCtrlC starter opp, laster den leverandørene fra filen med påloggingsinformasjon. Og hvis det er noen nøkler definert i miljøene dine eller en `.env`-fil i prosjektet ditt.
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 Administrer GitHub-agenten for depotautomatisering.
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 Installer GitHub-agenten i depotet ditt.
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 Dette setter opp den nødvendige GitHub Actions-arbeidsflyten og veileder deg gjennom konfigurasjonsprosessen. [Finn ut mer](/docs/github).
@@ -186,7 +186,7 @@ Dette setter opp den nødvendige GitHub Actions-arbeidsflyten og veileder deg gj
 Kjør GitHub-agenten. Dette brukes vanligvis i GitHub Actions.
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### Flagg
@@ -305,7 +305,7 @@ openctrlc models anthropic
 | <nobr><code>{"--refresh"}</code></nobr> | Oppdater modellbufferen fra models.dev                              |
 | <nobr><code>{"--verbose"}</code></nobr> | Bruk mer detaljert modellutdata (inkluderer metadata som kostnader) |
 
-Bruk `--refresh`-flagget for å oppdatere den bufrede modelllisten. Dette er nyttig når nye modeller er lagt til en leverandør og du vil se dem i OpenCode.
+Bruk `--refresh`-flagget for å oppdatere den bufrede modelllisten. Dette er nyttig når nye modeller er lagt til en leverandør og du vil se dem i OpenCtrlC.
 
 ```bash
 openctrlc models --refresh
@@ -315,7 +315,7 @@ openctrlc models --refresh
 
 ### run
 
-Kjør OpenCode i ikke-interaktiv modus ved å sende en melding direkte.
+Kjør OpenCtrlC i ikke-interaktiv modus ved å sende en melding direkte.
 
 ```bash
 openctrlc run [message..]
@@ -351,7 +351,7 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f` | Fil(er) som skal legges ved meldingen                                                              |
 | <nobr><code>{"--format"}</code></nobr>   |      | Format: standard (formatert) eller json (rå JSON hendelser)                                        |
 | <nobr><code>{"--title"}</code></nobr>    |      | Tittel for økten (bruker avkortet ledetekst hvis ingen verdi er oppgitt)                           |
-| <nobr><code>{"--attach"}</code></nobr>   |      | Koble til en kjørende OpenCode-server (f.eks. http://localhost:4096)                               |
+| <nobr><code>{"--attach"}</code></nobr>   |      | Koble til en kjørende OpenCtrlC-server (f.eks. http://localhost:4096)                               |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | Passord for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_PASSWORD`)                     |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | Brukernavn for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |      | Katalog å kjøre i, eller sti på fjernserveren ved tilkobling                                       |
@@ -363,13 +363,13 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 ### serve
 
-Start en headless OpenCode-server for API-tilgang. Sjekk ut [server-dokumentene](/docs/server) for hele HTTP-grensesnittet.
+Start en headless OpenCtrlC-server for API-tilgang. Sjekk ut [server-dokumentene](/docs/server) for hele HTTP-grensesnittet.
 
 ```bash
 openctrlc serve
 ```
 
-Dette starter en HTTP-server som gir API tilgang til OpenCode-funksjonalitet uten TUI-grensesnittet. Sett `OPENCTRLC_SERVER_PASSWORD` for å aktivere HTTP grunnleggende autentisering (brukernavn er standard til `openctrlc`).
+Dette starter en HTTP-server som gir API tilgang til OpenCtrlC-funksjonalitet uten TUI-grensesnittet. Sett `OPENCTRLC_SERVER_PASSWORD` for å aktivere HTTP grunnleggende autentisering (brukernavn er standard til `openctrlc`).
 
 #### Flagg
 
@@ -384,20 +384,20 @@ Dette starter en HTTP-server som gir API tilgang til OpenCode-funksjonalitet ute
 
 ### session
 
-Administrer OpenCode-økter.
+Administrer OpenCtrlC-økter.
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-List opp alle OpenCode-økter.
+List opp alle OpenCtrlC-økter.
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### Flagg
@@ -411,10 +411,10 @@ opencode session list
 
 ### stats
 
-Vis tokenbruk og kostnadsstatistikk for OpenCode-øktene dine.
+Vis tokenbruk og kostnadsstatistikk for OpenCtrlC-øktene dine.
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### Flagg
@@ -433,7 +433,7 @@ opencode stats
 Eksporter øktdata som JSON.
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 Hvis du ikke gir en økt ID, blir du bedt om å velge fra tilgjengelige økter.
@@ -442,30 +442,30 @@ Hvis du ikke gir en økt ID, blir du bedt om å velge fra tilgjengelige økter.
 
 ### import
 
-Importer øktdata fra en JSON-fil eller en OpenCode share-URL.
+Importer øktdata fra en JSON-fil eller en OpenCtrlC share-URL.
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
-Du kan importere fra en lokal fil eller en OpenCode share-URL.
+Du kan importere fra en lokal fil eller en OpenCtrlC share-URL.
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-Start en headless OpenCode-server med et webgrensesnitt.
+Start en headless OpenCtrlC-server med et webgrensesnitt.
 
 ```bash
 openctrlc web
 ```
 
-Dette starter en HTTP-server og åpner en nettleser for å få tilgang til OpenCode via et nettgrensesnitt. Sett `OPENCTRLC_SERVER_PASSWORD` for å aktivere HTTP grunnleggende autentisering (brukernavn er standard til `openctrlc`).
+Dette starter en HTTP-server og åpner en nettleser for å få tilgang til OpenCtrlC via et nettgrensesnitt. Sett `OPENCTRLC_SERVER_PASSWORD` for å aktivere HTTP grunnleggende autentisering (brukernavn er standard til `openctrlc`).
 
 #### Flagg
 
@@ -500,7 +500,7 @@ Denne kommandoen starter en ACP-server som kommuniserer via stdin/stdout ved å 
 
 ### uninstall
 
-Avinstaller OpenCode og fjern alle relaterte filer.
+Avinstaller OpenCtrlC og fjern alle relaterte filer.
 
 ```bash
 openctrlc uninstall
@@ -519,7 +519,7 @@ openctrlc uninstall
 
 ### upgrade
 
-Oppdaterer OpenCode til siste versjon eller en spesifikk versjon.
+Oppdaterer OpenCtrlC til siste versjon eller en spesifikk versjon.
 
 ```bash
 openctrlc upgrade [target]
@@ -547,7 +547,7 @@ openctrlc upgrade v0.1.48
 
 ## Globale flagg
 
-OpenCode CLI bruker følgende globale flagg.
+OpenCtrlC CLI bruker følgende globale flagg.
 
 | Flagg                                      | Kort | Beskrivelse                         |
 | ------------------------------------------ | ---- | ----------------------------------- |
@@ -560,7 +560,7 @@ OpenCode CLI bruker følgende globale flagg.
 
 ## Miljøvariabler
 
-OpenCode kan konfigureres ved hjelp av miljøvariabler.
+OpenCtrlC kan konfigureres ved hjelp av miljøvariabler.
 
 | Variabel                              | Type   | Beskrivelse                                                           |
 | ------------------------------------- | ------ | --------------------------------------------------------------------- |

@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: OpenCode CLI opcije i naredbe.
+description: OpenCtrlC CLI opcije i naredbe.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-OpenCode CLI po defaultu pokreće [TUI](/docs/tui) kada se pokrene bez ikakvih argumenata.
+OpenCtrlC CLI po defaultu pokreće [TUI](/docs/tui) kada se pokrene bez ikakvih argumenata.
 
 ```bash
-opencode
+openctrlc
 ```
 
-Ali takođe prihvata naredbe kao što je dokumentovano na ovoj stranici. Ovo vam omogućava programsku interakciju sa OpenCode.
+Ali takođe prihvata naredbe kao što je dokumentovano na ovoj stranici. Ovo vam omogućava programsku interakciju sa OpenCtrlC.
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-Pokrenite OpenCode terminalski korisnički interfejs.
+Pokrenite OpenCtrlC terminalski korisnički interfejs.
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### Opcije
@@ -44,29 +44,29 @@ opencode [project]
 
 ## Naredbe
 
-OpenCode CLI takođe ima sljedeće naredbe.
+OpenCtrlC CLI takođe ima sljedeće naredbe.
 
 ---
 
 ### agent
 
-Upravljajte OpenCode agentima.
+Upravljajte OpenCtrlC agentima.
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-Priključite terminal na već pokrenut OpenCode backend server pokrenut putem `serve` ili `web` naredbi.
+Priključite terminal na već pokrenut OpenCtrlC backend server pokrenut putem `serve` ili `web` naredbi.
 
 ```bash
 openctrlc attach [url]
 ```
 
-Ovo omogućava korištenje TUI-ja sa udaljenim OpenCode backend-om. Na primjer:
+Ovo omogućava korištenje TUI-ja sa udaljenim OpenCtrlC backend-om. Na primjer:
 
 ```bash
 # Start the backend server for web/mobile access
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 Kreirajte novog agenta s prilagođenom konfiguracijom.
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 Ova naredba će vas voditi kroz kreiranje novog agenta sa prilagođenim sistemskim promptom i konfiguracijom alata.
@@ -106,7 +106,7 @@ Ova naredba će vas voditi kroz kreiranje novog agenta sa prilagođenim sistemsk
 Navedite sve dostupne agente.
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-OpenCode pokreće lista provajdera na [Models.dev](https://models.dev), tako da možete koristiti `openctrlc auth login` da konfigurirate API ključeve za bilo kojeg provajdera kojeg želite koristiti. Ovo je pohranjeno u `~/.local/share/openctrlc/auth.json`.
+OpenCtrlC pokreće lista provajdera na [Models.dev](https://models.dev), tako da možete koristiti `openctrlc auth login` da konfigurirate API ključeve za bilo kojeg provajdera kojeg želite koristiti. Ovo je pohranjeno u `~/.local/share/openctrlc/auth.json`.
 
 ```bash
 openctrlc auth login
 ```
 
-Kada se OpenCode pokrene, učitava dobavljače iz datoteke vjerodajnica. I ako postoje neki ključevi definirani u vašim okruženjima ili `.env` fajl u vašem projektu.
+Kada se OpenCtrlC pokrene, učitava dobavljače iz datoteke vjerodajnica. I ako postoje neki ključevi definirani u vašim okruženjima ili `.env` fajl u vašem projektu.
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 Upravljajte GitHub agentom za automatizaciju repozitorija.
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 Instalirajte GitHub agenta u svoj repozitorij.
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 Ovo postavlja neophodni tok rada GitHub Actions i vodi vas kroz proces konfiguracije. [Saznajte više](/docs/github).
@@ -186,7 +186,7 @@ Ovo postavlja neophodni tok rada GitHub Actions i vodi vas kroz proces konfigura
 Pokrenite GitHub agent. Ovo se obično koristi u GitHub Actions.
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### Opcije
@@ -302,7 +302,7 @@ openctrlc models anthropic
 | <nobr><code>{"--refresh"}</code></nobr> | Osvježite keš modela sa models.dev                                       |
 | <nobr><code>{"--verbose"}</code></nobr> | Koristite detaljniji izlaz modela (uključuje metapodatke poput troškova) |
 
-Koristite `--refresh` zastavicu da ažurirate keširanu listu modela. Ovo je korisno kada su novi modeli dodani provajderu i želite da ih vidite u OpenCode.
+Koristite `--refresh` zastavicu da ažurirate keširanu listu modela. Ovo je korisno kada su novi modeli dodani provajderu i želite da ih vidite u OpenCtrlC.
 
 ```bash
 openctrlc models --refresh
@@ -312,7 +312,7 @@ openctrlc models --refresh
 
 ### run
 
-Pokrenite OpenCode u neinteraktivnom modu tako što ćete direktno proslijediti prompt.
+Pokrenite OpenCtrlC u neinteraktivnom modu tako što ćete direktno proslijediti prompt.
 
 ```bash
 openctrlc run [message..]
@@ -348,7 +348,7 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f`   | Fajlovi koje treba priložiti poruci                                                           |
 | <nobr><code>{"--format"}</code></nobr>   |        | Format: default (formatiran) ili json (sirovi JSON događaji)                                  |
 | <nobr><code>{"--title"}</code></nobr>    |        | Naslov sesije (koristi skraćeni prompt ako nije navedena vrijednost)                          |
-| <nobr><code>{"--attach"}</code></nobr>   |        | Priključite na pokrenuti OpenCode server (npr. http://localhost:4096)                         |
+| <nobr><code>{"--attach"}</code></nobr>   |        | Priključite na pokrenuti OpenCtrlC server (npr. http://localhost:4096)                         |
 | <nobr><code>{"--password"}</code></nobr> | `-p`   | Lozinka za osnovnu autentifikaciju (zadano: `OPENCTRLC_SERVER_PASSWORD`)                       |
 | <nobr><code>{"--username"}</code></nobr> | `-u`   | Korisničko ime za osnovnu autentifikaciju (zadano: `OPENCTRLC_SERVER_USERNAME` ili `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |        | Direktorij za pokretanje, ili putanja na udaljenom serveru pri spajanju                       |
@@ -360,13 +360,13 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 ### serve
 
-Pokrenite OpenCode headless server za API pristup. Pogledajte [server docs](/docs/server) za kompletan HTTP interfejs.
+Pokrenite OpenCtrlC headless server za API pristup. Pogledajte [server docs](/docs/server) za kompletan HTTP interfejs.
 
 ```bash
 openctrlc serve
 ```
 
-Ovo pokreće HTTP server koji pruža API pristup funkcionalnosti OpenCode-a bez TUI interfejsa. Postavite `OPENCTRLC_SERVER_PASSWORD` da omogućite HTTP osnovnu auth (korisničko ime je zadano na `openctrlc`).
+Ovo pokreće HTTP server koji pruža API pristup funkcionalnosti OpenCtrlC-a bez TUI interfejsa. Postavite `OPENCTRLC_SERVER_PASSWORD` da omogućite HTTP osnovnu auth (korisničko ime je zadano na `openctrlc`).
 
 #### Opcije
 
@@ -381,20 +381,20 @@ Ovo pokreće HTTP server koji pruža API pristup funkcionalnosti OpenCode-a bez 
 
 ### session
 
-Upravljajte OpenCode sesijama.
+Upravljajte OpenCtrlC sesijama.
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-Navedite sve OpenCode sesije.
+Navedite sve OpenCtrlC sesije.
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### Opcije
@@ -408,10 +408,10 @@ opencode session list
 
 ### stats
 
-Prikaži statistiku upotrebe tokena i troškova za vaše OpenCode sesije.
+Prikaži statistiku upotrebe tokena i troškova za vaše OpenCtrlC sesije.
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### Opcije
@@ -430,7 +430,7 @@ opencode stats
 Izvezite podatke sesije kao JSON.
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 Ako ne unesete ID sesije, od vas će biti zatraženo da odaberete neku od dostupnih sesija.
@@ -439,30 +439,30 @@ Ako ne unesete ID sesije, od vas će biti zatraženo da odaberete neku od dostup
 
 ### import
 
-Uvezite podatke sesije iz JSON datoteke ili OpenCode dijeljenog URL-a.
+Uvezite podatke sesije iz JSON datoteke ili OpenCtrlC dijeljenog URL-a.
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
-Možete uvesti iz lokalne datoteke ili OpenCode dijeljenog URL-a.
+Možete uvesti iz lokalne datoteke ili OpenCtrlC dijeljenog URL-a.
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-Pokrenite OpenCode headless server sa web interfejsom.
+Pokrenite OpenCtrlC headless server sa web interfejsom.
 
 ```bash
 openctrlc web
 ```
 
-Ovo pokreće HTTP server i otvara web pretraživač za pristup OpenCode-u preko web interfejsa. Postavite `OPENCTRLC_SERVER_PASSWORD` da omogućite HTTP osnovnu auth (korisničko ime je zadano na `openctrlc`).
+Ovo pokreće HTTP server i otvara web pretraživač za pristup OpenCtrlC-u preko web interfejsa. Postavite `OPENCTRLC_SERVER_PASSWORD` da omogućite HTTP osnovnu auth (korisničko ime je zadano na `openctrlc`).
 
 #### Opcije
 
@@ -497,7 +497,7 @@ Ova naredba pokreće ACP server koji komunicira preko stdin/stdout koristeći nd
 
 ### uninstall
 
-Deinstalirajte OpenCode i uklonite sve povezane datoteke.
+Deinstalirajte OpenCtrlC i uklonite sve povezane datoteke.
 
 ```bash
 openctrlc uninstall
@@ -516,7 +516,7 @@ openctrlc uninstall
 
 ### upgrade
 
-Ažurira OpenCode na najnoviju verziju ili određenu verziju.
+Ažurira OpenCtrlC na najnoviju verziju ili određenu verziju.
 
 ```bash
 openctrlc upgrade [target]
@@ -544,7 +544,7 @@ openctrlc upgrade v0.1.48
 
 ## Globalne opcije
 
-OpenCode CLI prihvata sljedeće globalne zastavice.
+OpenCtrlC CLI prihvata sljedeće globalne zastavice.
 
 | Opcija                                     | Kratko | Opis                                      |
 | ------------------------------------------ | ------ | ----------------------------------------- |
@@ -557,7 +557,7 @@ OpenCode CLI prihvata sljedeće globalne zastavice.
 
 ## Varijable okruženja
 
-OpenCode se može konfigurirati pomoću varijabli okruženja.
+OpenCtrlC se može konfigurirati pomoću varijabli okruženja.
 
 | Varijabla                             | Tip     | Opis                                                               |
 | ------------------------------------- | ------- | ------------------------------------------------------------------ |

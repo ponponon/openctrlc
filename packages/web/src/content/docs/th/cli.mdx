@@ -1,17 +1,17 @@
 ---
 title: CLI
-description: สัญญาณและคำสั่งของ OpenCode CLI
+description: สัญญาณและคำสั่งของ OpenCtrlC CLI
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-OpenCode CLI จะเริ่มต้น [TUI](/docs/tui) เป็นค่าเริ่มต้นเมื่อเรียกใช้โดยไม่มีอาร์กิวเมนต์
+OpenCtrlC CLI จะเริ่มต้น [TUI](/docs/tui) เป็นค่าเริ่มต้นเมื่อเรียกใช้โดยไม่มีอาร์กิวเมนต์
 
 ```bash
-opencode
+openctrlc
 ```
 
-นอกจากนี้ยังรับคำสั่งและแฟล็ก ซึ่งช่วยให้คุณใช้ OpenCode ผ่านโปรแกรมได้
+นอกจากนี้ยังรับคำสั่งและแฟล็ก ซึ่งช่วยให้คุณใช้ OpenCtrlC ผ่านโปรแกรมได้
 
 ```bash
 openctrlc run "Explain how closures work in JavaScript"
@@ -21,10 +21,10 @@ openctrlc run "Explain how closures work in JavaScript"
 
 ### tui
 
-เริ่ม TUI เพื่อใช้ OpenCode แบบโต้ตอบ
+เริ่ม TUI เพื่อใช้ OpenCtrlC แบบโต้ตอบ
 
 ```bash
-opencode [project]
+openctrlc [project]
 ```
 
 #### แฟล็ก
@@ -44,29 +44,29 @@ opencode [project]
 
 ## คำสั่ง
 
-OpenCode CLI ยังมีคำสั่งย่อยอีกมากมาย
+OpenCtrlC CLI ยังมีคำสั่งย่อยอีกมากมาย
 
 ---
 
 ### agent
 
-จัดการเอเจนต์สำหรับ OpenCode
+จัดการเอเจนต์สำหรับ OpenCtrlC
 
 ```bash
-opencode agent [command]
+openctrlc agent [command]
 ```
 
 ---
 
 ### attach
 
-เชื่อมต่อกับเซิร์ฟเวอร์แบ็กเอนด์ OpenCode ที่กำลังทำงานอยู่ ซึ่งเริ่มต้นผ่านคำสั่ง `serve` หรือ `web`
+เชื่อมต่อกับเซิร์ฟเวอร์แบ็กเอนด์ OpenCtrlC ที่กำลังทำงานอยู่ ซึ่งเริ่มต้นผ่านคำสั่ง `serve` หรือ `web`
 
 ```bash
 openctrlc attach [url]
 ```
 
-วิธีนี้ช่วยให้คุณใช้ TUI กับแบ็กเอนด์ OpenCode ระยะไกลได้ ตัวอย่าง:
+วิธีนี้ช่วยให้คุณใช้ TUI กับแบ็กเอนด์ OpenCtrlC ระยะไกลได้ ตัวอย่าง:
 
 ```bash
 # Start the backend server for web/mobile access
@@ -94,7 +94,7 @@ openctrlc attach http://10.20.30.40:4096
 สร้างเอเจนต์ใหม่
 
 ```bash
-opencode agent create
+openctrlc agent create
 ```
 
 คำสั่งนี้จะแนะนำคุณตลอดกระบวนการสร้างเอเจนต์ใหม่ พร้อมพรอมต์ระบบและความสามารถของเครื่องมือ
@@ -106,7 +106,7 @@ opencode agent create
 แสดงรายชื่อเอเจนต์ที่พร้อมใช้งานทั้งหมด
 
 ```bash
-opencode agent list
+openctrlc agent list
 ```
 
 ---
@@ -123,13 +123,13 @@ openctrlc auth [command]
 
 #### login
 
-OpenCode ได้รับการกำหนดค่าไว้ล่วงหน้าด้วยรายชื่อผู้ให้บริการทั่วไปที่ [Models.dev](https://models.dev) ดังนั้นคุณเพียงแค่ต้องใส่คีย์ API สำหรับผู้ให้บริการที่คุณต้องการใช้ ข้อมูลนี้จะถูกเก็บไว้ที่ `~/.local/share/openctrlc/auth.json`
+OpenCtrlC ได้รับการกำหนดค่าไว้ล่วงหน้าด้วยรายชื่อผู้ให้บริการทั่วไปที่ [Models.dev](https://models.dev) ดังนั้นคุณเพียงแค่ต้องใส่คีย์ API สำหรับผู้ให้บริการที่คุณต้องการใช้ ข้อมูลนี้จะถูกเก็บไว้ที่ `~/.local/share/openctrlc/auth.json`
 
 ```bash
 openctrlc auth login
 ```
 
-เมื่อ OpenCode เริ่มต้น ระบบจะโหลดข้อมูลรับรองจากไฟล์นี้ ดังนั้นคุณจึงไม่ต้องกังวลกับการตั้งค่าตัวแปรสภาพแวดล้อมหรือไฟล์ `.env` ในโปรเจ็กต์ของคุณ
+เมื่อ OpenCtrlC เริ่มต้น ระบบจะโหลดข้อมูลรับรองจากไฟล์นี้ ดังนั้นคุณจึงไม่ต้องกังวลกับการตั้งค่าตัวแปรสภาพแวดล้อมหรือไฟล์ `.env` ในโปรเจ็กต์ของคุณ
 
 ---
 
@@ -164,7 +164,7 @@ openctrlc auth logout
 จัดการเอเจนต์ GitHub สำหรับเวิร์กโฟลว์อัตโนมัติ
 
 ```bash
-opencode github [command]
+openctrlc github [command]
 ```
 
 ---
@@ -174,7 +174,7 @@ opencode github [command]
 ติดตั้งเอเจนต์ GitHub ใน repository ของคุณ
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 คำสั่งนี้จะสร้างเวิร์กโฟลว์ GitHub Actions และแนะนำคุณตลอดกระบวนการตั้งค่า [เรียนรู้เพิ่มเติม](/docs/github)
@@ -186,7 +186,7 @@ opencode github install
 รันเอเจนต์ GitHub ด้วยตนเองหรือใน GitHub Actions
 
 ```bash
-opencode github run
+openctrlc github run
 ```
 
 ##### แฟล็ก
@@ -306,7 +306,7 @@ openctrlc models anthropic
 | <nobr><code>{"--verbose"}</code></nobr> | แสดงรายละเอียดโมเดลเพิ่มเติม (รวมข้อมูลเมตาเช่นต้นทุน) |
 | <nobr><code>{"--json"}</code></nobr>    | แสดงผลลัพธ์เป็น JSON                                   |
 
-ใช้แฟล็ก `--refresh` เพื่ออัปเดตรายการโมเดลที่แคชไว้ มีประโยชน์เมื่อมีการเพิ่มโมเดลใหม่ให้กับผู้ให้บริการและคุณต้องการเห็นใน OpenCode
+ใช้แฟล็ก `--refresh` เพื่ออัปเดตรายการโมเดลที่แคชไว้ มีประโยชน์เมื่อมีการเพิ่มโมเดลใหม่ให้กับผู้ให้บริการและคุณต้องการเห็นใน OpenCtrlC
 
 ```bash
 openctrlc models --refresh
@@ -316,7 +316,7 @@ openctrlc models --refresh
 
 ### run
 
-รัน OpenCode โดยไม่ต้องใช้ TUI โดยส่งพรอมต์โดยตรง
+รัน OpenCtrlC โดยไม่ต้องใช้ TUI โดยส่งพรอมต์โดยตรง
 
 ```bash
 openctrlc run [message..]
@@ -352,7 +352,7 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f` | แนบไฟล์ไปกับข้อความ                                                                         |
 | <nobr><code>{"--format"}</code></nobr>   |      | รูปแบบเอาต์พุต: text (จัดรูปแบบ) หรือ json (JSON ดิบ)                                       |
 | <nobr><code>{"--title"}</code></nobr>    |      | ชื่อสำหรับเซสชัน (หากไม่ได้ระบุ จะสร้างจากพรอมต์)                                           |
-| <nobr><code>{"--attach"}</code></nobr>   |      | แนบไปกับเซิร์ฟเวอร์ opencode ที่ทำงานอยู่ (เช่น http://localhost:4096)                      |
+| <nobr><code>{"--attach"}</code></nobr>   |      | แนบไปกับเซิร์ฟเวอร์ openctrlc ที่ทำงานอยู่ (เช่น http://localhost:4096)                      |
 | <nobr><code>{"--password"}</code></nobr> | `-p` | รหัสผ่านการยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_PASSWORD`)                   |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | ชื่อผู้ใช้การยืนยันตัวตนพื้นฐาน (ค่าเริ่มต้นคือ `OPENCTRLC_SERVER_USERNAME` หรือ `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |      | ไดเร็กทอรีสำหรับรัน หรือเส้นทางบนเซิร์ฟเวอร์ระยะไกลเมื่อแนบ                                 |
@@ -364,13 +364,13 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 ### serve
 
-เริ่มต้นเซิร์ฟเวอร์ OpenCode headless ที่ให้บริการ API HTTP ดู [เอกสารเซิร์ฟเวอร์](/docs/server) สำหรับรายละเอียด API เต็มรูปแบบ
+เริ่มต้นเซิร์ฟเวอร์ OpenCtrlC headless ที่ให้บริการ API HTTP ดู [เอกสารเซิร์ฟเวอร์](/docs/server) สำหรับรายละเอียด API เต็มรูปแบบ
 
 ```bash
 openctrlc serve
 ```
 
-คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP ให้ API เข้าถึงฟังก์ชันการทำงานของ OpenCode ได้โดยไม่ต้องมี TUI นอกจากนี้ยังรองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `openctrlc` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
+คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP ให้ API เข้าถึงฟังก์ชันการทำงานของ OpenCtrlC ได้โดยไม่ต้องมี TUI นอกจากนี้ยังรองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `openctrlc` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
 
 #### แฟล็ก
 
@@ -385,20 +385,20 @@ openctrlc serve
 
 ### session
 
-จัดการเซสชัน OpenCode
+จัดการเซสชัน OpenCtrlC
 
 ```bash
-opencode session [command]
+openctrlc session [command]
 ```
 
 ---
 
 #### list
 
-แสดงรายการเซสชัน OpenCode ทั้งหมด
+แสดงรายการเซสชัน OpenCtrlC ทั้งหมด
 
 ```bash
-opencode session list
+openctrlc session list
 ```
 
 ##### แฟล็ก
@@ -412,10 +412,10 @@ opencode session list
 
 ### stats
 
-แสดงสถิติการใช้งานและค่าใช้จ่ายสำหรับ OpenCode ของคุณ
+แสดงสถิติการใช้งานและค่าใช้จ่ายสำหรับ OpenCtrlC ของคุณ
 
 ```bash
-opencode stats
+openctrlc stats
 ```
 
 #### แฟล็ก
@@ -434,7 +434,7 @@ opencode stats
 ส่งออกประวัติเซสชันเป็น JSON
 
 ```bash
-opencode export [sessionID]
+openctrlc export [sessionID]
 ```
 
 หากไม่ระบุรหัสเซสชัน คุณจะได้รับแจ้งให้เลือกจากรายการล่าสุด
@@ -443,30 +443,30 @@ opencode export [sessionID]
 
 ### import
 
-นำเข้าเซสชันจากไฟล์ JSON หรือ URL ที่แชร์ของ OpenCode
+นำเข้าเซสชันจากไฟล์ JSON หรือ URL ที่แชร์ของ OpenCtrlC
 
 ```bash
-opencode import <file>
+openctrlc import <file>
 ```
 
 คุณสามารถนำเข้าไฟล์ในเครื่องหรือ URL ที่แชร์
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+openctrlc import session.json
+openctrlc import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-เริ่ม OpenCode ในโหมดเซิร์ฟเวอร์พร้อมเว็บอินเตอร์เฟส
+เริ่ม OpenCtrlC ในโหมดเซิร์ฟเวอร์พร้อมเว็บอินเตอร์เฟส
 
 ```bash
 openctrlc web
 ```
 
-คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP และเปิดเว็บเบราว์เซอร์เพื่อเข้าถึง OpenCode ผ่านทางเว็บอินเตอร์เฟส รองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `openctrlc` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
+คำสั่งนี้จะเริ่มต้นเซิร์ฟเวอร์ HTTP และเปิดเว็บเบราว์เซอร์เพื่อเข้าถึง OpenCtrlC ผ่านทางเว็บอินเตอร์เฟส รองรับการตรวจสอบสิทธิ์พื้นฐาน HTTP (ชื่อผู้ใช้เริ่มต้นคือ `openctrlc` และรหัสผ่านระบุโดย `OPENCTRLC_SERVER_PASSWORD`)
 
 #### แฟล็ก
 
@@ -501,7 +501,7 @@ openctrlc acp
 
 ### uninstall
 
-ถอนการติดตั้ง OpenCode และลบข้อมูลการกำหนดค่าทั้งหมด
+ถอนการติดตั้ง OpenCtrlC และลบข้อมูลการกำหนดค่าทั้งหมด
 
 ```bash
 openctrlc uninstall
@@ -520,7 +520,7 @@ openctrlc uninstall
 
 ### upgrade
 
-อัปเกรด OpenCode เป็นเวอร์ชันล่าสุดหรือเวอร์ชันที่ระบุ
+อัปเกรด OpenCtrlC เป็นเวอร์ชันล่าสุดหรือเวอร์ชันที่ระบุ
 
 ```bash
 openctrlc upgrade [target]
@@ -548,7 +548,7 @@ openctrlc upgrade v0.1.48
 
 ## แฟล็กระดับโลก
 
-OpenCode CLI ยอมรับแฟล็กสากลต่อไปนี้สำหรับทุกคำสั่ง
+OpenCtrlC CLI ยอมรับแฟล็กสากลต่อไปนี้สำหรับทุกคำสั่ง
 
 | แฟล็ก                                      | สั้น | คำอธิบาย                                  |
 | ------------------------------------------ | ---- | ----------------------------------------- |
@@ -561,7 +561,7 @@ OpenCode CLI ยอมรับแฟล็กสากลต่อไปนี�
 
 ## ตัวแปรสภาพแวดล้อม
 
-OpenCode สามารถกำหนดค่าโดยใช้ตัวแปรสภาพแวดล้อม
+OpenCtrlC สามารถกำหนดค่าโดยใช้ตัวแปรสภาพแวดล้อม
 
 | ตัวแปร                                | ชนิด    | คำอธิบาย                                                         |
 | ------------------------------------- | ------- | ---------------------------------------------------------------- |

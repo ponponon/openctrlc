@@ -1,13 +1,13 @@
 ---
 title: Server
-description: Nutze den opencode-Server ueber HTTP.
+description: Nutze den openctrlc-Server ueber HTTP.
 ---
 
 import config from "../../../../config.mjs"
 export const typesUrl = `${config.github}/blob/dev/packages/sdk/js/src/gen/types.gen.ts`
 
 Der Befehl `openctrlc serve` startet einen headless HTTP-Server.
-Er stellt einen OpenAPI-Endpunkt bereit, den ein opencode-Client nutzen kann.
+Er stellt einen OpenAPI-Endpunkt bereit, den ein openctrlc-Client nutzen kann.
 
 ---
 
@@ -52,7 +52,7 @@ Wenn du `openctrlc` startest, werden TUI und Server gestartet.
 Die TUI ist dabei der Client, der mit dem Server spricht; dessen OpenAPI-3.1-Endpunkt dient auch zur Generierung des [SDK](/docs/sdk).
 
 :::tip
-Nutze den opencode-Server, um opencode programmatisch anzusteuern.
+Nutze den openctrlc-Server, um openctrlc programmatisch anzusteuern.
 :::
 
 Diese Architektur erlaubt mehrere Clients und programmatische Nutzung.
@@ -68,7 +68,7 @@ Beim TUI-Start werden Port und Hostname zufaellig gewaehlt.
 Alternativ gibst du `--hostname` und `--port` als [Flags](/docs/cli) vor und verbindest dich dann gezielt damit.
 
 Der Endpunkt [`/tui`](#tui) kann die TUI ueber den Server steuern, etwa zum Vorbelegen oder Abschicken von Prompts.
-Dieses Muster nutzen auch die OpenCode-[IDE](/docs/ide)-Plugins.
+Dieses Muster nutzen auch die OpenCtrlC-[IDE](/docs/ide)-Plugins.
 
 ---
 
@@ -87,7 +87,7 @@ Nutze die Spec zum Generieren von Clients, zum Pruefen von Request/Response-Type
 
 ## APIs
 
-Der opencode-Server stellt folgende APIs bereit.
+Der openctrlc-Server stellt folgende APIs bereit.
 
 ---
 
