@@ -47,7 +47,7 @@
 
 ```bash
 # Direct install
-curl -fsSL https://openctrlc.quniv.cn/install | bash
+curl -fsSL https://openctrlc.ai/install | bash
 
 # Менеджеры пакетов
 npm i -g openctrlc-ai@latest       # или bun/pnpm/yarn
@@ -92,8 +92,8 @@ scoop install openctrlc-desktop
 
 ```bash
 # Примеры
-OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
 ```
 
 ### Agents

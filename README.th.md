@@ -47,7 +47,7 @@
 
 ```bash
 # YOLO
-curl -fsSL https://openctrlc.quniv.cn/install | bash
+curl -fsSL https://openctrlc.ai/install | bash
 
 # ตัวจัดการแพ็กเกจ
 npm i -g openctrlc-ai@latest       # หรือ bun/pnpm/yarn
@@ -92,8 +92,8 @@ scoop install openctrlc-desktop
 
 ```bash
 # ตัวอย่าง
-OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
 ```
 
 ### เอเจนต์

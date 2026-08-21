@@ -4,7 +4,7 @@ A Visual Studio Code extension that integrates OpenCtrlC directly into your deve
 
 ## Prerequisites
 
-This extension requires the `openctrlc` CLI to be installed on your system. Visit <https://openctrlc.quniv.cn/install> for installation instructions.
+This extension requires the `openctrlc` CLI to be installed on your system. Visit <https://openctrlc.ai/install> for installation instructions.
 
 ## Features
 

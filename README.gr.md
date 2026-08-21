@@ -47,7 +47,7 @@
 
 ```bash
 # YOLO
-curl -fsSL https://openctrlc.quniv.cn/install | bash
+curl -fsSL https://openctrlc.ai/install | bash
 
 # Διαχειριστές πακέτων
 npm i -g openctrlc-ai@latest       # ή bun/pnpm/yarn
@@ -93,8 +93,8 @@ scoop install openctrlc-desktop
 
 ```bash
 # Παραδείγματα
-OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
 ```
 
 ### Πράκτορες

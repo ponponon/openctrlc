@@ -20,8 +20,8 @@ Options:
         --no-modify-path    Don't modify shell config files (.zshrc, .bashrc, etc.)
 
 Examples:
-    curl -fsSL https://openctrlc.quniv.cn/install | bash
-    curl -fsSL https://openctrlc.quniv.cn/install | bash -s -- --version 1.0.180
+    curl -fsSL https://openctrlc.ai/install | bash
+    curl -fsSL https://openctrlc.ai/install | bash -s -- --version 1.0.180
     ./install --binary /path/to/openctrlc
 EOF
 }

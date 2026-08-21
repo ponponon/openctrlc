@@ -47,7 +47,7 @@
 
 ```bash
 # Direct install
-curl -fsSL https://openctrlc.quniv.cn/install | bash
+curl -fsSL https://openctrlc.ai/install | bash
 
 # Package managers
 npm i -g openctrlc-ai@latest       # or bun/pnpm/yarn
@@ -91,8 +91,8 @@ The install script respects the following priority order for the installation pa
 
 ```bash
 # Examples
-OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
 ```
 
 ### Agents

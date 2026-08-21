@@ -49,7 +49,7 @@ test("keeps sidecar auth, updater persistence, and WSL CLI consumers product-own
   expect(server).toContain("Buffer.from(`${Brand.cli}:${password}`)")
   expect(updater).toContain('getStore("openctrlc.updater")')
   expect(updater).not.toContain("opencode.updater")
-  expect(wslRuntime).toContain("openctrlc.quniv.cn/install")
+  expect(wslRuntime).toContain("openctrlc.ai/install")
   expect(wslRuntime).toContain(".openctrlc/bin/openctrlc")
   expect(wslIpc).toContain("wsl-servers-install-openctrlc")
   expect(preload).toContain("installOpenctrlc")
