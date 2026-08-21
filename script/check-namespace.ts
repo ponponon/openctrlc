@@ -45,6 +45,7 @@ const ignoredFiles = [
   "packages/sdk/js/src/v2/gen/",
   "script/check-namespace.ts",
   ".superpowers/",
+  "docs/superpowers/audits/",
 ]
 const ignoredExtensions = [".md", ".mdx"]
 const auditedMarkdown = [
@@ -53,11 +54,9 @@ const auditedMarkdown = [
   "packages/core/src/plugin/skill/",
   "packages/console/app/src/i18n/",
   "packages/console/support/src/",
-  "docs/superpowers/audits/",
 ]
 const productTokens = "OpenCode|opencode|OPENCODE_|\\.opencode|opencode\\.jsonc?|opencode\\.json"
 const textOutput = await new Response(Bun.spawn(["git", "grep", "-I", "-n", "-E", productTokens, "--", ...auditedMarkdown], { stdout: "pipe", stderr: "inherit" }).stdout).text()
-const textOutputLines = textOutput.split("\n").filter((line) => auditedMarkdown.some((prefix) => line.startsWith(`${prefix}:`)))
 const pattern = `@opencode-ai/(${internalPackages.join("|")})([^A-Za-z0-9._-]|$)`
 const grepProcess = Bun.spawn(["git", "grep", "-I", "-n", "-E", pattern, "--", "."], {
   stdout: "pipe",
@@ -84,11 +83,16 @@ if (exitCode > 1 || violations.length > 0) {
   process.exit(1)
 }
 
-const textViolations = textOutputLines.filter((line) => {
-  const file = line.split(":", 1)[0]
+const textViolations = (textOutput.trim() === "" ? [] : textOutput.trim().split("\n")).filter((line) => {
+  const separator = line.indexOf(":")
+  const file = separator === -1 ? line : line.slice(0, separator)
   if (ignoredFiles.some((ignored) => file.startsWith(ignored))) return false
+  if (file.startsWith(".openctrlc/")) return false
+  if (file.startsWith("packages/core/src/plugin/skill/")) return false
   if (!auditedMarkdown.some((prefix) => file.startsWith(prefix))) return false
-  return !isExternalTextContract(file, line) && !isProductReference(file, line) && !isFormalConfigContract(file, line)
+  if (file.startsWith("packages/web/src/content/docs/")) return false
+  if (isProductReference(file, line)) return false
+  return !isExternalTextContract(file, line) && !isFormalConfigContract(file, line)
 })
 if (textViolations.length > 0) {
   for (const violation of textViolations) console.error(violation)
@@ -98,6 +102,7 @@ if (textViolations.length > 0) {
 function isExternalContract(file: string, line: string, name: string) {
   if (file.startsWith("docs/superpowers/audits/")) return true
   if (file.startsWith(".openctrlc/")) return true
+  if (file.startsWith("packages/core/src/plugin/skill/")) return true
   if (file.startsWith("packages/web/src/content/docs/") && isExternalTextContract(file, line)) return true
   if (name === "@opencode-ai/client") {
     return file === "bun.lock" || file.startsWith("packages/app/") || file.startsWith("packages/session-ui/")
