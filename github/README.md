@@ -63,39 +63,39 @@ This will walk you through installing the GitHub app, creating the workflow, and
 1. Install the GitHub app https://github.com/apps/opencode-agent. Make sure it is installed on the target repository.
 2. Add the following workflow file to `.github/workflows/openctrlc.yml` in your repo. Set the appropriate `model` and required API keys in `env`.
 
-   ```yml
-   name: openctrlc
+```yml
+name: openctrlc
 
-   on:
-     issue_comment:
-       types: [created]
-     pull_request_review_comment:
-       types: [created]
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
 
-   jobs:
-     openctrlc:
-       if: |
-         contains(github.event.comment.body, '/oc') ||
-          contains(github.event.comment.body, '/openctrlc')
-       runs-on: ubuntu-latest
-       permissions:
-         id-token: write
-       steps:
-         - name: Checkout repository
-           uses: actions/checkout@v6
-           with:
-             fetch-depth: 1
-             persist-credentials: false
+jobs:
+  openctrlc:
+    if: |
+      contains(github.event.comment.body, '/oc') ||
+      contains(github.event.comment.body, '/openctrlc')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
-         - name: Run OpenCtrlC
-           uses: ponponon/openctrlc/github@latest
-           env:
-             ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-           with:
-             model: anthropic/claude-sonnet-4-20250514
-             use_github_token: true
-   ```
+      - name: Run OpenCtrlC
+        uses: ponponon/openctrlc/github@latest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: anthropic/claude-sonnet-4-20250514
+          use_github_token: true
+```
 
 3. Store the API keys in secrets. In your organization or project **settings**, expand **Secrets and variables** on the left and select **Actions**. Add the required API keys.
 

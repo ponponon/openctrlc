@@ -117,15 +117,13 @@ for (const directory of audited) {
   }
 }
 
-const readmes = [
-  ...(await Array.fromAsync(new Bun.Glob("README*.md").scan({ cwd: root, absolute: true }))),
-  path.join(root, "github", "README.md"),
-]
-const staleReleaseGuide = /opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
+const tracked = (await Bun.$`git ls-files -z`.text()).split("\0").filter(Boolean)
+const readmes = tracked.filter((file) => /(?:^|\/)README[^/]*\.md$/.test(file)).map((file) => path.join(root, file))
+const staleReleaseGuide = /(?<!@)opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
 for (const file of readmes) {
   const source = await Bun.file(file).text()
   const installation = source.match(/### (?:Installation|安装|安裝|インストール|설치|Установка|Installasjon|Instalação|Instalación|Installazione|Εγκατάσταση|การติดตั้ง|Інсталяція)[\s\S]*?(?=### |$)/)?.[0] ?? source
-  if (staleReleaseGuide.test(installation)) failures.push(`${path.relative(root, file)} contains stale product release guidance`)
+  if (staleReleaseGuide.test(source)) failures.push(`${path.relative(root, file)} contains stale product release guidance`)
   if (source.includes("img.shields.io/github/actions/workflow/status/anomalyco/opencode/")) failures.push(`${path.relative(root, file)} contains an upstream workflow badge`)
   const fenced = [...source.matchAll(/```(?:yaml|yml)\n([\s\S]*?)```/g)].map((match) => match[1])
   for (const [index, block] of fenced.entries()) {
