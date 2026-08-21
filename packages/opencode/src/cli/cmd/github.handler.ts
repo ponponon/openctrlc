@@ -364,7 +364,7 @@ jobs:
           persist-credentials: false
 
       - name: Run opencode
-        uses: anomalyco/opencode/github@latest${envStr}
+        uses: ponponon/openctrlc/github@latest${envStr}
         with:
           model: ${provider}/${model}`,
         )
@@ -738,7 +738,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       }
 
       const reviewContext = getReviewCommentContext()
-      const mentions = (process.env["MENTIONS"] || "/opencode,/oc")
+      const mentions = (process.env["MENTIONS"] || "/openctrlc,/oc")
         .split(",")
         .map((m) => m.trim().toLowerCase())
         .filter(Boolean)
