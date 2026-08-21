@@ -50,6 +50,14 @@ The formal checks pass after the final product fix commit. The only remaining
 OpenCode strings in the audited Web documentation are explicit external
 provider/client examples or hosted-service/legal contracts.
 
+The final scoped residual search reports 65 matches in the product Web/console
+scope. They are limited to the explicit `ai-sdk-provider-opencode-sdk` rows
+using the external `@opencode-ai/sdk`, third-party plugin names such as
+`opencode-google-antigravity-auth`, external provider IDs such as
+`opencode-go`, and retained `opencode.ai` hosted legal/provider/Discord
+contracts. Product-owned install commands, runtime paths, package names, CLI
+commands, and configuration paths are not in that set.
+
 ## Classification
 
 ### Fixed Product-Owned Residuals
@@ -105,6 +113,8 @@ These are not OpenCtrlC-owned namespace values and must remain stable:
 - The 18 `ai-sdk-provider-opencode-sdk` ecosystem rows retain
   `@opencode-ai/sdk` as the third-party package contract. Other product SDK
   examples use `@openctrlc/sdk`; no `@openctrlc-ai/*` package exists.
+- `opencode-go` is retained only as the external OpenCode Go provider/model ID;
+  it is not a CLI, package, runtime path, or configuration directory.
 
 The external-provider and service strings are present in provider adapters,
 OAuth/API tests, recorded fixtures, models metadata, schema declarations, and
