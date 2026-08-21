@@ -41,6 +41,12 @@ covers package bins, platform artifacts, postinstall targets, Desktop CLI
 artifacts, Nix metadata, workflows/actions, installer paths, download routes,
 publisher targets, generated imports, and tracked README release guidance.
 
+The namespace script does not globally ignore Markdown anymore. It audits the
+formal `.openctrlc/` configuration, product Web documentation, and the Core
+built-in skill Markdown; other historical design/specification Markdown remains
+documentation of prior namespaces and is separately reviewed as non-runtime
+history.
+
 ## Classification
 
 ### Fixed Product-Owned Residual
@@ -82,6 +88,11 @@ OAuth/API tests, recorded fixtures, models metadata, schema declarations, and
 localized provider documentation. Renaming them would change an external
 protocol or credential contract.
 
+The VS Code Marketplace publisher is intentionally not claimed as migrated:
+`sst-dev` remains the existing external publishing identity because no new
+OpenCtrlC Marketplace publisher was supplied. Product-facing extension
+identity is migrated independently.
+
 ### Negative And Compatibility Tests
 
 The following old names are deliberately present as assertions that old
@@ -115,6 +126,13 @@ The product-owned installation and uninstall paths now use `openctrlc-ai`,
 `openctrlc`, `.openctrlc/bin`, the OpenCtrlC installer URL, and the
 `ponponon/openctrlc` release repository. The old package-manager names and
 `.opencode/bin` cleanup markers are no longer active product paths.
+
+The final web/console scan also distinguishes retained external hosted-service
+content from product-owned entrypoints. OpenCtrlC install commands, release
+repositories, CLI names, runtime paths, and workspace package examples use the
+OpenCtrlC namespace. Retained legal/hosted-service pages, provider IDs, API and
+schema URLs, external GitHub Action references, brand asset filenames, and the
+third-party `ai-sdk-provider-opencode-sdk` example remain external contracts.
 
 ## Isolated Runtime Verification
 
