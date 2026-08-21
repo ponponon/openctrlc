@@ -18,6 +18,7 @@ import type {
 } from "@octokit/webhooks-types"
 import { UI } from "../ui"
 import { ModelsDev } from "@openctrlc/core/models-dev"
+import { renderGitHubWorkflow } from "./github-workflow"
 import { InstanceRef } from "@/effect/instance-ref"
 import { SessionShare } from "@/share/session"
 import { Session } from "@/session/session"
@@ -329,44 +330,13 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
       }
 
       async function addWorkflowFiles() {
-        const envStr =
-          provider === "amazon-bedrock"
-            ? ""
-            : `\n        env:${providers[provider].env.map((e) => `\n          ${e}: \${{ secrets.${e} }}`).join("")}`
-
         await Filesystem.write(
           path.join(app.root, WORKFLOW_FILE),
-          `name: openctrlc
-
-on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-
-jobs:
-         openctrlc:
-    if: |
-      contains(github.event.comment.body, ' /oc') ||
-      startsWith(github.event.comment.body, '/oc') ||
-          contains(github.event.comment.body, ' /openctrlc') ||
-          startsWith(github.event.comment.body, '/openctrlc')
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      pull-requests: read
-      issues: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-       - name: Run OpenCtrlC
-        uses: ponponon/openctrlc/github@latest${envStr}
-        with:
-          model: ${provider}/${model}`,
+          renderGitHubWorkflow({
+            provider,
+            model,
+            secrets: provider === "amazon-bedrock" ? [] : providers[provider].env,
+          }),
         )
 
         prompts.log.success(`Added workflow file: "${WORKFLOW_FILE}"`)

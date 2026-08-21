@@ -45,7 +45,7 @@ const required: Array<[string, string[]]> = [
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
   ["github/action.yml", ["https://openctrlc.quniv.cn/install", "| OPENCTRLC_INSTALL_DIR=\"$HOME/.openctrlc/bin\" bash", "run: openctrlc github run"]],
   ["github/README.md", ["openctrlc github install", "ponponon/openctrlc/github@latest", "ponponon/openctrlc/issues"]],
-  ["packages/opencode/src/cli/cmd/github.handler.ts", ["ponponon/openctrlc/github@latest", "/openctrlc,/oc"]],
+  ["packages/opencode/src/cli/cmd/github-workflow.ts", ["name: openctrlc", "jobs:\n  openctrlc:", "ponponon/openctrlc/github@latest", "/openctrlc", "/oc"]],
   ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
@@ -117,7 +117,7 @@ for (const directory of audited) {
   }
 }
 
-const tracked = (await Bun.$`git ls-files -z`.text()).split("\0").filter(Boolean)
+const tracked = (await Bun.$`git ls-files -z`.cwd(root).text()).split("\0").filter(Boolean)
 const readmes = tracked.filter((file) => /(?:^|\/)README[^/]*\.md$/.test(file)).map((file) => path.join(root, file))
 const staleReleaseGuide = /(?<!@)opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
 for (const file of readmes) {
