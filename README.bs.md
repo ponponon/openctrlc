@@ -51,13 +51,13 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Package manageri
 npm i -g openctrlc-ai@latest       # ili bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS i Linux (preporučeno, uvijek ažurno)
-brew install opencode              # macOS i Linux (zvanična brew formula, rjeđe se ažurira)
-sudo pacman -S opencode            # Arch Linux (Stable)
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
+brew install openctrlc # macOS i Linux (preporučeno, uvijek ažurno)
+brew install openctrlc              # macOS i Linux (zvanična brew formula, rjeđe se ažurira)
+sudo pacman -S openctrlc            # Arch Linux (Stable)
 paru -S openctrlc-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # Bilo koji OS
+mise use -g openctrlc               # Bilo koji OS
 nix run github:ponponon/openctrlc
 ```
 
@@ -79,7 +79,7 @@ OpenCode je dostupan i kao desktop aplikacija. Preuzmi je direktno sa [stranice 
 # macOS (Homebrew)
 brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/openctrlc-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Instalacijski direktorij

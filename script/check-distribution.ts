@@ -32,7 +32,7 @@ if (!contract.includes("ProductBinaryName = `${Brand.cli}.exe`")) {
 }
 
 const required: Array<[string, string[]]> = [
-  ["packages/opencode/script/build.ts", [`outfile: \`dist/\${name}/bin/\${Brand.cli}\``, `OPENCTRLC_VERSION`]],
+  ["packages/opencode/script/build.ts", [`outfile: \`dist/\${name}/bin/\${Brand.cli}\``, `releaseTag(Script.channel, Script.version)`, `OPENCTRLC_VERSION`]],
   ["packages/opencode/script/postinstall.mjs", ["openctrlc-${platform}-${arch}", '"openctrlc.exe"']],
   ["packages/desktop/src/main/background-cli.ts", ["Brand.cli"]],
   ["nix/opencode.nix", ['pname = "openctrlc"', 'mainProgram = "openctrlc"']],
@@ -45,7 +45,7 @@ const required: Array<[string, string[]]> = [
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
   ["github/action.yml", ["https://openctrlc.quniv.cn/install", "echo \"$HOME/.openctrlc/bin\"", "run: openctrlc github run"]],
   ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],
-  ["script/changelog.ts", ["openctrlc run"]],
+  ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
 ]
 

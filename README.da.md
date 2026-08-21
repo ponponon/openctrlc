@@ -53,8 +53,8 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 npm i -g openctrlc-ai@latest       # eller bun/pnpm/yarn
 scoop install openctrlc             # Windows
 choco install openctrlc             # Windows
-brew install anomalyco/tap/opencode # macOS og Linux (anbefalet, altid up to date)
-brew install opencode              # macOS og Linux (officiel brew formula, opdateres sjældnere)
+brew install openctrlc # macOS og Linux (anbefalet, altid up to date)
+brew install openctrlc              # macOS og Linux (officiel brew formula, opdateres sjældnere)
 sudo pacman -S openctrlc            # Arch Linux (Stable)
 mise use -g openctrlc               # alle OS
 nix run github:ponponon/openctrlc

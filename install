@@ -65,7 +65,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-INSTALL_DIR=${OPENCTRLC_INSTALL_DIR:-${XDG_BIN_DIR:-$HOME/.openctrlc/bin}}
+INSTALL_DIR="${OPENCTRLC_INSTALL_DIR:-${XDG_BIN_DIR:-${HOME}/bin}}"
+if [ -z "${OPENCTRLC_INSTALL_DIR:-}" ] && [ -z "${XDG_BIN_DIR:-}" ] && [ ! -d "$INSTALL_DIR" ]; then
+    INSTALL_DIR="$HOME/.openctrlc/bin"
+fi
 mkdir -p "$INSTALL_DIR"
 
 # If --binary is provided, skip all download/detection logic

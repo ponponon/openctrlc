@@ -51,13 +51,13 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Menedżery pakietów
 npm i -g openctrlc-ai@latest        # albo bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS i Linux (polecane, zawsze aktualne)
-brew install opencode              # macOS i Linux (oficjalna formuła brew, rzadziej aktualizowana)
-sudo pacman -S opencode            # Arch Linux (Stable)
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
+brew install openctrlc # macOS i Linux (polecane, zawsze aktualne)
+brew install openctrlc              # macOS i Linux (oficjalna formuła brew, rzadziej aktualizowana)
+sudo pacman -S openctrlc            # Arch Linux (Stable)
 paru -S openctrlc-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # dowolny system
+mise use -g openctrlc               # dowolny system
 nix run github:ponponon/openctrlc
 ```
 
@@ -79,7 +79,7 @@ OpenCode jest także dostępny jako aplikacja desktopowa. Pobierz ją bezpośred
 # macOS (Homebrew)
 brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/openctrlc-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Katalog instalacji

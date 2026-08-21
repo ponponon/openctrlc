@@ -3,7 +3,7 @@ import { chmod, mkdtemp, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import { Brand } from "@openctrlc/identity"
-import { createProductPackageManifest, ProductBinaryName, ProductPackageName } from "../../script/package-contract"
+import { createProductPackageManifest, ProductBinaryName, ProductPackageName, releaseTag } from "../../script/package-contract"
 
 const temporaryDirectories: string[] = []
 
@@ -68,4 +68,10 @@ test("postinstall source uses only the openctrlc executable contract", async () 
   expect(source).toContain('"openctrlc.exe"')
   expect(source).not.toContain("opencode.exe")
   expect(source).not.toContain('"opencode"')
+})
+
+test("release tags distinguish beta from stable builds", () => {
+  expect(releaseTag("beta", "1.2.3")).toBe("beta")
+  expect(releaseTag("latest", "1.2.3")).toBe("v1.2.3")
+  expect(releaseTag("prod", "1.2.3")).toBe("v1.2.3")
 })

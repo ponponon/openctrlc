@@ -51,13 +51,13 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Các trình quản lý gói (Package managers)
 npm i -g openctrlc-ai@latest        # hoặc bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS và Linux (khuyên dùng, luôn cập nhật)
-brew install opencode              # macOS và Linux (công thức brew chính thức, ít cập nhật hơn)
-sudo pacman -S opencode            # Arch Linux (Bản ổn định)
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
+brew install openctrlc # macOS và Linux (khuyên dùng, luôn cập nhật)
+brew install openctrlc              # macOS và Linux (công thức brew chính thức, ít cập nhật hơn)
+sudo pacman -S openctrlc            # Arch Linux (Bản ổn định)
 paru -S openctrlc-bin               # Arch Linux (Bản mới nhất từ AUR)
-mise use -g opencode               # Mọi hệ điều hành
+mise use -g openctrlc               # Mọi hệ điều hành
 nix run github:ponponon/openctrlc
 ```
 
@@ -79,7 +79,7 @@ OpenCode cũng có sẵn dưới dạng ứng dụng desktop. Tải trực tiế
 # macOS (Homebrew)
 brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/openctrlc-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Thư mục cài đặt

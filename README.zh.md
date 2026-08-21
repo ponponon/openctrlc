@@ -54,11 +54,11 @@ npm i -g openctrlc-ai@latest       # 也可使用 bun/pnpm/yarn
 sudo pacman -S openctrlc            # Linux
 scoop install openctrlc             # Windows
 choco install openctrlc             # Windows
-brew install anomalyco/tap/opencode # macOS 和 Linux（推荐，始终保持最新）
-brew install opencode              # macOS 和 Linux（官方 brew formula，更新频率较低）
-sudo pacman -S opencode            # Arch Linux (Stable)
+brew install openctrlc # macOS 和 Linux（推荐，始终保持最新）
+brew install openctrlc              # macOS 和 Linux（官方 brew formula，更新频率较低）
+sudo pacman -S openctrlc            # Arch Linux (Stable)
 paru -S openctrlc-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # 任意系统
+mise use -g openctrlc               # 任意系统
 nix run github:ponponon/openctrlc
 ```
 
@@ -80,7 +80,7 @@ OpenCtrlC 也提供桌面版应用。可直接从 [发布页 (releases page)](ht
 # macOS (Homebrew Cask)
 brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/openctrlc-desktop
+scoop install openctrlc-desktop
 ```
 
 #### 安装目录

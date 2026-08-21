@@ -51,13 +51,13 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Διαχειριστές πακέτων
 npm i -g openctrlc-ai@latest       # ή bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
-brew install anomalyco/tap/opencode # macOS και Linux (προτείνεται, πάντα ενημερωμένο)
-brew install opencode              # macOS και Linux (επίσημος τύπος brew, λιγότερο συχνές ενημερώσεις)
-sudo pacman -S opencode            # Arch Linux (Σταθερό)
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
+brew install openctrlc # macOS και Linux (προτείνεται, πάντα ενημερωμένο)
+brew install openctrlc              # macOS και Linux (επίσημος τύπος brew, λιγότερο συχνές ενημερώσεις)
+sudo pacman -S openctrlc            # Arch Linux (Σταθερό)
 paru -S openctrlc-bin               # Arch Linux (Τελευταία έκδοση από AUR)
-mise use -g opencode               # Οποιοδήποτε λειτουργικό σύστημα
+mise use -g openctrlc               # Οποιοδήποτε λειτουργικό σύστημα
 nix run github:ponponon/openctrlc
 ```
 
@@ -79,7 +79,7 @@ nix run github:ponponon/openctrlc
 # macOS (Homebrew)
 brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/openctrlc-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Κατάλογος Εγκατάστασης

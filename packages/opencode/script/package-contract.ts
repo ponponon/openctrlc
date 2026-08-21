@@ -3,6 +3,10 @@ import { Brand } from "@openctrlc/identity"
 export const ProductPackageName = `${Brand.cli}-ai`
 export const ProductBinaryName = `${Brand.cli}.exe`
 
+export function releaseTag(channel: string, version: string) {
+  return channel === "beta" ? "beta" : `v${version}`
+}
+
 export function createProductPackageManifest(input: {
   version: string
   license: string

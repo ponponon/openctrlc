@@ -53,8 +53,8 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 npm i -g openctrlc-ai@latest       # oder bun/pnpm/yarn
 scoop install openctrlc             # Windows
 choco install openctrlc             # Windows
-brew install anomalyco/tap/opencode # macOS und Linux (empfohlen, immer aktuell)
-brew install opencode              # macOS und Linux (offizielle Brew-Formula, seltener aktualisiert)
+brew install openctrlc # macOS und Linux (empfohlen, immer aktuell)
+brew install openctrlc              # macOS und Linux (offizielle Brew-Formula, seltener aktualisiert)
 sudo pacman -S openctrlc            # Arch Linux (Stable)
 mise use -g openctrlc               # jedes Betriebssystem
 nix run github:ponponon/openctrlc
@@ -88,12 +88,12 @@ Das Installationsskript beachtet die folgende Prioritätsreihenfolge für den In
 1. `$OPENCTRLC_INSTALL_DIR` - Benutzerdefiniertes Installationsverzeichnis
 2. `$XDG_BIN_DIR` - XDG Base Directory Specification-konformer Pfad
 3. `$HOME/bin` - Standard-Binärverzeichnis des Users (falls vorhanden oder erstellbar)
-4. `$HOME/.opencode/bin` - Standard-Fallback
+4. `$HOME/.openctrlc/bin` - Standard-Fallback
 
 ```bash
 # Beispiele
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 ```
 
 ### Agents

@@ -16,6 +16,7 @@ const generated = await import("./generate.ts")
 import { Script } from "@openctrlc/script"
 import pkg from "../package.json"
 import { Brand } from "@openctrlc/identity"
+import { releaseTag } from "./package-contract"
 
 const singleFlag = process.argv.includes("--single")
 const baselineFlag = process.argv.includes("--baseline")
@@ -241,7 +242,7 @@ if (Script.release) {
       await $`zip -r ../../${key}.zip *`.cwd(`dist/${key}/bin`)
     }
   }
-  await $`gh release upload v${Script.version} ./dist/*.zip ./dist/*.tar.gz --clobber --repo ${process.env.GH_REPO}`
+  await $`gh release upload ${releaseTag(Script.channel, Script.version)} ./dist/*.zip ./dist/*.tar.gz --clobber --repo ${process.env.GH_REPO}`
 }
 
 export { binaries }

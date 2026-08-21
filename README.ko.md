@@ -53,8 +53,8 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 npm i -g openctrlc-ai@latest       # bun/pnpm/yarn 도 가능
 scoop install openctrlc             # Windows
 choco install openctrlc             # Windows
-brew install anomalyco/tap/opencode # macOS 및 Linux (권장, 항상 최신)
-brew install opencode              # macOS 및 Linux (공식 brew formula, 업데이트 빈도 낮음)
+brew install openctrlc # macOS 및 Linux (권장, 항상 최신)
+brew install openctrlc              # macOS 및 Linux (공식 brew formula, 업데이트 빈도 낮음)
 sudo pacman -S openctrlc            # Arch Linux (Stable)
 mise use -g openctrlc               # 어떤 OS든
 nix run github:ponponon/openctrlc
@@ -78,7 +78,7 @@ OpenCtrlC 는 데스크톱 앱으로도 제공됩니다. [releases page](https:/
 # macOS (Homebrew)
 scoop install openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/openctrlc-desktop
+scoop install openctrlc-desktop
 ```
 
 #### 설치 디렉터리

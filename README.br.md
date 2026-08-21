@@ -53,8 +53,8 @@ curl -fsSL https://openctrlc.quniv.cn/install | bash
 npm i -g openctrlc-ai@latest       # ou bun/pnpm/yarn
 scoop install openctrlc             # Windows
 choco install openctrlc             # Windows
-brew install anomalyco/tap/opencode # macOS e Linux (recomendado, sempre atualizado)
-brew install opencode              # macOS e Linux (fórmula oficial do brew, atualiza menos)
+brew install openctrlc # macOS e Linux (recomendado, sempre atualizado)
+brew install openctrlc              # macOS e Linux (fórmula oficial do brew, atualiza menos)
 sudo pacman -S openctrlc            # Arch Linux (Stable)
 mise use -g openctrlc               # qualquer sistema
 nix run github:ponponon/openctrlc
@@ -78,7 +78,7 @@ O OpenCtrlC também está disponível como aplicativo desktop. Baixe diretamente
 # macOS (Homebrew)
 scoop install openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Diretório de instalação
