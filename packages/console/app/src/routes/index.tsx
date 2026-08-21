@@ -152,7 +152,7 @@ export default function Home() {
                     <button data-copy data-slot="command" onClick={handleCopyClick}>
                       <span>
                         <span data-slot="protocol">paru -S </span>
-                        <span data-slot="highlight">opencode</span>
+                        <span data-slot="highlight">openctrlc-bin</span>
                       </span>
                       <CopyStatus />
                     </button>

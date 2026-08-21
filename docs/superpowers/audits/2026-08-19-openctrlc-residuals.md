@@ -65,6 +65,9 @@ provider/client examples or hosted-service/legal contracts.
   and OpenCtrlC Chocolatey/Scoop targets.
 - Console/Web installation snippets use `openctrlc.ai/install`,
   `openctrlc-ai`, `openctrlc`, `openctrlc-bin`, and `ponponon/openctrlc`.
+- Console product titles, 404 links, authentication command examples, and
+  installation tabs use OpenCtrlC identity; remaining console `opencode.ai`
+  references are external hosted-service, provider, or legal contracts.
 - Formal `.openctrlc/openctrlc.jsonc` references use `openctrlc` names and
   `~/.local/share/openctrlc`.
 - The Korean IME patch defaults to the `ponponon/openctrlc` repository,
