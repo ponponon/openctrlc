@@ -3,7 +3,9 @@ import type { DownloadPlatform } from "../types"
 
 export const releaseTag = (channel: "stable" | "beta") => (channel === "stable" ? "latest" : "beta")
 export const releaseUrl = (channel: "stable" | "beta", assetName: string) =>
-  `https://github.com/ponponon/openctrlc/releases/download/${releaseTag(channel)}/${assetName}`
+  channel === "stable"
+    ? `https://github.com/ponponon/openctrlc/releases/latest/download/${assetName}`
+    : `https://github.com/ponponon/openctrlc/releases/download/${releaseTag(channel)}/${assetName}`
 
 const prodAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
