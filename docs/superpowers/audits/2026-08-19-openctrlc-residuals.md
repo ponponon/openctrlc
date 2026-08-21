@@ -5,11 +5,10 @@ Date: 2026-08-21
 ## Result
 
 The product-owned OpenCtrlC namespace is used for the current CLI, runtime
-directories, project configuration, environment flags, Desktop identity, and
-distribution metadata. The final audit found and fixed one product-owned
-residual: both CLI wrappers read `OPENCODE_BIN_PATH`; they now read
-`OPENCTRLC_BIN_PATH`, with a regression assertion in
-`packages/opencode/test/cli/contract.test.ts`.
+directories, project configuration, environment flags, Desktop identity,
+enterprise deployment, VS Code integration, web/console entrypoints, and
+distribution metadata. This pass also removed product-owned installation,
+upgrade, documentation, security, `.openctrlc`, and multilingual Web residuals.
 
 No generated client output was edited. `packages/client` generation and the
 generated-output drift check passed.
@@ -47,9 +46,13 @@ built-in skill Markdown; other historical design/specification Markdown remains
 documentation of prior namespaces and is separately reviewed as non-runtime
 history.
 
+The formal checks pass after the final product fix commit. The only remaining
+OpenCode strings in the audited Web documentation are explicit external
+provider/client examples or hosted-service/legal contracts.
+
 ## Classification
 
-### Fixed Product-Owned Residual
+### Fixed Product-Owned Residuals
 
 - `packages/opencode/bin/openctrlc`: `OPENCODE_BIN_PATH` was a product CLI
   binary override and is now `OPENCTRLC_BIN_PATH`.
@@ -57,6 +60,17 @@ history.
   `OPENCTRLC_BIN_PATH`.
 - `packages/opencode/test/cli/contract.test.ts` asserts both wrappers use only
   the new override name.
+- Installation upgrade/latest now targets `openctrlc.ai/install`,
+  `ponponon/openctrlc` releases, the OpenCtrlC Homebrew tap, `openctrlc-ai`,
+  and OpenCtrlC Chocolatey/Scoop targets.
+- Console/Web installation snippets use `openctrlc.ai/install`,
+  `openctrlc-ai`, `openctrlc`, `openctrlc-bin`, and `ponponon/openctrlc`.
+- Formal `.openctrlc/openctrlc.jsonc` references use `openctrlc` names and
+  `~/.local/share/openctrlc`.
+- The Korean IME patch defaults to the `ponponon/openctrlc` repository,
+  OpenCtrlC directories, `openctrlc` binary, and `openctrlc.ai/install`.
+- SECURITY.md uses OpenCtrlC product language, `OPENCTRLC_SERVER_PASSWORD`,
+  and `ponponon/openctrlc` security advisories.
 
 ### Intentional External Service And Provider Contracts
 
@@ -195,6 +209,8 @@ wrapper contract.
   previously verified by Task 6.
 - Client generated check: `bun run check:generated` passed after generation;
   generated directories were not manually changed.
+- Web production build: passed after the final documentation migration.
+- Console app typecheck: passed.
 - Platform packaging commands `bun run package:mac`, `package:win`, and
   `package:linux` were not run because the host is macOS and the current
   package download target is unpublished.
@@ -203,6 +219,10 @@ wrapper contract.
 - `actionlint` was not run because it is not installed on the host.
 - `nix flake check --no-update-lock-file` was not run because `nix` is not
   installed on the host.
+- `bunx astro check` remains blocked by 15 pre-existing `Share.tsx`/session
+  type errors unrelated to namespace changes; the Web production build passes.
+- Enterprise full suite remains blocked without external R2 storage
+  configuration; the namespace identity test and typecheck pass.
 
 ## Concerns
 
