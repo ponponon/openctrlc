@@ -11,12 +11,12 @@ To debug issues with OpenCode, start by checking the logs and local data it stor
 
 Log files are written to:
 
-- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **macOS/Linux**: `~/.local/share/openctrlc/log/`
 - **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.local\share\opencode\log`
 
 Log files are named with timestamps (e.g., `2025-01-09T123456.log`) and the most recent 10 log files are kept.
 
-You can set the log level with the `--log-level` command-line option to get more detailed debug information. For example, `opencode --log-level DEBUG`.
+You can set the log level with the `--log-level` command-line option to get more detailed debug information. For example, `openctrlc --log-level DEBUG`.
 
 ---
 
@@ -24,7 +24,7 @@ You can set the log level with the `--log-level` command-line option to get more
 
 opencode stores session data and other application data on disk at:
 
-- **macOS/Linux**: `~/.local/share/opencode/`
+- **macOS/Linux**: `~/.local/share/openctrlc/`
 - **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.local\share\opencode`
 
 This directory contains:
@@ -42,7 +42,7 @@ This directory contains:
 To uninstall the OpenCode CLI and remove its related files, run:
 
 ```bash
-opencode uninstall
+openctrlc uninstall
 ```
 
 The command shows what will be removed and asks for confirmation. See the [CLI reference](/docs/cli#uninstall) for options to keep your configuration or application data.
@@ -71,8 +71,8 @@ If the desktop app is crashing on launch, hanging, or behaving strangely, start 
 
 Open your global config file and look for a `plugin` key.
 
-- **macOS/Linux**: `~/.config/opencode/openctrlc.jsonc` (or `~/.config/opencode/openctrlc.json`)
-- **macOS/Linux** (older installs): `~/.local/share/opencode/openctrlc.jsonc`
+- **macOS/Linux**: `~/.config/openctrlc/openctrlc.jsonc` (or `~/.config/openctrlc/openctrlc.json`)
+- **macOS/Linux** (older installs): `~/.local/share/openctrlc/openctrlc.jsonc`
 - **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.config\opencode\openctrlc.jsonc`
 
 If you have plugins configured, temporarily disable them by removing the key or setting it to an empty array:
@@ -89,7 +89,7 @@ If you have plugins configured, temporarily disable them by removing the key or 
 OpenCode can also load local plugins from disk. Temporarily move these out of the way (or rename the folder) and restart the desktop app:
 
 - **Global plugins**
-  - **macOS/Linux**: `~/.config/opencode/plugins/`
+  - **macOS/Linux**: `~/.config/openctrlc/plugins/`
   - **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.config\opencode\plugins`
 - **Project plugins** (only if you use per-project config)
   - `<your-project>/.openctrlc/plugins/`
@@ -105,8 +105,8 @@ If disabling plugins doesn't help (or a plugin install is stuck), clear the cach
 1. Quit OpenCode Desktop completely.
 2. Delete the cache directory:
 
-- **macOS**: Finder -> `Cmd+Shift+G` -> paste `~/.cache/opencode`
-- **Linux**: delete `~/.cache/opencode` (or run `rm -rf ~/.cache/opencode`)
+- **macOS**: Finder -> `Cmd+Shift+G` -> paste `~/.cache/openctrlc`
+- **Linux**: delete `~/.cache/openctrlc` (or run `rm -rf ~/.cache/openctrlc`)
 - **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.cache\opencode`
 
 3. Restart OpenCode Desktop.
@@ -129,9 +129,9 @@ If your `openctrlc.json(c)` contains a `server` section, temporarily remove it a
 
 #### Check environment variables
 
-If you have `OPENCODE_PORT` set in your environment, the desktop app will try to use that port for the local server.
+If you have `OPENCTRLC_PORT` set in your environment, the desktop app will try to use that port for the local server.
 
-- Unset `OPENCODE_PORT` (or pick a free port) and restart.
+- Unset `OPENCTRLC_PORT` (or pick a free port) and restart.
 
 ---
 
@@ -255,7 +255,7 @@ To resolve this:
 2. If the issue persists, try clearing your stored configuration:
 
    ```bash
-   rm -rf ~/.local/share/opencode
+   rm -rf ~/.local/share/openctrlc
    ```
 
    On Windows, press `WIN+R` and delete: `%USERPROFILE%\.local\share\opencode`
@@ -273,7 +273,7 @@ To resolve provider package issues:
 1. Clear the provider package cache:
 
    ```bash
-   rm -rf ~/.cache/opencode
+   rm -rf ~/.cache/openctrlc
    ```
 
    On Windows, press `WIN+R` and delete: `%USERPROFILE%\.cache\opencode`

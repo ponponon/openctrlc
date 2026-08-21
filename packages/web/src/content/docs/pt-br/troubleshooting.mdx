@@ -11,12 +11,12 @@ Para depurar problemas com o opencode, comece verificando os logs e os dados loc
 
 Os arquivos de log são gravados em:
 
-- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **macOS/Linux**: `~/.local/share/openctrlc/log/`
 - **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.local\share\opencode\log`
 
 Os arquivos de log são nomeados com timestamps (por exemplo, `2025-01-09T123456.log`) e os 10 arquivos de log mais recentes são mantidos.
 
-Você pode definir o nível de log com a opção de linha de comando `--log-level` para obter informações de depuração mais detalhadas. Por exemplo, `opencode --log-level DEBUG`.
+Você pode definir o nível de log com a opção de linha de comando `--log-level` para obter informações de depuração mais detalhadas. Por exemplo, `openctrlc --log-level DEBUG`.
 
 ---
 
@@ -24,7 +24,7 @@ Você pode definir o nível de log com a opção de linha de comando `--log-leve
 
 O opencode armazena dados de sessão e outros dados do aplicativo no disco em:
 
-- **macOS/Linux**: `~/.local/share/opencode/`
+- **macOS/Linux**: `~/.local/share/openctrlc/`
 - **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.local\share\opencode`
 
 Este diretório contém:
@@ -57,8 +57,8 @@ Se o aplicativo de desktop estiver travando ao iniciar, pendurado ou se comporta
 
 Abra seu arquivo de configuração global e procure uma chave `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/openctrlc.jsonc` (ou `~/.config/opencode/openctrlc.json`)
-- **macOS/Linux** (instalações mais antigas): `~/.local/share/opencode/openctrlc.jsonc`
+- **macOS/Linux**: `~/.config/openctrlc/openctrlc.jsonc` (ou `~/.config/openctrlc/openctrlc.json`)
+- **macOS/Linux** (instalações mais antigas): `~/.local/share/openctrlc/openctrlc.jsonc`
 - **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.config\opencode\openctrlc.jsonc`
 
 Se você tiver plugins configurados, desative-os temporariamente removendo a chave ou definindo-a como um array vazio:
@@ -75,7 +75,7 @@ Se você tiver plugins configurados, desative-os temporariamente removendo a cha
 O opencode também pode carregar plugins locais do disco. Mova-os temporariamente para fora do caminho (ou renomeie a pasta) e reinicie o aplicativo de desktop:
 
 - **Plugins globais**
-  - **macOS/Linux**: `~/.config/opencode/plugins/`
+  - **macOS/Linux**: `~/.config/openctrlc/plugins/`
   - **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.config\opencode\plugins`
 - **Plugins de projeto** (apenas se você usar configuração por projeto)
   - `<your-project>/.openctrlc/plugins/`
@@ -91,8 +91,8 @@ Se desativar plugins não ajudar (ou se a instalação de um plugin estiver trav
 1. Saia completamente do opencode Desktop.
 2. Exclua o diretório de cache:
 
-- **macOS**: Finder -> `Cmd+Shift+G` -> cole `~/.cache/opencode`
-- **Linux**: exclua `~/.cache/opencode` (ou execute `rm -rf ~/.cache/opencode`)
+- **macOS**: Finder -> `Cmd+Shift+G` -> cole `~/.cache/openctrlc`
+- **Linux**: exclua `~/.cache/openctrlc` (ou execute `rm -rf ~/.cache/openctrlc`)
 - **Windows**: Pressione `WIN+R` e cole `%USERPROFILE%\.cache\opencode`
 
 3. Reinicie o opencode Desktop.
@@ -115,9 +115,9 @@ Se seu `openctrlc.json(c)` contiver uma seção `server`, remova-a temporariamen
 
 #### Verificando as variáveis de ambiente
 
-Se você tiver `OPENCODE_PORT` definido em seu ambiente, o aplicativo de desktop tentará usar essa porta para o servidor local.
+Se você tiver `OPENCTRLC_PORT` definido em seu ambiente, o aplicativo de desktop tentará usar essa porta para o servidor local.
 
-- Desfaça `OPENCODE_PORT` (ou escolha uma porta livre) e reinicie.
+- Desfaça `OPENCTRLC_PORT` (ou escolha uma porta livre) e reinicie.
 
 ---
 
@@ -240,7 +240,7 @@ Para resolver isso:
 2. Se o problema persistir, tente limpar sua configuração armazenada:
 
    ```bash
-   rm -rf ~/.local/share/opencode
+   rm -rf ~/.local/share/openctrlc
    ```
 
    No Windows, pressione `WIN+R` e exclua: `%USERPROFILE%\.local\share\opencode`
@@ -258,7 +258,7 @@ Para resolver problemas com pacotes de provedores:
 1. Limpe o cache do pacote de provedores:
 
    ```bash
-   rm -rf ~/.cache/opencode
+   rm -rf ~/.cache/openctrlc
    ```
 
    No Windows, pressione `WIN+R` e exclua: `%USERPROFILE%\.cache\opencode`

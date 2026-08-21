@@ -11,12 +11,12 @@ Da biste otklonili probleme s OpenCode, počnite provjeravanjem dnevnika i lokal
 
 Log fajlovi se pišu na:
 
-- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **macOS/Linux**: `~/.local/share/openctrlc/log/`
 - **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.local\share\opencode\log`
 
 Datoteke evidencije se imenuju vremenskim oznakama (npr. `2025-01-09T123456.log`) i čuvaju se najnovijih 10 datoteka dnevnika.
 
-Možete postaviti nivo dnevnika pomoću opcije komandne linije `--log-level` da biste dobili detaljnije informacije o otklanjanju grešaka. Na primjer, `opencode --log-level DEBUG`.
+Možete postaviti nivo dnevnika pomoću opcije komandne linije `--log-level` da biste dobili detaljnije informacije o otklanjanju grešaka. Na primjer, `openctrlc --log-level DEBUG`.
 
 ---
 
@@ -24,7 +24,7 @@ Možete postaviti nivo dnevnika pomoću opcije komandne linije `--log-level` da 
 
 OpenCode pohranjuje podatke o sesiji i druge podatke aplikacije na disku na:
 
-- **macOS/Linux**: `~/.local/share/opencode/`
+- **macOS/Linux**: `~/.local/share/openctrlc/`
 - **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.local\share\opencode`
 
 Ovaj direktorij sadrži:
@@ -57,8 +57,8 @@ Ako se desktop aplikacija ruši pri pokretanju, visi ili se čudno ponaša, poč
 
 Otvorite svoju globalnu konfiguracijsku datoteku i potražite ključ `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/openctrlc.jsonc` (ili `~/.config/opencode/openctrlc.json`)
-- **macOS/Linux** (starije instalacije): `~/.local/share/opencode/openctrlc.jsonc`
+- **macOS/Linux**: `~/.config/openctrlc/openctrlc.jsonc` (ili `~/.config/openctrlc/openctrlc.json`)
+- **macOS/Linux** (starije instalacije): `~/.local/share/openctrlc/openctrlc.jsonc`
 - **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.config\opencode\openctrlc.jsonc`
 
 Ako imate konfigurirane dodatke, privremeno ih onemogućite uklanjanjem ključa ili postavljanjem na prazan niz:
@@ -75,7 +75,7 @@ Ako imate konfigurirane dodatke, privremeno ih onemogućite uklanjanjem ključa 
 OpenCode također može učitati lokalne dodatke s diska. Privremeno ih maknite s puta (ili preimenujte folder) i ponovo pokrenite desktop aplikaciju:
 
 - **Globalni dodaci**
-  - **macOS/Linux**: `~/.config/opencode/plugins/`
+  - **macOS/Linux**: `~/.config/openctrlc/plugins/`
   - **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.config\opencode\plugins`
 - **Projektni dodaci** (samo ako koristite konfiguraciju po projektu)
   - `<your-project>/.openctrlc/plugins/`
@@ -91,8 +91,8 @@ Ako onemogućavanje dodataka ne pomogne (ili se instalacija dodatka zaglavila), 
 1. Potpuno zatvorite OpenCode Desktop.
 2. Izbrišite keš direktorij:
 
-- **macOS**: Finder -> `Cmd+Shift+G` -> zalijepi `~/.cache/opencode`
-- **Linux**: obrišite `~/.cache/opencode` (ili pokrenite `rm -rf ~/.cache/opencode`)
+- **macOS**: Finder -> `Cmd+Shift+G` -> zalijepi `~/.cache/openctrlc`
+- **Linux**: obrišite `~/.cache/openctrlc` (ili pokrenite `rm -rf ~/.cache/openctrlc`)
 - **Windows**: Pritisnite `WIN+R` i zalijepite `%USERPROFILE%\.cache\opencode`
 
 3. Ponovo pokrenite OpenCode Desktop.
@@ -115,9 +115,9 @@ Ako vaš `openctrlc.json(c)` sadrži odjeljak `server`, privremeno ga uklonite i
 
 #### Provjerite varijable okruženja
 
-Ako ste postavili `OPENCODE_PORT` u svom okruženju, desktop aplikacija će pokušati da koristi taj port za lokalni server.
+Ako ste postavili `OPENCTRLC_PORT` u svom okruženju, desktop aplikacija će pokušati da koristi taj port za lokalni server.
 
-- Poništite `OPENCODE_PORT` (ili odaberite slobodan port) i ponovo pokrenite.
+- Poništite `OPENCTRLC_PORT` (ili odaberite slobodan port) i ponovo pokrenite.
 
 ---
 
@@ -241,7 +241,7 @@ Da biste ovo riješili:
 2. Ako se problem nastavi, pokušajte obrisati pohranjenu konfiguraciju:
 
 ```bash
-   rm -rf ~/.local/share/opencode
+   rm -rf ~/.local/share/openctrlc
 ```
 
 Na Windows-u pritisnite `WIN+R` i izbrišite: `%USERPROFILE%\.local\share\opencode`
@@ -259,7 +259,7 @@ Da biste riješili probleme s paketom dobavljača:
 1. Obrišite keš paketa provajdera:
 
 ```bash
-   rm -rf ~/.cache/opencode
+   rm -rf ~/.cache/openctrlc
 ```
 
 Na Windows-u pritisnite `WIN+R` i izbrišite: `%USERPROFILE%\.cache\opencode`

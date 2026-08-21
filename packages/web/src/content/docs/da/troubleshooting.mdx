@@ -11,12 +11,12 @@ For at fejlfinde problemer med OpenCode, start med at tjekke logfilerne og de lo
 
 Logfiler skrives til:
 
-- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **macOS/Linux**: `~/.local/share/openctrlc/log/`
 - **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.local\share\opencode\log`
 
 Logfiler navngives med tidsstempler (f.eks. `2025-01-09T123456.log`) og de sidste 10 logfiler beholdes.
 
-Du kan angive logniveauet med kommandolinjeflaget `--log-level` for at få mere detaljeret fejlfindingsinformation. For eksempel `opencode --log-level DEBUG`.
+Du kan angive logniveauet med kommandolinjeflaget `--log-level` for at få mere detaljeret fejlfindingsinformation. For eksempel `openctrlc --log-level DEBUG`.
 
 ---
 
@@ -24,7 +24,7 @@ Du kan angive logniveauet med kommandolinjeflaget `--log-level` for at få mere 
 
 opencode gemmer sessionsdata og andre applikationsdata på disken på:
 
-- **macOS/Linux**: `~/.local/share/opencode/`
+- **macOS/Linux**: `~/.local/share/openctrlc/`
 - **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.local\share\opencode`
 
 Denne mappe indeholder:
@@ -57,8 +57,8 @@ Hvis skrivebordsappen går ned ved opstart, hænger eller opfører sig mærkelig
 
 Åbn den globale konfigurationsfil og se efter en `plugin`-nøgle.
 
-- **macOS/Linux**: `~/.config/opencode/openctrlc.jsonc` (eller `~/.config/opencode/openctrlc.json`)
-- **macOS/Linux** (ældre installationer): `~/.local/share/opencode/openctrlc.jsonc`
+- **macOS/Linux**: `~/.config/openctrlc/openctrlc.jsonc` (eller `~/.config/openctrlc/openctrlc.json`)
+- **macOS/Linux** (ældre installationer): `~/.local/share/openctrlc/openctrlc.jsonc`
 - **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.config\opencode\openctrlc.jsonc`
 
 Hvis du har konfigureret plugins, deaktiver dem midlertidigt ved at fjerne nøglen eller sætte den til et tomt array:
@@ -75,7 +75,7 @@ Hvis du har konfigureret plugins, deaktiver dem midlertidigt ved at fjerne nøgl
 OpenCode kan også indlæse lokale plugins fra disken. Flyt disse midlertidigt væk (eller giv mappen nyt navn) og start skrivebordsappen på ny:
 
 - **Globale plugins**
-  - **macOS/Linux**: `~/.config/opencode/plugins/`
+  - **macOS/Linux**: `~/.config/openctrlc/plugins/`
   - **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.config\opencode\plugins`
 - **Projektplugins** (kun hvis du bruger konfiguration per projekt)
   - `<your-project>/.openctrlc/plugins/`
@@ -91,8 +91,8 @@ Hvis deaktivering af plugins ikke hjælper (eller en plugin-installation sidder 
 1. Afslut OpenCode Desktop helt.
 2. Slet cache-mappen:
 
-- **macOS**: Finder -> `Cmd+Shift+G` -> indsæt `~/.cache/opencode`
-- **Linux**: slet `~/.cache/opencode` (eller kør `rm -rf ~/.cache/opencode`)
+- **macOS**: Finder -> `Cmd+Shift+G` -> indsæt `~/.cache/openctrlc`
+- **Linux**: slet `~/.cache/openctrlc` (eller kør `rm -rf ~/.cache/openctrlc`)
 - **Windows**: Tryk `WIN+R` og indsæt `%USERPROFILE%\.cache\opencode`
 
 3. Start OpenCode Desktop på ny.
@@ -115,9 +115,9 @@ Hvis `openctrlc.json(c)` indeholder en `server`-del, fjern den midlertidigt og s
 
 #### Tjek miljøvariabler
 
-Hvis du har `OPENCODE_PORT` sat i dit miljø, vil skrivebordsappen prøve at bruge den port for den lokale server.
+Hvis du har `OPENCTRLC_PORT` sat i dit miljø, vil skrivebordsappen prøve at bruge den port for den lokale server.
 
-- Deaktiver `OPENCODE_PORT` (eller vælg en ledig port) og start på ny.
+- Deaktiver `OPENCTRLC_PORT` (eller vælg en ledig port) og start på ny.
 
 ---
 
@@ -241,7 +241,7 @@ For at løse dette:
 2. Hvis problemet vedvarer, prøv at tømme den gemte konfiguration:
 
    ```bash
-   rm -rf ~/.local/share/opencode
+   rm -rf ~/.local/share/openctrlc
    ```
 
    På Windows, tryk `WIN+R` og slet: `%USERPROFILE%\.local\share\opencode`
@@ -259,7 +259,7 @@ For at løse problemer med udbyderpakke:
 1. Tøm udbyderens pakkecache:
 
    ```bash
-   rm -rf ~/.cache/opencode
+   rm -rf ~/.cache/openctrlc
    ```
 
    På Windows, tryk `WIN+R` og slet: `%USERPROFILE%\.cache\opencode`

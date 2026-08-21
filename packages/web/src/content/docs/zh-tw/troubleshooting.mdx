@@ -11,12 +11,12 @@ description: 常見問題及其解決方法。
 
 日誌檔案寫入位置：
 
-- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **macOS/Linux**: `~/.local/share/openctrlc/log/`
 - **Windows**: 按 `WIN+R` 並貼上 `%USERPROFILE%\.local\share\opencode\log`
 
 日誌檔案以時間戳記命名（例如 `2025-01-09T123456.log`），並保留最近的 10 個日誌檔案。
 
-你可以透過 `--log-level` 命令列選項設定日誌等級以取得更詳細的偵錯資訊。例如：`opencode --log-level DEBUG`。
+你可以透過 `--log-level` 命令列選項設定日誌等級以取得更詳細的偵錯資訊。例如：`openctrlc --log-level DEBUG`。
 
 ---
 
@@ -24,7 +24,7 @@ description: 常見問題及其解決方法。
 
 OpenCode 將工作階段資料和其他應用程式資料儲存在磁碟上：
 
-- **macOS/Linux**: `~/.local/share/opencode/`
+- **macOS/Linux**: `~/.local/share/openctrlc/`
 - **Windows**: 按 `WIN+R` 並貼上 `%USERPROFILE%\.local\share\opencode`
 
 該目錄包含：
@@ -57,8 +57,8 @@ OpenCode Desktop 會在背景執行一個本地 OpenCode 伺服器（即 `openco
 
 開啟你的全域設定檔，查找 `plugin` 鍵。
 
-- **macOS/Linux**: `~/.config/opencode/openctrlc.jsonc`（或 `~/.config/opencode/openctrlc.json`）
-- **macOS/Linux**（舊版安裝）: `~/.local/share/opencode/openctrlc.jsonc`
+- **macOS/Linux**: `~/.config/openctrlc/openctrlc.jsonc`（或 `~/.config/openctrlc/openctrlc.json`）
+- **macOS/Linux**（舊版安裝）: `~/.local/share/openctrlc/openctrlc.jsonc`
 - **Windows**: 按 `WIN+R` 並貼上 `%USERPROFILE%\.config\opencode\openctrlc.jsonc`
 
 如果你設定了外掛，請透過移除該鍵或將其設定為空陣列來暫時停用它們：
@@ -75,7 +75,7 @@ OpenCode Desktop 會在背景執行一個本地 OpenCode 伺服器（即 `openco
 OpenCode 還可以從磁碟載入本地外掛。暫時將這些外掛移走（或重新命名資料夾），然後重新啟動桌面應用程式：
 
 - **全域外掛**
-  - **macOS/Linux**: `~/.config/opencode/plugins/`
+  - **macOS/Linux**: `~/.config/openctrlc/plugins/`
   - **Windows**: 按 `WIN+R` 並貼上 `%USERPROFILE%\.config\opencode\plugins`
 - **專案外掛**（僅當你使用了專案級設定時）
   - `<your-project>/.openctrlc/plugins/`
@@ -91,8 +91,8 @@ OpenCode 還可以從磁碟載入本地外掛。暫時將這些外掛移走（�
 1. 完全退出 OpenCode Desktop。
 2. 刪除快取目錄：
 
-- **macOS**: Finder -> `Cmd+Shift+G` -> 貼上 `~/.cache/opencode`
-- **Linux**: 刪除 `~/.cache/opencode`（或執行 `rm -rf ~/.cache/opencode`）
+- **macOS**: Finder -> `Cmd+Shift+G` -> 貼上 `~/.cache/openctrlc`
+- **Linux**: 刪除 `~/.cache/openctrlc`（或執行 `rm -rf ~/.cache/openctrlc`）
 - **Windows**: 按 `WIN+R` 並貼上 `%USERPROFILE%\.cache\opencode`
 
 3. 重新啟動 OpenCode Desktop。
@@ -115,9 +115,9 @@ OpenCode Desktop 可以啟動自己的本地伺服器（預設行為），也可
 
 #### 檢查環境變數
 
-如果你在環境中設定了 `OPENCODE_PORT`，桌面應用程式將嘗試使用該連接埠作為本地伺服器連接埠。
+如果你在環境中設定了 `OPENCTRLC_PORT`，桌面應用程式將嘗試使用該連接埠作為本地伺服器連接埠。
 
-- 取消設定 `OPENCODE_PORT`（或選擇一個空閒連接埠）並重新啟動。
+- 取消設定 `OPENCTRLC_PORT`（或選擇一個空閒連接埠）並重新啟動。
 
 ---
 
@@ -240,7 +240,7 @@ OpenCode Desktop 僅在以下情況下顯示系統通知：
 2. 如果問題仍然存在，請嘗試清除已儲存的設定：
 
    ```bash
-   rm -rf ~/.local/share/opencode
+   rm -rf ~/.local/share/openctrlc
    ```
 
    在 Windows 上，按 `WIN+R` 並刪除：`%USERPROFILE%\.local\share\opencode`
@@ -258,7 +258,7 @@ OpenCode Desktop 僅在以下情況下顯示系統通知：
 1. 清除供應商套件快取：
 
    ```bash
-   rm -rf ~/.cache/opencode
+   rm -rf ~/.cache/openctrlc
    ```
 
    在 Windows 上，按 `WIN+R` 並刪除：`%USERPROFILE%\.cache\opencode`

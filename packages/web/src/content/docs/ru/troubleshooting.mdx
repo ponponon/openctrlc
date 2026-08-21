@@ -11,12 +11,12 @@ description: Распространенные проблемы и способы
 
 Лог-файлы записываются в:
 
-- **macOS/Linux**: `~/.local/share/opencode/log/`
+- **macOS/Linux**: `~/.local/share/openctrlc/log/`
 - **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.local\share\opencode\log`.
 
 Файлам журналов присваиваются имена с метками времени (например, `2025-01-09T123456.log`), и сохраняются 10 последних файлов журналов.
 
-Вы можете установить уровень журнала с помощью CLI-параметра `--log-level`, чтобы получить более подробную информацию об отладке. Например, `opencode --log-level DEBUG`.
+Вы можете установить уровень журнала с помощью CLI-параметра `--log-level`, чтобы получить более подробную информацию об отладке. Например, `openctrlc --log-level DEBUG`.
 
 ---
 
@@ -24,7 +24,7 @@ description: Распространенные проблемы и способы
 
 opencode хранит данные сеанса и другие данные приложения на диске по адресу:
 
-- **macOS/Linux**: `~/.local/share/opencode/`
+- **macOS/Linux**: `~/.local/share/openctrlc/`
 - **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.local\share\opencode`.
 
 Этот каталог содержит:
@@ -57,8 +57,8 @@ opencode Desktop запускает локальный сервер opencode (с
 
 Откройте файл глобальной конфигурации и найдите ключ `plugin`.
 
-- **macOS/Linux**: `~/.config/opencode/openctrlc.jsonc` (или `~/.config/opencode/openctrlc.json`)
-- **macOS/Linux** (более ранние версии): `~/.local/share/opencode/openctrlc.jsonc`
+- **macOS/Linux**: `~/.config/openctrlc/openctrlc.jsonc` (или `~/.config/openctrlc/openctrlc.json`)
+- **macOS/Linux** (более ранние версии): `~/.local/share/openctrlc/openctrlc.jsonc`
 - **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.config\opencode\openctrlc.jsonc`.
 
 Если у вас настроены плагины, временно отключите их, удалив ключ или установив для него пустой массив:
@@ -75,7 +75,7 @@ opencode Desktop запускает локальный сервер opencode (с
 opencode также может загружать локальные плагины с диска. Временно переместите их в сторону (или переименуйте папку) и перезапустите настольное приложение:
 
 - **Глобальные плагины**
-  - **macOS/Linux**: `~/.config/opencode/plugins/`
+  - **macOS/Linux**: `~/.config/openctrlc/plugins/`
   - **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.config\opencode\plugins`.
 - **Плагины проекта** (только если вы используете конфигурацию для каждого проекта)
   - `<your-project>/.openctrlc/plugins/`
@@ -91,8 +91,8 @@ opencode также может загружать локальные плаги�
 1. Полностью закройте opencode Desktop.
 2. Удалите каталог кэша:
 
-- **macOS**: Finder -> `Cmd+Shift+G` -> вставить `~/.cache/opencode`.
-- **Linux**: удалите `~/.cache/opencode` (или запустите `rm -rf ~/.cache/opencode`).
+- **macOS**: Finder -> `Cmd+Shift+G` -> вставить `~/.cache/openctrlc`.
+- **Linux**: удалите `~/.cache/openctrlc` (или запустите `rm -rf ~/.cache/openctrlc`).
 - **Windows**: нажмите `WIN+R` и вставьте `%USERPROFILE%\.cache\opencode`.
 
 3. Перезапустите рабочий стол opencode.
@@ -115,9 +115,9 @@ opencode Desktop может либо запустить собственный �
 
 #### Проверьте переменные среды
 
-Если в вашей среде установлен `OPENCODE_PORT`, настольное приложение попытается использовать этот порт для локального сервера.
+Если в вашей среде установлен `OPENCTRLC_PORT`, настольное приложение попытается использовать этот порт для локального сервера.
 
-- Отмените настройку `OPENCODE_PORT` (или выберите свободный порт) и перезапустите.
+- Отмените настройку `OPENCTRLC_PORT` (или выберите свободный порт) и перезапустите.
 
 ---
 
@@ -241,7 +241,7 @@ opencode Desktop отображает системные уведомления 
 2. Если проблема не устранена, попробуйте очистить сохраненную конфигурацию:
 
    ```bash
-   rm -rf ~/.local/share/opencode
+   rm -rf ~/.local/share/openctrlc
    ```
 
    В Windows нажмите `WIN+R` и удалите: `%USERPROFILE%\.local\share\opencode`.
@@ -259,7 +259,7 @@ opencode Desktop отображает системные уведомления 
 1. Очистите кеш пакетов провайдера:
 
    ```bash
-   rm -rf ~/.cache/opencode
+   rm -rf ~/.cache/openctrlc
    ```
 
    В Windows нажмите `WIN+R` и удалите: `%USERPROFILE%\.cache\opencode`.

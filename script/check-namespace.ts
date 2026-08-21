@@ -37,7 +37,6 @@ const internalPackages = [
 ] as const
 
 const ignoredFiles = [
-  ".openctrlc/",
   "packages/app/vendor/",
   "packages/client/src/generated/",
   "packages/client/src/generated-effect/",
@@ -72,10 +71,19 @@ if (exitCode > 1 || violations.length > 0) {
 }
 
 function isExternalContract(file: string, line: string, name: string) {
-  if (name === "@opencode-ai/client") return true
+  if (name === "@opencode-ai/client") {
+    return file === "bun.lock" || file.startsWith("packages/app/") || file.startsWith("packages/session-ui/")
+  }
+
+  if (name === "@opencode-ai/sdk") {
+    return (
+      file === "packages/sdk/openapi.json" ||
+      file === "bun.lock" ||
+      file.startsWith("packages/web/src/content/docs/") && file.endsWith("ecosystem.mdx")
+    )
+  }
 
   if (!file.endsWith("bun.lock")) return false
-  if (name === "@opencode-ai/sdk") return line.includes("@opencode-ai/sdk")
   if (name === "@opencode-ai/plugin") {
     return ["@gitlab/opencode-gitlab-auth", "opencode-gitlab-auth", "opencode-poe-auth", "@opencode-ai/plugin"].some(
       (pkg) => line.includes(`\"${pkg}`),
