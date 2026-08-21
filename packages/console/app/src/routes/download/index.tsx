@@ -210,6 +210,14 @@ export default function Download() {
               </div>
               <div data-component="download-row">
                 <div data-component="download-info">
+                  <span>{i18n.t("download.platform.linuxDeb")} (ARM64)</span>
+                </div>
+                <a href={language.route(getDownloadHref("linux-arm64-deb"))} data-component="action-button">
+                  {i18n.t("download.action.download")}
+                </a>
+              </div>
+              <div data-component="download-row">
+                <div data-component="download-info">
                   <span data-slot="icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path

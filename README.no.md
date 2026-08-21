@@ -78,7 +78,7 @@ OpenCtrlC er også tilgjengelig som en desktop-app. Last ned direkte fra [releas
 # macOS (Homebrew)
 scoop install openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Installasjonsmappe

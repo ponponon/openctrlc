@@ -78,7 +78,7 @@ OpenCtrlC также доступен как десктопное приложе
 # macOS (Homebrew)
 scoop install openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop install openctrlc-desktop
 ```
 
 #### Каталог установки

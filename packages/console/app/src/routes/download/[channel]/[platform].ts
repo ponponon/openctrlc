@@ -2,6 +2,8 @@ import type { APIEvent } from "@solidjs/start"
 import type { DownloadPlatform } from "../types"
 
 export const releaseTag = (channel: "stable" | "beta") => (channel === "stable" ? "latest" : "beta")
+export const releaseUrl = (channel: "stable" | "beta", assetName: string) =>
+  `https://github.com/ponponon/openctrlc/releases/download/${releaseTag(channel)}/${assetName}`
 
 const prodAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
@@ -39,7 +41,7 @@ export async function GET({ params: { platform, channel } }: APIEvent) {
   if (!assetName) return new Response(null, { status: 404 })
 
   const resp = await fetch(
-    `https://github.com/ponponon/openctrlc/releases/download/${releaseTag(channel === "stable" ? "stable" : "beta")}/${assetName}`,
+    releaseUrl(channel === "stable" ? "stable" : "beta", assetName),
   )
 
   const downloadName = downloadNames[platform]

@@ -21,7 +21,12 @@ if (!Script.preview) {
    const release = await $`gh release view ${tag} --json tagName,databaseId --repo ${repo}`.json()
    output.push(`release=${release.databaseId}`)
 } else if (Script.channel === "beta") {
-   await $`gh release create ${tag} -d --target ${sha} --title "Beta ${Script.version}" --repo ${repo}`
+  const existing = await $`gh release view ${tag} --json databaseId --repo ${repo}`.nothrow()
+  if (existing.exitCode === 0) {
+    await $`gh release edit ${tag} --draft --target ${sha} --title "Beta ${Script.version}" --repo ${repo}`
+  } else {
+    await $`gh release create ${tag} -d --target ${sha} --title "Beta ${Script.version}" --repo ${repo}`
+  }
    const release =
      await $`gh release view ${tag} --json tagName,databaseId --repo ${repo}`.json()
   output.push(`release=${release.databaseId}`)
