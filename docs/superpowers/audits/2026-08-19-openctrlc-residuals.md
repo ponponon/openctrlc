@@ -121,6 +121,14 @@ OAuth/API tests, recorded fixtures, models metadata, schema declarations, and
 localized provider documentation. Renaming them would change an external
 protocol or credential contract.
 
+The same allowlist applies to the final Web and Console scan: `opencode.ai`,
+`api.opencode.ai`, `models.dev`, provider/API/OAuth identifiers, third-party
+vendor package and action names, the existing `sst-dev` Marketplace publisher,
+and `security@anoma.ly` as the inherited external security-team escalation
+contact remain unchanged. Product-owned CLI commands, installation targets,
+configuration paths, release repositories, docs hosts, social links, and brand
+download names are excluded from this allowlist.
+
 The VS Code Marketplace publisher is intentionally not claimed as migrated:
 `sst-dev` remains the existing external publishing identity because no new
 OpenCtrlC Marketplace publisher was supplied. Product-facing extension
