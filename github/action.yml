@@ -14,7 +14,7 @@ inputs:
     required: false
 
   share:
-     description: "Share the OpenCtrlC session (defaults to true for public repos)"
+    description: "Share the OpenCtrlC session (defaults to true for public repos)"
     required: false
 
   prompt:
@@ -27,7 +27,7 @@ inputs:
     default: "false"
 
   mentions:
-     description: "Comma-separated list of trigger phrases (case-insensitive). Defaults to '/openctrlc,/oc'"
+    description: "Comma-separated list of trigger phrases (case-insensitive). Defaults to '/openctrlc,/oc'"
     required: false
 
   variant:
@@ -41,33 +41,33 @@ inputs:
 runs:
   using: "composite"
   steps:
-     - name: Get OpenCtrlC version
+    - name: Get OpenCtrlC version
       id: version
       shell: bash
       run: |
         VERSION=$(curl -sf https://api.github.com/repos/ponponon/openctrlc/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4)
         echo "version=${VERSION:-latest}" >> $GITHUB_OUTPUT
 
-    - name: Cache opencode
+    - name: Cache OpenCtrlC
       id: cache
       uses: actions/cache@v4
       with:
         path: ~/.openctrlc/bin
-         key: openctrlc-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
+        key: openctrlc-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
 
-     - name: Install OpenCtrlC
+    - name: Install OpenCtrlC
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-       run: curl -fsSL https://openctrlc.quniv.cn/install | bash
+      run: curl -fsSL https://openctrlc.quniv.cn/install | bash
 
-     - name: Add OpenCtrlC to PATH
+    - name: Add OpenCtrlC to PATH
       shell: bash
       run: echo "$HOME/.openctrlc/bin" >> $GITHUB_PATH
 
-     - name: Run OpenCtrlC
+    - name: Run OpenCtrlC
       shell: bash
-      id: run_opencode
-       run: openctrlc github run
+      id: run_openctrlc
+      run: openctrlc github run
       env:
         MODEL: ${{ inputs.model }}
         AGENT: ${{ inputs.agent }}

@@ -45,6 +45,8 @@ const required: Array<[string, string[]]> = [
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
   ["github/action.yml", ["https://openctrlc.quniv.cn/install", "echo \"$HOME/.openctrlc/bin\"", "run: openctrlc github run"]],
   ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],
+  ["script/changelog.ts", ["openctrlc run"]],
+  ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
 ]
 
 const workflows = [".github/workflows/publish.yml", ".github/workflows/deploy.yml", ".github/workflows/stats.yml"]
@@ -58,6 +60,14 @@ for (const relative of workflows) {
   } catch (error) {
     failures.push(`${relative} is not valid YAML: ${String(error)}`)
   }
+}
+try {
+  const action = parse(await read("github/action.yml"))
+  if (typeof action !== "object" || action === null || typeof action.runs !== "object") {
+    failures.push("github/action.yml does not contain a valid action document")
+  }
+} catch (error) {
+  failures.push(`github/action.yml is not valid YAML: ${String(error)}`)
 }
 
 for (const [relative, needles] of required) {
@@ -96,7 +106,7 @@ for (const directory of audited) {
 }
 
 const readmes = await Array.fromAsync(new Bun.Glob("README*.md").scan({ cwd: root, absolute: true }))
-const staleReleaseGuide = /opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/install|nix run nixpkgs#opencode|github:anomalyco\/opencode/
+const staleReleaseGuide = /opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/install|nix run nixpkgs#opencode|github:anomalyco\/opencode|opencode\.(?:zip|tar\.gz|dmg|exe|deb|rpm|AppImage)/
 for (const file of readmes) {
   const source = await Bun.file(file).text()
   const installation = source.match(/### (?:Installation|安装|安裝|インストール|설치|Установка|Installasjon|Instalação|Instalación|Installazione|Εγκατάσταση|การติดตั้ง|Інсталяція)[\s\S]*?(?=### |$)/)?.[0] ?? source
