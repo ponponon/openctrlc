@@ -67,8 +67,15 @@ These are not OpenCtrlC-owned namespace values and must remain stable:
 - Third-party packages and package metadata such as `opencode-gitlab-auth`,
   `opencode-poe-auth`, `@opencode-ai/plugin`, and `@opencode-ai/sdk` where they
   are consumed as external integrations or recorded contract data.
+- The `ai-sdk-provider-opencode-sdk` ecosystem entry remains an explicit
+  third-party integration example; its package and `@opencode-ai/sdk` import
+  are not owned by this fork.
 - External IDE extension identifiers such as `sst-dev.opencode` and external
   managed-preference domain `ai.opencode.managed`.
+- The VS Code extension publisher remains `sst-dev`: this is the existing
+  third-party Marketplace publishing identity, while the extension package,
+  display name, commands, terminal name, CLI invocation, and environment
+  markers are OpenCtrlC-owned and have been migrated.
 
 The external-provider and service strings are present in provider adapters,
 OAuth/API tests, recorded fixtures, models metadata, schema declarations, and
@@ -102,19 +109,12 @@ or whose scope is not the product identity boundary:
 - `@opencode-ai/client` in the app's external vendor package contract and
   generated SDK fixtures; generated output remains generator-owned.
 
-### Remaining Product-Owned Release/Installation Boundary
+### Product-Owned Release And Installation Boundary Fixed In This Pass
 
-The residual scan also identifies old upstream package-manager and installer
-names in `packages/opencode/src/installation/index.ts` and the uninstall
-cleanup code. These are the old OpenCode installation discovery and cleanup
-contracts, not runtime path/config fallback. They remain a concern for a
-future installation-migration boundary and are not silently reclassified as
-external service identifiers.
-
-Examples include the old `opencode-ai` npm package, `opencode` Brew/Scoop/
-Chocolatey package names, the upstream install URL, and cleanup markers for
-`.opencode/bin`. The current OpenCtrlC distribution contract itself passes and
-uses `openctrlc-ai`, `openctrlc`, `.openctrlc/bin`, and the OpenCtrlC installer.
+The product-owned installation and uninstall paths now use `openctrlc-ai`,
+`openctrlc`, `.openctrlc/bin`, the OpenCtrlC installer URL, and the
+`ponponon/openctrlc` release repository. The old package-manager names and
+`.opencode/bin` cleanup markers are no longer active product paths.
 
 ## Isolated Runtime Verification
 
@@ -152,9 +152,21 @@ wrapper contract.
 ## Verification Summary
 
 - Core full suite: `1096 pass, 0 fail`; `bun typecheck` passed.
-- OpenCode full suite: `3304 pass, 5 fail, 22 skip, 1 todo`; the five failures
-  are pre-existing provider/auth environment failures, not namespace failures.
-  `bun typecheck` passed in the final focused run.
+- OpenCode full suite baseline: `3304 pass, 5 fail, 22 skip, 1 todo`. The five
+  failures recorded by the previous audit were:
+  `cf-ai-gateway routing > anthropic/* rides the native Anthropic passthrough
+  on the Messages API`, `cf-ai-gateway end-to-end (regression: #24432) >
+  reasoning effort variants for anthropic models land as native adaptive
+  thinking`, `cf-ai-gateway token scoping (regression: #32051/#32052) >
+  anthropic passthrough does NOT forward the Cloudflare token upstream`,
+  `HttpApi instance route authorization > requires configured auth before
+  opening the instance event stream`, and `HttpApi instance route
+  authorization > requires configured auth before resolving the PTY websocket
+  route`. Raw output was captured in
+  `/Users/ponponon/.local/share/opencode/tool-output/tool_022df5274001S3gcqi28puAwRT`:
+  three `provider "anthropic.messages" is currently not supported` errors,
+  two auth expectation failures, and the summary `5 tests failed` / `3304
+  pass`. These are unrelated provider/auth environment failures.
 - OpenCode CLI contract: `5 pass, 0 fail`; `bun typecheck` passed.
 - Core skill residual test: `1 pass, 0 fail`; `bun typecheck` passed.
 - App production build: passed; app `bun typecheck` passed.
@@ -170,6 +182,9 @@ wrapper contract.
   package download target is unpublished.
 - `~/.agents/instructions/script/test-proxy.sh` ran before external access;
   QuickQ `127.0.0.1:10025` and Clash Verge `127.0.0.1:7897` were available.
+- `actionlint` was not run because it is not installed on the host.
+- `nix flake check --no-update-lock-file` was not run because `nix` is not
+  installed on the host.
 
 ## Concerns
 
