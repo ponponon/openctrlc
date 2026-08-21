@@ -14,6 +14,12 @@ The current product repair is:
 
 `0ca7a01 fix(identity): make final namespace audit effective`
 
+The effective audit command was run again after the repair and returned zero
+output. This means zero residuals in the audit's declared product scopes, not
+zero occurrences across the entire repository: the repository still contains
+historical, external, generated, and provider-contract occurrences covered by
+the allowlist below.
+
 The audit-only commit for this document is:
 
 `docs(identity): record OpenCtrlC namespace audit`
