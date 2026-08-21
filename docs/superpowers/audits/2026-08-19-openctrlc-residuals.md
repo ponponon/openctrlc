@@ -99,6 +99,9 @@ These are not OpenCtrlC-owned namespace values and must remain stable:
   third-party Marketplace publishing identity, while the extension package,
   display name, commands, terminal name, CLI invocation, and environment
   markers are OpenCtrlC-owned and have been migrated.
+- The 18 `ai-sdk-provider-opencode-sdk` ecosystem rows retain
+  `@opencode-ai/sdk` as the third-party package contract. Other product SDK
+  examples use `@openctrlc/sdk`; no `@openctrlc-ai/*` package exists.
 
 The external-provider and service strings are present in provider adapters,
 OAuth/API tests, recorded fixtures, models metadata, schema declarations, and
