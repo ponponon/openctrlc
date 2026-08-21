@@ -65,7 +65,7 @@ nix run github:ponponon/openctrlc
 
 ### 桌面應用程式 (BETA)
 
-OpenCode 也提供桌面版應用程式。您可以直接從 [發佈頁面 (releases page)](https://github.com/anomalyco/opencode/releases) 或 [opencode.ai/download](https://opencode.ai/download) 下載。
+OpenCtrlC 也提供桌面版應用程式。您可以直接從 [發佈頁面 (releases page)](https://github.com/ponponon/openctrlc/releases) 下載。
 
 | 平台                  | 下載連結                           |
 | --------------------- | ---------------------------------- |
@@ -85,7 +85,7 @@ scoop bucket add extras; scoop install extras/opencode-desktop
 
 安裝腳本會依據以下優先順序決定安裝路徑：
 
-1. `$OPENCODE_INSTALL_DIR` - 自定義安裝目錄
+1. `$OPENCTRLC_INSTALL_DIR` - 自定義安裝目錄
 2. `$XDG_BIN_DIR` - 符合 XDG 基礎目錄規範的路徑
 3. `$HOME/bin` - 標準使用者執行檔目錄 (若存在或可建立)
 4. `$HOME/.openctrlc/bin` - 預設備用路徑

@@ -16,6 +16,7 @@ const read = async (relative: string) => Bun.file(path.resolve(root, relative)).
 const json = async (relative: string) => Bun.file(path.resolve(root, relative)).json() as Promise<Record<string, unknown>>
 
 const packageJson = await json("packages/opencode/package.json")
+if (packageJson.name !== Brand.cli) failures.push(`packages/opencode/package.json must be named ${Brand.cli}`)
 const bin = packageJson.bin
 if (JSON.stringify(bin) !== JSON.stringify({ [Brand.cli]: `./bin/${Brand.cli}` })) {
   failures.push(`packages/opencode/package.json must expose only ${Brand.cli}`)
@@ -36,7 +37,11 @@ const required: Array<[string, string[]]> = [
   ["nix/opencode.nix", ['pname = "openctrlc"', 'mainProgram = "openctrlc"']],
   ["nix/desktop.nix", ['pname = "openctrlc-desktop"', 'mainProgram = "openctrlc-desktop"']],
   [".github/workflows/publish.yml", ["name: openctrlc-cli", "name: openctrlc-desktop-"]],
-  ["install", ["APP=openctrlc", "$HOME/.openctrlc/bin", "openctrlc"]],
+  ["install", ["APP=openctrlc", "OPENCTRLC_INSTALL_DIR", "ponponon/openctrlc", "command -v openctrlc", "openctrlc"]],
+  ["packages/console/app/src/routes/download/[channel]/[platform].ts", ["ponponon/openctrlc", "openctrlc-linux-x64.deb", "openctrlc-linux-arm64.deb", "OpenCtrlC"]],
+  ["packages/desktop/electron-builder.config.ts", ["owner: \"ponponon\"", "repo: \"openctrlc\"", "artifactName: \"openctrlc-"]],
+  ["packages/opencode/script/publish.ts", ["ghcr.io/ponponon/openctrlc", "github.com/ponponon/openctrlc", "ponponon/homebrew-tap"]],
+  ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
 ]
 
 for (const [relative, needles] of required) {
@@ -64,12 +69,12 @@ const audited = [
   "install",
 ]
 for (const directory of audited) {
-  const files = directory === "install" ? [directory] : await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: path.join(root, directory) }))
+  const files = directory === "install" ? [directory] : await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: path.join(root, directory), absolute: true }))
   for (const relative of files) {
-    const file = path.join(root, relative)
+    const file = directory === "install" ? path.join(root, relative) : relative
     if (!(await Bun.file(file).exists())) continue
     const source = await Bun.file(file).text()
-    if (forbidden.test(source)) failures.push(`${relative} contains a forbidden product CLI name`)
+    if (forbidden.test(source)) failures.push(`${path.relative(root, file)} contains a forbidden product CLI name`)
     forbidden.lastIndex = 0
   }
 }

@@ -47,18 +47,17 @@
 
 ```bash
 # YOLO
-curl -fsSL https://opencode.ai/install | bash
+curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Package managers
-npm i -g opencode-ai@latest        # or bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
+npm i -g openctrlc-ai@latest       # or bun/pnpm/yarn
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
 brew install anomalyco/tap/opencode # macOS and Linux (recommended, always up to date)
 brew install opencode              # macOS and Linux (official brew formula, updated less)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # Any OS
-nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev branch
+sudo pacman -S openctrlc            # Arch Linux (Stable)
+mise use -g openctrlc               # Any OS
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -66,34 +65,34 @@ nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev
 
 ### ডেস্কটপ অ্যাপ (BETA)
 
-OpenCode ডেস্কটপ অ্যাপ্লিকেশন হিসেবেও উপলব্ধ। সরাসরি [রিলিজ পেজ](https://github.com/anomalyco/opencode/releases) অথবা [opencode.ai/download](https://opencode.ai/download) থেকে ডাউনলোড করুন।
+OpenCtrlC ডেস্কটপ অ্যাপ্লিকেশন হিসেবেও উপলব্ধ। সরাসরি [রিলিজ পেজ](https://github.com/ponponon/openctrlc/releases) থেকে ডাউনলোড করুন।
 
 | প্ল্যাটফর্ম           | ডাউনলোড                            |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-mac-x64.dmg`     |
+| Windows               | `openctrlc-win-x64.exe` |
 | Linux                 | `.deb`, `.rpm`, or `.AppImage`     |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+scoop install openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop install openctrlc-desktop
 ```
 
 #### ইনস্টলেশন ডিরেক্টরি (Installation Directory)
 
 ইনস্টল স্ক্রিপ্টটি ইনস্টলেশন পাতের জন্য নিম্নলিখিত অগ্রাধিকার ক্রম মেনে চলে:
 
-1. `$OPENCODE_INSTALL_DIR` - কাস্টম ইনস্টলেশন ডিরেক্টরি
+1. `$OPENCTRLC_INSTALL_DIR` - কাস্টম ইনস্টলেশন ডিরেক্টরি
 2. `$XDG_BIN_DIR` - XDG বেস ডিরেক্টরি স্পেসিফিকেশন সমর্থিত পাথ
 3. `$HOME/bin` - সাধারণ ব্যবহারকারী বাইনারি ডিরেক্টরি (যদি বিদ্যমান থাকে বা তৈরি করা যায়)
-4. `$HOME/.opencode/bin` - ডিফল্ট ফলব্যাক
+4. `$HOME/.openctrlc/bin` - ডিফল্ট ফলব্যাক
 
 ```bash
 # উদাহরণ
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
 ```
 

@@ -131,7 +131,7 @@ function getConfig() {
         appId,
         productName: Brand.name,
         protocols: { name: Brand.name, schemes: [Brand.urlScheme] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode-beta", channel: "latest" },
+        publish: { provider: "github", owner: "ponponon", repo: "openctrlc", channel: "latest" },
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "openctrlc-beta", fpm: [metainfoFpm(appId)] },
       }
@@ -142,7 +142,7 @@ function getConfig() {
         appId,
         productName: Brand.name,
         protocols: { name: Brand.name, schemes: [Brand.urlScheme] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode", channel: "latest" },
+        publish: { provider: "github", owner: "ponponon", repo: "openctrlc", channel: "latest" },
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "openctrlc", fpm: [metainfoFpm(appId)] },
       }

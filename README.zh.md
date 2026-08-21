@@ -67,7 +67,7 @@ nix run nixpkgs#opencode           # 或用 github:anomalyco/opencode 获取最�
 
 ### 桌面应用程序 (BETA)
 
-OpenCode 也提供桌面版应用。可直接从 [发布页 (releases page)](https://github.com/anomalyco/opencode/releases) 或 [opencode.ai/download](https://opencode.ai/download) 下载。
+OpenCtrlC 也提供桌面版应用。可直接从 [发布页 (releases page)](https://github.com/ponponon/openctrlc/releases) 下载。
 
 | 平台                  | 下载文件                           |
 | --------------------- | ---------------------------------- |
@@ -87,7 +87,7 @@ scoop bucket add extras; scoop install extras/opencode-desktop
 
 安装脚本按照以下优先级决定安装路径：
 
-1. `$OPENCODE_INSTALL_DIR` - 自定义安装目录
+1. `$OPENCTRLC_INSTALL_DIR` - 自定义安装目录
 2. `$XDG_BIN_DIR` - 符合 XDG 基础目录规范的路径
 3. `$HOME/bin` - 如果存在或可创建的用户二进制目录
 4. `$HOME/.openctrlc/bin` - 默认备用路径

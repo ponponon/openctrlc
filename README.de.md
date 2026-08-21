@@ -65,7 +65,7 @@ nix run github:ponponon/openctrlc
 
 ### Desktop-App (BETA)
 
-OpenCode ist auch als Desktop-Anwendung verfügbar. Lade sie direkt von der [Releases-Seite](https://github.com/anomalyco/opencode/releases) oder [opencode.ai/download](https://opencode.ai/download) herunter.
+OpenCtrlC ist auch als Desktop-Anwendung verfügbar. Lade sie direkt von der [Releases-Seite](https://github.com/ponponon/openctrlc/releases) herunter.
 
 | Plattform             | Download                           |
 | --------------------- | ---------------------------------- |
@@ -85,7 +85,7 @@ scoop bucket add extras; scoop install extras/opencode-desktop
 
 Das Installationsskript beachtet die folgende Prioritätsreihenfolge für den Installationspfad:
 
-1. `$OPENCODE_INSTALL_DIR` - Benutzerdefiniertes Installationsverzeichnis
+1. `$OPENCTRLC_INSTALL_DIR` - Benutzerdefiniertes Installationsverzeichnis
 2. `$XDG_BIN_DIR` - XDG Base Directory Specification-konformer Pfad
 3. `$HOME/bin` - Standard-Binärverzeichnis des Users (falls vorhanden oder erstellbar)
 4. `$HOME/.opencode/bin` - Standard-Fallback

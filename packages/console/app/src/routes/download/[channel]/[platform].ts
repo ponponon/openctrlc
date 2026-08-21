@@ -5,25 +5,31 @@ const prodAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
   "darwin-x64-dmg": "openctrlc-mac-x64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
-  "linux-x64-deb": "openctrlc-linux-amd64.deb",
-  "linux-x64-appimage": "openctrlc-linux-x86_64.AppImage",
-  "linux-x64-rpm": "openctrlc-linux-x86_64.rpm",
+  "linux-x64-deb": "openctrlc-linux-x64.deb",
+  "linux-x64-appimage": "openctrlc-linux-x64.AppImage",
+  "linux-x64-rpm": "openctrlc-linux-x64.rpm",
+  "linux-arm64-deb": "openctrlc-linux-arm64.deb",
+  "linux-arm64-appimage": "openctrlc-linux-arm64.AppImage",
+  "linux-arm64-rpm": "openctrlc-linux-arm64.rpm",
 } satisfies Record<DownloadPlatform, string>
 
 const betaAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
   "darwin-x64-dmg": "openctrlc-mac-x64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
-  "linux-x64-deb": "openctrlc-linux-amd64.deb",
-  "linux-x64-appimage": "openctrlc-linux-x86_64.AppImage",
-  "linux-x64-rpm": "openctrlc-linux-x86_64.rpm",
+  "linux-x64-deb": "openctrlc-linux-x64.deb",
+  "linux-x64-appimage": "openctrlc-linux-x64.AppImage",
+  "linux-x64-rpm": "openctrlc-linux-x64.rpm",
+  "linux-arm64-deb": "openctrlc-linux-arm64.deb",
+  "linux-arm64-appimage": "openctrlc-linux-arm64.AppImage",
+  "linux-arm64-rpm": "openctrlc-linux-arm64.rpm",
 } satisfies Record<DownloadPlatform, string>
 
 // Doing this on the server lets us preserve the original name for platforms we don't care to rename for
 const downloadNames: Record<string, string> = {
-  "darwin-aarch64-dmg": "OpenCode Desktop.dmg",
-  "darwin-x64-dmg": "OpenCode Desktop.dmg",
-  "windows-x64-nsis": "OpenCode Desktop Installer.exe",
+  "darwin-aarch64-dmg": "OpenCtrlC.dmg",
+  "darwin-x64-dmg": "OpenCtrlC.dmg",
+  "windows-x64-nsis": "OpenCtrlC Installer.exe",
 } satisfies { [K in DownloadPlatform]?: string }
 
 export async function GET({ params: { platform, channel } }: APIEvent) {
@@ -31,7 +37,7 @@ export async function GET({ params: { platform, channel } }: APIEvent) {
   if (!assetName) return new Response(null, { status: 404 })
 
   const resp = await fetch(
-    `https://github.com/anomalyco/${channel === "stable" ? "opencode" : "opencode-beta"}/releases/latest/download/${assetName}`,
+    `https://github.com/ponponon/openctrlc/releases/latest/download/${assetName}`,
   )
 
   const downloadName = downloadNames[platform]

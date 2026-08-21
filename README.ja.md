@@ -47,18 +47,17 @@
 
 ```bash
 # YOLO
-curl -fsSL https://opencode.ai/install | bash
+curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # パッケージマネージャー
-npm i -g opencode-ai@latest        # bun/pnpm/yarn でもOK
-scoop install opencode             # Windows
-choco install opencode             # Windows
+npm i -g openctrlc-ai@latest       # bun/pnpm/yarn でもOK
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
 brew install anomalyco/tap/opencode # macOS と Linux（推奨。常に最新）
 brew install opencode              # macOS と Linux（公式 brew formula。更新頻度は低め）
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # どのOSでも
-nix run nixpkgs#opencode           # または github:anomalyco/opencode で最新 dev ブランチ
+sudo pacman -S openctrlc            # Arch Linux (Stable)
+mise use -g openctrlc               # どのOSでも
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -66,34 +65,34 @@ nix run nixpkgs#opencode           # または github:anomalyco/opencode で最�
 
 ### デスクトップアプリ (BETA)
 
-OpenCode はデスクトップアプリとしても利用できます。[releases page](https://github.com/anomalyco/opencode/releases) から直接ダウンロードするか、[opencode.ai/download](https://opencode.ai/download) を利用してください。
+OpenCtrlC はデスクトップアプリとしても利用できます。[releases page](https://github.com/ponponon/openctrlc/releases) から直接ダウンロードしてください。
 
 | プラットフォーム      | ダウンロード                       |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-mac-x64.dmg`     |
+| Windows               | `openctrlc-win-x64.exe` |
 | Linux                 | `.deb`、`.rpm`、または AppImage    |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+scoop install openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop install openctrlc-desktop
 ```
 
 #### インストールディレクトリ
 
 インストールスクリプトは、インストール先パスを次の優先順位で決定します。
 
-1. `$OPENCODE_INSTALL_DIR` - カスタムのインストールディレクトリ
+1. `$OPENCTRLC_INSTALL_DIR` - カスタムのインストールディレクトリ
 2. `$XDG_BIN_DIR` - XDG Base Directory Specification に準拠したパス
 3. `$HOME/bin` - 標準のユーザー用バイナリディレクトリ（存在する場合、または作成できる場合）
-4. `$HOME/.opencode/bin` - デフォルトのフォールバック
+4. `$HOME/.openctrlc/bin` - デフォルトのフォールバック
 
 ```bash
 # 例
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
 ```
 
