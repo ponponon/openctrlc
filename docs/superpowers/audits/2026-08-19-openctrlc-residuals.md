@@ -1,19 +1,24 @@
 # OpenCtrlC Residual Namespace Audit
 
-Date: 2026-08-21
+Date: 2026-08-22
 
 ## Current Result
 
-The product-owned CLI, configuration, installation, AUR, Console, Support, and
-Web documentation entrypoints use OpenCtrlC naming. External OpenCode provider,
-service, protocol, vendor, and OAuth identifiers remain unchanged.
+The effective namespace audit now parses `git grep` output using the first colon
+as the file/line separator and scans tracked product Markdown/MDX, the formal
+`.openctrlc` tree, Core skill Markdown, Web docs, Console i18n, and Console
+Support. It uses line-level external-contract allowlisting rather than
+file-level suppression for those product scopes.
 
-The final product repair is `d786d61 fix(identity): finish OpenCtrlC web and console residuals`.
-The preceding product entrypoint repair is `c51b5dd fix(identity): complete OpenCtrlC web console and docs`.
-The current audit documentation commit is this document's follow-up:
-`docs(identity): record OpenCtrlC namespace audit`.
+The current product repair is:
 
-## Verification Commands
+`0ca7a01 fix(identity): make final namespace audit effective`
+
+The audit-only commit for this document is:
+
+`docs(identity): record OpenCtrlC namespace audit`
+
+## Commands And Evidence
 
 ```bash
 ~/.agents/instructions/script/test-proxy.sh
@@ -28,49 +33,56 @@ cd packages/opencode && bun test test/installation/installation.test.ts test/cli
 cd sdks/vscode && bun test identity-contract.test.ts && bun run check-types && bun run lint
 ```
 
-Results in this pass:
+Latest observed results before this audit-only commit:
 
-- Proxy check: QuickQ and Clash Verge passed Google, GitHub, and HuggingFace checks.
-- Namespace audit: passed with zero output.
-- Distribution audit: `Distribution contract passed for OpenCtrlC (openctrlc)`.
-- Web build: passed; existing chunk-size and prerender warnings remain non-fatal.
+- Proxy check: Clash Verge passed all three sites; QuickQ passed Google/GitHub but HuggingFace timed out during this run.
+- `bun script/check-namespace.ts`: passed with zero output after the parser and product-scope fixes.
+- `bun script/check-distribution.ts`: passed for OpenCtrlC.
+- `git diff --check`: passed.
+- Web production build: passed; existing large-chunk and prerender request-header warnings remain non-fatal.
 - Console typecheck: 31 tasks successful.
 - Console Support typecheck: passed.
-- Console download identity tests: `3 pass, 0 fail`.
-- OpenCode focused tests: `21 pass, 0 fail`.
+- Console download test: `3 pass, 0 fail`.
+- OpenCode focused CLI/config tests: `21 pass, 0 fail`.
 - VS Code identity test: `1 pass, 0 fail`; typecheck passed; lint has 48 existing semicolon warnings and 0 errors.
-- `git diff --check`: passed before commits.
 
-## Product-Owned Contracts Fixed
+## Product Changes
 
-- Web docs CLI commands, product prose, `.openctrlc` paths, config filenames,
-  schemas, TUI theme names, XDG paths, Windows paths, and installation commands
-  now use OpenCtrlC. All translated documents are included.
-- Console i18n dictionaries now use OpenCtrlC product-facing names.
-- Console Support page titles now use OpenCtrlC.
-- Console download and README/Web AUR commands use the published `openctrlc-bin`
-  target. The distribution audit and download test assert this exact command.
-- `script/check-namespace.ts` scans tracked product Markdown/MDX, formal
-  `.openctrlc` content, Web docs, Console i18n, and Console Support text.
-- `script/check-distribution.ts` checks the Console AUR entrypoint and rejects
-  stale AUR commands in tracked README installation guidance.
+- Console locale dictionaries use OpenCtrlC product names for titles, metadata,
+  logo labels, download labels, and product copy.
+- Console Support titles use OpenCtrlC.
+- Console download AUR instructions and test use the published `openctrlc-bin`
+  target.
+- Distribution audit asserts the Console AUR command and rejects stale AUR
+  commands in tracked README installation guidance.
+- Namespace audit includes tracked Markdown/MDX and the Web/Console/Support
+  product scopes; it does not rely on a blanket file-level ignore for those
+  scopes.
 
-## Exact Allowlist
+## Allowlist
 
-The following remain intentional external contracts and are not product-owned
-residuals:
+These are intentionally preserved external contracts:
 
 - `opencode.ai`, `api.opencode.ai`, `console.opencode.ai`,
-  `models.opencode.ai`, and external OpenCode schema/API/OAuth URLs.
-- `models.dev` and provider IDs, model IDs, API keys, and provider-specific
+  `models.opencode.ai`, external schema/API/OAuth URLs, and hosted service links.
+- `models.dev`, provider IDs, model IDs, provider API keys, and provider-specific
   environment variables.
-- `@opencode-ai/sdk`, `@opencode-ai/plugin`, external OpenCode integrations,
-  third-party actions, and vendor package names.
-- `opencode-go` and provider-specific OpenCode Go service identifiers.
+- `@opencode-ai/sdk`, `@opencode-ai/plugin`, third-party OpenCode packages,
+  vendor actions, external IDE integrations, and external GitHub/GitLab app IDs.
+- `opencode-go` and other provider/model identifiers whose value is an external
+  service contract.
 - `sst-dev` as the existing VS Code Marketplace publisher.
-- `security@anoma.ly` as the inherited external security-team escalation contact.
+- `security@anoma.ly` as the inherited external security escalation contact.
 - Historical protocol fields, generated fixtures, negative compatibility tests,
-  and external brand/vendor assets where renaming would change a contract.
+  and external vendor asset filenames.
 
-The audit deliberately does not modify Session, Provider, Protocol, database
-schema, generated SDK output, or external provider/API/OAuth behavior.
+The audit does not modify Session, Provider, Protocol, database schema, or
+generated SDK output.
+
+## Limitations
+
+- The current host is macOS, so Windows/Linux packaging commands were not run.
+- Full Desktop packaging remains dependent on the unpublished platform npm
+  package noted in the prior Task 8 verification.
+- The two pre-existing scratch reports remain uncommitted:
+  `task-3-report.md` and `task-4-report.md`.
