@@ -1,7 +1,7 @@
 <!--
   Built-in skill. Name and description are registered in code at
   packages/core/src/plugin/skill.ts
-  and CUSTOMIZE_OPENCODE_SKILL_DESCRIPTION). The body below becomes the
+  and CUSTOMIZE_OPENCTRLC_SKILL_DESCRIPTION). The body below becomes the
   skill's content.
 -->
 
@@ -122,10 +122,10 @@ Every field is optional.
   },
 
   "plugin": [
-    "opencode-gemini-auth",
-    "opencode-foo@1.2.3",
+    "openctrlc-gemini-auth",
+    "openctrlc-foo@1.2.3",
     "./local-plugin.ts",
-    ["opencode-bar", { "option": "value" }]
+    ["openctrlc-bar", { "option": "value" }]
   ],
 
   "permission": {
@@ -311,11 +311,11 @@ model: anthropic/claude-sonnet-4-6
 
 ```json
 "plugin": [
-  "opencode-gemini-auth",            // npm spec, latest
-  "opencode-foo@1.2.3",              // npm spec, pinned
+  "openctrlc-gemini-auth",            // npm spec, latest
+  "openctrlc-foo@1.2.3",              // npm spec, pinned
   "./local-plugin.ts",               // file path, relative to the declaring config
   "file:///abs/path/plugin.js",      // file URL
-  ["opencode-bar", { "key": "val" }] // tuple form with options
+  ["openctrlc-bar", { "key": "val" }] // tuple form with options
 ]
 ```
 
