@@ -115,8 +115,11 @@ for (const directory of audited) {
   }
 }
 
-const readmes = await Array.fromAsync(new Bun.Glob("README*.md").scan({ cwd: root, absolute: true }))
-const staleReleaseGuide = /opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/install|nix run nixpkgs#opencode|github:anomalyco\/opencode|opencode\.(?:zip|tar\.gz|dmg|exe|deb|rpm|AppImage)/
+const readmes = [
+  ...(await Array.fromAsync(new Bun.Glob("README*.md").scan({ cwd: root, absolute: true }))),
+  path.join(root, "github", "README.md"),
+]
+const staleReleaseGuide = /opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
 for (const file of readmes) {
   const source = await Bun.file(file).text()
   const installation = source.match(/### (?:Installation|安装|安裝|インストール|설치|Установка|Installasjon|Instalação|Instalación|Installazione|Εγκατάσταση|การติดตั้ง|Інсталяція)[\s\S]*?(?=### |$)/)?.[0] ?? source

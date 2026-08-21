@@ -53,7 +53,7 @@ This allows for more targeted requests without needing to specify file paths or 
 Run the following command in the terminal from your GitHub repo:
 
 ```bash
-opencode github install
+openctrlc github install
 ```
 
 This will walk you through installing the GitHub app, creating the workflow, and setting up secrets.
@@ -87,8 +87,8 @@ This will walk you through installing the GitHub app, creating the workflow, and
               fetch-depth: 1
               persist-credentials: false
 
-          - name: Run opencode
-           uses: anomalyco/opencode/github@latest
+           - name: Run OpenCtrlC
+            uses: ponponon/openctrlc/github@latest
            env:
              ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
