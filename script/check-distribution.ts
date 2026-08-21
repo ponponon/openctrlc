@@ -49,6 +49,7 @@ const required: Array<[string, string[]]> = [
   ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
+  ["packages/console/app/src/routes/download/index.tsx", ["paru -S openctrlc-bin"]],
 ]
 
 const workflows = await Array.fromAsync(new Bun.Glob(".github/workflows/*.{yml,yaml}").scan({ cwd: root }))
@@ -120,10 +121,12 @@ for (const directory of audited) {
 const tracked = (await Bun.$`git ls-files -z`.cwd(root).text()).split("\0").filter(Boolean)
 const readmes = tracked.filter((file) => /(?:^|\/)README[^/]*\.md$/.test(file)).map((file) => path.join(root, file))
 const staleReleaseGuide = /(?<!@)opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
+const staleAUR = /paru\s+-S\s+(?!openctrlc-bin\b)[A-Za-z0-9._-]+/
 for (const file of readmes) {
   const source = await Bun.file(file).text()
   const installation = source.match(/### (?:Installation|安装|安裝|インストール|설치|Установка|Installasjon|Instalação|Instalación|Installazione|Εγκατάσταση|การติดตั้ง|Інсталяція)[\s\S]*?(?=### |$)/)?.[0] ?? source
   if (staleReleaseGuide.test(source)) failures.push(`${path.relative(root, file)} contains stale product release guidance`)
+  if (staleAUR.test(source)) failures.push(`${path.relative(root, file)} contains a stale AUR package command`)
   if (source.includes("img.shields.io/github/actions/workflow/status/anomalyco/opencode/")) failures.push(`${path.relative(root, file)} contains an upstream workflow badge`)
   const fenced = [...source.matchAll(/```(?:yaml|yml)\n([\s\S]*?)```/g)].map((match) => match[1])
   for (const [index, block] of fenced.entries()) {

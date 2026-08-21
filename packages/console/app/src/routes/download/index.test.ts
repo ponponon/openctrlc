@@ -1,6 +1,12 @@
 import { expect, test } from "bun:test"
 import { detectArch, getDownloadHref, getDownloadPlatform } from "./helpers"
 
+test("uses the published OpenCtrlC AUR package", async () => {
+  const source = await Bun.file(new URL("./index.tsx", import.meta.url)).text()
+  expect(source).toContain("paru -S openctrlc-bin")
+  expect(source).not.toContain("paru -S openctrlc\n")
+})
+
 test("maps Linux architectures to distinct OpenCtrlC download routes", () => {
   expect(getDownloadPlatform("Linux", "x64")).toBe("linux-x64-deb")
   expect(getDownloadPlatform("Linux", "arm64")).toBe("linux-arm64-deb")

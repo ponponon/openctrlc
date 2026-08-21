@@ -117,9 +117,9 @@ export default function Download() {
                 </code>
                 <CopyStatus />
               </button>
-               <button data-component="cli-row" onClick={handleCopyClick("paru -S openctrlc")}>
+               <button data-component="cli-row" onClick={handleCopyClick("paru -S openctrlc-bin")}>
                 <code>
-                   paru -S <strong>openctrlc</strong>
+                   paru -S <strong>openctrlc-bin</strong>
                 </code>
                 <CopyStatus />
               </button>

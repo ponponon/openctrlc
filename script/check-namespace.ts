@@ -44,9 +44,20 @@ const ignoredFiles = [
   "packages/sdk/js/src/gen/",
   "packages/sdk/js/src/v2/gen/",
   "script/check-namespace.ts",
+  ".superpowers/",
 ]
 const ignoredExtensions = [".md", ".mdx"]
-const auditedMarkdown = [".openctrlc/", "packages/web/src/content/docs/", "packages/core/src/plugin/skill/"]
+const auditedMarkdown = [
+  ".openctrlc/",
+  "packages/web/src/content/docs/",
+  "packages/core/src/plugin/skill/",
+  "packages/console/app/src/i18n/",
+  "packages/console/support/src/",
+  "docs/superpowers/audits/",
+]
+const productTokens = "OpenCode|opencode|OPENCODE_|\\.opencode|opencode\\.jsonc?|opencode\\.json"
+const textOutput = await new Response(Bun.spawn(["git", "grep", "-I", "-n", "-E", productTokens, "--", ...auditedMarkdown], { stdout: "pipe", stderr: "inherit" }).stdout).text()
+const textOutputLines = textOutput.split("\n").filter((line) => auditedMarkdown.some((prefix) => line.startsWith(`${prefix}:`)))
 const pattern = `@opencode-ai/(${internalPackages.join("|")})([^A-Za-z0-9._-]|$)`
 const grepProcess = Bun.spawn(["git", "grep", "-I", "-n", "-E", pattern, "--", "."], {
   stdout: "pipe",
@@ -73,7 +84,21 @@ if (exitCode > 1 || violations.length > 0) {
   process.exit(1)
 }
 
+const textViolations = textOutputLines.filter((line) => {
+  const file = line.split(":", 1)[0]
+  if (ignoredFiles.some((ignored) => file.startsWith(ignored))) return false
+  if (!auditedMarkdown.some((prefix) => file.startsWith(prefix))) return false
+  return !isExternalTextContract(file, line) && !isProductReference(file, line) && !isFormalConfigContract(file, line)
+})
+if (textViolations.length > 0) {
+  for (const violation of textViolations) console.error(violation)
+  process.exit(1)
+}
+
 function isExternalContract(file: string, line: string, name: string) {
+  if (file.startsWith("docs/superpowers/audits/")) return true
+  if (file.startsWith(".openctrlc/")) return true
+  if (file.startsWith("packages/web/src/content/docs/") && isExternalTextContract(file, line)) return true
   if (name === "@opencode-ai/client") {
     return file === "bun.lock" || file.startsWith("packages/app/") || file.startsWith("packages/session-ui/")
   }
@@ -96,4 +121,33 @@ function isExternalContract(file: string, line: string, name: string) {
       (pkg) => line.includes(`\"${pkg}`),
     )
   }
+}
+
+function isExternalTextContract(file: string, line: string) {
+  if (file.endsWith("ecosystem.mdx") || file.endsWith("go.mdx") || file.endsWith("zen.mdx")) return true
+  return [
+    "https://opencode.ai",
+    "https://api.opencode.ai",
+    "https://models.dev",
+    "@opencode-ai/sdk",
+    "@opencode-ai/plugin",
+    "opencode-go",
+    "opencode-google-antigravity-auth",
+    "opencode-gitlab-auth",
+    "opencode-poe-auth",
+    "opencode-agent[bot]",
+    "anomalyco/opencode",
+    "sst-dev",
+    "security@anoma.ly",
+  ].some((contract) => line.includes(contract))
+}
+
+function isProductReference(file: string, line: string) {
+  if (!file.startsWith("packages/web/src/content/docs/")) return false
+  return ["github.mdx", "gitlab.mdx", "ecosystem.mdx", "go.mdx", "zen.mdx"].some((name) => file.endsWith(name))
+}
+
+function isFormalConfigContract(file: string, line: string) {
+  if (!file.startsWith(".openctrlc/")) return false
+  return line.includes("model: opencode/") || line.includes("packages/opencode/") || line.includes("OpenCode")
 }
