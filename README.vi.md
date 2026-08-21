@@ -10,7 +10,7 @@
 <p align="center">Trợ lý lập trình AI mã nguồn mở.</p>
 <p align="center">
   <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
   <a href="https://github.com/anomalyco/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/opencode/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -47,18 +47,18 @@
 
 ```bash
 # YOLO
-curl -fsSL https://opencode.ai/install | bash
+curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Các trình quản lý gói (Package managers)
-npm i -g opencode-ai@latest        # hoặc bun/pnpm/yarn
+npm i -g openctrlc-ai@latest        # hoặc bun/pnpm/yarn
 scoop install opencode             # Windows
 choco install opencode             # Windows
 brew install anomalyco/tap/opencode # macOS và Linux (khuyên dùng, luôn cập nhật)
 brew install opencode              # macOS và Linux (công thức brew chính thức, ít cập nhật hơn)
 sudo pacman -S opencode            # Arch Linux (Bản ổn định)
-paru -S opencode-bin               # Arch Linux (Bản mới nhất từ AUR)
+paru -S openctrlc-bin               # Arch Linux (Bản mới nhất từ AUR)
 mise use -g opencode               # Mọi hệ điều hành
-nix run nixpkgs#opencode           # hoặc github:anomalyco/opencode cho nhánh dev mới nhất
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -70,31 +70,31 @@ OpenCode cũng có sẵn dưới dạng ứng dụng desktop. Tải trực tiế
 
 | Nền tảng              | Tải xuống                          |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-desktop-mac-x64.dmg`     |
+| Windows               | `openctrlc-desktop-windows-x64.exe` |
 | Linux                 | `.deb`, `.rpm`, hoặc AppImage      |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop bucket add extras; scoop install extras/openctrlc-desktop
 ```
 
 #### Thư mục cài đặt
 
 Tập lệnh cài đặt tuân theo thứ tự ưu tiên sau cho đường dẫn cài đặt:
 
-1. `$OPENCODE_INSTALL_DIR` - Thư mục cài đặt tùy chỉnh
+1. `$OPENCTRLC_INSTALL_DIR` - Thư mục cài đặt tùy chỉnh
 2. `$XDG_BIN_DIR` - Đường dẫn tuân thủ XDG Base Directory Specification
 3. `$HOME/bin` - Thư mục nhị phân tiêu chuẩn của người dùng (nếu tồn tại hoặc có thể tạo)
-4. `$HOME/.opencode/bin` - Mặc định dự phòng
+4. `$HOME/.openctrlc/bin` - Mặc định dự phòng
 
 ```bash
 # Ví dụ
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 ```
 
 ### Agents (Đại diện)

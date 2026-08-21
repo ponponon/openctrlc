@@ -46,19 +46,18 @@
 ### Installation
 
 ```bash
-# YOLO
-curl -fsSL https://opencode.ai/install | bash
+# Direct install
+curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Pakkehåndteringer
 npm i -g openctrlc-ai@latest       # eller bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
 brew install anomalyco/tap/opencode # macOS og Linux (anbefalet, altid up to date)
 brew install opencode              # macOS og Linux (officiel brew formula, opdateres sjældnere)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # alle OS
-nix run nixpkgs#opencode           # eller github:anomalyco/opencode for nyeste dev-branch
+sudo pacman -S openctrlc            # Arch Linux (Stable)
+mise use -g openctrlc               # alle OS
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -66,18 +65,18 @@ nix run nixpkgs#opencode           # eller github:anomalyco/opencode for nyeste 
 
 ### Desktop-app (BETA)
 
-OpenCode findes også som desktop-app. Download direkte fra [releases-siden](https://github.com/anomalyco/opencode/releases) eller [opencode.ai/download](https://opencode.ai/download).
+OpenCtrlC findes også som desktop-app. Download direkte fra [releases-siden](https://github.com/ponponon/openctrlc/releases).
 
 | Platform              | Download                           |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-mac-x64.dmg`     |
+| Windows               | `openctrlc-win-x64.exe` |
 | Linux                 | `.deb`, `.rpm`, eller AppImage     |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+scoop install openctrlc-desktop
 # Windows (Scoop)
 scoop bucket add extras; scoop install extras/opencode-desktop
 ```
@@ -86,7 +85,7 @@ scoop bucket add extras; scoop install extras/opencode-desktop
 
 Installationsscriptet bruger følgende prioriteringsrækkefølge for installationsstien:
 
-1. `$OPENCODE_INSTALL_DIR` - Tilpasset installationsmappe
+1. `$OPENCTRLC_INSTALL_DIR` - Tilpasset installationsmappe
 2. `$XDG_BIN_DIR` - Sti der følger XDG Base Directory Specification
 3. `$HOME/bin` - Standard bruger-bin-mappe (hvis den findes eller kan oprettes)
 4. `$HOME/.openctrlc/bin` - Standard fallback

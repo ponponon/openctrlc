@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import path from "node:path"
+import { parse } from "yaml"
 
 const Brand = {
   name: "OpenCtrlC",
@@ -37,12 +38,27 @@ const required: Array<[string, string[]]> = [
   ["nix/opencode.nix", ['pname = "openctrlc"', 'mainProgram = "openctrlc"']],
   ["nix/desktop.nix", ['pname = "openctrlc-desktop"', 'mainProgram = "openctrlc-desktop"']],
   [".github/workflows/publish.yml", ["name: openctrlc-cli", "name: openctrlc-desktop-"]],
-  ["install", ["APP=openctrlc", "OPENCTRLC_INSTALL_DIR", "ponponon/openctrlc", "command -v openctrlc", "openctrlc"]],
+  ["install", ["APP=openctrlc", "OPENCTRLC_INSTALL_DIR", "ponponon/openctrlc", "openctrlc_path", "openctrlc"]],
   ["packages/console/app/src/routes/download/[channel]/[platform].ts", ["ponponon/openctrlc", "openctrlc-linux-x64.deb", "openctrlc-linux-arm64.deb", "OpenCtrlC"]],
   ["packages/desktop/electron-builder.config.ts", ["owner: \"ponponon\"", "repo: \"openctrlc\"", "artifactName: \"openctrlc-"]],
   ["packages/opencode/script/publish.ts", ["ghcr.io/ponponon/openctrlc", "github.com/ponponon/openctrlc", "ponponon/homebrew-tap"]],
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
+  ["github/action.yml", ["https://openctrlc.quniv.cn/install", "echo \"$HOME/.openctrlc/bin\"", "run: openctrlc github run"]],
+  ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],
 ]
+
+const workflows = [".github/workflows/publish.yml", ".github/workflows/deploy.yml", ".github/workflows/stats.yml"]
+for (const relative of workflows) {
+  const source = await read(relative)
+  try {
+    const document = parse(source)
+    if (typeof document !== "object" || document === null || typeof document.jobs !== "object") {
+      failures.push(`${relative} does not contain a valid workflow document`)
+    }
+  } catch (error) {
+    failures.push(`${relative} is not valid YAML: ${String(error)}`)
+  }
+}
 
 for (const [relative, needles] of required) {
   const source = await read(relative)
@@ -77,6 +93,14 @@ for (const directory of audited) {
     if (forbidden.test(source)) failures.push(`${path.relative(root, file)} contains a forbidden product CLI name`)
     forbidden.lastIndex = 0
   }
+}
+
+const readmes = await Array.fromAsync(new Bun.Glob("README*.md").scan({ cwd: root, absolute: true }))
+const staleReleaseGuide = /opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/install|nix run nixpkgs#opencode|github:anomalyco\/opencode/
+for (const file of readmes) {
+  const source = await Bun.file(file).text()
+  const installation = source.match(/### (?:Installation|安装|安裝|インストール|설치|Установка|Installasjon|Instalação|Instalación|Installazione|Εγκατάσταση|การติดตั้ง|Інсталяція)[\s\S]*?(?=### |$)/)?.[0] ?? source
+  if (staleReleaseGuide.test(installation)) failures.push(`${path.relative(root, file)} contains stale product release guidance`)
 }
 
 if (failures.length > 0) {

@@ -12,37 +12,7 @@ import { config } from "~/config"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
 import desktopTabsVideo from "../../asset/lander/desktop-tabs-landscape.mp4"
-import type { DownloadPlatform } from "./types"
-
-type OS = "macOS" | "Windows" | "Linux" | null
-
-function detectOS(): OS {
-  if (typeof navigator === "undefined") return null
-  const platform = navigator.platform.toLowerCase()
-  const userAgent = navigator.userAgent.toLowerCase()
-
-  if (platform.includes("mac") || userAgent.includes("mac")) return "macOS"
-  if (platform.includes("win") || userAgent.includes("win")) return "Windows"
-  if (platform.includes("linux") || userAgent.includes("linux")) return "Linux"
-  return null
-}
-
-function getDownloadPlatform(os: OS): DownloadPlatform {
-  switch (os) {
-    case "macOS":
-      return "darwin-aarch64-dmg"
-    case "Windows":
-      return "windows-x64-nsis"
-    case "Linux":
-      return "linux-x64-deb"
-    default:
-      return "darwin-aarch64-dmg"
-  }
-}
-
-function getDownloadHref(platform: DownloadPlatform, channel: "stable" | "beta" = "stable") {
-  return `/download/${channel}/${platform}`
-}
+import { detectArch, detectOS, getDownloadHref, getDownloadPlatform, type Arch, type OS } from "./helpers"
 
 function IconDownload(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   return (
@@ -70,9 +40,11 @@ export default function Download() {
   const i18n = useI18n()
   const language = useLanguage()
   const [detectedOS, setDetectedOS] = createSignal<OS>(null)
+  const [detectedArch, setDetectedArch] = createSignal<Arch>("x64")
 
   onMount(() => {
     setDetectedOS(detectOS())
+    setDetectedArch(detectArch())
   })
 
   const handleCopyClick = (command: string) => (event: Event) => {
@@ -103,7 +75,7 @@ export default function Download() {
               </p>
               <Show when={detectedOS()}>
                 <a
-                  href={language.route(getDownloadHref(getDownloadPlatform(detectedOS())))}
+                   href={language.route(getDownloadHref(getDownloadPlatform(detectedOS(), detectedArch())))}
                   data-component="download-button"
                 >
                   <IconDownload />
@@ -120,34 +92,34 @@ export default function Download() {
             <div data-component="section-content">
               <button
                 data-component="cli-row"
-                onClick={handleCopyClick("curl -fsSL https://opencode.ai/install | bash")}
+                 onClick={handleCopyClick("curl -fsSL https://openctrlc.quniv.cn/install | bash")}
               >
                 <code>
-                  curl -fsSL https://<strong>opencode.ai/install</strong> | bash
+                   curl -fsSL https://<strong>openctrlc.quniv.cn/install</strong> | bash
                 </code>
                 <CopyStatus />
               </button>
-              <button data-component="cli-row" onClick={handleCopyClick("npm i -g opencode-ai")}>
+               <button data-component="cli-row" onClick={handleCopyClick("npm i -g openctrlc-ai")}>
                 <code>
-                  npm i -g <strong>opencode-ai</strong>
+                   npm i -g <strong>openctrlc-ai</strong>
                 </code>
                 <CopyStatus />
               </button>
-              <button data-component="cli-row" onClick={handleCopyClick("bun add -g opencode-ai")}>
+               <button data-component="cli-row" onClick={handleCopyClick("bun add -g openctrlc-ai")}>
                 <code>
-                  bun add -g <strong>opencode-ai</strong>
+                   bun add -g <strong>openctrlc-ai</strong>
                 </code>
                 <CopyStatus />
               </button>
-              <button data-component="cli-row" onClick={handleCopyClick("brew install anomalyco/tap/opencode")}>
+               <button data-component="cli-row" onClick={handleCopyClick("brew install openctrlc")}>
                 <code>
-                  brew install <strong>anomalyco/tap/opencode</strong>
+                   brew install <strong>openctrlc</strong>
                 </code>
                 <CopyStatus />
               </button>
-              <button data-component="cli-row" onClick={handleCopyClick("paru -S opencode")}>
+               <button data-component="cli-row" onClick={handleCopyClick("paru -S openctrlc")}>
                 <code>
-                  paru -S <strong>opencode</strong>
+                   paru -S <strong>openctrlc</strong>
                 </code>
                 <CopyStatus />
               </button>
@@ -159,9 +131,9 @@ export default function Download() {
               <span>[2]</span> {i18n.t("download.section.desktop")}
             </div>
             <div data-component="section-content">
-              <button data-component="cli-row" onClick={handleCopyClick("brew install --cask opencode-desktop")}>
+               <button data-component="cli-row" onClick={handleCopyClick("brew install --cask openctrlc-desktop")}>
                 <code>
-                  brew install --cask <strong>opencode-desktop</strong>
+                   brew install --cask <strong>openctrlc-desktop</strong>
                 </code>
                 <CopyStatus />
               </button>
@@ -230,7 +202,7 @@ export default function Download() {
                       />
                     </svg>
                   </span>
-                  <span>{i18n.t("download.platform.linuxDeb")}</span>
+                   <span>{i18n.t("download.platform.linuxDeb")} (x64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-x64-deb"))} data-component="action-button">
                   {i18n.t("download.action.download")}
@@ -246,14 +218,13 @@ export default function Download() {
                       />
                     </svg>
                   </span>
-                  <span>{i18n.t("download.platform.linuxRpm")}</span>
+                   <span>{i18n.t("download.platform.linuxRpm")} (x64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-x64-rpm"))} data-component="action-button">
                   {i18n.t("download.action.download")}
                 </a>
               </div>
-              {/* Disabled temporarily as it doesn't work */}
-              {/*<div data-component="download-row">
+               <div data-component="download-row">
                 <div data-component="download-info">
                   <span data-slot="icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -265,10 +236,10 @@ export default function Download() {
                   </span>
                   <span>Linux (.AppImage)</span>
                 </div>
-                <a href={language.route(getDownloadHref("linux-x64-appimage"))} data-component="action-button">
-                  Download
+                 <a href={language.route(getDownloadHref("linux-x64-appimage"))} data-component="action-button">
+                   {i18n.t("download.action.download")}
                 </a>
-              </div>*/}
+               </div>
             </div>
           </section>
 

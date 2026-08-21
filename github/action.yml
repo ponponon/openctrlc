@@ -1,5 +1,5 @@
-name: "opencode GitHub Action"
-description: "Run opencode in GitHub Actions workflows"
+name: "OpenCtrlC GitHub Action"
+description: "Run OpenCtrlC in GitHub Actions workflows"
 branding:
   icon: "code"
   color: "orange"
@@ -14,7 +14,7 @@ inputs:
     required: false
 
   share:
-    description: "Share the opencode session (defaults to true for public repos)"
+     description: "Share the OpenCtrlC session (defaults to true for public repos)"
     required: false
 
   prompt:
@@ -27,7 +27,7 @@ inputs:
     default: "false"
 
   mentions:
-    description: "Comma-separated list of trigger phrases (case-insensitive). Defaults to '/opencode,/oc'"
+     description: "Comma-separated list of trigger phrases (case-insensitive). Defaults to '/openctrlc,/oc'"
     required: false
 
   variant:
@@ -41,7 +41,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Get opencode version
+     - name: Get OpenCtrlC version
       id: version
       shell: bash
       run: |
@@ -53,21 +53,21 @@ runs:
       uses: actions/cache@v4
       with:
         path: ~/.openctrlc/bin
-        key: opencode-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
+         key: openctrlc-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
 
-    - name: Install opencode
+     - name: Install OpenCtrlC
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-      run: curl -fsSL https://opencode.ai/install | bash
+       run: curl -fsSL https://openctrlc.quniv.cn/install | bash
 
-    - name: Add opencode to PATH
+     - name: Add OpenCtrlC to PATH
       shell: bash
       run: echo "$HOME/.openctrlc/bin" >> $GITHUB_PATH
 
-    - name: Run opencode
+     - name: Run OpenCtrlC
       shell: bash
       id: run_opencode
-      run: opencode github run
+       run: openctrlc github run
       env:
         MODEL: ${{ inputs.model }}
         AGENT: ${{ inputs.agent }}

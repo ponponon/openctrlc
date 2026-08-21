@@ -219,11 +219,11 @@ print_message() {
 }
 
 check_version() {
-    if command -v openctrlc >/dev/null 2>&1; then
-        openctrlc_path=$(command -v openctrlc)
+    local openctrlc_path="${INSTALL_DIR}/openctrlc"
+    if [ -x "$openctrlc_path" ]; then
 
         ## Check the installed version
-        installed_version=$(openctrlc --version 2>/dev/null || echo "")
+        installed_version=$("$openctrlc_path" --version 2>/dev/null || echo "")
 
         if [[ "$installed_version" != "$specific_version" ]]; then
             print_message info "${MUTED}Installed version: ${NC}$installed_version."

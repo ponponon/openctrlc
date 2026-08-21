@@ -57,9 +57,9 @@ choco install openctrlc             # Windows
 brew install anomalyco/tap/opencode # macOS 和 Linux（推荐，始终保持最新）
 brew install opencode              # macOS 和 Linux（官方 brew formula，更新频率较低）
 sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
+paru -S openctrlc-bin               # Arch Linux (Latest from AUR)
 mise use -g opencode               # 任意系统
-nix run nixpkgs#opencode           # 或用 github:anomalyco/opencode 获取最新 dev 分支
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -71,16 +71,16 @@ OpenCtrlC 也提供桌面版应用。可直接从 [发布页 (releases page)](ht
 
 | 平台                  | 下载文件                           |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-desktop-mac-x64.dmg`     |
+| Windows               | `openctrlc-desktop-windows-x64.exe` |
 | Linux                 | `.deb`、`.rpm` 或 AppImage         |
 
 ```bash
 # macOS (Homebrew Cask)
-brew install --cask opencode-desktop
+brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop bucket add extras; scoop install extras/openctrlc-desktop
 ```
 
 #### 安装目录

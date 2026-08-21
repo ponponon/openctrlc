@@ -25,6 +25,7 @@
         "semver": "^7.6.0",
         "sst": "catalog:",
         "turbo": "2.10.2",
+        "yaml": "2.9.0",
       },
     },
     "github": {

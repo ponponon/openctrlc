@@ -10,7 +10,7 @@
 <p align="center">AI-kodeagent med åpen kildekode.</p>
 <p align="center">
   <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
   <a href="https://github.com/anomalyco/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/anomalyco/opencode/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -46,19 +46,18 @@
 ### Installasjon
 
 ```bash
-# YOLO
-curl -fsSL https://opencode.ai/install | bash
+# Direct install
+curl -fsSL https://openctrlc.quniv.cn/install | bash
 
 # Pakkehåndterere
 npm i -g openctrlc-ai@latest       # eller bun/pnpm/yarn
-scoop install opencode             # Windows
-choco install opencode             # Windows
+scoop install openctrlc             # Windows
+choco install openctrlc             # Windows
 brew install anomalyco/tap/opencode # macOS og Linux (anbefalt, alltid oppdatert)
 brew install opencode              # macOS og Linux (offisiell brew-formel, oppdateres sjeldnere)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-bin               # Arch Linux (Latest from AUR)
-mise use -g opencode               # alle OS
-nix run nixpkgs#opencode           # eller github:anomalyco/opencode for nyeste dev-branch
+sudo pacman -S openctrlc            # Arch Linux (Stable)
+mise use -g openctrlc               # alle OS
+nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
@@ -66,18 +65,18 @@ nix run nixpkgs#opencode           # eller github:anomalyco/opencode for nyeste 
 
 ### Desktop-app (BETA)
 
-OpenCode er også tilgjengelig som en desktop-app. Last ned direkte fra [releases-siden](https://github.com/anomalyco/opencode/releases) eller [opencode.ai/download](https://opencode.ai/download).
+OpenCtrlC er også tilgjengelig som en desktop-app. Last ned direkte fra [releases-siden](https://github.com/ponponon/openctrlc/releases).
 
 | Plattform             | Nedlasting                         |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-windows-x64.exe` |
+| macOS (Apple Silicon) | `openctrlc-mac-arm64.dmg`   |
+| macOS (Intel)         | `openctrlc-mac-x64.dmg`     |
+| Windows               | `openctrlc-win-x64.exe` |
 | Linux                 | `.deb`, `.rpm` eller AppImage      |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+scoop install openctrlc-desktop
 # Windows (Scoop)
 scoop bucket add extras; scoop install extras/opencode-desktop
 ```
@@ -86,7 +85,7 @@ scoop bucket add extras; scoop install extras/opencode-desktop
 
 Installasjonsskriptet bruker følgende prioritet for installasjonsstien:
 
-1. `$OPENCODE_INSTALL_DIR` - Egendefinert installasjonsmappe
+1. `$OPENCTRLC_INSTALL_DIR` - Egendefinert installasjonsmappe
 2. `$XDG_BIN_DIR` - Sti som følger XDG Base Directory Specification
 3. `$HOME/bin` - Standard brukerbinar-mappe (hvis den finnes eller kan opprettes)
 4. `$HOME/.openctrlc/bin` - Standard fallback
@@ -94,7 +93,7 @@ Installasjonsskriptet bruker følgende prioritet for installasjonsstien:
 ```bash
 # Eksempler
 OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.quniv.cn/install | bash
 ```
 
 ### Agents
