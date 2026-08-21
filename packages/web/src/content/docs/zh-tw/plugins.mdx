@@ -45,7 +45,7 @@ description: 編寫自己的外掛來擴展 OpenCode。
 
 ### 外掛的安裝方式
 
-**npm 外掛**在啟動時使用 Bun 自動安裝。套件及其相依套件會快取在 `~/.cache/opencode/node_modules/` 中。
+**npm 外掛**在啟動時使用 Bun 自動安裝。套件及其相依套件會快取在 `~/.cache/openctrlc/node_modules/` 中。
 
 **本地外掛**直接從外掛目錄載入。如果需要使用外部套件，您必須在設定目錄中建立 `package.json`（參見[相依套件](#dependencies)），或者將外掛發布到 npm 並[將其新增到設定中](/docs/config#plugins)。
 
