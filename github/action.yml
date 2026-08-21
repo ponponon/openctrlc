@@ -58,7 +58,7 @@ runs:
     - name: Install OpenCtrlC
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-      run: curl -fsSL https://openctrlc.quniv.cn/install | bash
+      run: OPENCTRLC_INSTALL_DIR="$HOME/.openctrlc/bin" curl -fsSL https://openctrlc.quniv.cn/install | bash
 
     - name: Add OpenCtrlC to PATH
       shell: bash

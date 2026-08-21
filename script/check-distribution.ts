@@ -63,8 +63,18 @@ for (const relative of workflows) {
 }
 try {
   const action = parse(await read("github/action.yml"))
-  if (typeof action !== "object" || action === null || typeof action.runs !== "object") {
+  const runs = typeof action === "object" && action !== null && typeof action.runs === "object" && action.runs !== null ? action.runs as { using?: unknown; steps?: unknown } : undefined
+  if (runs?.using !== "composite" || !Array.isArray(runs.steps) || runs.steps.length === 0) {
     failures.push("github/action.yml does not contain a valid action document")
+  }
+  for (const [index, step] of (runs?.steps ?? []).entries()) {
+    if (typeof step !== "object" || step === null) {
+      failures.push(`github/action.yml step ${index} is not an object`)
+      continue
+    }
+    const item = step as { run?: unknown; uses?: unknown; shell?: unknown }
+    if (typeof item.run !== "string" && typeof item.uses !== "string") failures.push(`github/action.yml step ${index} must have run or uses`)
+    if (typeof item.run === "string" && typeof item.shell !== "string") failures.push(`github/action.yml run step ${index} must declare shell`)
   }
 } catch (error) {
   failures.push(`github/action.yml is not valid YAML: ${String(error)}`)
