@@ -1,5 +1,5 @@
 {
-  "name": "openctrlc",
+  "name": "openctrlc-agent",
   "displayName": "OpenCtrlC",
   "description": "OpenCtrlC for VS Code",
   "version": "1.18.18",

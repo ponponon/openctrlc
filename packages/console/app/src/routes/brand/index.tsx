@@ -61,7 +61,7 @@ export default function Brand() {
   }
 
   return (
-    <main data-page="enterprise">
+    <main data-page="brand">
       <Title>{i18n.t("brand.title")}</Title>
       <LocaleLinks path="/brand" />
       <Meta name="description" content={i18n.t("brand.meta.description")} />
