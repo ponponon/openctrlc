@@ -1,16 +1,19 @@
 import path from "node:path"
 
 const root = path.resolve(import.meta.dirname, "..")
-const internalPackages = /@opencode-ai\/(?:app|cli|codemode|console-app|console-core|console-function|console-mail|console-resource|console-support|core|desktop|effect-drizzle-sqlite|effect-sqlite-node|enterprise|function|http-recorder|httpapi-codegen|llm|plugin|protocol|schema|script|sdk-next|server|session-ui|slack|stats-app|stats-core|stats-server|storybook|tui|ui|web)\b/g
 const productTokens = /OpenCode|opencode|OPENCODE_|\.opencode|opencode\.jsonc?|opencode\.json|@opencode-ai\/[A-Za-z0-9._-]+/g
 const externalTokens = [
   /https?:\/\/[^\s)`"]*opencode\.ai[^\s)`"]*/,
   /https?:\/\/[^\s)`"]*anomalyco\/opencode[^\s)`"]*/,
   /anomalyco\/opencode/,
-  /@opencode-ai\/(?:sdk|plugin|client)\b/,
-  /@(?:plannotator|openspoon)\/opencode\b/,
+  /@opencode-ai\/sdk\b/,
+  /@opencode-ai\/plugin\b/,
+  /@opencode-ai\/client\b/,
+  /@plannotator\/opencode\b/,
+  /@openspoon\/subtask2\b/,
   /opencode-(?:agent|go|google-antigravity-auth|gitlab-auth|poe-auth|helicone-session|wakatime|gitlab-plugin|daytona|type-inject|openai-codex-auth|antigravity-auth|devcontainers|dynamic-context-pruning|vibeguard|websearch-cited|pty|shell-strategy|md-table-formatter|morph-fast-apply|morph-plugin|notificator|notifier|zellij-namer|skillful|supermemory|scheduler|conductor|background-agents|notify|workspace|worktree|sentry-monitor|firecrawl|jfrog-plugin|goal-plugin|tavily)\b/,
-  /opencode\/[A-Za-z0-9._-]+/,
+  /opencode\/(?:[A-Za-z0-9._-]+|<model-id>)/,
+  /opencode-go\/(?:[A-Za-z0-9._-]+|<model-id>)/,
   /\.well-known\/opencode/,
   /OPENCODE_API_KEY/,
   /OPENCODE_AUTH_JSON/,
@@ -31,6 +34,8 @@ const externalTokens = [
   /(?:github\.com\/apps\/opencode(?:-agent|-gent)?|github\.com\/apps\/openctrlcgent)/,
   /(?:^|[\[(\s])(?:opencode-[A-Za-z0-9._-]+|@plannotator\/opencode)(?=[\])\s).,])/,
   /\[[^\]]*opencode[^\]]*\]\([^)]*\)/,
+  /\| \[[^\]]*opencode[^\]]*\]\([^)]*\)\s*\|[^\n]*@opencode-ai\/sdk/,
+  /\| \[OpenCode-Obsidian\]\([^)]*\)\s*\|[^\n]*/,
   /https?:\/\/[^\s)`"]*opencode[^\s)`"]*/,
   /https?:\/\/[^\s)`"]*gitlab\.com\/nagyv\/gitlab-opencode\b/,
   /https?:\/\/[^\s)`"]*docs\.ollama\.com\/integrations\/opencode\b/,
@@ -90,9 +95,7 @@ async function run() {
 function isAllowedExternalMatch(line: string, offset: number, token: string, externalRanges: number[][]) {
   if (externalRanges.some(([start, end]) => offset < end && offset + token.length > start)) return true
   if (fileIsHistoricalTool(line, token)) return true
-  if (!token.startsWith("@opencode-ai/")) return false
-  internalPackages.lastIndex = 0
-  return !internalPackages.test(token)
+  return false
 }
 
 function fileIsHistoricalTool(line: string, token: string) {

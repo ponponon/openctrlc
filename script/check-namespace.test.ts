@@ -12,3 +12,13 @@ test("reports internal packages without rejecting external package contracts", (
     "packages/web/src/content/docs/example.mdx:1:@opencode-ai/core",
   ])
 })
+
+test("reports unknown OpenCode packages by default", () => {
+  expect(scanText("@opencode-ai/unknown-package", "packages/web/src/content/docs/example.mdx")).toEqual([
+    "packages/web/src/content/docs/example.mdx:1:@opencode-ai/unknown-package",
+  ])
+})
+
+test("preserves external provider and model IDs", () => {
+  expect(scanText("opencode/gpt-5.5 and opencode-go/kimi-k3", "packages/web/src/content/docs/zen.mdx")).toEqual([])
+})
