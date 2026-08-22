@@ -6,9 +6,9 @@ const externalTokens = [
   /https?:\/\/[^\s)`"]*opencode\.ai[^\s)`"]*/,
   /https?:\/\/[^\s)`"]*anomalyco\/opencode[^\s)`"]*/,
   /anomalyco\/opencode/,
-  /@opencode-ai\/sdk\b/,
-  /@opencode-ai\/plugin\b/,
-  /@opencode-ai\/client\b/,
+  /@opencode-ai\/sdk(?=\/|$|[^A-Za-z0-9._-])/,
+  /@opencode-ai\/plugin(?=\/|$|[^A-Za-z0-9._-])/,
+  /@opencode-ai\/client(?=\/|$|[^A-Za-z0-9._-])/,
   /@plannotator\/opencode\b/,
   /@openspoon\/subtask2\b/,
   /opencode-(?:agent|go|google-antigravity-auth|gitlab-auth|poe-auth|helicone-session|wakatime|gitlab-plugin|daytona|type-inject|openai-codex-auth|antigravity-auth|devcontainers|dynamic-context-pruning|vibeguard|websearch-cited|pty|shell-strategy|md-table-formatter|morph-fast-apply|morph-plugin|notificator|notifier|zellij-namer|skillful|supermemory|scheduler|conductor|background-agents|notify|workspace|worktree|sentry-monitor|firecrawl|jfrog-plugin|goal-plugin|tavily)\b/,
@@ -51,6 +51,12 @@ const auditedScopes = [
 ]
 
 export function scanText(source: string, file: string) {
+  const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\((https?:\/\/[^)]+)\)/g)].some((match) => {
+    const label = match[1]
+    const href = match[2]
+    return (label.includes("opencode.ai") && !href.includes("opencode.ai")) || (label.includes("openctrlc.ai") && !href.includes("openctrlc.ai"))
+  })
+  if (mismatch) return [`${file}:1:external-link-mismatch`]
   return source.split("\n").flatMap((line, index) => {
     const matches = [...line.matchAll(productTokens)]
     const externalRanges = [...externalTokens, externalContext].flatMap((pattern) =>
