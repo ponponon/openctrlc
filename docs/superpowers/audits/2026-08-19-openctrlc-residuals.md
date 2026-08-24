@@ -6,17 +6,18 @@ Date: 2026-08-24
 
 The final product repair commit is:
 
-`87d1d85bbbc333c8566d94ac31989fd9f90b4ed7 fix(identity): audit remaining runtime product identity`
+`b5877fd fix(identity): close final source identity leaks`
+
+Intermediate audit boundary commits:
+
+- `383aeea` audit-script baseline
+- `87d1d85` product identity repair
 
 The final audit commit for this document is recorded after the product repair:
 
-`ea26cd8ae347d663666f86495ce70dedb5dd4975 docs(identity): record OpenCtrlC namespace audit`
-
-`document content committed in ea26cd8ae347d663666f86495ce70dedb5dd4975`
-
-The audit-only commit for this document is:
-
-`docs(identity): record OpenCtrlC namespace audit`
+The final audit commit message is `docs(identity): record OpenCtrlC namespace audit`.
+It records this document against its parent product SHA to avoid a
+self-referential hash.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
@@ -41,10 +42,14 @@ OpenCtrlC product identity and URL scheme in that provider copy.
   identity values.
 - The source audit now scans product-owned files under `packages/core/src`,
   `packages/opencode/src`, `packages/app/src`, and `packages/desktop/src` with
-  an exact allowlist for provider contracts, vendor/API identifiers, generated
-  boundaries, and negative compatibility tests. The product-owned mDNS default
+  concrete file-and-line external contract rules rather than a directory-wide
+  product-source allowlist. Ordinary product copy, filenames, and User-Agent
+  values remain auditable. The product-owned mDNS default
   is `${Brand.cli}.local` with `${Brand.cli}-${port}` service names, and the
   webfetch challenge retry uses `Brand.cli` as its User-Agent.
+- App server and terminal defaults use `Brand.cli`, status popover config copy
+  uses `Brand.configFile`, Core OAuth callback copy uses `Brand.name`, and
+  Desktop notifications use the local canonical favicon.
 - Distribution audit imports `Brand` from `@openctrlc/identity` rather than
   duplicating product identity literals.
 - Desktop product title and README identity remain OpenCtrlC.
@@ -60,55 +65,56 @@ OpenCtrlC product identity and URL scheme in that provider copy.
 
 Task 8's built-binary smoke is historical evidence only. The isolated smoke
 below was rerun against the current source CLI and is the final runtime basis.
-It
-used a fresh temporary `HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`,
+It used a fresh temporary `HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`,
 `XDG_CONFIG_HOME`, `XDG_STATE_HOME`, and `TMPDIR`, plus
-`OPENCTRLC_DISABLE_MODELS_FETCH=1`. It also created a real old
-`$tmp/opencode` directory containing a sentinel file and set
-`OPENCODE_TEST_HOME` to that directory.
+`OPENCTRLC_DISABLE_MODELS_FETCH=1`. It created a legacy sentinel directory,
+set `OPENCTRLC_TEST_HOME` to that directory, and set `OPENCODE_TEST_HOME` as
+an interference variable.
 
 The source CLI commands were:
 
 ```bash
 env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
   XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-  PATH="$PATH" OPENCODE_TEST_HOME="$tmp/opencode" \
+  PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
   OPENCTRLC_DISABLE_MODELS_FETCH=1 \
   bun run --conditions=browser ./src/index.ts --version
 
 env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
   XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-  PATH="$PATH" OPENCODE_TEST_HOME="$tmp/opencode" \
+  PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
   OPENCTRLC_DISABLE_MODELS_FETCH=1 \
   bun run --conditions=browser ./src/index.ts --help
 
 env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
   XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-  PATH="$PATH" OPENCODE_TEST_HOME="$tmp/opencode" \
+  PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
   OPENCTRLC_DISABLE_MODELS_FETCH=1 \
   bun run --conditions=browser ./src/index.ts serve --help
 ```
 
-The recursive assertion inspected all six isolated roots and the old
-directory. It found the expected OpenCtrlC runtime directories
+The recursive assertion inspected all six isolated roots and the legacy
+sentinel directory. It found the expected OpenCtrlC runtime directories
 (`data/openctrlc`, `cache/openctrlc`, `config/openctrlc`, `state/openctrlc`,
 and `tmp/openctrlc`). The additional `cache/bun` tree is Bun's package/cache
 tool noise, not an OpenCode runtime path. No `opencode` or `.opencode` path
-was created, and the old sentinel directory was unchanged. The CLI output
-used `openctrlc` commands and `openctrlc serve`.
+was created, and the old sentinel directory was unchanged. The additional
+`cache/bun` tree is Bun's package/cache noise, not an OpenCode runtime path.
+The CLI output used `openctrlc` commands and `openctrlc serve`; mDNS help used
+the `openctrlc.local` default.
 
 Recorded smoke evidence:
 
 ```text
-sentinel SHA-256 before: 1bf84fec72db3e64c8db4e4add5d1a5b1f2ccc1e4870aa95745ccaa05859c0c3
-sentinel SHA-256 after:  1bf84fec72db3e64c8db4e4add5d1a5b1f2ccc1e4870aa95745ccaa05859c0c3
+sentinel SHA-256 before: a97aa60d37dccdb3e1603ee3dc145146027d78c8857534cd9b3acee9b0c9126f
+sentinel SHA-256 after:  a97aa60d37dccdb3e1603ee3dc145146027d78c8857534cd9b3acee9b0c9126f
 
 data:   ./openctrlc, ./openctrlc/log, ./openctrlc/repos
 cache:  ./bun, ./bun/@t@, ./openctrlc, ./openctrlc/bin
 config: ./openctrlc
 state:  ./openctrlc
 tmp:    ./openctrlc
-old:    ./, ./sentinel.txt
+legacy-sentinel: ./, ./sentinel.txt
 ```
 
 ## Commands And Evidence
@@ -153,6 +159,9 @@ latest source state. The latest source smoke above is the final runtime basis.
 ## Full-Suite Evidence And Limitations
 
 - Core full tests completed successfully as recorded above.
+- Task 8's separate report file is not present in this checkout; this audit
+  document is the authoritative record for the final isolated smoke and its
+  limitations.
 - OpenCode full `bun test && bun typecheck` was started with the repository
   suite. The command exceeded the 120-second tool timeout after extensive
   passing output, so it is not reported as a completed full-suite pass. The
