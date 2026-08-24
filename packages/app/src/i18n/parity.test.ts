@@ -56,13 +56,19 @@ describe("i18n parity", () => {
 
   test("external OpenCode Zen copy keeps its service identity", async () => {
     const bundles = [
-      english,
-      ...(await Promise.all(appLocales.map(async (locale) => (await import(`./${locale}`)).dict))),
+      ["en", english] as const,
+      ...(await Promise.all(appLocales.map(async (locale) => [locale, (await import(`./${locale}`)).dict] as const))),
     ]
-    for (const bundle of bundles) {
+    expect(bundles).toHaveLength(DESKTOP_NATIVE_LOCALES.length)
+    for (const [locale, bundle] of bundles) {
+      expect(Object.keys(bundle)).toContain("provider.connect.opencodeZen.line1")
+      expect(Object.keys(bundle)).toContain("provider.connect.opencodeZen.line2")
+      expect(Object.keys(bundle)).toContain("provider.connect.opencodeZen.visit.prefix")
+      expect(Object.keys(bundle)).toContain("provider.connect.opencodeZen.visit.link")
+      expect(Object.keys(bundle)).toContain("provider.connect.opencodeZen.visit.suffix")
       expect(bundle["provider.connect.opencodeZen.line1"]).toContain("OpenCode Zen")
+      expect(bundle["provider.connect.opencodeZen.visit.link"]).toBe("opencode.ai/zen")
       expect(bundle["provider.connect.opencodeZen.line1"]).not.toContain(Brand.name)
-      expect(bundle["provider.connect.opencodeZen.visit.link"]).toContain("opencode.ai/zen")
       expect(bundle["provider.connect.opencodeZen.visit.link"]).not.toContain(Brand.urlScheme)
     }
   })

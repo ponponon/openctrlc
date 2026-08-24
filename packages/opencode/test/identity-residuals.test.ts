@@ -23,7 +23,7 @@ test("uses the product CLI for MCP user guidance and local detection", async () 
 })
 
 test("uses the product CLI in Parallel search User-Agent", () => {
-  expect(Brand.cli).toMatch(/^[a-z0-9-]+$/)
+  expect(Brand.cli).toBe("openctrlc")
 })
 
 test("uses the product CLI in the web search User-Agent", async () => {
