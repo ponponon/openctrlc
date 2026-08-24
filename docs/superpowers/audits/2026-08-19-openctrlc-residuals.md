@@ -33,13 +33,25 @@ whose parent is `4b84c063586046370f9f6d9923b1896103e7430a`. The verified
 historical chain is
 `5d191691b53e9518445bfb404f41ba25b9945f66 -> 4b84c063586046370f9f6d9923b1896103e7430a -> f64503569cae8aa78fbd999fa7a78f876e88b25e`.
 
-The follow-up product repair is
+The follow-up isolated audit repair is
 `c5d2a79 fix(identity): isolate runtime legacy-variable audit`, whose full SHA
-is `c5d2a797ba83bb9307e77bc1e66e2010828b15bb` and whose parent is
-`f64503569cae8aa78fbd999fa7a78f876e88b25e`. This audit document is validated
-by that parent audit commit. The current audit commit is created with
-`c5d2a797ba83bb9307e77bc1e66e2010828b15bb` as its parent and is intentionally
-not embedded here to avoid self-reference.
+is `c5d2a797ba83bb9307e77bc1e66e2010828b15bb`. Its parent is the preceding
+audit document commit `f64503569cae8aa78fbd999fa7a78f876e88b25e`. The verified
+historical chain is
+`f64503569cae8aa78fbd999fa7a78f876e88b25e -> c5d2a797ba83bb9307e77bc1e66e2010828b15bb -> 3751f6bc992806c36d2e571f80ae1fbc452d2a3f -> e70a7568bd22872b2e02aace807690024d3f51f9`.
+
+`3751f6bc992806c36d2e571f80ae1fbc452d2a3f docs(identity): record OpenCtrlC
+namespace audit` is the isolated audit repair commit that follows
+`c5d2a797ba83bb9307e77bc1e66e2010828b15bb`. Its parent is
+`c5d2a797ba83bb9307e77bc1e66e2010828b15bb`.
+
+`e70a7568bd22872b2e02aace807690024d3f51f9 docs(identity): record OpenCtrlC
+namespace audit` is the subsequent documentation correction commit. Its parent
+is `3751f6bc992806c36d2e571f80ae1fbc452d2a3f`.
+
+This new audit document commit is created with
+`e70a7568bd22872b2e02aace807690024d3f51f9` as its parent. Its own commit SHA
+is intentionally not embedded here to avoid self-reference.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
