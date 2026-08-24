@@ -4,13 +4,13 @@ Date: 2026-08-24
 
 ## Current Result
 
-The final product/test repair is:
+The final product repair commit is:
 
-`13cdd7f11f76878f3b6f5a56ca5a1104cbe16739 fix(identity): tighten final audit evidence`
+`87d1d85d6c5df8bc0e8e2a5fdb4ab8a96ab3bb1e fix(identity): audit remaining runtime product identity`
 
-The preceding complete audit commit is:
+The final audit commit for this document is recorded after the product repair:
 
-`0de986e9dfd76101e00e386b1358c7d1e2019dbe docs(identity): record OpenCtrlC namespace audit`
+`document content committed in 383aeeaa322e03247a1b43453a760380293ca0be`
 
 The audit-only commit for this document is:
 
@@ -37,6 +37,14 @@ OpenCtrlC product identity and URL scheme in that provider copy.
 - MCP initialize paths, websearch User-Agent coverage, server-auth tests, and
   App auth tests use `Brand.cli`/`Brand.name` rather than hardcoded product
   identity values.
+- The source audit now scans product-owned files under `packages/core/src`,
+  `packages/opencode/src`, `packages/app/src`, and `packages/desktop/src` with
+  an exact allowlist for provider contracts, vendor/API identifiers, generated
+  boundaries, and negative compatibility tests. The product-owned mDNS default
+  is `${Brand.cli}.local` with `${Brand.cli}-${port}` service names, and the
+  webfetch challenge retry uses `Brand.cli` as its User-Agent.
+- Distribution audit imports `Brand` from `@openctrlc/identity` rather than
+  duplicating product identity literals.
 - Desktop product title and README identity remain OpenCtrlC.
 - App E2E persistence residual coverage scans every `e2e/**/*.ts` fixture,
   with only the exact legacy-new-session negative allowlist.
@@ -48,7 +56,9 @@ OpenCtrlC product identity and URL scheme in that provider copy.
 
 ## Runtime Smoke
 
-The isolated smoke was rerun against the source CLI, not a built binary. It
+Task 8's built-binary smoke is historical evidence only. The isolated smoke
+below was rerun against the current source CLI and is the final runtime basis.
+It
 used a fresh temporary `HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`,
 `XDG_CONFIG_HOME`, `XDG_STATE_HOME`, and `TMPDIR`, plus
 `OPENCTRLC_DISABLE_MODELS_FETCH=1`. It also created a real old
@@ -134,6 +144,10 @@ Observed results:
 - Console download tests: `3 pass, 0 fail`.
 - `git diff --check`: passed.
 
+The historical Task 8 built-binary smoke verified `dist/openctrlc-darwin-arm64/bin/openctrlc`
+with isolated XDG roots and is retained as historical evidence; it is not the
+latest source state. The latest source smoke above is the final runtime basis.
+
 ## Full-Suite Evidence And Limitations
 
 - Core full tests completed successfully as recorded above.
@@ -157,6 +171,9 @@ Observed results:
   by this repair.
 - Desktop packaging was not run on this macOS host. Prior verification also
   records the unpublished platform npm package limitation after prebuild.
+- Distribution packaging and built-binary smoke were not rerun for this final
+  source repair because the platform package is unpublished; source smoke is
+  the applicable final runtime evidence.
 - Browser E2E and platform packaging were not used as namespace evidence;
   isolated runtime smoke and source-level residual tests provide that
   evidence without changing session behavior.
@@ -182,6 +199,20 @@ These are intentionally preserved external contracts:
 
 The audit does not modify Session, Provider, Protocol, database schema, or
 generated SDK output.
+
+## Final Test Limitations
+
+- Root `bun test` is prohibited by the repository guard
+  `do-not-run-tests-from-root`.
+- OpenCode full `bun test` previously exceeded the tool timeout after extensive
+  passing output; focused identity, mDNS, and webfetch tests are the final
+  evidence for this repair.
+- App full tests previously had 651 pass, 10 fail, and 6 errors from the
+  existing `solid-js/web` named export `use` incompatibility and macOS ICU
+  `pa-PK` likely-subtag behavior; focused identity/parity tests passed.
+- Desktop full tests previously had the existing `node:sqlite` environment
+  failure in `draft-store.test.ts`; focused identity tests and typecheck passed.
+- Browser E2E, native packaging, and a newly built binary were not run.
 
 ## Worktree Note
 
