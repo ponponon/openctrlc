@@ -12,6 +12,10 @@ The line-precise audit repair commit is:
 
 `12135fbc314371c2a75ef2eabd1b151e12b3c785 fix(identity): make source audit line-precise`
 
+The source allowlist bypass repair commit is:
+
+`ffc81a9 fix(identity): close source allowlist bypasses`
+
 Intermediate audit boundary commits:
 
 - `383aeea` audit-script baseline
@@ -133,7 +137,8 @@ cd script && bun run check-namespace.ts && bun run check-distribution.ts
 git diff --check
 cd packages/core && bun test test/oauth-page.test.ts && bun typecheck
 cd packages/opencode && bun test test/mcp/oauth-provider.test.ts test/mcp/oauth-callback.test.ts test/mcp/oauth-browser.test.ts test/mcp/oauth-auto-connect.test.ts test/server/httpapi-mcp-oauth.test.ts && bun typecheck
-cd packages/app && bun typecheck
+cd packages/opencode && bun test test/tool/webfetch.test.ts test/server/httpapi-mdns.test.ts
+cd packages/app && bun test ./src/identity-residuals.test.ts ./src/i18n/parity.test.ts && bun typecheck
 cd packages/desktop && bun test src/renderer/html.test.ts && bun typecheck
 ```
 
@@ -147,12 +152,13 @@ tmp=$(mktemp -d); mkdir -p "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$
 
 Observed results:
 
-- Namespace regression tests: `15 pass, 0 fail`; namespace audit passed with zero output.
+- Namespace regression tests: `17 pass, 0 fail`; namespace audit passed with zero output.
 - Script translation tests: `16 pass, 0 fail`.
 - Distribution audit: passed for OpenCtrlC (`openctrlc`).
 - Core OAuth focused tests: `3 pass, 0 fail`; Core typecheck passed.
 - OpenCode MCP OAuth focused tests and typecheck passed.
-- App typecheck passed.
+- OpenCode `webfetch` and mDNS focused tests passed.
+- App focused identity/parity tests: `10 pass, 0 fail`; App typecheck passed.
 - Desktop renderer HTML focused tests: `6 pass, 0 fail`; Desktop typecheck passed.
 - `git diff --check`: passed.
 
@@ -179,7 +185,7 @@ latest source state. The latest source smoke above is the final runtime basis.
   and the existing macOS ICU likely-subtag failure for `pa-PK` (`en` instead of
   `pa`). The final focused evidence is
   `packages/app/src/identity-residuals.test.ts` plus
-  `packages/app/src/i18n/parity.test.ts`, with `9 pass, 0 fail`, followed by
+  `packages/app/src/i18n/parity.test.ts`, with `10 pass, 0 fail`, followed by
   package typecheck.
 - Desktop full `bun test && bun typecheck` had one existing environment
   failure in `packages/desktop/src/main/draft-store.test.ts` because this Bun
