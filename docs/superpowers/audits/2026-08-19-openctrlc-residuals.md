@@ -4,20 +4,27 @@ Date: 2026-08-24
 
 ## Current Result
 
-The final product repair commit is:
+The preceding product repair commit is:
 
-`b5877fd fix(identity): close final source identity leaks`
+`b5877fd2ae9825e4a780742a84fc077e8e1cd3f1 fix(identity): close final source identity leaks`
+
+The line-precise audit repair commit is:
+
+`12135fbc314371c2a75ef2eabd1b151e12b3c785 fix(identity): make source audit line-precise`
 
 Intermediate audit boundary commits:
 
 - `383aeea` audit-script baseline
 - `87d1d85` product identity repair
+- `20a6e34e5ecd8a0972a8658ffed655a06c9dd52 audit document before the line-precise repair`
 
 The final audit commit for this document is recorded after the product repair:
 
 The final audit commit message is `docs(identity): record OpenCtrlC namespace audit`.
-It records this document against its parent product SHA to avoid a
-self-referential hash.
+Its parent is the line-precise product commit
+`12135fbc314371c2a75ef2eabd1b151e12b3c785`. The audit commit's full SHA is
+reported after commit; it is intentionally not embedded in this document
+because doing so would make the document self-referential.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
@@ -65,11 +72,11 @@ OpenCtrlC product identity and URL scheme in that provider copy.
 
 Task 8's built-binary smoke is historical evidence only. The isolated smoke
 below was rerun against the current source CLI and is the final runtime basis.
-It used a fresh temporary `HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`,
-`XDG_CONFIG_HOME`, `XDG_STATE_HOME`, and `TMPDIR`, plus
-`OPENCTRLC_DISABLE_MODELS_FETCH=1`. It created a legacy sentinel directory,
-set `OPENCTRLC_TEST_HOME` to that directory, and set `OPENCODE_TEST_HOME` as
-an interference variable.
+It used six fresh isolated roots (`HOME`, `XDG_DATA_HOME`,
+`XDG_CACHE_HOME`, `XDG_CONFIG_HOME`, `XDG_STATE_HOME`, and `TMPDIR`) plus a
+seventh legacy-sentinel root. It set `OPENCTRLC_TEST_HOME` and the legacy
+`OPENCODE_TEST_HOME` interference variable to that sentinel and disabled model
+fetching with `OPENCTRLC_DISABLE_MODELS_FETCH=1`.
 
 The source CLI commands were:
 
@@ -93,15 +100,16 @@ env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
   bun run --conditions=browser ./src/index.ts serve --help
 ```
 
-The recursive assertion inspected all six isolated roots and the legacy
-sentinel directory. It found the expected OpenCtrlC runtime directories
-(`data/openctrlc`, `cache/openctrlc`, `config/openctrlc`, `state/openctrlc`,
-and `tmp/openctrlc`). The additional `cache/bun` tree is Bun's package/cache
-tool noise, not an OpenCode runtime path. No `opencode` or `.opencode` path
-was created, and the old sentinel directory was unchanged. The additional
-`cache/bun` tree is Bun's package/cache noise, not an OpenCode runtime path.
-The CLI output used `openctrlc` commands and `openctrlc serve`; mDNS help used
-the `openctrlc.local` default.
+The recursive assertion inspected seven roots: the six isolated roots plus
+the legacy sentinel. Root-level results were: `home` had 0 entries; `data`
+had 3 OpenCtrlC entries (`openctrlc`, `log`, `repos`); `cache` had 2
+OpenCtrlC entries (`openctrlc`, `bin`) plus Bun's unrelated `bun` cache tree;
+`config`, `state`, and `tmp` each had 1 OpenCtrlC entry; and the legacy
+sentinel had only `sentinel.txt`. Bun's nested `cache/bun` files are tool
+noise and are excluded from the product count. No `opencode` or `.opencode`
+path was created, and the sentinel remained unchanged. The CLI output used
+`openctrlc` commands and `openctrlc serve`; help showed the `openctrlc.local`
+default.
 
 Recorded smoke evidence:
 
@@ -110,7 +118,7 @@ sentinel SHA-256 before: a97aa60d37dccdb3e1603ee3dc145146027d78c8857534cd9b3acee
 sentinel SHA-256 after:  a97aa60d37dccdb3e1603ee3dc145146027d78c8857534cd9b3acee9b0c9126f
 
 data:   ./openctrlc, ./openctrlc/log, ./openctrlc/repos
-cache:  ./bun, ./bun/@t@, ./openctrlc, ./openctrlc/bin
+cache:   ./bun (Bun noise), ./openctrlc, ./openctrlc/bin
 config: ./openctrlc
 state:  ./openctrlc
 tmp:    ./openctrlc
@@ -120,36 +128,32 @@ legacy-sentinel: ./, ./sentinel.txt
 ## Commands And Evidence
 
 ```bash
-bun script/check-namespace.ts
-bun script/check-distribution.ts
+cd script && bun test ./check-namespace.test.ts ./translate-app.test.ts
+cd script && bun run check-namespace.ts && bun run check-distribution.ts
 git diff --check
-cd packages/core && bun test && bun typecheck
-cd packages/opencode && bun typecheck
+cd packages/core && bun test test/oauth-page.test.ts && bun typecheck
+cd packages/opencode && bun test test/mcp/oauth-provider.test.ts test/mcp/oauth-callback.test.ts test/mcp/oauth-browser.test.ts test/mcp/oauth-auto-connect.test.ts test/server/httpapi-mcp-oauth.test.ts && bun typecheck
 cd packages/app && bun typecheck
-cd packages/desktop && bun test identity-contract.test.ts src/renderer/html.test.ts && bun typecheck
-cd packages/web && bun run build
-cd packages/console && bun typecheck
-cd packages/console/support && bun typecheck
-cd packages/console/app && bun test src/routes/download/index.test.ts
-bun turbo typecheck
+cd packages/desktop && bun test src/renderer/html.test.ts && bun typecheck
+```
+
+The source smoke was run from `packages/opencode` with the following command;
+the recursive assertion used `/usr/bin/find` over the seven isolated roots and
+then removed the temporary directory:
+
+```bash
+tmp=$(mktemp -d); mkdir -p "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; printf 'sentinel\n' > "$tmp/legacy-sentinel/sentinel.txt"; before=$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1); run='env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" OPENCTRLC_DISABLE_MODELS_FETCH=1'; eval "$run bun run --conditions=browser ./src/index.ts --version"; eval "$run bun run --conditions=browser ./src/index.ts --help"; eval "$run bun run --conditions=browser ./src/index.ts serve --help"; for root in "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; do (cd "$root" && /usr/bin/find . -print | sort); done; after=$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1); rm -rf "$tmp"
 ```
 
 Observed results:
 
-- Namespace audit: passed with zero output.
+- Namespace regression tests: `15 pass, 0 fail`; namespace audit passed with zero output.
+- Script translation tests: `16 pass, 0 fail`.
 - Distribution audit: passed for OpenCtrlC (`openctrlc`).
-- Core full suite: `1096 pass, 0 fail`; typecheck passed.
-- OpenCode focused identity/MCP/websearch/auth suite: `39 pass, 0 fail`; typecheck passed.
-- App focused identity/i18n/auth suite: `13 pass, 0 fail`; typecheck passed.
-- Final OpenCode identity residual suite (`packages/opencode/test/identity-residuals.test.ts`): `7 pass, 0 fail`; package typecheck passed.
-- Final App identity/parity suites (`packages/app/src/identity-residuals.test.ts` and
-  `packages/app/src/i18n/parity.test.ts`): `9 pass, 0 fail`; package typecheck passed.
-- Desktop focused identity/renderer suite: `82 pass, 0 fail`; typecheck passed.
-- Web production build: passed. Existing large-chunk and prerender request-header
-  warnings remain non-fatal.
-- Console turbo typecheck: `31 successful, 31 total`.
-- Console Support typecheck: passed.
-- Console download tests: `3 pass, 0 fail`.
+- Core OAuth focused tests: `3 pass, 0 fail`; Core typecheck passed.
+- OpenCode MCP OAuth focused tests and typecheck passed.
+- App typecheck passed.
+- Desktop renderer HTML focused tests: `6 pass, 0 fail`; Desktop typecheck passed.
 - `git diff --check`: passed.
 
 The historical Task 8 built-binary smoke verified `dist/openctrlc-darwin-arm64/bin/openctrlc`
@@ -158,10 +162,12 @@ latest source state. The latest source smoke above is the final runtime basis.
 
 ## Full-Suite Evidence And Limitations
 
-- Core full tests completed successfully as recorded above.
-- Task 8's separate report file is not present in this checkout; this audit
-  document is the authoritative record for the final isolated smoke and its
-  limitations.
+- The Core full suite was not rerun for this audit; the recorded Core evidence
+  is the focused OAuth regression suite and typecheck above.
+- Task 8's report exists locally at
+  `.superpowers/sdd/2026-08-19-openctrlc-identity/task-8-report.md`, is
+  ignored by `.superpowers/sdd/.gitignore`, and is not present in any Git
+  commit. This audit document records only the verified source smoke below.
 - OpenCode full `bun test && bun typecheck` was started with the repository
   suite. The command exceeded the 120-second tool timeout after extensive
   passing output, so it is not reported as a completed full-suite pass. The
