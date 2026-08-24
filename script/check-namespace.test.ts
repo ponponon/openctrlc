@@ -37,6 +37,24 @@ test("reports a product token beside an allowed external contract", () => {
   ).toEqual(["packages/web/src/content/docs/example.mdx:1:OpenCode"])
 })
 
+test("reports unauthorized product copy beside an allowed source contract", () => {
+  expect(
+    scanProductSource(
+      'const copy = "OpenCode"; const url = "https://opencode.ai/zen"',
+      "packages/app/src/i18n/en.ts",
+    ),
+  ).toEqual(["packages/app/src/i18n/en.ts:1:OpenCode"])
+})
+
+test("reports product UA beside an allowed provider contract", () => {
+  expect(
+    scanProductSource(
+      'const provider = "opencode"; const headers = { "User-Agent": "OpenCode" }',
+      "packages/opencode/src/plugin/xai.ts",
+    ),
+  ).toEqual(["packages/opencode/src/plugin/xai.ts:1:OpenCode"])
+})
+
 test("reports internal packages without rejecting external package contracts", () => {
   expect(scanText("@opencode-ai/core and @opencode-ai/sdk", "packages/web/src/content/docs/example.mdx")).toEqual([
     "packages/web/src/content/docs/example.mdx:1:@opencode-ai/core",

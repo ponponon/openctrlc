@@ -12,6 +12,14 @@ describe("OauthCallbackPage", () => {
     expect(error).not.toContain("OpenCode")
   })
 
+  test("uses the OpenCtrlC product identity without a provider", () => {
+    const success = OauthCallbackPage.success()
+    const error = OauthCallbackPage.error("nope")
+
+    expect(success).toContain("OpenCtrlC is now authorized.")
+    expect(error).toContain("OpenCtrlC couldn't complete authorization.")
+  })
+
   test("escapes bootstrap options embedded in the inline script", () => {
     const html = OauthCallbackPage.bootstrap({
       provider: `xAI</script><script>alert("provider")</script>`,

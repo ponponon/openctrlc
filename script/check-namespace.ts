@@ -2,7 +2,7 @@ import path from "node:path"
 
 const root = path.resolve(import.meta.dirname, "..")
 const productTokens =
-  /OpenCode|opencode|OPENCODE_[A-Z0-9_]+|\.opencode|opencode\.jsonc?|opencode\.json|@opencode-ai\/[A-Za-z0-9._-]+/g
+  /OpenCode(?![A-Za-z0-9._-])|opencode(?![A-Za-z0-9._-])|OPENCODE_[A-Z0-9_]+|\.opencode|opencode\.jsonc?|opencode\.json|@opencode-ai\/[A-Za-z0-9._-]+/g
 const externalTokens = [
   /https?:\/\/[^\s)`"]*opencode\.ai[^\s)`"]*/,
   /https?:\/\/[^\s)`"]*anomalyco\/opencode[^\s)`"]*/,
@@ -134,6 +134,7 @@ const productContractAllowlist: Array<{ file: RegExp; line: RegExp }> = [
   { file: /packages\/opencode\/src\/cli\/cmd\/run\/footer\.(?:prompt|view)\.tsx$/, line: /.*OPENCODE_.*/ },
   { file: /packages\/opencode\/src\/plugin\/openai\/README\.md$/, line: /.*OPENCODE_.*/ },
   { file: /packages\/opencode\/src\/session\/llm\/AGENTS\.md$/, line: /.*(?:OPENCODE_|@opencode|opencode).*/ },
+  { file: /packages\/opencode\/src\/session\/llm\/AGENTS\.md$/, line: /.*opencode's normalized session input.*/ },
   { file: /packages\/opencode\/src\/skill\/index\.ts$/, line: /.*OPENCODE_.*/ },
   { file: /packages\/opencode\/src\/session\/llm\.ts$/, line: /.*@opencode-ai\/llm.*/ },
   { file: /packages\/opencode\/src\/session\/llm\/request\.ts$/, line: /.*x-opencode-.*/ },
@@ -205,16 +206,7 @@ export function scanText(source: string, file: string, strictExternal = false) {
   if (mismatch) return [`${file}:1:external-link-mismatch`]
   return source.split("\n").flatMap((line, index) => {
     const matches = [...line.matchAll(productTokens)]
-    const contractRanges = strictExternal
-      ? productContractAllowlist
-          .filter((rule) => rule.file.test(file))
-          .flatMap((rule) =>
-            [...line.matchAll(new RegExp(rule.line.source, `${rule.line.flags.replace("g", "")}g`))].map((match) => [
-              match.index ?? 0,
-              (match.index ?? 0) + match[0].length,
-            ]),
-          )
-      : []
+    const contractRanges = strictExternal ? findContractRanges(line, file) : []
     const externalRanges = [...externalTokens, ...(strictExternal ? [] : [externalContext])].flatMap((pattern) =>
       [...line.matchAll(new RegExp(pattern.source, `${pattern.flags.replace("g", "")}g`))].map((match) => [
         match.index ?? 0,
@@ -307,6 +299,49 @@ function isAllowedExternalMatch(line: string, offset: number, token: string, ext
   if (externalRanges.some(([start, end]) => offset < end && offset + token.length > start)) return true
   if (fileIsHistoricalTool(line, token)) return true
   return false
+}
+
+function findContractRanges(line: string, file: string) {
+  const tokenMatches = [...line.matchAll(productTokens)]
+  return productContractAllowlist
+    .filter((rule) => rule.file.test(file))
+    .flatMap((rule) =>
+      [...line.matchAll(new RegExp(rule.line.source, `${rule.line.flags.replace("g", "")}g`))].flatMap((match) => {
+        const start = match.index ?? 0
+        return [...line.slice(start, start + match[0].length).matchAll(productTokens)].flatMap((tokenMatch) => {
+          const token = tokenMatch[0]
+          if (!isContractToken(line, start + (tokenMatch.index ?? 0), token, tokenMatches.length)) return []
+          const tokenStart = start + (tokenMatch.index ?? 0)
+          return [[tokenStart, tokenStart + token.length]]
+        })
+      }),
+    )
+}
+
+function isContractToken(line: string, offset: number, token: string, tokenCount: number) {
+  if (token.startsWith("@opencode-ai/") || token.startsWith("OPENCODE_") || token.startsWith(".opencode")) return true
+  if (token === "opencode.json" || token === "opencode.jsonc") return true
+  if (token === "opencode-go") return /["'`]opencode-go["'`]|opencode-go\//.test(line)
+  if (token === "OpenCode") {
+    return (
+      /OpenCode\s+Zen/.test(line) ||
+      (tokenCount === 1 && !/https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)/.test(line)) ||
+      /@opencode-ai\//.test(line) ||
+      /provider:\s*\{[^\n]*name:\s*["'`]OpenCode["'`]/.test(line)
+    )
+  }
+  if (token !== "opencode") return false
+  if (tokenCount === 1) return true
+  if (/customize-opencode/.test(line) || /opencode["'`)]/.test(line) || /opencode session/.test(line)) return true
+  if (/https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)/.test(line)) return true
+  const before = line.slice(Math.max(0, offset - 80), offset)
+  const after = line.slice(offset + token.length, offset + token.length + 80)
+  return (
+    /(?:User-Agent|X-Title|X-Source|X-BILLING|originator|providerID|provider\.id|Integration|provider|id)\s*[^\n]*["'`]opencode["'`]/.test(
+      line,
+    ) ||
+    /["'`]opencode["'`]|opencode\//.test(before + token + after)
+  )
 }
 
 function fileIsHistoricalTool(line: string, token: string) {

@@ -49,6 +49,9 @@ describe("electron renderer html", () => {
         const content = await Bun.file(join(dir, "index.tsx")).text()
         expect(content).toContain('icon: "./favicon-96x96-v3.png"')
         expect(content).not.toContain("opencode.ai/favicon")
+        expect(existsSync(join(root, "../app/public/favicon-96x96-v3.png"))).toBe(true)
+        expect(existsSync(join(root, "../app/public/favicon-v3.svg"))).toBe(true)
+        expect(existsSync(join(root, "../app/public/favicon-v3.ico"))).toBe(true)
       })
     })
   }
