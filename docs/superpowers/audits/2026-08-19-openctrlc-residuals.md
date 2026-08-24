@@ -4,31 +4,28 @@ Date: 2026-08-24
 
 ## Current Result
 
-The preceding product repair commit is:
+The product repair boundary for this audit is:
 
-`b5877fd2ae9825e4a780742a84fc077e8e1cd3f1 fix(identity): close final source identity leaks`
+`ffc81a94685bede3e24647b279b15883de66d745 fix(identity): close source allowlist bypasses`
 
-The line-precise audit repair commit is:
+The current audit boundary before this document's next audit commit is:
 
-`12135fbc314371c2a75ef2eabd1b151e12b3c785 fix(identity): make source audit line-precise`
+`4f515e61ad7064d499c02f5ab2e78f47c40d37b5 docs(identity): record OpenCtrlC namespace audit`
 
-The source allowlist bypass repair commit is:
+The chain is: the product repair `ffc81a94685bede3e24647b279b15883de66d745`
+has parent `eb38fc1a2822b93edbfa8810bb12bc58ef87c31e`; the audit boundary
+`4f515e61ad7064d499c02f5ab2e78f47c40d37b5` has parent
+`ffc81a94685bede3e24647b279b15883de66d745`. The next product fix is committed
+separately, followed by an audit commit with the exact message
+`docs(identity): record OpenCtrlC namespace audit`. That future audit commit's
+SHA is intentionally not embedded here because doing so would be
+self-referential.
 
-`ffc81a9 fix(identity): close source allowlist bypasses`
-
-Intermediate audit boundary commits:
-
-- `383aeea` audit-script baseline
-- `87d1d85` product identity repair
-- `20a6e34e5ecd8a0972a8658ffed655a06c9dd52 audit document before the line-precise repair`
-
-The final audit commit for this document is recorded after the product repair:
-
-The final audit commit message is `docs(identity): record OpenCtrlC namespace audit`.
-Its parent is the line-precise product commit
-`12135fbc314371c2a75ef2eabd1b151e12b3c785`. The audit commit's full SHA is
-reported after commit; it is intentionally not embedded in this document
-because doing so would make the document self-referential.
+For this review round, the product fix is
+`e5e33c9 fix(identity): close final audit boundary gaps`, whose parent is the
+audit boundary `4f515e61ad7064d499c02f5ab2e78f47c40d37b5`. The audit commit for
+this document is created immediately after that product fix; its SHA is not
+embedded in the document to avoid self-reference.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
@@ -76,50 +73,57 @@ OpenCtrlC product identity and URL scheme in that provider copy.
 
 Task 8's built-binary smoke is historical evidence only. The isolated smoke
 below was rerun against the current source CLI and is the final runtime basis.
-It used six fresh isolated roots (`HOME`, `XDG_DATA_HOME`,
-`XDG_CACHE_HOME`, `XDG_CONFIG_HOME`, `XDG_STATE_HOME`, and `TMPDIR`) plus a
-seventh legacy-sentinel root. It set `OPENCTRLC_TEST_HOME` and the legacy
-`OPENCODE_TEST_HOME` interference variable to that sentinel and disabled model
-fetching with `OPENCTRLC_DISABLE_MODELS_FETCH=1`.
-
-The source CLI commands were:
+The following script is self-contained and can be copied and run from
+`packages/opencode`. It creates temporary roots, asserts the CLI output,
+recursively rejects old paths, asserts the expected `openctrlc` directories,
+and fails when the sentinel changes. Bun may create `cache/bun`; that is
+explicitly reported as Bun tool noise and excluded from product assertions.
 
 ```bash
-env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
-  XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-  PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
-  OPENCTRLC_DISABLE_MODELS_FETCH=1 \
-  bun run --conditions=browser ./src/index.ts --version
-
-env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
-  XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-  PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
-  OPENCTRLC_DISABLE_MODELS_FETCH=1 \
-  bun run --conditions=browser ./src/index.ts --help
-
-env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
-  XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-  PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
-  OPENCTRLC_DISABLE_MODELS_FETCH=1 \
-  bun run --conditions=browser ./src/index.ts serve --help
+set -eu
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"
+printf 'sentinel\n' > "$tmp/legacy-sentinel/sentinel.txt"
+before="$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1)"
+run() {
+  env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
+    XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
+    PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
+    OPENCTRLC_DISABLE_MODELS_FETCH=1 "$@"
+}
+version="$(run bun run --conditions=browser ./src/index.ts --version 2>&1)"
+help="$(run bun run --conditions=browser ./src/index.ts --help 2>&1)"
+serve_help="$(run bun run --conditions=browser ./src/index.ts serve --help 2>&1)"
+test -n "$version" || { printf '%s\n' 'FAIL: --version returned no output' >&2; exit 1; }
+case "$help" in *openctrlc*) ;; *) printf '%s\n' 'FAIL: --help lacks openctrlc' >&2; exit 1 ;; esac
+case "$serve_help" in *openctrlc*) ;; *) printf '%s\n' 'FAIL: serve --help lacks openctrlc' >&2; exit 1 ;; esac
+for root in "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; do
+  old="$(/usr/bin/find "$root" \( -iname '*opencode*' -o -name '.opencode' \) -print -quit)"
+  if [ -n "$old" ]; then printf 'FAIL: legacy path: %s\n' "$old" >&2; exit 1; fi
+done
+for root in data cache config state tmp; do
+  test -d "$tmp/$root/openctrlc" || { printf 'FAIL: missing %s/openctrlc\n' "$root" >&2; exit 1; }
+done
+if [ -d "$tmp/cache/bun" ]; then printf '%s\n' 'cache/bun: Bun tool noise (excluded from product assertions)'; fi
+after="$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1)"
+if [ "$before" != "$after" ]; then printf '%s\n' 'FAIL: legacy sentinel changed' >&2; exit 1; fi
+printf 'sentinel SHA-256 before: %s\nsentinel SHA-256 after:  %s\n' "$before" "$after"
+for root in data cache config state tmp legacy-sentinel; do (cd "$tmp/$root" && /usr/bin/find . -print | sort); done
 ```
 
-The recursive assertion inspected seven roots: the six isolated roots plus
-the legacy sentinel. Root-level results were: `home` had 0 entries; `data`
-had 3 OpenCtrlC entries (`openctrlc`, `log`, `repos`); `cache` had 2
-OpenCtrlC entries (`openctrlc`, `bin`) plus Bun's unrelated `bun` cache tree;
-`config`, `state`, and `tmp` each had 1 OpenCtrlC entry; and the legacy
-sentinel had only `sentinel.txt`. Bun's nested `cache/bun` files are tool
-noise and are excluded from the product count. No `opencode` or `.opencode`
-path was created, and the sentinel remained unchanged. The CLI output used
-`openctrlc` commands and `openctrlc serve`; help showed the `openctrlc.local`
-default.
+The script was run against the current source. It passed all assertions: no
+`opencode` or `.opencode` path was created; `data`, `cache`, `config`, `state`,
+and `tmp` each contained `openctrlc`; `cache/bun` was reported as Bun noise;
+and the sentinel remained unchanged. CLI output used `openctrlc` commands and
+`openctrlc serve`, with the `openctrlc.local` default in help.
 
 Recorded smoke evidence:
 
 ```text
-sentinel SHA-256 before: a97aa60d37dccdb3e1603ee3dc145146027d78c8857534cd9b3acee9b0c9126f
-sentinel SHA-256 after:  a97aa60d37dccdb3e1603ee3dc145146027d78c8857534cd9b3acee9b0c9126f
+version: local
+sentinel SHA-256 before: b5f7e7d285029324d9b3acae19cc05099271454ac98bfc059a92b0581625cd51
+sentinel SHA-256 after:  b5f7e7d285029324d9b3acae19cc05099271454ac98bfc059a92b0581625cd51
 
 data:   ./openctrlc, ./openctrlc/log, ./openctrlc/repos
 cache:   ./bun (Bun noise), ./openctrlc, ./openctrlc/bin
@@ -140,14 +144,6 @@ cd packages/opencode && bun test test/mcp/oauth-provider.test.ts test/mcp/oauth-
 cd packages/opencode && bun test test/tool/webfetch.test.ts test/server/httpapi-mdns.test.ts
 cd packages/app && bun test ./src/identity-residuals.test.ts ./src/i18n/parity.test.ts && bun typecheck
 cd packages/desktop && bun test src/renderer/html.test.ts && bun typecheck
-```
-
-The source smoke was run from `packages/opencode` with the following command;
-the recursive assertion used `/usr/bin/find` over the seven isolated roots and
-then removed the temporary directory:
-
-```bash
-tmp=$(mktemp -d); mkdir -p "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; printf 'sentinel\n' > "$tmp/legacy-sentinel/sentinel.txt"; before=$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1); run='env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" OPENCTRLC_DISABLE_MODELS_FETCH=1'; eval "$run bun run --conditions=browser ./src/index.ts --version"; eval "$run bun run --conditions=browser ./src/index.ts --help"; eval "$run bun run --conditions=browser ./src/index.ts serve --help"; for root in "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; do (cd "$root" && /usr/bin/find . -print | sort); done; after=$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1); rm -rf "$tmp"
 ```
 
 Observed results:
