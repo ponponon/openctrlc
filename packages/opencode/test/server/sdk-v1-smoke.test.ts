@@ -3,6 +3,7 @@
 // (2025-12-07) so types may be stale, but runtime calls should still work
 // for endpoints the v1 SDK was generated against.
 import { afterEach, describe, expect, test } from "bun:test"
+import path from "node:path"
 import { createOpencodeClient } from "@openctrlc/sdk"
 import { Server } from "../../src/server/server"
 import { tmpdir, disposeAllInstances } from "../fixture/fixture"
@@ -44,6 +45,17 @@ describe("v1 SDK runtime smoke", () => {
     const result = await sdk.config.get()
     expect(result.error).toBeUndefined()
     expect(result.data).toBeDefined()
+  })
+
+  test("CLI smoke identity is OpenCtrlC and excludes the legacy product name", async () => {
+    const process = Bun.spawn(
+      ["bun", "run", "--conditions=browser", "./src/index.ts", "--help"],
+      { cwd: path.resolve(import.meta.dir, "../.."), stdout: "pipe", stderr: "pipe" },
+    )
+    const output = `${await new Response(process.stdout).text()}\n${await new Response(process.stderr).text()}`
+    expect(await process.exited).toBe(0)
+    expect(output).toContain("openctrlc")
+    expect(output.toLowerCase()).not.toContain("opencode")
   })
 
   test("session 404: result-tuple path returns the error body", async () => {

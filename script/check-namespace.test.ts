@@ -111,6 +111,18 @@ test("rejects lookalike external hostnames and query disguises", () => {
   ])
 })
 
+test("scanText strictly validates bare branded URLs outside product source", () => {
+  expect(scanText("https://opencode.ai/docs and https://docs.openctrlc.ai", "x.mdx")).toEqual([])
+  expect(scanText("https://opencode.ai.evil.example/zen", "x.mdx")).toEqual(["x.mdx:1:external-url-mismatch"])
+  expect(scanText("https://evil.example/?next=opencode.ai", "x.mdx")).toEqual(["x.mdx:1:external-url-mismatch"])
+  expect(scanText("https://opencode.ai@evil.example/zen", "x.mdx")).toEqual(["x.mdx:1:external-url-mismatch"])
+  expect(scanText("https://evil.example@opencode.ai/zen", "x.mdx")).toEqual(["x.mdx:1:external-url-mismatch"])
+  expect(scanText("https://openctrlc.ai.evil.example/docs", "x.mdx")).toEqual(["x.mdx:1:external-url-mismatch"])
+  expect(scanText("https://evil.example/?next=openctrlc.ai/docs", "x.mdx")).toEqual([
+    "x.mdx:1:external-url-mismatch",
+  ])
+})
+
 test("strict product source scanning parses bare URL hostnames exactly", () => {
   expect(scanProductSource('const url = "https://opencode.ai/api"', "packages/app/src/entry.tsx")).toEqual([])
   expect(scanProductSource('const url = "https://opencode.ai.evil.example/api"', "packages/app/src/entry.tsx")).toEqual([

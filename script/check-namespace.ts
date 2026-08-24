@@ -191,15 +191,17 @@ export function scanText(source: string, file: string, strictExternal = false) {
     const label = match[1].toLowerCase()
     const parsed = parseInlineLink(source, (match.index ?? 0) + match[0].length)
     if (!parsed) return true
-    const hostname = URL.canParse(parsed.href) ? new URL(parsed.href).hostname : undefined
-    if (!hostname) return true
+    if (!URL.canParse(parsed.href)) return true
+    const url = new URL(parsed.href)
+    const hostname = url.hostname
+    if (!hostname || url.username || url.password) return true
     return (
       (label.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) ||
       (label.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
     )
   })
   if (mismatch) return [`${file}:1:external-link-mismatch`]
-  return source.split("\n").flatMap((line, index) => {
+  const violations = source.split("\n").flatMap((line, index) => {
     const matches = [...line.matchAll(productTokens)]
     const contractRanges = strictExternal
       ? [...findContractRanges(line, file), ...findAppI18nContractRanges(source, index, file)]
@@ -215,11 +217,12 @@ export function scanText(source: string, file: string, strictExternal = false) {
       .filter((match) => !isAllowedExternalMatch(line, match.index ?? 0, match[0], externalRanges))
       .map((match) => `${file}:${index + 1}:${match[0]}`)
   })
+  violations.push(...findBareUrlMismatches(source, file))
+  return [...new Set(violations)]
 }
 
 export function scanProductSource(source: string, file: string) {
   const violations = scanText(source, file, true)
-  violations.push(...findBareUrlMismatches(source, file))
   if (/^packages\/app\/src\/i18n\/[^/]+\.ts$/.test(file)) {
     return [...new Set(violations)]
   }
@@ -409,7 +412,9 @@ function findBareUrlMismatches(source: string, file: string) {
       const lowerHref = href.toLowerCase()
       if (!lowerHref.includes("opencode.ai") && !lowerHref.includes("openctrlc.ai")) return []
       if (!URL.canParse(href)) return `${file}:${index + 1}:external-url-mismatch`
-      const hostname = new URL(href).hostname.toLowerCase()
+      const url = new URL(href)
+      const hostname = url.hostname.toLowerCase()
+      if (url.username || url.password) return `${file}:${index + 1}:external-url-mismatch`
       if (isAllowedWebHostname(hostname, "opencode.ai") || isAllowedWebHostname(hostname, "openctrlc.ai")) return []
       return `${file}:${index + 1}:external-url-mismatch`
     }),
