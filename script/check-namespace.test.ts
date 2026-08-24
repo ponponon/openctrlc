@@ -119,6 +119,13 @@ test("strict product source scanning parses bare URL hostnames exactly", () => {
   expect(scanProductSource('const url = "https://evil.example/?next=opencode.ai/api"', "packages/app/src/entry.tsx")).toEqual([
     "packages/app/src/entry.tsx:1:external-url-mismatch",
   ])
+  expect(scanProductSource('const url = "https://openctrlc.ai/docs"', "packages/app/src/entry.tsx")).toEqual([])
+  expect(scanProductSource('const url = "https://openctrlc.ai.evil.example/docs"', "packages/app/src/entry.tsx")).toEqual([
+    "packages/app/src/entry.tsx:1:external-url-mismatch",
+  ])
+  expect(scanProductSource('const url = "https://evil.example/?next=openctrlc.ai/docs"', "packages/app/src/entry.tsx")).toEqual([
+    "packages/app/src/entry.tsx:1:external-url-mismatch",
+  ])
 })
 
 test("App i18n only allows explicit provider and Zen contracts", () => {
@@ -134,6 +141,21 @@ test("App i18n only allows explicit provider and Zen contracts", () => {
   expect(scanProductSource('"dialog.provider.opencode.note": "OpenCode models"', "packages/app/src/i18n/en.ts")).toEqual(
     [],
   )
+  expect(
+    scanProductSource(
+      '"provider.connect.opencodeZen.line1": "OpenCode Zen models"; const copy = "OpenCode"',
+      "packages/app/src/i18n/en.ts",
+    ),
+  ).toEqual(["packages/app/src/i18n/en.ts:1:OpenCode"])
+  expect(
+    scanProductSource(
+      '"provider.connect.opencodeZen.line1":\n  "OpenCode Zen models"; const copy = "OpenCode"',
+      "packages/app/src/i18n/en.ts",
+    ),
+  ).toEqual(["packages/app/src/i18n/en.ts:2:OpenCode"])
+  expect(
+    scanProductSource('"provider.connect.opencodeZen.line1":\n  "OpenCode Zen models"', "packages/app/src/i18n/en.ts"),
+  ).toEqual([])
 })
 
 test("reports malformed web URLs as external link mismatches", () => {

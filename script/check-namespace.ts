@@ -47,10 +47,6 @@ const externalContext =
   /https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)|(?:^|[\[(\s])(?:awesome-opencode|oh-my-opencode|opencode(?:gent|-agent|-go)?)(?=[\])\s).,])/g
 const productContractAllowlist: Array<{ file: RegExp; line: RegExp }> = [
   {
-    file: /packages\/app\/src\/i18n\/[^/]+\.ts$/,
-    line: /.*(?:dialog\.provider\.opencode|provider\.connect\.opencodeZen|opencode\.ai\/zen).*/,
-  },
-  {
     file: /packages\/app\/src\/components\/(?:dialog-connect-provider|dialog-select-model(?:-unpaid|-unpaid-v2)?|settings-providers|settings-v2\/providers)\.tsx$/,
     line: /(?:id|provider)\s*===?\s*["'`]opencode|["'`]opencode(?:-go)?["'`]|opencode\.ai\/zen|\.opencode/,
   },
@@ -205,7 +201,9 @@ export function scanText(source: string, file: string, strictExternal = false) {
   if (mismatch) return [`${file}:1:external-link-mismatch`]
   return source.split("\n").flatMap((line, index) => {
     const matches = [...line.matchAll(productTokens)]
-    const contractRanges = strictExternal ? findContractRanges(line, file) : []
+    const contractRanges = strictExternal
+      ? [...findContractRanges(line, file), ...findAppI18nContractRanges(source, index, file)]
+      : []
     const externalRanges = [...externalTokens, ...(strictExternal ? [] : [externalContext])].flatMap((pattern) =>
       [...line.matchAll(new RegExp(pattern.source, `${pattern.flags.replace("g", "")}g`))].map((match) => [
         match.index ?? 0,
@@ -223,7 +221,7 @@ export function scanProductSource(source: string, file: string) {
   const violations = scanText(source, file, true)
   violations.push(...findBareUrlMismatches(source, file))
   if (/^packages\/app\/src\/i18n\/[^/]+\.ts$/.test(file)) {
-    return [...new Set(violations)].filter((violation) => !isAllowedAppI18nViolation(violation, source, file))
+    return [...new Set(violations)]
   }
   if (file === "packages/opencode/src/server/mdns.ts") {
     violations.push(
@@ -253,13 +251,6 @@ export function scanProductSource(source: string, file: string) {
     )
   }
   return [...new Set(violations)]
-}
-
-function isAllowedAppI18nViolation(violation: string, source: string, file: string) {
-  if (!/^packages\/app\/src\/i18n\/[^/]+\.ts$/.test(file)) return false
-  const line = Number(violation.match(/:(\d+):/)?.[1])
-  const lines = source.split("\n")
-  return /"(?:dialog\.provider\.opencode|provider\.connect\.opencodeZen)[^"]*"\s*:/.test(lines[line - 2] ?? "")
 }
 
 if (import.meta.main) await run()
@@ -328,6 +319,55 @@ function findContractRanges(line: string, file: string) {
     )
 }
 
+function findAppI18nContractRanges(source: string, lineIndex: number, file: string) {
+  if (!/^packages\/app\/src\/i18n\/[^/]+\.ts$/.test(file)) return []
+  const lines = source.split("\n")
+  const line = lines[lineIndex] ?? ""
+  const ranges: number[][] = []
+  for (const match of line.matchAll(/"((?:dialog\.provider\.opencode(?:Go)?|provider\.connect\.opencodeZen)(?:\.[A-Za-z0-9_]+)*)"\s*:/g)) {
+    const start = match.index ?? 0
+    const colon = start + match[0].length
+    ranges.push([start, colon])
+    const value = findQuotedString(line, findNextQuote(line, colon))
+    if (value) {
+      ranges.push([value.start, value.end])
+      continue
+    }
+    const continuation = lines[lineIndex + 1]
+    if (!continuation || !/^\s+['"]/.test(continuation)) continue
+    const nextValue = findQuotedString(continuation, findNextQuote(continuation, 0))
+    if (nextValue) ranges.push([nextValue.start, nextValue.end])
+  }
+  if (lineIndex === 0) return ranges
+  const previous = lines[lineIndex - 1] ?? ""
+  if (!/^\s+['"]/.test(line)) return ranges
+  if (!/"((?:dialog\.provider\.opencode(?:Go)?|provider\.connect\.opencodeZen)(?:\.[A-Za-z0-9_]+)*)"\s*:\s*$/.test(previous)) return ranges
+  const continuation = findQuotedString(line, findNextQuote(line, 0))
+  if (continuation) ranges.push([continuation.start, continuation.end])
+  return ranges
+}
+
+function findQuotedString(line: string, start: number) {
+  if (start < 0) return
+  const quote = line[start]
+  if (quote !== '"' && quote !== "'") return
+  for (let index = start + 1; index < line.length; index++) {
+    if (line[index] === "\\") {
+      index++
+      continue
+    }
+    if (line[index] === quote) return { start, end: index + 1 }
+  }
+}
+
+function findNextQuote(line: string, start: number) {
+  const double = line.indexOf('"', start)
+  const single = line.indexOf("'", start)
+  if (double < 0) return single
+  if (single < 0) return double
+  return Math.min(double, single)
+}
+
 function isContractToken(line: string, offset: number, token: string, tokenCount: number) {
   if (token.startsWith("@opencode-ai/") || token.startsWith("OPENCODE_") || token.startsWith(".opencode")) return true
   if (token === "opencode.json" || token === "opencode.jsonc") return true
@@ -335,9 +375,8 @@ function isContractToken(line: string, offset: number, token: string, tokenCount
   if (token === "OpenCode") {
     return (
       /OpenCode\s+Zen/.test(line) ||
-      (tokenCount === 1 && !isAppI18nFile(line) && !/https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)/.test(line)) ||
+      (tokenCount === 1 && !/https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)/.test(line)) ||
       /@opencode-ai\//.test(line) ||
-      /(?:dialog\.provider\.opencode|provider\.connect\.opencodeZen)/.test(line) ||
       /provider:\s*\{[^\n]*name:\s*["'`]OpenCode["'`]/.test(line)
     )
   }
@@ -355,10 +394,6 @@ function isContractToken(line: string, offset: number, token: string, tokenCount
   )
 }
 
-function isAppI18nFile(line: string) {
-  return line.includes("provider.connect.opencodeZen") || line.includes("dialog.provider.opencode")
-}
-
 function fileIsHistoricalTool(line: string, token: string) {
   return token === "opencode" && /const repo = "opencode"/.test(line)
 }
@@ -371,10 +406,11 @@ function findBareUrlMismatches(source: string, file: string) {
   return source.split("\n").flatMap((line, index) =>
     [...line.matchAll(/https?:\/\/[^\s)`"'<>]+/gi)].flatMap((match) => {
       const href = match[0]
-      if (!href.toLowerCase().includes("opencode.ai")) return []
+      const lowerHref = href.toLowerCase()
+      if (!lowerHref.includes("opencode.ai") && !lowerHref.includes("openctrlc.ai")) return []
       if (!URL.canParse(href)) return `${file}:${index + 1}:external-url-mismatch`
       const hostname = new URL(href).hostname.toLowerCase()
-      if (hostname === "opencode.ai" || hostname.endsWith(".opencode.ai")) return []
+      if (isAllowedWebHostname(hostname, "opencode.ai") || isAllowedWebHostname(hostname, "openctrlc.ai")) return []
       return `${file}:${index + 1}:external-url-mismatch`
     }),
   )
