@@ -1,5 +1,5 @@
 export const dict = {
-  "desktop.menu.app": "OpenCode",
+  "desktop.menu.app": "OpenCtrlC",
   "desktop.menu.file": "Berkas",
   "desktop.menu.edit": "Sunting",
   "desktop.menu.view": "Tampilan",
@@ -39,11 +39,11 @@ export const dict = {
   "desktop.menu.nextProject": "Proyek berikutnya",
   "desktop.menu.minimize": "Minimalkan",
   "desktop.menu.maximize": "Maksimalkan",
-  "desktop.menu.documentation": "Dokumentasi OpenCode",
+  "desktop.menu.documentation": "Dokumentasi OpenCtrlC",
   "desktop.menu.supportForum": "Forum dukungan",
   "desktop.menu.shareFeedback": "Bagikan umpan balik",
   "desktop.menu.reportBug": "Laporkan bug",
-  "desktop.menu.ariaLabel": "Menu OpenCode",
+  "desktop.menu.ariaLabel": "Menu OpenCtrlC",
 
   "desktop.updater.dialog.checkFailed.message": "Pemeriksaan pembaruan gagal.",
   "desktop.updater.dialog.checkFailed.title": "Kesalahan pembaruan",
@@ -58,9 +58,9 @@ export const dict = {
   "desktop.recovery.action.exportLogs": "Ekspor log",
   "desktop.recovery.action.keepWaiting": "Tetap tunggu",
   "desktop.recovery.action.quit": "Keluar",
-  "desktop.recovery.loadFailed": "OpenCode gagal dimuat",
-  "desktop.recovery.terminated": "Jendela OpenCode berhenti secara tidak terduga",
-  "desktop.recovery.unresponsive": "OpenCode tidak merespons",
+  "desktop.recovery.loadFailed": "OpenCtrlC gagal dimuat",
+  "desktop.recovery.terminated": "Jendela OpenCtrlC berhenti secara tidak terduga",
+  "desktop.recovery.unresponsive": "OpenCtrlC tidak merespons",
   "desktop.recovery.unresponsive.detail": "Anda dapat meluncurkan ulang aplikasi, membuka log, atau tetap menunggu.",
   "desktop.recovery.loadFailed.detail": "Jendela: {{window}}\nURL: {{url}}\nKesalahan: {{code}} {{description}}",
   "desktop.recovery.terminated.detail": "Jendela: {{window}}\nAlasan: {{reason}}\nKode: {{code}}",
@@ -225,7 +225,7 @@ export const dict = {
   "dialog.model.manage.description": "Sesuaikan model mana yang muncul di pemilih model.",
   "dialog.model.manage.provider.toggle": "Alihkan semua model {{provider}}",
 
-  "dialog.model.unpaid.freeModels.title": "Model gratis disediakan oleh OpenCode",
+  "dialog.model.unpaid.freeModels.title": "Model gratis disediakan oleh OpenCtrlC",
   "dialog.model.unpaid.addMore.title": "Tambahkan lebih banyak model dari penyedia populer",
   "dialog.model.unpaid.viewMoreProviders": "Lihat 70+ penyedia lainnya",
 
@@ -241,7 +241,7 @@ export const dict = {
   "provider.connect.status.waiting": "Menunggu otorisasi...",
   "provider.connect.status.failed": "Otorisasi gagal: {{error}}",
   "provider.connect.apiKey.description":
-    "Masukkan kunci API {{provider}} untuk menghubungkan akun Anda dan gunakan model {{provider}} di OpenCode.",
+    "Masukkan kunci API {{provider}} untuk menghubungkan akun Anda dan gunakan model {{provider}} di OpenCtrlC.",
   "provider.connect.apiKey.label": "Kunci API {{provider}}",
   "provider.connect.apiKey.placeholder": "Kunci API",
   "provider.connect.apiKey.required": "Kunci API diperlukan",
@@ -255,7 +255,7 @@ export const dict = {
   "provider.connect.oauth.code.visit.prefix": "Kunjungi ",
   "provider.connect.oauth.code.visit.link": "tautan ini",
   "provider.connect.oauth.code.visit.suffix":
-    " untuk mendapatkan kode otorisasi guna menghubungkan akun Anda dan menggunakan model {{provider}} di OpenCode.",
+    " untuk mendapatkan kode otorisasi guna menghubungkan akun Anda dan menggunakan model {{provider}} di OpenCtrlC.",
   "provider.connect.oauth.code.label": "Kode otorisasi {{method}}",
   "provider.connect.oauth.code.placeholder": "Kode otorisasi",
   "provider.connect.oauth.code.required": "Kode otorisasi diperlukan",
@@ -263,7 +263,7 @@ export const dict = {
   "provider.connect.oauth.auto.visit.prefix": "Kunjungi ",
   "provider.connect.oauth.auto.visit.link": "tautan ini",
   "provider.connect.oauth.auto.visit.suffix":
-    " dan masukkan kode di bawah untuk menghubungkan akun dan menggunakan model {{provider}} di OpenCode.",
+    " dan masukkan kode di bawah untuk menghubungkan akun dan menggunakan model {{provider}} di OpenCtrlC.",
   "provider.connect.oauth.auto.confirmationCode": "Kode konfirmasi",
   "provider.connect.toast.connected.title": "{{provider}} terhubung",
   "provider.connect.toast.connected.description": "Model {{provider}} sekarang tersedia untuk digunakan.",
@@ -423,7 +423,7 @@ export const dict = {
   "dialog.mcp.empty": "Tidak ada MCP yang dikonfigurasi",
 
   "dialog.lsp.empty": "LSP terdeteksi otomatis dari jenis berkas",
-  "dialog.plugins.empty": "Plugin dikonfigurasi di opencode.json",
+  "dialog.plugins.empty": "Plugin dikonfigurasi di openctrlc.json",
 
   "mcp.status.connected": "terhubung",
   "mcp.status.failed": "gagal",
@@ -446,7 +446,7 @@ export const dict = {
   "app.server.otherServers": "Server lainnya",
 
   "dialog.server.title": "Server",
-  "dialog.server.description": "Ganti server OpenCode mana yang terhubung dengan aplikasi ini.",
+  "dialog.server.description": "Ganti server OpenCtrlC mana yang terhubung dengan aplikasi ini.",
   "dialog.server.search.placeholder": "Cari server",
   "dialog.server.empty": "Belum ada server",
   "dialog.server.add.title": "Tambah server",
@@ -551,7 +551,7 @@ export const dict = {
   "help.tabs.title": "Memperkenalkan Tab",
   "help.tabs.description": "Atur pekerjaan dan sesi aktif Anda dengan tab",
   "help.tabs.date": "14 Juli",
-  "help.tabs.introduction": "OpenCode Desktop kini dirancang dengan tab sebagai pusatnya.",
+  "help.tabs.introduction": "OpenCtrlC Desktop kini dirancang dengan tab sebagai pusatnya.",
   "help.tabs.sessions":
     "Mulai sesi baru di tab, atau buka sesi yang sudah ada dari proyek Anda. Buka tab baru saat Anda memulai sesuatu yang baru, lalu tutup setelah selesai.",
   "help.tabs.organize":
@@ -680,7 +680,7 @@ export const dict = {
   "toast.project.reloadFailed.title": "Gagal memuat ulang {{project}}",
 
   "toast.update.title": "Pembaruan tersedia",
-  "toast.update.description": "Versi baru OpenCode ({{version}}) sekarang tersedia untuk diinstal.",
+  "toast.update.description": "Versi baru OpenCtrlC ({{version}}) sekarang tersedia untuk diinstal.",
   "toast.update.action.installRestart": "Instal dan mulai ulang",
   "toast.update.action.notYet": "Nanti saja",
 
@@ -696,7 +696,7 @@ export const dict = {
   "error.page.action.checkUpdates": "Periksa pembaruan",
   "error.page.action.updateTo": "Perbarui ke {{version}}",
   "error.page.circular": "[Sirkular]",
-  "error.page.report.prefix": "Harap laporkan kesalahan ini ke tim OpenCode",
+  "error.page.report.prefix": "Harap laporkan kesalahan ini ke tim OpenCtrlC",
   "error.page.report.discord": "di Discord",
   "error.page.version": "Versi: {{version}}",
 
@@ -721,8 +721,8 @@ export const dict = {
   "error.chain.responseBody": "Isi respons:\n{{body}}",
   "error.chain.didYouMean": "Maksud Anda: {{suggestions}}",
   "error.chain.modelNotFound": "Model tidak ditemukan: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "Periksa nama penyedia/model di konfigurasi Anda (opencode.json)",
-  "error.chain.mcpFailed": 'Server MCP "{{name}}" gagal. Catatan: OpenCode belum mendukung autentikasi MCP.',
+  "error.chain.checkConfig": "Periksa nama penyedia/model di konfigurasi Anda (openctrlc.json)",
+  "error.chain.mcpFailed": 'Server MCP "{{name}}" gagal. Catatan: OpenCtrlC belum mendukung autentikasi MCP.',
   "error.chain.providerAuthFailed": "Autentikasi penyedia gagal ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
     'Gagal menginisialisasi penyedia "{{provider}}". Periksa kredensial dan konfigurasi.',
@@ -945,7 +945,7 @@ export const dict = {
   "sidebar.workspaces.enable": "Aktifkan ruang kerja",
   "sidebar.workspaces.disable": "Nonaktifkan ruang kerja",
   "sidebar.gettingStarted.title": "Memulai",
-  "sidebar.gettingStarted.line1": "OpenCode menyertakan model gratis sehingga Anda dapat memulai dengan segera.",
+  "sidebar.gettingStarted.line1": "OpenCtrlC menyertakan model gratis sehingga Anda dapat memulai dengan segera.",
   "sidebar.gettingStarted.line2":
     "Hubungkan penyedia mana pun untuk menggunakan model, termasuk Claude, GPT, Gemini, dll.",
   "sidebar.project.recentSessions": "Sesi terbaru",
@@ -1004,17 +1004,17 @@ export const dict = {
   "settings.general.section.display": "Tampilan",
 
   "settings.general.row.language.title": "Bahasa",
-  "settings.general.row.language.description": "Ubah bahasa tampilan untuk OpenCode",
+  "settings.general.row.language.description": "Ubah bahasa tampilan untuk OpenCtrlC",
   "settings.general.row.shell.title": "Shell terminal",
   "settings.general.row.shell.description": "Shell yang digunakan oleh terminal dan alat agen",
   "settings.general.row.shell.autoDefault": "Otomatis (Bawaan)",
   "settings.general.row.shell.terminalOnly": "hanya terminal",
   "settings.general.row.appearance.title": "Tampilan",
-  "settings.general.row.appearance.description": "Sesuaikan tampilan OpenCode di perangkat Anda",
+  "settings.general.row.appearance.description": "Sesuaikan tampilan OpenCtrlC di perangkat Anda",
   "settings.general.row.colorScheme.title": "Skema warna",
-  "settings.general.row.colorScheme.description": "Pilih apakah OpenCode mengikuti tema sistem, terang, atau gelap",
+  "settings.general.row.colorScheme.description": "Pilih apakah OpenCtrlC mengikuti tema sistem, terang, atau gelap",
   "settings.general.row.theme.title": "Tema",
-  "settings.general.row.theme.description": "Sesuaikan tema OpenCode.",
+  "settings.general.row.theme.description": "Sesuaikan tema OpenCtrlC.",
   "settings.general.row.font.title": "Font kode",
   "settings.general.row.font.description": "Sesuaikan font yang digunakan di blok kode",
   "settings.general.row.terminalFont.title": "Font terminal",
@@ -1070,7 +1070,7 @@ export const dict = {
   "settings.general.row.releaseNotes.description": "Tampilkan pop-up Apa yang Baru setelah pembaruan",
 
   "settings.updates.row.startup.title": "Periksa pembaruan saat dimulai",
-  "settings.updates.row.startup.description": "Secara otomatis memeriksa pembaruan saat OpenCode diluncurkan",
+  "settings.updates.row.startup.description": "Secara otomatis memeriksa pembaruan saat OpenCtrlC diluncurkan",
   "settings.updates.row.check.title": "Periksa pembaruan",
   "settings.updates.row.check.description": "Periksa pembaruan secara manual dan instal jika tersedia",
   "settings.updates.action.checkNow": "Periksa sekarang",
@@ -1078,7 +1078,7 @@ export const dict = {
   "settings.updates.action.downloading": "Mengunduh...",
   "settings.updates.action.installing": "Menginstal...",
   "settings.updates.toast.latest.title": "Versi Anda sudah terbaru",
-  "settings.updates.toast.latest.description": "Anda menjalankan versi terbaru OpenCode.",
+  "settings.updates.toast.latest.description": "Anda menjalankan versi terbaru OpenCtrlC.",
   "sound.option.none": "Tidak ada",
   "sound.option.alert01": "Peringatan 01",
   "sound.option.alert02": "Peringatan 02",

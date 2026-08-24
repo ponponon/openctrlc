@@ -4,10 +4,10 @@
   "version": "1.18.18",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://opencode.ai",
+  "homepage": "https://openctrlc.ai",
   "author": {
-    "name": "OpenCode",
-    "email": "hello@opencode.ai"
+    "name": "OpenCtrlC",
+    "email": "hello@openctrlc.ai"
   },
   "scripts": {
     "typecheck": "tsgo -b",

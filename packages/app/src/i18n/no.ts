@@ -2,7 +2,7 @@ import { dict as en } from "./en"
 type Keys = keyof typeof en
 
 export const dict = {
-  "desktop.menu.app": "OpenCode",
+  "desktop.menu.app": "OpenCtrlC",
   "desktop.menu.file": "Arkiv",
   "desktop.menu.edit": "Rediger",
   "desktop.menu.view": "Vis",
@@ -42,11 +42,11 @@ export const dict = {
   "desktop.menu.nextProject": "Neste prosjekt",
   "desktop.menu.minimize": "Minimer",
   "desktop.menu.maximize": "Maksimer",
-  "desktop.menu.documentation": "OpenCode-dokumentasjon",
+  "desktop.menu.documentation": "OpenCtrlC-dokumentasjon",
   "desktop.menu.supportForum": "Brukerstøtteforum",
   "desktop.menu.shareFeedback": "Del tilbakemelding",
   "desktop.menu.reportBug": "Rapporter en feil",
-  "desktop.menu.ariaLabel": "OpenCode-meny",
+  "desktop.menu.ariaLabel": "OpenCtrlC-meny",
 
   "desktop.updater.dialog.checkFailed.message": "Søket etter oppdateringer mislyktes.",
   "desktop.updater.dialog.checkFailed.title": "Oppdateringsfeil",
@@ -61,9 +61,9 @@ export const dict = {
   "desktop.recovery.action.exportLogs": "Eksporter logger",
   "desktop.recovery.action.keepWaiting": "Fortsett å vente",
   "desktop.recovery.action.quit": "Avslutt",
-  "desktop.recovery.loadFailed": "OpenCode kunne ikke lastes inn",
-  "desktop.recovery.terminated": "OpenCode-vinduet ble uventet avsluttet",
-  "desktop.recovery.unresponsive": "OpenCode svarer ikke",
+  "desktop.recovery.loadFailed": "OpenCtrlC kunne ikke lastes inn",
+  "desktop.recovery.terminated": "OpenCtrlC-vinduet ble uventet avsluttet",
+  "desktop.recovery.unresponsive": "OpenCtrlC svarer ikke",
   "desktop.recovery.unresponsive.detail": "Du kan starte appen på nytt, åpne loggene eller fortsette å vente.",
   "desktop.recovery.loadFailed.detail": "Vindu: {{window}}\nURL: {{url}}\nFeil: {{code}} {{description}}",
   "desktop.recovery.terminated.detail": "Vindu: {{window}}\nÅrsak: {{reason}}\nKode: {{code}}",
@@ -223,7 +223,7 @@ export const dict = {
   "dialog.model.manage.description": "Tilpass hvilke modeller som vises i modellvelgeren.",
   "dialog.model.manage.provider.toggle": "Veksle alle {{provider}}-modeller",
 
-  "dialog.model.unpaid.freeModels.title": "Gratis modeller levert av OpenCode",
+  "dialog.model.unpaid.freeModels.title": "Gratis modeller levert av OpenCtrlC",
   "dialog.model.unpaid.addMore.title": "Legg til flere modeller fra populære leverandører",
   "dialog.model.unpaid.viewMoreProviders": "Se over 70 flere leverandører",
 
@@ -239,7 +239,7 @@ export const dict = {
   "provider.connect.status.waiting": "Venter på autorisering...",
   "provider.connect.status.failed": "Autorisering mislyktes: {{error}}",
   "provider.connect.apiKey.description":
-    "Skriv inn API-nøkkelen din for {{provider}} for å koble til kontoen din og bruke {{provider}}-modeller i OpenCode.",
+    "Skriv inn API-nøkkelen din for {{provider}} for å koble til kontoen din og bruke {{provider}}-modeller i OpenCtrlC.",
   "provider.connect.apiKey.label": "{{provider}}-API-nøkkel",
   "provider.connect.apiKey.placeholder": "API-nøkkel",
   "provider.connect.apiKey.required": "API-nøkkel er påkrevd",
@@ -253,7 +253,7 @@ export const dict = {
   "provider.connect.oauth.code.visit.prefix": "Besøk ",
   "provider.connect.oauth.code.visit.link": "denne lenken",
   "provider.connect.oauth.code.visit.suffix":
-    " for å hente autorisasjonskoden din for å koble til kontoen din og bruke {{provider}}-modeller i OpenCode.",
+    " for å hente autorisasjonskoden din for å koble til kontoen din og bruke {{provider}}-modeller i OpenCtrlC.",
   "provider.connect.oauth.code.label": "{{method}}-autorisasjonskode",
   "provider.connect.oauth.code.placeholder": "Autorisasjonskode",
   "provider.connect.oauth.code.required": "Autorisasjonskode er påkrevd",
@@ -261,7 +261,7 @@ export const dict = {
   "provider.connect.oauth.auto.visit.prefix": "Besøk ",
   "provider.connect.oauth.auto.visit.link": "denne lenken",
   "provider.connect.oauth.auto.visit.suffix":
-    " og skriv inn koden nedenfor for å koble til kontoen din og bruke {{provider}}-modeller i OpenCode.",
+    " og skriv inn koden nedenfor for å koble til kontoen din og bruke {{provider}}-modeller i OpenCtrlC.",
   "provider.connect.oauth.auto.confirmationCode": "Bekreftelseskode",
   "provider.connect.toast.connected.title": "{{provider}} tilkoblet",
   "provider.connect.toast.connected.description": "{{provider}}-modeller er nå tilgjengelige.",
@@ -413,7 +413,7 @@ export const dict = {
   "dialog.mcp.empty": "Ingen MCP-er konfigurert",
 
   "dialog.lsp.empty": "LSP-er automatisk oppdaget fra filtyper",
-  "dialog.plugins.empty": "Programtillegg konfigurert i opencode.json",
+  "dialog.plugins.empty": "Programtillegg konfigurert i openctrlc.json",
 
   "mcp.status.connected": "tilkoblet",
   "mcp.status.failed": "mislyktes",
@@ -432,7 +432,7 @@ export const dict = {
   "dialog.directory.readError": "Kan ikke lese denne mappen",
 
   "dialog.server.title": "Servere",
-  "dialog.server.description": "Bytt hvilken OpenCode-server denne appen kobler til.",
+  "dialog.server.description": "Bytt hvilken OpenCtrlC-server denne appen kobler til.",
   "dialog.server.search.placeholder": "Søk etter servere",
   "dialog.server.empty": "Ingen servere ennå",
   "dialog.server.add.title": "Legg til en server",
@@ -574,7 +574,7 @@ export const dict = {
   "toast.session.listFailed.title": "Kunne ikke laste sesjoner for {{project}}",
 
   "toast.update.title": "Oppdatering tilgjengelig",
-  "toast.update.description": "En ny versjon av OpenCode ({{version}}) er nå tilgjengelig for installasjon.",
+  "toast.update.description": "En ny versjon av OpenCtrlC ({{version}}) er nå tilgjengelig for installasjon.",
   "toast.update.action.installRestart": "Installer og start på nytt",
   "toast.update.action.notYet": "Ikke nå",
 
@@ -587,7 +587,7 @@ export const dict = {
   "error.page.action.checking": "Sjekker...",
   "error.page.action.checkUpdates": "Se etter oppdateringer",
   "error.page.action.updateTo": "Oppdater til {{version}}",
-  "error.page.report.prefix": "Vennligst rapporter denne feilen til OpenCode-teamet",
+  "error.page.report.prefix": "Vennligst rapporter denne feilen til OpenCtrlC-teamet",
   "error.page.report.discord": "på Discord",
   "error.page.version": "Versjon: {{version}}",
 
@@ -605,8 +605,8 @@ export const dict = {
   "error.chain.responseBody": "Responsinnhold:\n{{body}}",
   "error.chain.didYouMean": "Mente du: {{suggestions}}",
   "error.chain.modelNotFound": "Modell ikke funnet: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "Sjekk leverandør-/modellnavnene i konfigurasjonen din (opencode.json)",
-  "error.chain.mcpFailed": 'MCP-server "{{name}}" mislyktes. Merk at OpenCode ikke støtter MCP-autentisering ennå.',
+  "error.chain.checkConfig": "Sjekk leverandør-/modellnavnene i konfigurasjonen din (openctrlc.json)",
+  "error.chain.mcpFailed": 'MCP-server "{{name}}" mislyktes. Merk at OpenCtrlC ikke støtter MCP-autentisering ennå.',
   "error.chain.providerAuthFailed": "Leverandørautentisering mislyktes ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
     'Kunne ikke initialisere leverandør "{{provider}}". Sjekk legitimasjon og konfigurasjon.',
@@ -749,7 +749,7 @@ export const dict = {
   "sidebar.workspaces.enable": "Aktiver arbeidsområder",
   "sidebar.workspaces.disable": "Deaktiver arbeidsområder",
   "sidebar.gettingStarted.title": "Kom i gang",
-  "sidebar.gettingStarted.line1": "OpenCode inkluderer gratis modeller så du kan starte umiddelbart.",
+  "sidebar.gettingStarted.line1": "OpenCtrlC inkluderer gratis modeller så du kan starte umiddelbart.",
   "sidebar.gettingStarted.line2": "Koble til en leverandør for å bruke modeller, inkl. Claude, GPT, Gemini osv.",
   "sidebar.project.recentSessions": "Nylige sesjoner",
   "sidebar.project.viewAllSessions": "Vis alle sesjoner",
@@ -773,14 +773,14 @@ export const dict = {
   "settings.general.section.display": "Skjerm",
 
   "settings.general.row.language.title": "Språk",
-  "settings.general.row.language.description": "Endre visningsspråket for OpenCode",
+  "settings.general.row.language.description": "Endre visningsspråket for OpenCtrlC",
   "settings.general.row.appearance.title": "Utseende",
-  "settings.general.row.appearance.description": "Tilpass hvordan OpenCode ser ut på enheten din",
+  "settings.general.row.appearance.description": "Tilpass hvordan OpenCtrlC ser ut på enheten din",
   "settings.general.row.colorScheme.title": "Fargevalg",
   "settings.general.row.colorScheme.description":
-    "Velg om OpenCode skal følge systeminnstillingen eller bruke lyst eller mørkt tema",
+    "Velg om OpenCtrlC skal følge systeminnstillingen eller bruke lyst eller mørkt tema",
   "settings.general.row.theme.title": "Tema",
-  "settings.general.row.theme.description": "Tilpass temaet i OpenCode.",
+  "settings.general.row.theme.description": "Tilpass temaet i OpenCtrlC.",
   "settings.general.row.font.title": "Kodefont",
   "settings.general.row.font.description": "Tilpass skrifttypen som brukes i kodeblokker",
   "settings.general.row.terminalFont.title": "Terminalskrift",
@@ -807,13 +807,13 @@ export const dict = {
   "settings.general.row.releaseNotes.description": 'Vis "Hva er nytt"-vinduer etter oppdateringer',
 
   "settings.updates.row.startup.title": "Se etter oppdateringer ved oppstart",
-  "settings.updates.row.startup.description": "Se automatisk etter oppdateringer når OpenCode starter",
+  "settings.updates.row.startup.description": "Se automatisk etter oppdateringer når OpenCtrlC starter",
   "settings.updates.row.check.title": "Se etter oppdateringer",
   "settings.updates.row.check.description": "Se etter oppdateringer manuelt og installer hvis tilgjengelig",
   "settings.updates.action.checkNow": "Sjekk nå",
   "settings.updates.action.checking": "Sjekker...",
-  "settings.updates.toast.latest.title": "OpenCode er oppdatert",
-  "settings.updates.toast.latest.description": "Du bruker den nyeste versjonen av OpenCode.",
+  "settings.updates.toast.latest.title": "OpenCtrlC er oppdatert",
+  "settings.updates.toast.latest.description": "Du bruker den nyeste versjonen av OpenCtrlC.",
   "sound.option.none": "Ingen",
   "sound.option.alert01": "Varsel 01",
   "sound.option.alert02": "Varsel 02",
@@ -1173,7 +1173,7 @@ export const dict = {
   "help.tabs.title": "Vi introduserer faner",
   "help.tabs.description": "Organiser arbeidet og de aktive sesjonene dine med faner",
   "help.tabs.date": "14. juli",
-  "help.tabs.introduction": "OpenCode Desktop er nå bygget rundt faner.",
+  "help.tabs.introduction": "OpenCtrlC Desktop er nå bygget rundt faner.",
   "help.tabs.sessions":
     "Start en ny sesjon i en fane, eller åpne en eksisterende sesjon fra et av prosjektene dine. Åpne en ny fane når du skal begynne på noe nytt, og lukk den når du er ferdig.",
   "help.tabs.organize":

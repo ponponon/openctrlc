@@ -55,3 +55,21 @@ test("keeps sidecar auth, updater persistence, and WSL CLI consumers product-own
   expect(preload).toContain("installOpenctrlc")
   expect(preload).not.toContain("installOpencode")
 })
+
+test("keeps product-owned publishing metadata on OpenCtrlC targets", async () => {
+  const packageJson = await read("./package.json")
+  const copyMetainfo = await read("./scripts/copy-metainfo.ts")
+  const metainfo = await read("./resources/cn.quniv.openctrlc.metainfo.xml")
+
+  expect(packageJson).toContain('"homepage": "https://openctrlc.ai"')
+  expect(packageJson).toContain('"name": "OpenCtrlC"')
+  expect(packageJson).toContain('"email": "hello@openctrlc.ai"')
+  expect(copyMetainfo).toContain("https://openctrlc.ai")
+  expect(copyMetainfo).toContain("https://github.com/ponponon/openctrlc")
+  expect(copyMetainfo).toContain("<name>OpenCtrlC</name>")
+  expect(metainfo).toContain("https://openctrlc.ai")
+  expect(metainfo).toContain("https://github.com/ponponon/openctrlc/issues")
+  expect(metainfo).toContain("https://github.com/ponponon/openctrlc")
+  expect(metainfo).not.toContain("anomalyco/opencode")
+  expect(metainfo).not.toContain("https://opencode.ai")
+})

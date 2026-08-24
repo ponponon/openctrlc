@@ -1,5 +1,5 @@
 export const dict = {
-  "desktop.menu.app": "OpenCode",
+  "desktop.menu.app": "OpenCtrlC",
   "desktop.menu.file": "ไฟล์",
   "desktop.menu.edit": "แก้ไข",
   "desktop.menu.view": "มุมมอง",
@@ -39,11 +39,11 @@ export const dict = {
   "desktop.menu.nextProject": "โปรเจกต์ถัดไป",
   "desktop.menu.minimize": "ย่อหน้าต่าง",
   "desktop.menu.maximize": "ขยายหน้าต่าง",
-  "desktop.menu.documentation": "เอกสาร OpenCode",
+  "desktop.menu.documentation": "เอกสาร OpenCtrlC",
   "desktop.menu.supportForum": "ฟอรัมสนับสนุน",
   "desktop.menu.shareFeedback": "ส่งข้อคิดเห็น",
   "desktop.menu.reportBug": "รายงานข้อบกพร่อง",
-  "desktop.menu.ariaLabel": "เมนู OpenCode",
+  "desktop.menu.ariaLabel": "เมนู OpenCtrlC",
 
   "desktop.updater.dialog.checkFailed.message": "การตรวจหาการอัปเดตล้มเหลว",
   "desktop.updater.dialog.checkFailed.title": "ข้อผิดพลาดในการอัปเดต",
@@ -58,9 +58,9 @@ export const dict = {
   "desktop.recovery.action.exportLogs": "ส่งออกบันทึก",
   "desktop.recovery.action.keepWaiting": "รอต่อไป",
   "desktop.recovery.action.quit": "ออก",
-  "desktop.recovery.loadFailed": "โหลด OpenCode ไม่สำเร็จ",
-  "desktop.recovery.terminated": "หน้าต่าง OpenCode หยุดทำงานโดยไม่คาดคิด",
-  "desktop.recovery.unresponsive": "OpenCode ไม่ตอบสนอง",
+  "desktop.recovery.loadFailed": "โหลด OpenCtrlC ไม่สำเร็จ",
+  "desktop.recovery.terminated": "หน้าต่าง OpenCtrlC หยุดทำงานโดยไม่คาดคิด",
+  "desktop.recovery.unresponsive": "OpenCtrlC ไม่ตอบสนอง",
   "desktop.recovery.unresponsive.detail": "คุณสามารถเปิดแอปอีกครั้ง เปิดบันทึก หรือรอต่อไป",
   "desktop.recovery.loadFailed.detail": "หน้าต่าง: {{window}}\nURL: {{url}}\nข้อผิดพลาด: {{code}} {{description}}",
   "desktop.recovery.terminated.detail": "หน้าต่าง: {{window}}\nสาเหตุ: {{reason}}\nรหัส: {{code}}",
@@ -223,7 +223,7 @@ export const dict = {
   "dialog.model.manage.description": "ปรับแต่งโมเดลที่จะปรากฏในตัวเลือกโมเดล",
   "dialog.model.manage.provider.toggle": "สลับโมเดลทั้งหมดของ {{provider}}",
 
-  "dialog.model.unpaid.freeModels.title": "โมเดลฟรีที่จัดหาให้โดย OpenCode",
+  "dialog.model.unpaid.freeModels.title": "โมเดลฟรีที่จัดหาให้โดย OpenCtrlC",
   "dialog.model.unpaid.addMore.title": "เพิ่มโมเดลเพิ่มเติมจากผู้ให้บริการยอดนิยม",
   "dialog.model.unpaid.viewMoreProviders": "ดูผู้ให้บริการเพิ่มเติมกว่า 70 ราย",
 
@@ -239,7 +239,7 @@ export const dict = {
   "provider.connect.status.waiting": "รอการอนุญาต...",
   "provider.connect.status.failed": "การอนุญาตล้มเหลว: {{error}}",
   "provider.connect.apiKey.description":
-    "ป้อนคีย์ API ของ {{provider}} เพื่อเชื่อมต่อบัญชีและใช้โมเดล {{provider}} ใน OpenCode",
+    "ป้อนคีย์ API ของ {{provider}} เพื่อเชื่อมต่อบัญชีและใช้โมเดล {{provider}} ใน OpenCtrlC",
   "provider.connect.apiKey.label": "คีย์ API ของ {{provider}}",
   "provider.connect.apiKey.placeholder": "คีย์ API",
   "provider.connect.apiKey.required": "ต้องใช้คีย์ API",
@@ -253,7 +253,7 @@ export const dict = {
   "provider.connect.oauth.code.visit.prefix": "เยี่ยมชม ",
   "provider.connect.oauth.code.visit.link": "ลิงก์นี้",
   "provider.connect.oauth.code.visit.suffix":
-    " เพื่อรับรหัสการอนุญาตสำหรับเชื่อมต่อบัญชีและใช้โมเดล {{provider}} ใน OpenCode",
+    " เพื่อรับรหัสการอนุญาตสำหรับเชื่อมต่อบัญชีและใช้โมเดล {{provider}} ใน OpenCtrlC",
   "provider.connect.oauth.code.label": "รหัสการอนุญาต {{method}}",
   "provider.connect.oauth.code.placeholder": "รหัสการอนุญาต",
   "provider.connect.oauth.code.required": "ต้องใช้รหัสการอนุญาต",
@@ -261,7 +261,7 @@ export const dict = {
   "provider.connect.oauth.auto.visit.prefix": "เยี่ยมชม ",
   "provider.connect.oauth.auto.visit.link": "ลิงก์นี้",
   "provider.connect.oauth.auto.visit.suffix":
-    " และป้อนรหัสด้านล่างเพื่อเชื่อมต่อบัญชีและใช้โมเดล {{provider}} ใน OpenCode",
+    " และป้อนรหัสด้านล่างเพื่อเชื่อมต่อบัญชีและใช้โมเดล {{provider}} ใน OpenCtrlC",
   "provider.connect.oauth.auto.confirmationCode": "รหัสยืนยัน",
   "provider.connect.toast.connected.title": "เชื่อมต่อ {{provider}} แล้ว",
   "provider.connect.toast.connected.description": "โมเดล {{provider}} พร้อมใช้งานแล้ว",
@@ -420,7 +420,7 @@ export const dict = {
   "dialog.mcp.empty": "ไม่มี MCP ที่กำหนดค่า",
 
   "dialog.lsp.empty": "LSPs ตรวจจับอัตโนมัติจากประเภทไฟล์",
-  "dialog.plugins.empty": "ปลั๊กอินที่กำหนดค่าใน opencode.json",
+  "dialog.plugins.empty": "ปลั๊กอินที่กำหนดค่าใน openctrlc.json",
 
   "mcp.status.connected": "เชื่อมต่อแล้ว",
   "mcp.status.failed": "ล้มเหลว",
@@ -439,7 +439,7 @@ export const dict = {
   "dialog.directory.readError": "ไม่สามารถอ่านโฟลเดอร์นี้ได้",
 
   "dialog.server.title": "เซิร์ฟเวอร์",
-  "dialog.server.description": "สลับเซิร์ฟเวอร์ OpenCode ที่แอปนี้เชื่อมต่อด้วย",
+  "dialog.server.description": "สลับเซิร์ฟเวอร์ OpenCtrlC ที่แอปนี้เชื่อมต่อด้วย",
   "dialog.server.search.placeholder": "ค้นหาเซิร์ฟเวอร์",
   "dialog.server.empty": "ยังไม่มีเซิร์ฟเวอร์",
   "dialog.server.add.title": "เพิ่มเซิร์ฟเวอร์",
@@ -542,7 +542,7 @@ export const dict = {
   "help.tabs.title": "ขอแนะนำแท็บ",
   "help.tabs.description": "จัดระเบียบงานและเซสชันที่ใช้งานอยู่ด้วยแท็บ",
   "help.tabs.date": "14 กรกฎาคม",
-  "help.tabs.introduction": "ตอนนี้ OpenCode Desktop สร้างขึ้นโดยใช้แท็บเป็นหลัก",
+  "help.tabs.introduction": "ตอนนี้ OpenCtrlC Desktop สร้างขึ้นโดยใช้แท็บเป็นหลัก",
   "help.tabs.sessions":
     "เริ่มเซสชันใหม่ในแท็บ หรือเปิดเซสชันที่มีอยู่จากโปรเจกต์ใดก็ได้ เปิดแท็บใหม่เมื่อเริ่มงานใหม่ และปิดเมื่อทำงานเสร็จ",
   "help.tabs.organize":
@@ -665,7 +665,7 @@ export const dict = {
   "toast.session.listFailed.title": "ไม่สามารถโหลดเซสชันสำหรับ {{project}}",
 
   "toast.update.title": "มีการอัปเดต",
-  "toast.update.description": "เวอร์ชันใหม่ของ OpenCode ({{version}}) พร้อมใช้งานสำหรับติดตั้ง",
+  "toast.update.description": "เวอร์ชันใหม่ของ OpenCtrlC ({{version}}) พร้อมใช้งานสำหรับติดตั้ง",
   "toast.update.action.installRestart": "ติดตั้งและรีสตาร์ท",
   "toast.update.action.notYet": "ยังไม่",
 
@@ -680,7 +680,7 @@ export const dict = {
   "error.page.action.checking": "กำลังตรวจสอบ...",
   "error.page.action.checkUpdates": "ตรวจสอบการอัปเดต",
   "error.page.action.updateTo": "อัปเดตเป็น {{version}}",
-  "error.page.report.prefix": "โปรดรายงานข้อผิดพลาดนี้ให้ทีม OpenCode",
+  "error.page.report.prefix": "โปรดรายงานข้อผิดพลาดนี้ให้ทีม OpenCtrlC",
   "error.page.report.discord": "บน Discord",
   "error.page.version": "เวอร์ชัน: {{version}}",
 
@@ -697,8 +697,8 @@ export const dict = {
   "error.chain.responseBody": "เนื้อหาการตอบสนอง:\n{{body}}",
   "error.chain.didYouMean": "คุณหมายถึง: {{suggestions}}",
   "error.chain.modelNotFound": "ไม่พบโมเดล: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "ตรวจสอบการกำหนดค่าของคุณ (opencode.json) ชื่อผู้ให้บริการ/โมเดล",
-  "error.chain.mcpFailed": 'เซิร์ฟเวอร์ MCP "{{name}}" ล้มเหลว โปรดทราบว่า OpenCode ยังไม่รองรับการตรวจสอบสิทธิ์ MCP',
+  "error.chain.checkConfig": "ตรวจสอบการกำหนดค่าของคุณ (openctrlc.json) ชื่อผู้ให้บริการ/โมเดล",
+  "error.chain.mcpFailed": 'เซิร์ฟเวอร์ MCP "{{name}}" ล้มเหลว โปรดทราบว่า OpenCtrlC ยังไม่รองรับการตรวจสอบสิทธิ์ MCP',
   "error.chain.providerAuthFailed": "การตรวจสอบสิทธิ์ผู้ให้บริการล้มเหลว ({{provider}}): {{message}}",
   "error.chain.providerInitFailed": 'ไม่สามารถเริ่มต้นผู้ให้บริการ "{{provider}}" ตรวจสอบข้อมูลรับรองและการกำหนดค่า',
   "error.chain.configJsonInvalid": "ไฟล์กำหนดค่าที่ {{path}} ไม่ใช่ JSON(C) ที่ถูกต้อง",
@@ -871,7 +871,7 @@ export const dict = {
   "sidebar.workspaces.enable": "เปิดใช้งานพื้นที่ทำงาน",
   "sidebar.workspaces.disable": "ปิดใช้งานพื้นที่ทำงาน",
   "sidebar.gettingStarted.title": "เริ่มต้นใช้งาน",
-  "sidebar.gettingStarted.line1": "OpenCode รวมถึงโมเดลฟรีเพื่อให้คุณเริ่มต้นได้ทันที",
+  "sidebar.gettingStarted.line1": "OpenCtrlC รวมถึงโมเดลฟรีเพื่อให้คุณเริ่มต้นได้ทันที",
   "sidebar.gettingStarted.line2": "เชื่อมต่อผู้ให้บริการใด ๆ เพื่อใช้โมเดล รวมถึง Claude, GPT, Gemini ฯลฯ",
   "sidebar.project.recentSessions": "เซสชันล่าสุด",
   "sidebar.project.viewAllSessions": "ดูเซสชันทั้งหมด",
@@ -898,18 +898,18 @@ export const dict = {
   "settings.general.section.display": "การแสดงผล",
 
   "settings.general.row.language.title": "ภาษา",
-  "settings.general.row.language.description": "เปลี่ยนภาษาที่แสดงสำหรับ OpenCode",
+  "settings.general.row.language.description": "เปลี่ยนภาษาที่แสดงสำหรับ OpenCtrlC",
   "settings.general.row.shell.title": "เชลล์เทอร์มินัล",
   "settings.general.row.shell.description":
     "เลือกเชลล์ที่จะใช้กับเทอร์มินัล เชลล์ที่เข้ากันได้จะใช้สำหรับการเรียกเครื่องมือของเอเจนต์ด้วย",
   "settings.general.row.shell.autoDefault": "อัตโนมัติ (ค่าเริ่มต้น)",
   "settings.general.row.shell.terminalOnly": "เทอร์มินัลเท่านั้น",
   "settings.general.row.appearance.title": "รูปลักษณ์",
-  "settings.general.row.appearance.description": "ปรับแต่งรูปลักษณ์ของ OpenCode บนอุปกรณ์ของคุณ",
+  "settings.general.row.appearance.description": "ปรับแต่งรูปลักษณ์ของ OpenCtrlC บนอุปกรณ์ของคุณ",
   "settings.general.row.colorScheme.title": "โทนสี",
-  "settings.general.row.colorScheme.description": "เลือกว่าจะให้ OpenCode ใช้ธีมตามระบบ สว่าง หรือมืด",
+  "settings.general.row.colorScheme.description": "เลือกว่าจะให้ OpenCtrlC ใช้ธีมตามระบบ สว่าง หรือมืด",
   "settings.general.row.theme.title": "ธีม",
-  "settings.general.row.theme.description": "ปรับแต่งธีมของ OpenCode",
+  "settings.general.row.theme.description": "ปรับแต่งธีมของ OpenCtrlC",
   "settings.general.row.font.title": "แบบอักษรโค้ด",
   "settings.general.row.font.description": "ปรับแต่งแบบอักษรที่ใช้ในบล็อกโค้ด",
   "settings.general.row.terminalFont.title": "แบบอักษรเทอร์มินัล",
@@ -960,7 +960,7 @@ export const dict = {
   "settings.general.row.releaseNotes.description": "แสดงป๊อปอัพ What's New หลังจากอัปเดต",
 
   "settings.updates.row.startup.title": "ตรวจสอบการอัปเดตเมื่อเริ่มต้น",
-  "settings.updates.row.startup.description": "ตรวจสอบการอัปเดตโดยอัตโนมัติเมื่อ OpenCode เปิดใช้งาน",
+  "settings.updates.row.startup.description": "ตรวจสอบการอัปเดตโดยอัตโนมัติเมื่อ OpenCtrlC เปิดใช้งาน",
   "settings.updates.row.check.title": "ตรวจสอบการอัปเดต",
   "settings.updates.row.check.description": "ตรวจสอบการอัปเดตด้วยตนเองและติดตั้งหากมี",
   "settings.updates.action.checkNow": "ตรวจสอบทันที",
@@ -968,7 +968,7 @@ export const dict = {
   "settings.updates.action.downloading": "กำลังดาวน์โหลด...",
   "settings.updates.action.installing": "กำลังติดตั้ง...",
   "settings.updates.toast.latest.title": "คุณเป็นเวอร์ชันล่าสุดแล้ว",
-  "settings.updates.toast.latest.description": "คุณกำลังใช้งาน OpenCode เวอร์ชันล่าสุด",
+  "settings.updates.toast.latest.description": "คุณกำลังใช้งาน OpenCtrlC เวอร์ชันล่าสุด",
 
   "sound.option.none": "ไม่มี",
   "sound.option.alert01": "เสียงเตือน 01",

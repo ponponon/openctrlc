@@ -5,10 +5,10 @@
   <project_license>MIT</project_license>
   <name>OpenCtrlC</name>
   <summary>Open source AI coding agent</summary>
-  <developer id="ly.anoma"><name>Anomaly Innovations Inc.</name></developer>
+  <developer id="cn.quniv"><name>OpenCtrlC</name></developer>
   <description><p>OpenCtrlC is an open source agent that helps you write and run code with any AI model.</p></description>
   <launchable type="desktop-id">cn.quniv.openctrlc.desktop</launchable>
-  <url type="bugtracker">https://github.com/anomalyco/opencode/issues</url>
-  <url type="homepage">https://opencode.ai</url>
-  <url type="vcs-browser">https://github.com/anomalyco/opencode</url>
+  <url type="bugtracker">https://github.com/ponponon/openctrlc/issues</url>
+  <url type="homepage">https://openctrlc.ai</url>
+  <url type="vcs-browser">https://github.com/ponponon/openctrlc</url>
 </component>

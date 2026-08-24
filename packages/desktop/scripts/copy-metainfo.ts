@@ -18,8 +18,8 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <name>${productName}</name>
   <summary>${summary}</summary>
 
-  <developer id="ly.anoma">
-    <name>Anomaly Innovations Inc.</name>
+  <developer id="cn.quniv">
+    <name>OpenCtrlC</name>
   </developer>
 
   <description>
@@ -33,12 +33,12 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <content_rating type="oars-1.1" />
 
   <url type="bugtracker">https://github.com/ponponon/openctrlc/issues</url>
-  <url type="homepage">https://opencode.ai</url>
+  <url type="homepage">https://openctrlc.ai</url>
   <url type="vcs-browser">https://github.com/ponponon/openctrlc</url>
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/anomalyco/opencode/b75d4d1c5ec449585d515c756fc81f080a157a9a/packages/web/src/assets/lander/screenshot.png</image>
+      <image>https://raw.githubusercontent.com/ponponon/openctrlc/dev/packages/web/src/assets/lander/screenshot.png</image>
     </screenshot>
   </screenshots>
 </component>

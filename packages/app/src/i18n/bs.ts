@@ -1,5 +1,5 @@
 export const dict = {
-  "desktop.menu.app": "OpenCode",
+  "desktop.menu.app": "OpenCtrlC",
   "desktop.menu.file": "Datoteka",
   "desktop.menu.edit": "Uredi",
   "desktop.menu.view": "Prikaz",
@@ -39,11 +39,11 @@ export const dict = {
   "desktop.menu.nextProject": "Sljedeći projekat",
   "desktop.menu.minimize": "Minimiziraj",
   "desktop.menu.maximize": "Maksimiziraj",
-  "desktop.menu.documentation": "Dokumentacija za OpenCode",
+  "desktop.menu.documentation": "Dokumentacija za OpenCtrlC",
   "desktop.menu.supportForum": "Forum za podršku",
   "desktop.menu.shareFeedback": "Pošalji povratne informacije",
   "desktop.menu.reportBug": "Prijavi grešku",
-  "desktop.menu.ariaLabel": "OpenCode meni",
+  "desktop.menu.ariaLabel": "OpenCtrlC meni",
 
   "desktop.updater.dialog.checkFailed.message": "Provjera ažuriranja nije uspjela.",
   "desktop.updater.dialog.checkFailed.title": "Greška pri ažuriranju",
@@ -59,9 +59,9 @@ export const dict = {
   "desktop.recovery.action.exportLogs": "Izvezi zapisnike",
   "desktop.recovery.action.keepWaiting": "Nastavi čekati",
   "desktop.recovery.action.quit": "Izađi",
-  "desktop.recovery.loadFailed": "OpenCode se nije uspio učitati",
-  "desktop.recovery.terminated": "Prozor OpenCode-a neočekivano je zatvoren",
-  "desktop.recovery.unresponsive": "OpenCode ne reaguje",
+  "desktop.recovery.loadFailed": "OpenCtrlC se nije uspio učitati",
+  "desktop.recovery.terminated": "Prozor OpenCtrlC-a neočekivano je zatvoren",
+  "desktop.recovery.unresponsive": "OpenCtrlC ne reaguje",
   "desktop.recovery.unresponsive.detail": "Možeš ponovo pokrenuti aplikaciju, otvoriti zapisnike ili nastaviti čekati.",
   "desktop.recovery.loadFailed.detail": "Prozor: {{window}}\nURL: {{url}}\nGreška: {{code}} {{description}}",
   "desktop.recovery.terminated.detail": "Prozor: {{window}}\nRazlog: {{reason}}\nKod: {{code}}",
@@ -225,7 +225,7 @@ export const dict = {
   "dialog.model.manage.description": "Prilagodi koji se modeli prikazuju u izborniku modela.",
   "dialog.model.manage.provider.toggle": "Uključi/isključi sve {{provider}} modele",
 
-  "dialog.model.unpaid.freeModels.title": "Besplatni modeli koje obezbjeđuje OpenCode",
+  "dialog.model.unpaid.freeModels.title": "Besplatni modeli koje obezbjeđuje OpenCtrlC",
   "dialog.model.unpaid.addMore.title": "Dodaj još modela od popularnih provajdera",
   "dialog.model.unpaid.viewMoreProviders": "Pogledaj još više od 70 provajdera",
 
@@ -241,7 +241,7 @@ export const dict = {
   "provider.connect.status.waiting": "Čekanje na autorizaciju...",
   "provider.connect.status.failed": "Autorizacija nije uspjela: {{error}}",
   "provider.connect.apiKey.description":
-    "Unesi svoj {{provider}} API ključ da povežeš račun i koristiš {{provider}} modele u OpenCode-u.",
+    "Unesi svoj {{provider}} API ključ da povežeš račun i koristiš {{provider}} modele u OpenCtrlC-u.",
   "provider.connect.apiKey.label": "{{provider}} API ključ",
   "provider.connect.apiKey.placeholder": "API ključ",
   "provider.connect.apiKey.required": "API ključ je obavezan",
@@ -255,7 +255,7 @@ export const dict = {
   "provider.connect.oauth.code.visit.prefix": "Posjeti ",
   "provider.connect.oauth.code.visit.link": "ovaj link",
   "provider.connect.oauth.code.visit.suffix":
-    " da preuzmeš autorizacijski kod i povežeš račun te koristiš {{provider}} modele u OpenCode-u.",
+    " da preuzmeš autorizacijski kod i povežeš račun te koristiš {{provider}} modele u OpenCtrlC-u.",
   "provider.connect.oauth.code.label": "{{method}} autorizacijski kod",
   "provider.connect.oauth.code.placeholder": "Autorizacijski kod",
   "provider.connect.oauth.code.required": "Autorizacijski kod je obavezan",
@@ -263,7 +263,7 @@ export const dict = {
   "provider.connect.oauth.auto.visit.prefix": "Posjeti ",
   "provider.connect.oauth.auto.visit.link": "ovaj link",
   "provider.connect.oauth.auto.visit.suffix":
-    " i unesi kod ispod da povežeš račun i koristiš {{provider}} modele u OpenCode-u.",
+    " i unesi kod ispod da povežeš račun i koristiš {{provider}} modele u OpenCtrlC-u.",
   "provider.connect.oauth.auto.confirmationCode": "Kod za potvrdu",
   "provider.connect.toast.connected.title": "{{provider}} povezan",
   "provider.connect.toast.connected.description": "{{provider}} modeli su sada dostupni za korištenje.",
@@ -423,7 +423,7 @@ export const dict = {
   "dialog.mcp.empty": "Nema konfigurisanih MCP-ova",
 
   "dialog.lsp.empty": "LSP-ovi se automatski otkrivaju prema tipu datoteke",
-  "dialog.plugins.empty": "Plugini su konfigurisani u opencode.json",
+  "dialog.plugins.empty": "Plugini su konfigurisani u openctrlc.json",
 
   "mcp.status.connected": "povezano",
   "mcp.status.failed": "neuspjelo",
@@ -442,7 +442,7 @@ export const dict = {
   "dialog.directory.readError": "Nije moguće pročitati ovu fasciklu",
 
   "dialog.server.title": "Serveri",
-  "dialog.server.description": "Promijeni na koji se OpenCode server ova aplikacija povezuje.",
+  "dialog.server.description": "Promijeni na koji se OpenCtrlC server ova aplikacija povezuje.",
   "dialog.server.search.placeholder": "Pretraži servere",
   "dialog.server.empty": "Još nema servera",
   "dialog.server.add.title": "Dodaj server",
@@ -545,7 +545,7 @@ export const dict = {
   "help.tabs.title": "Predstavljamo kartice",
   "help.tabs.description": "Organizuj svoj rad i aktivne sesije pomoću kartica",
   "help.tabs.date": "14. juli",
-  "help.tabs.introduction": "OpenCode Desktop sada je organizovan oko kartica.",
+  "help.tabs.introduction": "OpenCtrlC Desktop sada je organizovan oko kartica.",
   "help.tabs.sessions":
     "Započni novu sesiju u kartici ili otvori postojeću sesiju iz bilo kojeg projekta. Otvori novu karticu kada započinješ nešto novo, a zatvori je kada završiš.",
   "help.tabs.organize":
@@ -670,7 +670,7 @@ export const dict = {
   "toast.session.listFailed.title": "Neuspjelo učitavanje sesija za {{project}}",
 
   "toast.update.title": "Dostupno ažuriranje",
-  "toast.update.description": "Nova verzija OpenCode-a ({{version}}) je dostupna za instalaciju.",
+  "toast.update.description": "Nova verzija OpenCtrlC-a ({{version}}) je dostupna za instalaciju.",
   "toast.update.action.installRestart": "Instaliraj i ponovo pokreni",
   "toast.update.action.notYet": "Ne još",
 
@@ -685,7 +685,7 @@ export const dict = {
   "error.page.action.checking": "Provjera...",
   "error.page.action.checkUpdates": "Provjeri ažuriranja",
   "error.page.action.updateTo": "Ažuriraj na {{version}}",
-  "error.page.report.prefix": "Molimo prijavi ovu grešku OpenCode timu",
+  "error.page.report.prefix": "Molimo prijavi ovu grešku OpenCtrlC timu",
   "error.page.report.discord": "na Discordu",
   "error.page.version": "Verzija: {{version}}",
 
@@ -703,8 +703,8 @@ export const dict = {
   "error.chain.responseBody": "Tijelo odgovora:\n{{body}}",
   "error.chain.didYouMean": "Da li si mislio: {{suggestions}}",
   "error.chain.modelNotFound": "Model nije pronađen: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "Provjeri nazive provajdera/modela u konfiguraciji (opencode.json)",
-  "error.chain.mcpFailed": 'MCP server "{{name}}" nije uspio. Napomena: OpenCode još ne podržava MCP autentifikaciju.',
+  "error.chain.checkConfig": "Provjeri nazive provajdera/modela u konfiguraciji (openctrlc.json)",
+  "error.chain.mcpFailed": 'MCP server "{{name}}" nije uspio. Napomena: OpenCtrlC još ne podržava MCP autentifikaciju.',
   "error.chain.providerAuthFailed": "Autentifikacija provajdera nije uspjela ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
     'Neuspjelo inicijalizovanje provajdera "{{provider}}". Provjeri kredencijale i konfiguraciju.',
@@ -884,7 +884,7 @@ export const dict = {
   "sidebar.workspaces.enable": "Omogući radne prostore",
   "sidebar.workspaces.disable": "Onemogući radne prostore",
   "sidebar.gettingStarted.title": "Početak",
-  "sidebar.gettingStarted.line1": "OpenCode uključuje besplatne modele, tako da možeš odmah početi.",
+  "sidebar.gettingStarted.line1": "OpenCtrlC uključuje besplatne modele, tako da možeš odmah početi.",
   "sidebar.gettingStarted.line2": "Poveži bilo kojeg provajdera da koristiš modele, npr. Claude, GPT, Gemini itd.",
   "sidebar.project.recentSessions": "Nedavne sesije",
   "sidebar.project.viewAllSessions": "Prikaži sve sesije",
@@ -911,18 +911,18 @@ export const dict = {
   "settings.general.section.display": "Prikaz",
 
   "settings.general.row.language.title": "Jezik",
-  "settings.general.row.language.description": "Promijeni jezik prikaza u OpenCode-u",
+  "settings.general.row.language.description": "Promijeni jezik prikaza u OpenCtrlC-u",
   "settings.general.row.shell.title": "Shell terminala",
   "settings.general.row.shell.description":
     "Odaberi shell koji se koristi za terminal. Kompatibilni shellovi koriste se i za pozive alata agenta.",
   "settings.general.row.shell.autoDefault": "Automatski (podrazumijevano)",
   "settings.general.row.shell.terminalOnly": "samo terminal",
   "settings.general.row.appearance.title": "Izgled",
-  "settings.general.row.appearance.description": "Prilagodi kako OpenCode izgleda na tvom uređaju",
+  "settings.general.row.appearance.description": "Prilagodi kako OpenCtrlC izgleda na tvom uređaju",
   "settings.general.row.colorScheme.title": "Šema boja",
-  "settings.general.row.colorScheme.description": "Odaberi da li OpenCode prati sistemsku, svijetlu ili tamnu temu",
+  "settings.general.row.colorScheme.description": "Odaberi da li OpenCtrlC prati sistemsku, svijetlu ili tamnu temu",
   "settings.general.row.theme.title": "Tema",
-  "settings.general.row.theme.description": "Prilagodi temu OpenCode-a.",
+  "settings.general.row.theme.description": "Prilagodi temu OpenCtrlC-a.",
   "settings.general.row.font.title": "Font za kod",
   "settings.general.row.font.description": "Prilagodi font koji se koristi u blokovima koda",
   "settings.general.row.terminalFont.title": "Font terminala",
@@ -978,7 +978,7 @@ export const dict = {
   "settings.general.row.releaseNotes.description": 'Prikaži iskačuće prozore "Šta je novo" nakon ažuriranja',
 
   "settings.updates.row.startup.title": "Provjeri ažuriranja pri pokretanju",
-  "settings.updates.row.startup.description": "Automatski provjerava ažuriranja kada se OpenCode pokrene",
+  "settings.updates.row.startup.description": "Automatski provjerava ažuriranja kada se OpenCtrlC pokrene",
   "settings.updates.row.check.title": "Provjeri ažuriranja",
   "settings.updates.row.check.description": "Ručno provjeri ažuriranja i instaliraj ako su dostupna",
   "settings.updates.action.checkNow": "Provjeri sada",
@@ -986,7 +986,7 @@ export const dict = {
   "settings.updates.action.downloading": "Preuzimanje...",
   "settings.updates.action.installing": "Instaliranje...",
   "settings.updates.toast.latest.title": "Sve je ažurno",
-  "settings.updates.toast.latest.description": "Koristiš najnoviju verziju OpenCode-a.",
+  "settings.updates.toast.latest.description": "Koristiš najnoviju verziju OpenCtrlC-a.",
   "sound.option.none": "Nijedan",
   "sound.option.alert01": "Upozorenje 01",
   "sound.option.alert02": "Upozorenje 02",

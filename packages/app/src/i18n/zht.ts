@@ -3,7 +3,7 @@ import { dict as en } from "./en"
 type Keys = keyof typeof en
 
 export const dict = {
-  "desktop.menu.app": "OpenCode",
+  "desktop.menu.app": "OpenCtrlC",
   "desktop.menu.file": "檔案",
   "desktop.menu.edit": "編輯",
   "desktop.menu.view": "檢視",
@@ -43,11 +43,11 @@ export const dict = {
   "desktop.menu.nextProject": "下一個專案",
   "desktop.menu.minimize": "最小化",
   "desktop.menu.maximize": "最大化",
-  "desktop.menu.documentation": "OpenCode 文件",
+  "desktop.menu.documentation": "OpenCtrlC 文件",
   "desktop.menu.supportForum": "支援論壇",
   "desktop.menu.shareFeedback": "提供意見回饋",
   "desktop.menu.reportBug": "回報錯誤",
-  "desktop.menu.ariaLabel": "OpenCode 選單",
+  "desktop.menu.ariaLabel": "OpenCtrlC 選單",
 
   "desktop.updater.dialog.checkFailed.message": "檢查更新失敗。",
   "desktop.updater.dialog.checkFailed.title": "更新錯誤",
@@ -62,9 +62,9 @@ export const dict = {
   "desktop.recovery.action.exportLogs": "匯出記錄檔",
   "desktop.recovery.action.keepWaiting": "繼續等待",
   "desktop.recovery.action.quit": "結束",
-  "desktop.recovery.loadFailed": "OpenCode 載入失敗",
-  "desktop.recovery.terminated": "OpenCode 視窗意外終止",
-  "desktop.recovery.unresponsive": "OpenCode 沒有回應",
+  "desktop.recovery.loadFailed": "OpenCtrlC 載入失敗",
+  "desktop.recovery.terminated": "OpenCtrlC 視窗意外終止",
+  "desktop.recovery.unresponsive": "OpenCtrlC 沒有回應",
   "desktop.recovery.unresponsive.detail": "你可以重新啟動應用程式、開啟記錄檔，或繼續等待。",
   "desktop.recovery.loadFailed.detail": "視窗：{{window}}\nURL：{{url}}\n錯誤：{{code}} {{description}}",
   "desktop.recovery.terminated.detail": "視窗：{{window}}\n原因：{{reason}}\n代碼：{{code}}",
@@ -227,7 +227,7 @@ export const dict = {
   "dialog.model.manage.description": "自訂模型選擇器中顯示的模型。",
   "dialog.model.manage.provider.toggle": "切換所有 {{provider}} 模型",
 
-  "dialog.model.unpaid.freeModels.title": "OpenCode 提供的免費模型",
+  "dialog.model.unpaid.freeModels.title": "OpenCtrlC 提供的免費模型",
   "dialog.model.unpaid.addMore.title": "從熱門提供者新增更多模型",
   "dialog.model.unpaid.viewMoreProviders": "查看另外 70 多個提供者",
 
@@ -243,7 +243,7 @@ export const dict = {
   "provider.connect.status.waiting": "等待授權...",
   "provider.connect.status.failed": "授權失敗: {{error}}",
   "provider.connect.apiKey.description":
-    "輸入你的 {{provider}} API 金鑰以連線帳戶，並在 OpenCode 中使用 {{provider}} 模型。",
+    "輸入你的 {{provider}} API 金鑰以連線帳戶，並在 OpenCtrlC 中使用 {{provider}} 模型。",
   "provider.connect.apiKey.label": "{{provider}} API 金鑰",
   "provider.connect.apiKey.placeholder": "API 金鑰",
   "provider.connect.apiKey.required": "API 金鑰為必填",
@@ -254,7 +254,7 @@ export const dict = {
   "provider.connect.opencodeZen.visit.suffix": " 取得你的 API 金鑰。",
   "provider.connect.oauth.code.visit.prefix": "造訪 ",
   "provider.connect.oauth.code.visit.link": "此連結",
-  "provider.connect.oauth.code.visit.suffix": " 取得授權碼，以連線你的帳戶並在 OpenCode 中使用 {{provider}} 模型。",
+  "provider.connect.oauth.code.visit.suffix": " 取得授權碼，以連線你的帳戶並在 OpenCtrlC 中使用 {{provider}} 模型。",
   "provider.connect.oauth.code.label": "{{method}} 授權碼",
   "provider.connect.oauth.code.placeholder": "授權碼",
   "provider.connect.oauth.code.required": "授權碼為必填",
@@ -262,7 +262,7 @@ export const dict = {
   "provider.connect.oauth.auto.visit.prefix": "造訪 ",
   "provider.connect.oauth.auto.visit.link": "此連結",
   "provider.connect.oauth.auto.visit.suffix":
-    " 並輸入以下程式碼，以連線你的帳戶並在 OpenCode 中使用 {{provider}} 模型。",
+    " 並輸入以下程式碼，以連線你的帳戶並在 OpenCtrlC 中使用 {{provider}} 模型。",
   "provider.connect.oauth.auto.confirmationCode": "確認碼",
   "provider.connect.toast.connected.title": "{{provider}} 已連線",
   "provider.connect.toast.connected.description": "現在可以使用 {{provider}} 模型了。",
@@ -420,7 +420,7 @@ export const dict = {
   "dialog.mcp.empty": "未設定 MCP",
 
   "dialog.lsp.empty": "會根據檔案類型自動偵測 LSP",
-  "dialog.plugins.empty": "在 opencode.json 中設定的外掛程式",
+  "dialog.plugins.empty": "在 openctrlc.json 中設定的外掛程式",
 
   "mcp.status.connected": "已連線",
   "mcp.status.failed": "失敗",
@@ -439,7 +439,7 @@ export const dict = {
   "dialog.directory.readError": "無法讀取此資料夾",
 
   "dialog.server.title": "伺服器",
-  "dialog.server.description": "切換此應用程式連線的 OpenCode 伺服器。",
+  "dialog.server.description": "切換此應用程式連線的 OpenCtrlC 伺服器。",
   "dialog.server.search.placeholder": "搜尋伺服器",
   "dialog.server.empty": "尚無伺服器",
   "dialog.server.add.title": "新增伺服器",
@@ -539,7 +539,7 @@ export const dict = {
   "help.tabs.title": "分頁功能介紹",
   "help.tabs.description": "使用分頁整理工作和進行中的工作階段",
   "help.tabs.date": "7 月 14 日",
-  "help.tabs.introduction": "OpenCode Desktop 現在以分頁為核心。",
+  "help.tabs.introduction": "OpenCtrlC Desktop 現在以分頁為核心。",
   "help.tabs.sessions":
     "在分頁中開始新的工作階段，或從任一專案開啟現有的工作階段。開始新工作時請開啟新分頁，完成後再將其關閉。",
   "help.tabs.organize":
@@ -661,7 +661,7 @@ export const dict = {
   "toast.session.listFailed.title": "無法載入 {{project}} 的工作階段",
 
   "toast.update.title": "有可用更新",
-  "toast.update.description": "OpenCode 有新版本 ({{version}}) 可安裝。",
+  "toast.update.description": "OpenCtrlC 有新版本 ({{version}}) 可安裝。",
   "toast.update.action.installRestart": "安裝並重新啟動",
   "toast.update.action.notYet": "稍後",
 
@@ -676,7 +676,7 @@ export const dict = {
   "error.page.action.checking": "檢查中...",
   "error.page.action.checkUpdates": "檢查更新",
   "error.page.action.updateTo": "更新到 {{version}}",
-  "error.page.report.prefix": "請將此錯誤回報給 OpenCode 團隊",
+  "error.page.report.prefix": "請將此錯誤回報給 OpenCtrlC 團隊",
   "error.page.report.discord": "在 Discord 上",
   "error.page.version": "版本: {{version}}",
 
@@ -693,8 +693,8 @@ export const dict = {
   "error.chain.responseBody": "回應內容:\n{{body}}",
   "error.chain.didYouMean": "你是不是想輸入: {{suggestions}}",
   "error.chain.modelNotFound": "找不到模型: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "請檢查你的設定 (opencode.json) 中的 provider/model 名稱",
-  "error.chain.mcpFailed": "MCP 伺服器「{{name}}」啟動失敗。注意：OpenCode 尚不支援 MCP 驗證。",
+  "error.chain.checkConfig": "請檢查你的設定 (openctrlc.json) 中的 provider/model 名稱",
+  "error.chain.mcpFailed": "MCP 伺服器「{{name}}」啟動失敗。注意：OpenCtrlC 尚不支援 MCP 驗證。",
   "error.chain.providerAuthFailed": "提供者驗證失敗（{{provider}}）：{{message}}",
   "error.chain.providerInitFailed": '無法初始化提供者 "{{provider}}"。請檢查憑證和設定。',
   "error.chain.configJsonInvalid": "設定檔 {{path}} 不是有效的 JSON(C)",
@@ -864,7 +864,7 @@ export const dict = {
   "sidebar.workspaces.enable": "啟用工作區",
   "sidebar.workspaces.disable": "停用工作區",
   "sidebar.gettingStarted.title": "開始使用",
-  "sidebar.gettingStarted.line1": "OpenCode 提供免費模型，你可以立即開始使用。",
+  "sidebar.gettingStarted.line1": "OpenCtrlC 提供免費模型，你可以立即開始使用。",
   "sidebar.gettingStarted.line2": "連線任意提供者即可使用更多模型，如 Claude、GPT、Gemini 等。",
   "sidebar.project.recentSessions": "最近工作階段",
   "sidebar.project.viewAllSessions": "查看全部工作階段",
@@ -890,17 +890,17 @@ export const dict = {
   "settings.general.section.display": "顯示",
 
   "settings.general.row.language.title": "語言",
-  "settings.general.row.language.description": "變更 OpenCode 的顯示語言",
+  "settings.general.row.language.description": "變更 OpenCtrlC 的顯示語言",
   "settings.general.row.shell.title": "終端機 Shell",
   "settings.general.row.shell.description": "選擇終端機使用的 Shell。相容的 Shell 也會用於代理程式工具呼叫。",
   "settings.general.row.shell.autoDefault": "自動（預設）",
   "settings.general.row.shell.terminalOnly": "僅限終端機",
   "settings.general.row.appearance.title": "外觀",
-  "settings.general.row.appearance.description": "自訂 OpenCode 在你的裝置上的外觀",
+  "settings.general.row.appearance.description": "自訂 OpenCtrlC 在你的裝置上的外觀",
   "settings.general.row.colorScheme.title": "配色方案",
-  "settings.general.row.colorScheme.description": "選擇 OpenCode 要跟隨系統、淺色或深色主題",
+  "settings.general.row.colorScheme.description": "選擇 OpenCtrlC 要跟隨系統、淺色或深色主題",
   "settings.general.row.theme.title": "主題",
-  "settings.general.row.theme.description": "自訂 OpenCode 的主題。",
+  "settings.general.row.theme.description": "自訂 OpenCtrlC 的主題。",
   "settings.general.row.font.title": "程式碼字型",
   "settings.general.row.font.description": "自訂程式碼區塊使用的字型",
   "settings.general.row.terminalFont.title": "終端機字型",
@@ -948,7 +948,7 @@ export const dict = {
   "settings.general.row.releaseNotes.description": "更新後顯示「新功能」彈出視窗",
 
   "settings.updates.row.startup.title": "啟動時檢查更新",
-  "settings.updates.row.startup.description": "在 OpenCode 啟動時自動檢查更新",
+  "settings.updates.row.startup.description": "在 OpenCtrlC 啟動時自動檢查更新",
   "settings.updates.row.check.title": "檢查更新",
   "settings.updates.row.check.description": "手動檢查更新並在有更新時安裝",
   "settings.updates.action.checkNow": "立即檢查",
@@ -956,7 +956,7 @@ export const dict = {
   "settings.updates.action.downloading": "下載中...",
   "settings.updates.action.installing": "安裝中...",
   "settings.updates.toast.latest.title": "已是最新版本",
-  "settings.updates.toast.latest.description": "你正在使用最新版本的 OpenCode。",
+  "settings.updates.toast.latest.description": "你正在使用最新版本的 OpenCtrlC。",
 
   "sound.option.none": "無",
   "sound.option.alert01": "警報 01",
