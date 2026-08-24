@@ -34,6 +34,12 @@ persistence key is the exact negative migration fixture
 old `opencode.*.dat` keys and the timeline and cross-server fixtures assert
 the new `openctrlc.*.dat` keys.
 
+The persistence audit dynamically collects all OpenCtrlC persistence literals,
+compares the complete per-fixture result with the expected set, and explicitly
+classifies remaining fixtures as having no persistence literals. The only old
+persistence key remains the exact negative migration fixture
+`e2e/regression/legacy-new-session.spec.ts`.
+
 The App i18n parity test dynamically loads all 62 App locales, including
 English, and verifies the external OpenCode Zen copy retains the exact
 `opencode.ai/zen` link value and expected key structure, while rejecting the
@@ -62,7 +68,9 @@ OpenCtrlC product identity and URL scheme in that provider copy.
   duplicating product identity literals.
 - Desktop product title and README identity remain OpenCtrlC.
 - App E2E persistence residual coverage scans every `e2e/**/*.ts` fixture,
-  with only the exact legacy-new-session negative allowlist.
+  dynamically compares all discovered persistence literals with the expected
+  set, classifies no-persistence fixtures, and keeps only the exact
+  legacy-new-session negative allowlist.
 - All 62 App locales are checked for the external OpenCode Zen provider text
   and link contract. Product-owned App/WSL copy remains OpenCtrlC.
 - Session, Provider, Protocol, database schema, generated SDK output, vendor
@@ -71,52 +79,14 @@ OpenCtrlC product identity and URL scheme in that provider copy.
 
 ## Runtime Smoke
 
-Task 8's built-binary smoke is historical evidence only. The isolated smoke
-below was rerun against the current source CLI and is the final runtime basis.
-The following script is self-contained and can be copied and run from
-`packages/opencode`. It creates temporary roots, asserts the CLI output,
-recursively rejects old paths, asserts the expected `openctrlc` directories,
-and fails when the sentinel changes. Bun may create `cache/bun`; that is
-explicitly reported as Bun tool noise and excluded from product assertions.
-The CLI assertions require `openctrlc` and reject `opencode` case-insensitively.
-
-```bash
-set -eu
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"
-printf 'sentinel\n' > "$tmp/legacy-sentinel/sentinel.txt"
-before="$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1)"
-run() {
-  env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
-    XDG_CONFIG_HOME="$tmp/config" XDG_STATE_HOME="$tmp/state" TMPDIR="$tmp/tmp" \
-    PATH="$PATH" OPENCTRLC_TEST_HOME="$tmp/legacy-sentinel" OPENCODE_TEST_HOME="$tmp/legacy-sentinel" \
-    OPENCTRLC_DISABLE_MODELS_FETCH=1 "$@"
-}
-version="$(run bun run --conditions=browser ./src/index.ts --version 2>&1)"
-help="$(run bun run --conditions=browser ./src/index.ts --help 2>&1)"
-serve_help="$(run bun run --conditions=browser ./src/index.ts serve --help 2>&1)"
-test -n "$version" || { printf '%s\n' 'FAIL: --version returned no output' >&2; exit 1; }
-case "$help" in *openctrlc*) ;; *) printf '%s\n' 'FAIL: --help lacks openctrlc' >&2; exit 1 ;; esac
-case "$serve_help" in *openctrlc*) ;; *) printf '%s\n' 'FAIL: serve --help lacks openctrlc' >&2; exit 1 ;; esac
-help_lower=$(printf '%s\n' "$help" | tr '[:upper:]' '[:lower:]')
-serve_help_lower=$(printf '%s\n' "$serve_help" | tr '[:upper:]' '[:lower:]')
-case "$help_lower" in *opencode*) printf '%s\n' 'FAIL: --help contains legacy opencode identity' >&2; exit 1 ;; esac
-case "$serve_help_lower" in *opencode*) printf '%s\n' 'FAIL: serve --help contains legacy opencode identity' >&2; exit 1 ;; esac
-for root in "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; do
-  old="$(/usr/bin/find "$root" \( -iname '*opencode*' -o -name '.opencode' \) -print -quit)"
-  if [ -n "$old" ]; then printf 'FAIL: legacy path: %s\n' "$old" >&2; exit 1; fi
-done
-for root in data cache config state tmp; do
-  test -d "$tmp/$root/openctrlc" || { printf 'FAIL: missing %s/openctrlc\n' "$root" >&2; exit 1; }
-done
-if [ -d "$tmp/cache/bun" ]; then printf '%s\n' 'cache/bun: Bun tool noise (excluded from product assertions)'; fi
-after="$(shasum -a 256 "$tmp/legacy-sentinel/sentinel.txt" | cut -d' ' -f1)"
-if [ "$before" != "$after" ]; then printf '%s\n' 'FAIL: legacy sentinel changed' >&2; exit 1; fi
-printf 'sentinel SHA-256 before: %s\nsentinel SHA-256 after:  %s\n' "$before" "$after"
-for root in data cache config state tmp legacy-sentinel; do (cd "$tmp/$root" && /usr/bin/find . -print | sort); done
-```
-
+Task 8's built-binary smoke is historical evidence only. The final source
+runtime basis is `script/verify-openctrlc-runtime.ts`, runnable as either
+`bun run verify:runtime` or `bun script/verify-openctrlc-runtime.ts` from the
+repository root. It runs `--version`, `--help`, and `serve --help` with
+isolated `HOME`, all XDG roots, `TMPDIR`, `OPENCTRLC_TEST_HOME`, and
+`OPENCODE_TEST_HOME`; recursively rejects old paths and `.opencode`; requires
+`openctrlc` runtime directories; reports but excludes `cache/bun` Bun noise;
+preserves a sentinel; and exits non-zero for every failed assertion.
 The script was run against the current source. It passed all assertions: no
 `opencode` or `.opencode` path was created; `data`, `cache`, `config`, `state`,
 and `tmp` each contained `openctrlc`; `cache/bun` was reported as Bun noise;
@@ -126,16 +96,13 @@ and the sentinel remained unchanged. CLI output used `openctrlc` commands and
 Recorded smoke evidence:
 
 ```text
-version: local
-sentinel SHA-256 before: b5f7e7d285029324d9b3acae19cc05099271454ac98bfc059a92b0581625cd51
-sentinel SHA-256 after:  b5f7e7d285029324d9b3acae19cc05099271454ac98bfc059a92b0581625cd51
-
-data:   ./openctrlc, ./openctrlc/log, ./openctrlc/repos
-cache:   ./bun (Bun noise), ./openctrlc, ./openctrlc/bin
-config: ./openctrlc
-state:  ./openctrlc
-tmp:    ./openctrlc
-legacy-sentinel: ./, ./sentinel.txt
+--version: exit 0
+--help: exit 0
+serve --help: exit 0
+cache/bun: Bun noise excluded from product assertions
+sentinel SHA-256 before: 782a67c7fab7d1eb0caaaf49bd7d6d3d76a58d8388ea6d238a88fe26954c8f79
+sentinel SHA-256 after:  782a67c7fab7d1eb0caaaf49bd7d6d3d76a58d8388ea6d238a88fe26954c8f79
+OpenCtrlC runtime smoke passed
 ```
 
 ## Commands And Evidence
@@ -147,14 +114,12 @@ git diff --check
 cd packages/core && bun test test/oauth-page.test.ts && bun typecheck
 cd packages/opencode && bun test test/mcp/oauth-provider.test.ts test/mcp/oauth-callback.test.ts test/mcp/oauth-browser.test.ts test/mcp/oauth-auto-connect.test.ts test/server/httpapi-mcp-oauth.test.ts && bun typecheck
 cd packages/opencode && bun test test/tool/webfetch.test.ts test/server/httpapi-mdns.test.ts
-cd packages/app && bun test ./src/identity-residuals.test.ts ./src/i18n/parity.test.ts && bun typecheck
+cd packages/app && bun test --preload ./happydom.ts ./src/identity-residuals.test.ts ./src/i18n/parity.test.ts && bun typecheck
 cd packages/desktop && bun test src/renderer/html.test.ts && bun typecheck
 ```
 
-The complete isolated runtime smoke command is the full script shown above,
-run from `packages/opencode`; it includes `--version`, `--help`, `serve --help`,
-case-insensitive legacy-identity rejection, path checks, Bun-noise reporting,
-and sentinel verification.
+The complete isolated runtime smoke command is `bun run verify:runtime` (or
+`bun script/verify-openctrlc-runtime.ts`) from the repository root.
 
 Observed results:
 
@@ -164,10 +129,11 @@ Observed results:
 - Core OAuth focused tests: `3 pass, 0 fail`; Core typecheck passed.
 - OpenCode MCP OAuth focused tests and typecheck passed.
 - OpenCode `webfetch` and mDNS focused tests passed.
-- App focused identity/parity tests: `10 pass, 0 fail`; App typecheck passed.
+- App focused identity tests: `3 pass, 0 fail`; App typecheck passed.
 - Desktop renderer HTML focused tests: `6 pass, 0 fail`; Desktop typecheck passed.
 - OpenCode SDK smoke, webfetch, and mDNS focused tests: `14 pass, 0 fail`; OpenCode typecheck passed.
-- App persistence residual and i18n parity tests: `10 pass, 0 fail`; App typecheck passed.
+- App i18n parity tests are a separate collection and are not included in the
+  identity count above.
 - `git diff --check`: passed.
 
 The historical Task 8 built-binary smoke verified `dist/openctrlc-darwin-arm64/bin/openctrlc`
@@ -192,9 +158,9 @@ latest source state. The latest source smoke above is the final runtime basis.
   `solid-js/web` named export `use` incompatibility in browser-dependent tests
   and the existing macOS ICU likely-subtag failure for `pa-PK` (`en` instead of
   `pa`). The final focused evidence is
-  `packages/app/src/identity-residuals.test.ts` plus
-  `packages/app/src/i18n/parity.test.ts`, with `10 pass, 0 fail`, followed by
-  package typecheck.
+  `packages/app/src/identity-residuals.test.ts`, with `3 pass, 0 fail`, followed
+  by package typecheck. The i18n parity collection is separate and is not
+  included in the identity count.
 - Desktop full `bun test && bun typecheck` had one existing environment
   failure in `packages/desktop/src/main/draft-store.test.ts` because this Bun
   runtime lacks the built-in `node:sqlite` module. The focused desktop
