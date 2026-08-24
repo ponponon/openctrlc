@@ -40,6 +40,7 @@ const externalTokens = [
   /https?:\/\/[^\s)`"]*gitlab\.com\/nagyv\/gitlab-opencode\b/,
   /https?:\/\/[^\s)`"]*docs\.ollama\.com\/integrations\/opencode\b/,
   /github\.com\/anomalyco\/opencode\/(?:issues|pull|actions)/,
+  /\[[^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*\]\((?:<[^>]+>|[^)]*)\)/i,
 ]
 const externalContext = /https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)|(?:^|[\[(\s])(?:awesome-opencode|oh-my-opencode|opencode(?:gent|-agent|-go)?)(?=[\])\s).,])/g
 const auditedScopes = [
@@ -51,12 +52,13 @@ const auditedScopes = [
 ]
 
 export function scanText(source: string, file: string) {
-  const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\((https?:\/\/[^)]+)\)/g)].some((match) => {
+  const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\(<?(https?:\/\/[^)>\s]+)>?(?:\s+["'][^)]*["'])?\)/gi)].some((match) => {
     const label = match[1]
     const href = match[2]
     const hostname = URL.canParse(href) ? new URL(href).hostname : undefined
     if (!hostname) return true
-    return (label.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) || (label.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
+    const normalizedLabel = label.toLowerCase()
+    return (normalizedLabel.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) || (normalizedLabel.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
   })
   if (mismatch) return [`${file}:1:external-link-mismatch`]
   return source.split("\n").flatMap((line, index) => {

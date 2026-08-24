@@ -58,6 +58,18 @@ test("reports malformed web URLs as external link mismatches", () => {
   expect(scanText("[opencode.ai](https://[)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
 })
 
+test("normalizes web URL audit matching without accepting disguises", () => {
+  expect(scanText("[OpenCode.AI](HTTPS://opencode.ai/zen)", "x.mdx")).toEqual([])
+  expect(scanText("[OpenCtrlC.Ai](hTTpS://docs.openctrlc.ai/zen)", "x.mdx")).toEqual([])
+  expect(scanText('[Opencode.AI](<HTTPS://docs.opencode.ai/zen> "title")', "x.mdx")).toEqual([])
+  expect(scanText("[OpenCtrlC.AI](<hTTpS://docs.openctrlc.ai/zen> 'title')", "x.mdx")).toEqual([])
+  expect(scanText("[OpenCode.AI](HTTPS://opencode.ai.evil.example/zen)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[OpenCode.AI](HTTPS://evil.example/?next=opencode.ai)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[OpenCtrlC.AI](HTTPS://openctrlc.ai.evil.example/zen)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[OpenCtrlC.AI](HTTPS://evil.example/?next=openctrlc.ai)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText('[OpenCode.AI](<HTTPS://opencode.ai.evil.example/zen> "title")', "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+})
+
 test("keeps every translated provider Zen link label aligned with its href", async () => {
   const root = path.resolve(import.meta.dirname, "..")
   const files = (await Bun.$`git ls-files packages/web/src/content/docs/**/providers.mdx packages/web/src/content/docs/providers.mdx`.cwd(root).text()).trim().split("\n")
