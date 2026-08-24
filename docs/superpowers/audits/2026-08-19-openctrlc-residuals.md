@@ -6,7 +6,7 @@ Date: 2026-08-24
 
 The final product repair commit is:
 
-`87d1d85d6c5df8bc0e8e2a5fdb4ab8a96ab3bb1e fix(identity): audit remaining runtime product identity`
+`87d1d85bbbc333c8566d94ac31989fd9f90b4ed7 fix(identity): audit remaining runtime product identity`
 
 The final audit commit for this document is recorded after the product repair:
 
