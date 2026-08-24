@@ -52,13 +52,13 @@ const auditedScopes = [
 ]
 
 export function scanText(source: string, file: string) {
-  const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\(<?(https?:\/\/[^)>\s]+)>?(?:\s+["'][^)]*["'])?\)/gi)].some((match) => {
-    const label = match[1]
-    const href = match[2]
-    const hostname = URL.canParse(href) ? new URL(href).hostname : undefined
+  const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\(/gi)].some((match) => {
+    const label = match[1].toLowerCase()
+    const parsed = parseInlineLink(source, (match.index ?? 0) + match[0].length)
+    if (!parsed) return true
+    const hostname = URL.canParse(parsed.href) ? new URL(parsed.href).hostname : undefined
     if (!hostname) return true
-    const normalizedLabel = label.toLowerCase()
-    return (normalizedLabel.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) || (normalizedLabel.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
+    return (label.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) || (label.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
   })
   if (mismatch) return [`${file}:1:external-link-mismatch`]
   return source.split("\n").flatMap((line, index) => {
@@ -114,4 +114,74 @@ function fileIsHistoricalTool(line: string, token: string) {
 
 function isAllowedWebHostname(hostname: string, domain: string) {
   return hostname === domain || hostname.endsWith(`.${domain}`)
+}
+
+function parseInlineLink(source: string, start: number) {
+  const destinationStart = skipWhitespace(source, start)
+  const angle = source[destinationStart] === "<"
+  const hrefStart = angle ? destinationStart + 1 : destinationStart
+  const hrefEnd = angle ? source.indexOf(">", hrefStart) : findBareDestinationEnd(source, hrefStart)
+  if (hrefEnd < 0 || hrefEnd === hrefStart) return
+  const href = source.slice(hrefStart, hrefEnd)
+  const suffixStart = angle ? hrefEnd + 1 : hrefEnd
+  const suffix = parseLinkSuffix(source, suffixStart)
+  if (suffix === undefined) return
+  return { href }
+}
+
+function skipWhitespace(source: string, start: number) {
+  let index = start
+  while (/\s/.test(source[index] ?? "")) index++
+  return index
+}
+
+function findBareDestinationEnd(source: string, start: number) {
+  let index = start
+  while (index < source.length && !/[\s)]/.test(source[index])) index++
+  return index
+}
+
+function parseLinkSuffix(source: string, start: number) {
+  const index = skipWhitespace(source, start)
+  if (source[index] === ")") return index + 1
+  if (source[index] === '"' || source[index] === "'") return parseQuotedTitle(source, index)
+  if (source[index] === "(") return parseParenthesizedTitle(source, index)
+  return
+}
+
+function parseQuotedTitle(source: string, start: number) {
+  const quote = source[start]
+  let index = start + 1
+  while (index < source.length) {
+    if (source[index] === "\\") {
+      index += 2
+      continue
+    }
+    if (source[index] === quote) return requireClosingLink(source, index + 1)
+    index++
+  }
+  return
+}
+
+function parseParenthesizedTitle(source: string, start: number) {
+  let depth = 1
+  let index = start + 1
+  while (index < source.length) {
+    if (source[index] === "\\") {
+      index += 2
+      continue
+    }
+    if (source[index] === "(") depth++
+    if (source[index] === ")") {
+      depth--
+      if (depth === 0) return requireClosingLink(source, index + 1)
+    }
+    index++
+  }
+  return
+}
+
+function requireClosingLink(source: string, start: number) {
+  const index = skipWhitespace(source, start)
+  return source[index] === ")" ? index + 1 : undefined
 }

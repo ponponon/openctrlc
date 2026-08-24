@@ -70,6 +70,15 @@ test("normalizes web URL audit matching without accepting disguises", () => {
   expect(scanText('[OpenCode.AI](<HTTPS://opencode.ai.evil.example/zen> "title")', "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
 })
 
+test("rejects malformed branded web links instead of skipping the audit", () => {
+  expect(scanText("[opencode.ai](https://evil.example/zen bad)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[opencode.ai](https://evil.example/zen", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[opencode.ai](https://[ bad)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText('[opencode.ai](<https://evil.example/zen> "a) b")', "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText('[opencode.ai](<https://opencode.ai/zen> "a) b")', "x.mdx")).toEqual([])
+  expect(scanText("opencode/gpt-5.5 and opencode-go/kimi-k3", "x.mdx")).toEqual([])
+})
+
 test("keeps every translated provider Zen link label aligned with its href", async () => {
   const root = path.resolve(import.meta.dirname, "..")
   const files = (await Bun.$`git ls-files packages/web/src/content/docs/**/providers.mdx packages/web/src/content/docs/providers.mdx`.cwd(root).text()).trim().split("\n")
