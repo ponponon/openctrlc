@@ -23,9 +23,22 @@ whose parent is `4f515e61ad7064d499c02f5ab2e78f47c40d37b5`. The current audit
 commit `4232dd8ea07c7a904268852d15c0a754334936a9` had that product fix as its
 parent. The current product fix is
 `fe8c0aa3ae236746c45d8a8c7631f2995599afe1 fix(identity): close final audit verification gaps`,
-whose parent is `4232dd8ea07c7a904268852d15c0a754334936a9`. This audit commit is
-created with `fe8c0aa3ae236746c45d8a8c7631f2995599afe1` as its parent; its own
-future SHA is intentionally not embedded to avoid self-reference.
+whose parent is `4232dd8ea07c7a904268852d15c0a754334936a9`.
+
+The runtime and persistence audit repair under review is
+`4b84c063586046370f9f6d9923b1896103e7430a fix(identity): automate final runtime and persistence audit`,
+whose parent is `5d191691b53e9518445bfb404f41ba25b9945f66`. The audit commit
+for that repair is `f64503569cae8aa78fbd999fa7a78f876e88b25e docs(identity): record OpenCtrlC namespace audit`,
+whose parent is `4b84c063586046370f9f6d9923b1896103e7430a`. The verified
+historical chain is
+`5d191691b53e9518445bfb404f41ba25b9945f66 -> 4b84c063586046370f9f6d9923b1896103e7430a -> f64503569cae8aa78fbd999fa7a78f876e88b25e`.
+
+The follow-up product repair is
+`c5d2a79 fix(identity): isolate runtime legacy-variable audit`, whose full SHA
+is `c5d2a797ba83bb9307e77bc1e66e2010828b15bb` and whose parent is
+`4b84c063586046370f9f6d9923b1896103e7430a`. This audit document is validated
+by that parent product repair; the current audit commit is intentionally not
+embedded here to avoid self-reference.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
@@ -84,9 +97,13 @@ runtime basis is `script/verify-openctrlc-runtime.ts`, runnable as either
 `bun run verify:runtime` or `bun script/verify-openctrlc-runtime.ts` from the
 repository root. It runs `--version`, `--help`, and `serve --help` with
 isolated `HOME`, all XDG roots, `TMPDIR`, `OPENCTRLC_TEST_HOME`, and
-`OPENCODE_TEST_HOME`; recursively rejects old paths and `.opencode`; requires
+`OPENCODE_TEST_HOME`; points the OpenCtrlC test home at the normal isolated
+home while reserving a separate legacy sentinel for the old variable;
+recursively rejects old paths and `.opencode`; requires
 `openctrlc` runtime directories; reports but excludes `cache/bun` Bun noise;
-preserves a sentinel; and exits non-zero for every failed assertion.
+recursively snapshots the sentinel tree to detect reads/writes by the child
+processes; cleans the temporary roots in `finally`; and exits non-zero for
+every failed assertion.
 The script was run against the current source. It passed all assertions: no
 `opencode` or `.opencode` path was created; `data`, `cache`, `config`, `state`,
 and `tmp` each contained `openctrlc`; `cache/bun` was reported as Bun noise;
