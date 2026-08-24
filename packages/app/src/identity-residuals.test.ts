@@ -18,9 +18,9 @@ test("uses the OpenCtrlC Vite server contract", async () => {
   expect(playwright).not.toContain("VITE_OPENCODE_SERVER_")
 })
 
-test("all E2E persistence fixtures use OpenCtrlC keys except the legacy negative", async () => {
+test("all E2E TypeScript fixtures use OpenCtrlC keys except the exact legacy negative", async () => {
   const specs: string[] = []
-  for await (const path of new Bun.Glob("e2e/**/*.spec.ts").scan({ cwd: "." })) specs.push(path)
+  for await (const path of new Bun.Glob("e2e/**/*.ts").scan({ cwd: "." })) specs.push(path)
 
   for (const path of specs) {
     const source = await read(path)
@@ -33,5 +33,11 @@ test("all E2E persistence fixtures use OpenCtrlC keys except the legacy negative
     expect(source).not.toContain("opencode.window.browser.dat")
   }
 
+  expect(await read("e2e/performance/timeline/timeline-test-helpers.ts")).toEqual(
+    expect.stringContaining("openctrlc.window.browser.dat:tabs"),
+  )
+  expect(await read("e2e/regression/cross-server-tab-close.spec.ts")).toEqual(
+    expect.stringContaining("openctrlc.global.dat:server"),
+  )
   expect(specs.length).toBeGreaterThan(0)
 })

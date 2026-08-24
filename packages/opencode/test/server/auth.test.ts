@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { Option, Redacted } from "effect"
 import { Flag } from "@openctrlc/core/flag/flag"
+import { Brand } from "@openctrlc/identity"
 import { ServerAuth } from "../../src/server/auth"
 
 const original = {
@@ -27,7 +28,7 @@ describe("ServerAuth", () => {
     Flag.OPENCTRLC_SERVER_USERNAME = undefined
 
     expect(ServerAuth.headers()).toEqual({
-      Authorization: `Basic ${Buffer.from("openctrlc:secret").toString("base64")}`,
+      Authorization: `Basic ${Buffer.from(`${Brand.cli}:secret`).toString("base64")}`,
     })
   })
 
@@ -54,6 +55,6 @@ describe("ServerAuth", () => {
 
     expect(ServerAuth.required(config)).toBe(true)
     expect(ServerAuth.authorized({ username: "alice", password: Redacted.make("secret") }, config)).toBe(true)
-    expect(ServerAuth.authorized({ username: "openctrlc", password: Redacted.make("secret") }, config)).toBe(false)
+    expect(ServerAuth.authorized({ username: Brand.cli, password: Redacted.make("secret") }, config)).toBe(false)
   })
 })

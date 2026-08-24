@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { Brand } from "@openctrlc/identity"
 import { authFromToken, authTokenFromCredentials } from "./server"
 
 describe("authFromToken", () => {
@@ -7,7 +8,7 @@ describe("authFromToken", () => {
   })
 
   test("defaults blank username to openctrlc", () => {
-    expect(authFromToken(btoa(":secret"))).toEqual({ username: "openctrlc", password: "secret" })
+    expect(authFromToken(btoa(":secret"))).toEqual({ username: Brand.cli, password: "secret" })
   })
 
   test("ignores malformed tokens", () => {
@@ -18,6 +19,6 @@ describe("authFromToken", () => {
 
 describe("authTokenFromCredentials", () => {
   test("encodes credentials with the default username", () => {
-    expect(authTokenFromCredentials({ password: "secret" })).toBe(btoa("openctrlc:secret"))
+    expect(authTokenFromCredentials({ password: "secret" })).toBe(btoa(`${Brand.cli}:secret`))
   })
 })

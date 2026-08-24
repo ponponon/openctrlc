@@ -6,6 +6,7 @@ import { LayerNode } from "@openctrlc/core/effect/layer-node"
 import { Effect } from "effect"
 import { testEffect } from "../lib/effect"
 import { MCP } from "../../src/mcp/index"
+import { Brand } from "@openctrlc/identity"
 
 const it = testEffect(LayerNode.compile(MCP.node))
 
@@ -68,7 +69,7 @@ describe("mcp.headers", () => {
         server.requests.find((request) => (request.body as { method?: string })?.method === "initialize")?.body,
       ).toMatchObject({
         method: "initialize",
-        params: { clientInfo: { name: "openctrlc" } },
+        params: { clientInfo: { name: Brand.cli } },
       })
     }),
   )

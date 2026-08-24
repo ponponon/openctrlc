@@ -2,6 +2,7 @@ import { test, expect, describe } from "bun:test"
 import { determineScope } from "@modelcontextprotocol/sdk/client/auth.js"
 import { McpOAuthProvider, OAUTH_CALLBACK_PORT, OAUTH_CALLBACK_PATH } from "../../src/mcp/oauth-provider"
 import type { McpAuth } from "../../src/mcp/auth"
+import { Brand } from "@openctrlc/identity"
 
 // Stub auth — only synchronous getters are exercised in these tests
 const stubAuth = {} as McpAuth.Interface
@@ -42,7 +43,8 @@ describe("McpOAuthProvider.clientMetadata", () => {
 
   test("uses the OpenCtrlC product identity for OAuth registration", () => {
     const provider = makeProvider({})
-    expect(provider.clientMetadata.client_name).toBe("OpenCtrlC")
+    expect(provider.clientMetadata.client_name).toBe(Brand.name)
+    expect(provider.clientMetadata.client_uri).toBe("https://openctrlc.ai")
   })
 
   test("includes scope when set in config", () => {

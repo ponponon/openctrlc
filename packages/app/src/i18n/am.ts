@@ -224,7 +224,7 @@ export const dict = {
   "provider.connect.apiKey.label": "{{provider}} API ቁልፍ",
   "provider.connect.apiKey.placeholder": "API ቁልፍ",
   "provider.connect.apiKey.required": "API ቁልፍ ያስፈልጋል",
-  "provider.connect.opencodeZen.line1": "OpenCode ዜን ለኮድ ወኪሎች የተመቻቹ አስተማማኝ ሞዴሎች ስብስብ መዳረሻ ይሰጥዎታል።",
+  "provider.connect.opencodeZen.line1": "OpenCode Zen ለኮድ ወኪሎች የተመቻቹ አስተማማኝ ሞዴሎች ስብስብ መዳረሻ ይሰጥዎታል።",
   "provider.connect.opencodeZen.line2": "በአንድ የAPI ቁልፍ እንደ Claude፣ GPT፣ Gemini፣ GLM እና ሌሎችም ያሉ ሞዴሎችን መድረስ ይችላሉ።",
   "provider.connect.opencodeZen.visit.prefix": "ጎብኝ ",
   "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",

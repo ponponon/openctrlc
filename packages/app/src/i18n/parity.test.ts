@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { DESKTOP_NATIVE_LOCALES, desktopNativePluralCategories } from "./desktop-native"
 import { dict as english } from "./en"
+import { Brand } from "@openctrlc/identity"
 
 const appLocales = DESKTOP_NATIVE_LOCALES.filter((locale) => locale !== "en")
 const desktopLocales = appLocales
@@ -54,15 +55,16 @@ describe("i18n parity", () => {
   })
 
   test("external OpenCode Zen copy keeps its service identity", async () => {
-    const amharic = await import("./am")
-    const greek = await import("./el")
-
-    expect(amharic.dict["provider.connect.opencodeZen.line1"]).toContain("OpenCode")
-    expect(amharic.dict["provider.connect.opencodeZen.line1"]).not.toContain("OpenCtrlC")
-    expect(greek.dict["provider.connect.opencodeZen.line1"]).toContain("OpenCode")
-    expect(greek.dict["provider.connect.opencodeZen.line1"]).not.toContain("OpenCtrlC")
-    expect(amharic.dict["provider.connect.opencodeZen.visit.link"]).toBe("opencode.ai/zen")
-    expect(greek.dict["provider.connect.opencodeZen.visit.link"]).toBe("opencode.ai/zen")
+    const bundles = [
+      english,
+      ...(await Promise.all(appLocales.map(async (locale) => (await import(`./${locale}`)).dict))),
+    ]
+    for (const bundle of bundles) {
+      expect(bundle["provider.connect.opencodeZen.line1"]).toContain("OpenCode Zen")
+      expect(bundle["provider.connect.opencodeZen.line1"]).not.toContain(Brand.name)
+      expect(bundle["provider.connect.opencodeZen.visit.link"]).toContain("opencode.ai/zen")
+      expect(bundle["provider.connect.opencodeZen.visit.link"]).not.toContain(Brand.urlScheme)
+    }
   })
   test("non-English locales have every English key and required plural variants", async () => {
     for (const domain of domains) {

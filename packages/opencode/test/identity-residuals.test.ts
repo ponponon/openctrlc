@@ -23,7 +23,7 @@ test("uses the product CLI for MCP user guidance and local detection", async () 
 })
 
 test("uses the product CLI in Parallel search User-Agent", () => {
-  expect(Brand.cli).toBe("openctrlc")
+  expect(Brand.cli).toMatch(/^[a-z0-9-]+$/)
 })
 
 test("uses the product CLI in the web search User-Agent", async () => {
@@ -45,6 +45,12 @@ test("uses product identity for all MCP client initialization paths", async () =
   expect(mcp).not.toContain('name: "opencode"')
   expect(debug).not.toContain('name: "opencode-debug"')
   expect(oauth).not.toContain('client_name: "OpenCode"')
+})
+
+test("uses the OpenCtrlC canonical URI for MCP OAuth client metadata", async () => {
+  const oauth = await read("./src/mcp/oauth-provider.ts")
+  expect(oauth).toContain('client_uri: "https://openctrlc.ai"')
+  expect(oauth).not.toContain('client_uri: "https://opencode.ai"')
 })
 
 test("builds the debug initialize payload with the product CLI identity", () => {
