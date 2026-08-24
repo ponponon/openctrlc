@@ -1,6 +1,20 @@
 import { expect, test } from "bun:test"
 import path from "node:path"
-import { scanText } from "./check-namespace"
+import { scanProductSource, scanText } from "./check-namespace"
+
+test("reports product-owned mDNS identity and webfetch fallback UA", () => {
+  expect(scanProductSource('const host = "opencode.local"', "packages/opencode/src/server/mdns.ts")).toEqual([
+    "packages/opencode/src/server/mdns.ts:1:opencode.local",
+  ])
+  expect(scanProductSource('"User-Agent": "opencode"', "packages/opencode/src/tool/webfetch.ts")).toEqual([
+    'packages/opencode/src/tool/webfetch.ts:1:"User-Agent": "opencode"',
+  ])
+})
+
+test("keeps exact external provider UA and environment contracts allowlisted", () => {
+  expect(scanProductSource('"User-Agent": `opencode/${version}`', "packages/opencode/src/plugin/xai.ts")).toEqual([])
+  expect(scanProductSource("OPENCODE_BASE_MODE", "packages/opencode/src/cli/cmd/run/footer.view.tsx")).toEqual([])
+})
 
 test("reports a product token beside an allowed external contract", () => {
   expect(scanText("OpenCode uses https://opencode.ai/docs for API docs.", "packages/web/src/content/docs/example.mdx")).toEqual([

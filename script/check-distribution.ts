@@ -2,13 +2,10 @@
 
 import path from "node:path"
 import { parse } from "yaml"
+import { Brand } from "@openctrlc/identity"
 
-const Brand = {
-  name: "OpenCtrlC",
-  cli: "openctrlc",
-} as const
-const ProductPackageName = "openctrlc-ai"
-const ProductBinaryName = "openctrlc.exe"
+const ProductPackageName = `${Brand.cli}-ai`
+const ProductBinaryName = `${Brand.cli}.exe`
 
 const root = path.resolve(import.meta.dirname, "..")
 const failures: string[] = []

@@ -45,6 +45,10 @@ const externalTokens = [
 const externalContext = /https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)|(?:^|[\[(\s])(?:awesome-opencode|oh-my-opencode|opencode(?:gent|-agent|-go)?)(?=[\])\s).,])/g
 const auditedScopes = [
   ".openctrlc/",
+  "packages/core/src/",
+  "packages/opencode/src/",
+  "packages/app/src/",
+  "packages/desktop/src/",
   "packages/web/src/content/docs/",
   "packages/core/src/plugin/skill/",
   "packages/console/app/src/i18n/",
@@ -72,6 +76,40 @@ export function scanText(source: string, file: string) {
   })
 }
 
+const productSourceRules = [
+  { pattern: /opencode\.local|opencode-\$\{port\}/g, allow: [] as RegExp[] },
+  {
+    pattern: /["'`]User-Agent["'`]\s*:\s*["'`]opencode(?:\/[^"'`]+)?["'`]/g,
+    allow: [
+      /packages\/core\/src\/plugin\/provider\//,
+      /packages\/core\/src\/tool\/(?:webfetch|websearch)\.ts/,
+      /packages\/opencode\/src\/plugin\//,
+      /packages\/opencode\/src\/provider\/provider\.ts/,
+    ],
+  },
+  {
+    pattern: /\bOPENCODE_[A-Z0-9_]+\b/g,
+    allow: [
+      /packages\/opencode\/src\/cli\/cmd\/run\/footer\.(?:prompt|view)\.tsx/,
+      /packages\/opencode\/src\/plugin\/openai\/README\.md/,
+      /packages\/opencode\/src\/session\/llm\/AGENTS\.md/,
+      /packages\/core\/src\/plugin\/provider\/opencode\.ts/,
+      /packages\/app\/src\/pages\/layout\/helpers\.ts/,
+    ],
+  },
+]
+
+export function scanProductSource(source: string, file: string) {
+  return source.split("\n").flatMap((line, index) =>
+    productSourceRules.flatMap((rule) => {
+      if (rule.allow.some((pattern) => pattern.test(file))) return []
+      return [...line.matchAll(new RegExp(rule.pattern.source, `${rule.pattern.flags.replace("g", "")}g`))].map(
+        (match) => `${file}:${index + 1}:${match[0]}`,
+      )
+    }),
+  )
+}
+
 if (import.meta.main) await run()
 
 async function run() {
@@ -92,6 +130,9 @@ async function run() {
   const violations = await Promise.all(
     tracked.map(async (file) => {
       if (ignored.has(file) || !auditedScopes.some((scope) => file.startsWith(scope)) || !/\.(md|mdx|ts|tsx|json|jsonc)$/.test(file)) return []
+      if (file.startsWith("packages/core/src/") || file.startsWith("packages/opencode/src/") || file.startsWith("packages/app/src/") || file.startsWith("packages/desktop/src/")) {
+        return scanProductSource(await Bun.file(path.join(root, file)).text(), file)
+      }
       return scanText(await Bun.file(path.join(root, file)).text(), file)
     }),
   ).then((results) => results.flat())

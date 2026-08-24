@@ -114,6 +114,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.933.0",
+    "@openctrlc/identity": "workspace:*",
     "@openctrlc/plugin": "workspace:*",
     "@openctrlc/script": "workspace:*",
     "@openctrlc/sdk": "workspace:*",
