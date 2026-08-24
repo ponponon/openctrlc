@@ -111,6 +111,31 @@ test("rejects lookalike external hostnames and query disguises", () => {
   ])
 })
 
+test("strict product source scanning parses bare URL hostnames exactly", () => {
+  expect(scanProductSource('const url = "https://opencode.ai/api"', "packages/app/src/entry.tsx")).toEqual([])
+  expect(scanProductSource('const url = "https://opencode.ai.evil.example/api"', "packages/app/src/entry.tsx")).toEqual([
+    "packages/app/src/entry.tsx:1:external-url-mismatch",
+  ])
+  expect(scanProductSource('const url = "https://evil.example/?next=opencode.ai/api"', "packages/app/src/entry.tsx")).toEqual([
+    "packages/app/src/entry.tsx:1:external-url-mismatch",
+  ])
+})
+
+test("App i18n only allows explicit provider and Zen contracts", () => {
+  expect(scanProductSource('const copy = "OpenCode"', "packages/app/src/i18n/en.ts")).toEqual([
+    "packages/app/src/i18n/en.ts:1:OpenCode",
+  ])
+  expect(
+    scanProductSource(
+      '"provider.connect.opencodeZen.line1": "OpenCode Zen gives access to curated models."',
+      "packages/app/src/i18n/en.ts",
+    ),
+  ).toEqual([])
+  expect(scanProductSource('"dialog.provider.opencode.note": "OpenCode models"', "packages/app/src/i18n/en.ts")).toEqual(
+    [],
+  )
+})
+
 test("reports malformed web URLs as external link mismatches", () => {
   expect(scanText("[opencode.ai](https://[)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
 })

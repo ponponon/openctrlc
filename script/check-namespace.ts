@@ -105,7 +105,6 @@ const productContractAllowlist: Array<{ file: RegExp; line: RegExp }> = [
   { file: /packages\/app\/src\/context\/file\/path\.test\.ts$/, line: /.*opencode.*/ },
   { file: /packages\/app\/src\/context\/global-sync\/utils\.test\.ts$/, line: /.*opencode.*/ },
   { file: /packages\/app\/src\/context\/server\.test\.ts$/, line: /.*opencode.*/ },
-  { file: /packages\/app\/src\/i18n\/[^/]+\.ts$/, line: /.*OpenCode.*/ },
   {
     file: /packages\/core\/src\/plugin\/provider\/[^/]+\.ts$/,
     line: /.*(?:User-Agent|X-Title|X-Source|HTTP-Referer|http-referer|X-BILLING|Integration|opencode\.ai).*opencode.*/,
@@ -222,6 +221,10 @@ export function scanText(source: string, file: string, strictExternal = false) {
 
 export function scanProductSource(source: string, file: string) {
   const violations = scanText(source, file, true)
+  violations.push(...findBareUrlMismatches(source, file))
+  if (/^packages\/app\/src\/i18n\/[^/]+\.ts$/.test(file)) {
+    return [...new Set(violations)].filter((violation) => !isAllowedAppI18nViolation(violation, source, file))
+  }
   if (file === "packages/opencode/src/server/mdns.ts") {
     violations.push(
       ...source
@@ -250,6 +253,13 @@ export function scanProductSource(source: string, file: string) {
     )
   }
   return [...new Set(violations)]
+}
+
+function isAllowedAppI18nViolation(violation: string, source: string, file: string) {
+  if (!/^packages\/app\/src\/i18n\/[^/]+\.ts$/.test(file)) return false
+  const line = Number(violation.match(/:(\d+):/)?.[1])
+  const lines = source.split("\n")
+  return /"(?:dialog\.provider\.opencode|provider\.connect\.opencodeZen)[^"]*"\s*:/.test(lines[line - 2] ?? "")
 }
 
 if (import.meta.main) await run()
@@ -325,8 +335,9 @@ function isContractToken(line: string, offset: number, token: string, tokenCount
   if (token === "OpenCode") {
     return (
       /OpenCode\s+Zen/.test(line) ||
-      (tokenCount === 1 && !/https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)/.test(line)) ||
+      (tokenCount === 1 && !isAppI18nFile(line) && !/https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)/.test(line)) ||
       /@opencode-ai\//.test(line) ||
+      /(?:dialog\.provider\.opencode|provider\.connect\.opencodeZen)/.test(line) ||
       /provider:\s*\{[^\n]*name:\s*["'`]OpenCode["'`]/.test(line)
     )
   }
@@ -344,12 +355,29 @@ function isContractToken(line: string, offset: number, token: string, tokenCount
   )
 }
 
+function isAppI18nFile(line: string) {
+  return line.includes("provider.connect.opencodeZen") || line.includes("dialog.provider.opencode")
+}
+
 function fileIsHistoricalTool(line: string, token: string) {
   return token === "opencode" && /const repo = "opencode"/.test(line)
 }
 
 function isAllowedWebHostname(hostname: string, domain: string) {
   return hostname === domain || hostname.endsWith(`.${domain}`)
+}
+
+function findBareUrlMismatches(source: string, file: string) {
+  return source.split("\n").flatMap((line, index) =>
+    [...line.matchAll(/https?:\/\/[^\s)`"'<>]+/gi)].flatMap((match) => {
+      const href = match[0]
+      if (!href.toLowerCase().includes("opencode.ai")) return []
+      if (!URL.canParse(href)) return `${file}:${index + 1}:external-url-mismatch`
+      const hostname = new URL(href).hostname.toLowerCase()
+      if (hostname === "opencode.ai" || hostname.endsWith(".opencode.ai")) return []
+      return `${file}:${index + 1}:external-url-mismatch`
+    }),
+  )
 }
 
 function parseInlineLink(source: string, start: number) {
