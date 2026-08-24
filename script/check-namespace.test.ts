@@ -54,6 +54,10 @@ test("rejects lookalike external hostnames and query disguises", () => {
   expect(scanText("[openctrlc.ai](https://evil.example/?next=openctrlc.ai)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
 })
 
+test("reports malformed web URLs as external link mismatches", () => {
+  expect(scanText("[opencode.ai](https://[)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+})
+
 test("keeps every translated provider Zen link label aligned with its href", async () => {
   const root = path.resolve(import.meta.dirname, "..")
   const files = (await Bun.$`git ls-files packages/web/src/content/docs/**/providers.mdx packages/web/src/content/docs/providers.mdx`.cwd(root).text()).trim().split("\n")

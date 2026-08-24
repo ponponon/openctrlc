@@ -54,7 +54,8 @@ export function scanText(source: string, file: string) {
   const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\((https?:\/\/[^)]+)\)/g)].some((match) => {
     const label = match[1]
     const href = match[2]
-    const hostname = new URL(href).hostname
+    const hostname = URL.canParse(href) ? new URL(href).hostname : undefined
+    if (!hostname) return true
     return (label.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) || (label.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
   })
   if (mismatch) return [`${file}:1:external-link-mismatch`]
