@@ -47,6 +47,13 @@ test("reports mismatched external domain labels and hrefs", () => {
   ])
 })
 
+test("rejects lookalike external hostnames and query disguises", () => {
+  expect(scanText("[opencode.ai](https://opencode.ai.evil.example/zen)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[opencode.ai](https://evil.example/?next=opencode.ai)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[openctrlc.ai](https://openctrlc.ai.evil.example/zen)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+  expect(scanText("[openctrlc.ai](https://evil.example/?next=openctrlc.ai)", "x.mdx")).toEqual(["x.mdx:1:external-link-mismatch"])
+})
+
 test("keeps every translated provider Zen link label aligned with its href", async () => {
   const root = path.resolve(import.meta.dirname, "..")
   const files = (await Bun.$`git ls-files packages/web/src/content/docs/**/providers.mdx packages/web/src/content/docs/providers.mdx`.cwd(root).text()).trim().split("\n")
