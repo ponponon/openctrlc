@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect"
 import { HttpClient, HttpClientRequest } from "effect/unstable/http"
 import { Parser } from "htmlparser2"
+import { Brand } from "@openctrlc/identity"
 import * as Tool from "./tool"
 import TurndownService from "turndown"
 import DESCRIPTION from "./webfetch.txt"
@@ -85,7 +86,7 @@ export const WebFetchTool = Tool.define(
               () =>
                 httpOk.execute(
                   HttpClientRequest.get(params.url).pipe(
-                    HttpClientRequest.setHeaders({ ...headers, "User-Agent": "opencode" }),
+                    HttpClientRequest.setHeaders({ ...headers, "User-Agent": Brand.cli }),
                   ),
                 ),
             ),

@@ -1,4 +1,5 @@
 import { Bonjour } from "bonjour-service"
+import { Brand } from "@openctrlc/identity"
 
 let bonjour: Bonjour | undefined
 let currentPort: number | undefined
@@ -8,8 +9,8 @@ export function publish(port: number, domain?: string) {
   if (bonjour) unpublish()
 
   try {
-    const host = domain ?? "opencode.local"
-    const name = `opencode-${port}`
+    const host = domain ?? `${Brand.cli}.local`
+    const name = `${Brand.cli}-${port}`
     bonjour = new Bonjour()
     const service = bonjour.publish({
       name,

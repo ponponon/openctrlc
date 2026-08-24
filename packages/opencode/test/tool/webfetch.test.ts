@@ -1,4 +1,5 @@
 import { describe, expect } from "bun:test"
+import { Brand } from "@openctrlc/identity"
 import { LayerNode } from "@openctrlc/core/effect/layer-node"
 import { httpClient } from "@openctrlc/core/effect/app-node-platform"
 import { Effect, Layer } from "effect"
@@ -44,6 +45,26 @@ const exec = Effect.fn("WebFetchToolTest.exec")(function* (args: Tool.InferParam
 })
 
 describe("tool.webfetch", () => {
+  it.instance("uses the product User-Agent for the Cloudflare challenge retry", () =>
+    Effect.gen(function* () {
+      const userAgents: string[] = []
+      let attempts = 0
+      yield* withFetch(
+        (request) => {
+          userAgents.push(request.headers.get("user-agent") ?? "")
+          attempts++
+          if (attempts === 1) {
+            return new Response("challenge", { status: 403, headers: { "cf-mitigated": "challenge" } })
+          }
+          return new Response("ok", { status: 200, headers: { "content-type": "text/plain" } })
+        },
+        (url) => Effect.as(exec({ url: new URL("/challenge", url).toString(), format: "text" }), undefined),
+      )
+
+      expect(userAgents).toEqual([expect.stringContaining("Mozilla/5.0"), Brand.cli])
+    }),
+  )
+
   it.instance("returns image responses as file attachments", () =>
     Effect.gen(function* () {
       const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])

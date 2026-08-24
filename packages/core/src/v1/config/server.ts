@@ -1,6 +1,7 @@
 export * as ConfigServerV1 from "./server"
 
 import { Schema } from "effect"
+import { Brand } from "@openctrlc/identity"
 import { PositiveInt } from "../../schema"
 
 export const Server = Schema.Struct({
@@ -10,7 +11,7 @@ export const Server = Schema.Struct({
   hostname: Schema.optional(Schema.String).annotate({ description: "Hostname to listen on" }),
   mdns: Schema.optional(Schema.Boolean).annotate({ description: "Enable mDNS service discovery" }),
   mdnsDomain: Schema.optional(Schema.String).annotate({
-    description: "Custom domain name for mDNS service (default: opencode.local)",
+    description: `Custom domain name for mDNS service (default: ${Brand.cli}.local)`,
   }),
   cors: Schema.optional(Schema.mutable(Schema.Array(Schema.String))).annotate({
     description: "Additional domains to allow for CORS",
