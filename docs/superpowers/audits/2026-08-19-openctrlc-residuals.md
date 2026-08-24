@@ -10,9 +10,9 @@ The final product repair commit is:
 
 The final audit commit for this document is recorded after the product repair:
 
-`73db10fbdf95db8efb06ba37c08848a9d19c2c26 docs(identity): record OpenCtrlC namespace audit`
+`8df1ada81fc361feb12fde0920daf75e8247d047 docs(identity): record OpenCtrlC namespace audit`
 
-`document content committed in 73db10fbdf95db8efb06ba37c08848a9d19c2c26`
+`document content committed in 8df1ada81fc361feb12fde0920daf75e8247d047`
 
 The audit-only commit for this document is:
 
