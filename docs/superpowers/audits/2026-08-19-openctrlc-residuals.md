@@ -4,9 +4,13 @@ Date: 2026-08-24
 
 ## Current Result
 
-The final product repair is:
+The final product/test repair is:
 
-`f103e4c fix(identity): close final runtime audit gaps`
+`13cdd7f11f76878f3b6f5a56ca5a1104cbe16739 fix(identity): tighten final audit evidence`
+
+The preceding complete audit commit is:
+
+`0de986e9dfd76101e00e386b1358c7d1e2019dbe docs(identity): record OpenCtrlC namespace audit`
 
 The audit-only commit for this document is:
 
@@ -19,9 +23,10 @@ persistence key is the exact negative migration fixture
 old `opencode.*.dat` keys and the timeline and cross-server fixtures assert
 the new `openctrlc.*.dat` keys.
 
-The App i18n parity test dynamically loads every App locale and verifies the
-external OpenCode Zen copy retains `OpenCode Zen` and `opencode.ai/zen`, while
-rejecting the OpenCtrlC product identity and URL scheme in that provider copy.
+The App i18n parity test dynamically loads all 62 App locales, including
+English, and verifies the external OpenCode Zen copy retains the exact
+`opencode.ai/zen` link value and expected key structure, while rejecting the
+OpenCtrlC product identity and URL scheme in that provider copy.
 
 ## Product Changes
 
@@ -73,11 +78,26 @@ env -i HOME="$tmp/home" XDG_DATA_HOME="$tmp/data" XDG_CACHE_HOME="$tmp/cache" \
 ```
 
 The recursive assertion inspected all six isolated roots and the old
-directory. It found only OpenCtrlC runtime directories under the isolated
-roots (`data/openctrlc`, `cache/openctrlc`, `config/openctrlc`,
-`state/openctrlc`, and `tmp/openctrlc`); no `opencode` or `.opencode` path was
-created, and the old sentinel directory was unchanged. The CLI output used
-`openctrlc` commands and `openctrlc serve`.
+directory. It found the expected OpenCtrlC runtime directories
+(`data/openctrlc`, `cache/openctrlc`, `config/openctrlc`, `state/openctrlc`,
+and `tmp/openctrlc`). The additional `cache/bun` tree is Bun's package/cache
+tool noise, not an OpenCode runtime path. No `opencode` or `.opencode` path
+was created, and the old sentinel directory was unchanged. The CLI output
+used `openctrlc` commands and `openctrlc serve`.
+
+Recorded smoke evidence:
+
+```text
+sentinel SHA-256 before: 1bf84fec72db3e64c8db4e4add5d1a5b1f2ccc1e4870aa95745ccaa05859c0c3
+sentinel SHA-256 after:  1bf84fec72db3e64c8db4e4add5d1a5b1f2ccc1e4870aa95745ccaa05859c0c3
+
+data:   ./openctrlc, ./openctrlc/log, ./openctrlc/repos
+cache:  ./bun, ./bun/@t@, ./openctrlc, ./openctrlc/bin
+config: ./openctrlc
+state:  ./openctrlc
+tmp:    ./openctrlc
+old:    ./, ./sentinel.txt
+```
 
 ## Commands And Evidence
 
@@ -103,6 +123,9 @@ Observed results:
 - Core full suite: `1096 pass, 0 fail`; typecheck passed.
 - OpenCode focused identity/MCP/websearch/auth suite: `39 pass, 0 fail`; typecheck passed.
 - App focused identity/i18n/auth suite: `13 pass, 0 fail`; typecheck passed.
+- Final OpenCode identity residual suite (`packages/opencode/test/identity-residuals.test.ts`): `7 pass, 0 fail`; package typecheck passed.
+- Final App identity/parity suites (`packages/app/src/identity-residuals.test.ts` and
+  `packages/app/src/i18n/parity.test.ts`): `9 pass, 0 fail`; package typecheck passed.
 - Desktop focused identity/renderer suite: `82 pass, 0 fail`; typecheck passed.
 - Web production build: passed. Existing large-chunk and prerender request-header
   warnings remain non-fatal.
@@ -116,17 +139,22 @@ Observed results:
 - Core full tests completed successfully as recorded above.
 - OpenCode full `bun test && bun typecheck` was started with the repository
   suite. The command exceeded the 120-second tool timeout after extensive
-  passing output, so it is not reported as a completed full-suite pass; the
-  focused identity/MCP suite and typecheck completed successfully.
+  passing output, so it is not reported as a completed full-suite pass. The
+  final focused evidence is `packages/opencode/test/identity-residuals.test.ts`
+  with `7 pass, 0 fail`, followed by package typecheck.
 - App full `bun test && bun typecheck` reached `651 pass, 10 fail, 6 errors`
-  before typecheck. Known failures were the existing `solid-js/web` named
-  export `use` incompatibility in browser-dependent tests and the existing
-  macOS ICU likely-subtag failure for `pa-PK` (`en` instead of `pa`). The
-  focused identity/i18n suite is green.
+  before typecheck. The failure/error summary was the existing
+  `solid-js/web` named export `use` incompatibility in browser-dependent tests
+  and the existing macOS ICU likely-subtag failure for `pa-PK` (`en` instead of
+  `pa`). The final focused evidence is
+  `packages/app/src/identity-residuals.test.ts` plus
+  `packages/app/src/i18n/parity.test.ts`, with `9 pass, 0 fail`, followed by
+  package typecheck.
 - Desktop full `bun test && bun typecheck` had one existing environment
-  failure in `src/main/draft-store.test.ts` because this Bun runtime lacks the
-  built-in `node:sqlite` module; the focused desktop identity/renderer suite
-  and typecheck are green.
+  failure in `packages/desktop/src/main/draft-store.test.ts` because this Bun
+  runtime lacks the built-in `node:sqlite` module. The focused desktop
+  identity/renderer suite and typecheck were green; Desktop was not changed
+  by this repair.
 - Desktop packaging was not run on this macOS host. Prior verification also
   records the unpublished platform npm package limitation after prebuild.
 - Browser E2E and platform packaging were not used as namespace evidence;
