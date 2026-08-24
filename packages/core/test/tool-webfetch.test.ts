@@ -3,6 +3,7 @@ import { Duration, Effect, Fiber, Layer, Schema } from "effect"
 import * as TestClock from "effect/testing/TestClock"
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { AppNodeBuilder } from "@openctrlc/core/effect/app-node-builder"
+import { Brand } from "@openctrlc/identity"
 import { LayerNode } from "@openctrlc/core/effect/layer-node"
 import { LayerNodePlatform } from "@openctrlc/core/effect/app-node-platform"
 import { PermissionV2 } from "@openctrlc/core/permission"
@@ -260,7 +261,7 @@ describe("WebFetchTool registration", () => {
       })
       expect(requests).toHaveLength(2)
       expect(requests[0]?.headers["user-agent"]).toContain("Mozilla/5.0")
-      expect(requests[1]?.headers["user-agent"]).toBe("opencode")
+      expect(requests[1]?.headers["user-agent"]).toBe(Brand.cli)
     }),
   )
 

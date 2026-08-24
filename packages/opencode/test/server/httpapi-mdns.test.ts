@@ -72,6 +72,19 @@ describe("HttpApi Server.listen mDNS", () => {
     expect(events.some((e) => e.kind === "destroy")).toBe(true)
   })
 
+  test("uses an explicitly configured mDNS domain", async () => {
+    Flag.OPENCTRLC_SERVER_PASSWORD = "mdns-secret"
+    Flag.OPENCTRLC_SERVER_USERNAME = Brand.cli
+    const listener = await Server.listen({ hostname: "0.0.0.0", port: 0, mdns: true, mdnsDomain: "custom.local" })
+    try {
+      const published = events.filter((e) => e.kind === "publish")
+      expect(published).toHaveLength(1)
+      expect(published[0]!.host).toBe("custom.local")
+    } finally {
+      await withTimeout(listener.stop(true), 10_000, "timed out stopping custom-domain mdns listener")
+    }
+  })
+
   test("scope finalizer unpublishes even if stop() is not called for force-close", async () => {
     Flag.OPENCTRLC_SERVER_PASSWORD = "mdns-secret"
     Flag.OPENCTRLC_SERVER_USERNAME = Brand.cli

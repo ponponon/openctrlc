@@ -2,6 +2,16 @@ import { describe, expect, test } from "bun:test"
 import { OauthCallbackPage } from "../src/oauth/page"
 
 describe("OauthCallbackPage", () => {
+  test("uses the OpenCtrlC product identity in callback copy", () => {
+    const success = OauthCallbackPage.success({ provider: "xAI" })
+    const error = OauthCallbackPage.error("nope", { provider: "xAI" })
+
+    expect(success).toContain("OpenCtrlC is now connected to xAI.")
+    expect(error).toContain("OpenCtrlC couldn't finish connecting to xAI.")
+    expect(success).not.toContain("OpenCode")
+    expect(error).not.toContain("OpenCode")
+  })
+
   test("escapes bootstrap options embedded in the inline script", () => {
     const html = OauthCallbackPage.bootstrap({
       provider: `xAI</script><script>alert("provider")</script>`,

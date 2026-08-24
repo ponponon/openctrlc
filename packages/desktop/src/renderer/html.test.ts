@@ -44,6 +44,12 @@ describe("electron renderer html", () => {
         expect(content).toContain("<title>OpenCtrlC</title>")
         expect(content).not.toContain("<title>OpenCode</title>")
       })
+
+      test("uses a local product favicon for notifications", async () => {
+        const content = await Bun.file(join(dir, "index.tsx")).text()
+        expect(content).toContain('icon: "./favicon-96x96-v3.png"')
+        expect(content).not.toContain("opencode.ai/favicon")
+      })
     })
   }
 })

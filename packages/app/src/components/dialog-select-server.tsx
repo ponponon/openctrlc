@@ -20,8 +20,9 @@ import { detectServerProtocol } from "@/utils/server-protocol"
 import { type ServerHealth, useCheckServerHealth } from "@/utils/server-health"
 import { useSettings } from "@/context/settings"
 import { useTabs } from "@/context/tabs"
+import { Brand } from "@openctrlc/identity"
 
-const DEFAULT_USERNAME = "opencode"
+const DEFAULT_USERNAME = Brand.cli
 
 interface ServerFormProps {
   value: string
@@ -204,7 +205,7 @@ export function useServerManagementController(options: { onSelect?: () => void; 
     addServer: {
       url: "",
       name: "",
-      username: DEFAULT_USERNAME,
+      username: String(DEFAULT_USERNAME),
       password: "",
       error: "",
       showForm: false,
@@ -225,7 +226,7 @@ export function useServerManagementController(options: { onSelect?: () => void; 
     setStore("addServer", {
       url: "",
       name: "",
-      username: DEFAULT_USERNAME,
+      username: String(DEFAULT_USERNAME),
       password: "",
       error: "",
       showForm: false,
@@ -473,7 +474,7 @@ export function useServerManagementController(options: { onSelect?: () => void; 
       showForm: true,
       url: "",
       name: "",
-      username: DEFAULT_USERNAME,
+      username: String(DEFAULT_USERNAME),
       password: "",
       error: "",
       status: undefined,

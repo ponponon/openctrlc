@@ -1,7 +1,8 @@
 import path from "node:path"
 
 const root = path.resolve(import.meta.dirname, "..")
-const productTokens = /OpenCode|opencode|OPENCODE_|\.opencode|opencode\.jsonc?|opencode\.json|@opencode-ai\/[A-Za-z0-9._-]+/g
+const productTokens =
+  /OpenCode|opencode|OPENCODE_[A-Z0-9_]+|\.opencode|opencode\.jsonc?|opencode\.json|@opencode-ai\/[A-Za-z0-9._-]+/g
 const externalTokens = [
   /https?:\/\/[^\s)`"]*opencode\.ai[^\s)`"]*/,
   /https?:\/\/[^\s)`"]*anomalyco\/opencode[^\s)`"]*/,
@@ -42,7 +43,141 @@ const externalTokens = [
   /github\.com\/anomalyco\/opencode\/(?:issues|pull|actions)/,
   /\[[^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*\]\((?:<[^>]+>|[^)]*)\)/i,
 ]
-const externalContext = /https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)|(?:^|[\[(\s])(?:awesome-opencode|oh-my-opencode|opencode(?:gent|-agent|-go)?)(?=[\])\s).,])/g
+const externalContext =
+  /https?:\/\/[^\s)`"]*opencode(?:\.ai|\/)|(?:^|[\[(\s])(?:awesome-opencode|oh-my-opencode|opencode(?:gent|-agent|-go)?)(?=[\])\s).,])/g
+const productContractAllowlist: Array<{ file: RegExp; line: RegExp }> = [
+  {
+    file: /packages\/app\/src\/i18n\/[^/]+\.ts$/,
+    line: /.*(?:dialog\.provider\.opencode|provider\.connect\.opencodeZen|opencode\.ai\/zen).*/,
+  },
+  {
+    file: /packages\/app\/src\/components\/(?:dialog-connect-provider|dialog-select-model(?:-unpaid|-unpaid-v2)?|settings-providers|settings-v2\/providers)\.tsx$/,
+    line: /(?:id|provider)\s*===?\s*["'`]opencode|["'`]opencode(?:-go)?["'`]|opencode\.ai\/zen|\.opencode/,
+  },
+  { file: /packages\/app\/src\/components\/dialog-.*\.stories\.tsx$/, line: /.*(?:OpenCode|["'`]opencode["'`]).*/ },
+  {
+    file: /packages\/app\/src\/(?:context|utils|pages\/session)\/.*\.(?:ts|tsx)$/,
+    line: /.*(?:OpenCodeEvent|OpenCodeClient|@opencode-ai\/client|@opencode-ai\/sdk).*/,
+  },
+  {
+    file: /packages\/app\/src\/(?:context|utils|pages\/session)\/.*\.(?:ts|tsx)$/,
+    line: /.*(?:opencode\.(?:window|global)|opencode-titlebar|legacy.*opencode|opencode\.dat).*/i,
+  },
+  {
+    file: /packages\/app\/src\/i18n\/(?:parity|wsl-identity)\.test\.ts$/,
+    line: /.*(?:OpenCode|opencode|\.opencode).*/,
+  },
+  { file: /packages\/app\/src\/theme-preload\.test\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/utils\/(?:persist|terminal-websocket-url)\.test\.ts$/, line: /.*opencode.*/ },
+  {
+    file: /packages\/app\/src\/utils\/(?:comment-note|draft-store|session-export)\.ts$/,
+    line: /.*(?:opencode|\.opencode).*/,
+  },
+  { file: /packages\/app\/src\/utils\/server(?:-health)?\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/app\/src\/entry\.tsx$/, line: /.*opencode\.ai.*/ },
+  { file: /packages\/app\/src\/hooks\/use-providers\.ts$/, line: /.*["'`]opencode(?:-go)?["'`].*/ },
+  {
+    file: /packages\/app\/src\/components\/(?:session\/session-header|titlebar|titlebar-session-events|windows-app-menu)\.[^.]+$/,
+    line: /.*opencode.*/,
+  },
+  { file: /packages\/app\/src\/components\/terminal\.tsx$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/components\/windows-app-menu\.tsx$/, line: /.*OpenCode.*/ },
+  {
+    file: /packages\/app\/src\/components\/prompt-input\/build-request-parts\.test\.ts$/,
+    line: /.*(?:opencode|\.opencode).*/,
+  },
+  {
+    file: /packages\/app\/src\/components\/(?:dialog-select-model-unpaid|dialog-select-model-unpaid-v2)\.tsx$/,
+    line: /.*(?:opencode|\.opencode).*/,
+  },
+  {
+    file: /packages\/app\/src\/components\/settings-(?:providers|v2\/providers)\.tsx$/,
+    line: /.*(?:opencode|\.opencode).*/,
+  },
+  {
+    file: /packages\/app\/src\/context\/(?:file\/path|global-sync\/bootstrap|global-sync\/utils|server)\.(?:ts|tsx)$/,
+    line: /.*opencode.*/,
+  },
+  { file: /packages\/app\/src\/identity-residuals\.test\.ts$/, line: /.*(?:opencode|OPENCODE_).*/ },
+  { file: /packages\/app\/src\/pages\/layout\/helpers\.ts$/, line: /.*OPENCODE_PROJECT_ID.*/ },
+  { file: /packages\/app\/src\/pages\/session\/usage-exceeded-dialogs\.tsx$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/utils\/(?:server-compat|server-errors)\.test\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/context\/file\/path\.test\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/context\/global-sync\/utils\.test\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/context\/server\.test\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/app\/src\/i18n\/[^/]+\.ts$/, line: /.*OpenCode.*/ },
+  {
+    file: /packages\/core\/src\/plugin\/provider\/[^/]+\.ts$/,
+    line: /.*(?:User-Agent|X-Title|X-Source|HTTP-Referer|http-referer|X-BILLING|Integration|opencode\.ai).*opencode.*/,
+  },
+  { file: /packages\/core\/src\/plugin\/provider\/opencode\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/core\/src\/plugin\/provider\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/core\/src\/plugin\/provider\/(?:nvidia|vercel)\.ts$/, line: /.*(?:OpenCode|opencode).*/ },
+  { file: /packages\/core\/src\/plugin\/skill\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/core\/src\/tool\/websearch\.ts$/, line: /.*User-Agent.*opencode.*/ },
+  { file: /packages\/core\/src\/plugin\/provider\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/core\/src\/plugin\/provider\/(?:nvidia|openai|vercel)\.ts$/, line: /.*(?:OpenCode|opencode).*/ },
+  { file: /packages\/core\/src\/plugin\/skill\.ts$/, line: /.*opencode.*/ },
+  {
+    file: /packages\/core\/src\/(?:catalog|observability\/otlp|file-mutation|shell|tool\/AGENTS|v1\/config\/lsp)\.[^.]+$/,
+    line: /.*(?:opencode|OpenCode).*/,
+  },
+  {
+    file: /packages\/opencode\/src\/(?:acp|account|auth|config\/managed|control-plane\/dev|ide|plugin|provider|server|session|skill|util|worktree)\/.*\.(?:ts|tsx|md|mdx)$/,
+    line: /(?:User-Agent|originator|X-Title|X-Source|@opencode|OpenCodeEvent|ProviderV2|providerID|provider\.id|OPENCODE_)[^;\n]*(?:OpenCode|opencode)/,
+  },
+  { file: /packages\/opencode\/src\/plugin\/openai\/codex\.ts$/, line: /.*(?:originator|User-Agent).*opencode.*/ },
+  {
+    file: /packages\/opencode\/src\/plugin\/(?:digitalocean|github-copilot\/copilot|snowflake-cortex|xai)\.ts$/,
+    line: /.*User-Agent.*opencode.*/,
+  },
+  { file: /packages\/opencode\/src\/cli\/cmd\/run\/footer\.(?:prompt|view)\.tsx$/, line: /.*OPENCODE_.*/ },
+  { file: /packages\/opencode\/src\/plugin\/openai\/README\.md$/, line: /.*OPENCODE_.*/ },
+  { file: /packages\/opencode\/src\/session\/llm\/AGENTS\.md$/, line: /.*(?:OPENCODE_|@opencode|opencode).*/ },
+  { file: /packages\/opencode\/src\/skill\/index\.ts$/, line: /.*OPENCODE_.*/ },
+  { file: /packages\/opencode\/src\/session\/llm\.ts$/, line: /.*@opencode-ai\/llm.*/ },
+  { file: /packages\/opencode\/src\/session\/llm\/request\.ts$/, line: /.*x-opencode-.*/ },
+  { file: /packages\/opencode\/src\/plugin\/shared\.ts$/, line: /.*(?:opencode|\.opencode).*/ },
+  { file: /packages\/opencode\/src\/server\/routes\/instance\/httpapi\/.*\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/opencode\/src\/server\/(?:proxy-util|shared\/.*)\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/worktree\/index\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/config\/managed\.ts$/, line: /.*(?:opencode|OpenCode|\.opencode).*/ },
+  { file: /packages\/opencode\/src\/ide\/index\.ts$/, line: /.*\.opencode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/openai\/ws-pool\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/github-copilot\/models\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/(?:digitalocean|snowflake-cortex)\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/provider\/(?:error|provider|transform)\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/opencode\/src\/session\/retry\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/cli\/cmd\/run\/footer\.prompt\.tsx$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/session\/llm\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/session\/llm\/native-request\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/session\/llm\/request\.ts$/, line: /.*providerID\.startsWith\("opencode"\).*/ },
+  { file: /packages\/opencode\/src\/tool\/registry\.ts$/, line: /.*\.opencode.*/ },
+  { file: /packages\/opencode\/src\/util\/process\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/account\/account\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/cli\/cmd\/(?:github\.handler|models|providers)\.ts$/, line: /.*opencode.*/ },
+  {
+    file: /packages\/opencode\/src\/cli\/cmd\/run\/(?:demo|footer\.command|footer\.permission|permission\.shared|splash)\.(?:ts|tsx)$/,
+    line: /.*(?:opencode|OpenCode).*/,
+  },
+  { file: /packages\/opencode\/src\/cli\/cmd\/(?:serve|web)\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/acp\/(?:service|usage)\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/opencode\/src\/auth\/index\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/control-plane\/dev\/README\.md$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/shared\.ts$/, line: /.*(?:opencode|\.opencode).*/ },
+  { file: /packages\/opencode\/src\/plugin\/openai\/ws-pool\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/github-copilot\/models\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/(?:digitalocean|snowflake-cortex)\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/opencode\/src\/plugin\/xai\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/provider\/(?:error|provider|transform)\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/opencode\/src\/server\/(?:proxy-util|shared\/.*)\.ts$/, line: /.*opencode.*/ },
+  { file: /packages\/opencode\/src\/server\/routes\/instance\/httpapi\/.*\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/opencode\/src\/session\/retry\.ts$/, line: /.*OpenCode.*/ },
+  { file: /packages\/desktop\/src\/main\/.*\.test\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/desktop\/src\/renderer\/(?:html|window-state)\.test\.ts$/, line: /.*(?:opencode|OpenCode).*/ },
+  { file: /packages\/opencode\/src\/server\/mdns\.ts$/, line: /.*(?:opencode\.local|opencode-\$\{port\}).*/ },
+  { file: /packages\/opencode\/src\/tool\/webfetch\.ts$/, line: /.*User-Agent.*opencode.*/ },
+]
 const auditedScopes = [
   ".openctrlc/",
   "packages/core/src/",
@@ -55,59 +190,74 @@ const auditedScopes = [
   "packages/console/support/src/",
 ]
 
-export function scanText(source: string, file: string) {
+export function scanText(source: string, file: string, strictExternal = false) {
   const mismatch = [...source.matchAll(/\[([^\]]*(?:opencode\.ai|openctrlc\.ai)[^\]]*)\]\(/gi)].some((match) => {
     const label = match[1].toLowerCase()
     const parsed = parseInlineLink(source, (match.index ?? 0) + match[0].length)
     if (!parsed) return true
     const hostname = URL.canParse(parsed.href) ? new URL(parsed.href).hostname : undefined
     if (!hostname) return true
-    return (label.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) || (label.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
+    return (
+      (label.includes("opencode.ai") && !isAllowedWebHostname(hostname, "opencode.ai")) ||
+      (label.includes("openctrlc.ai") && !isAllowedWebHostname(hostname, "openctrlc.ai"))
+    )
   })
   if (mismatch) return [`${file}:1:external-link-mismatch`]
   return source.split("\n").flatMap((line, index) => {
     const matches = [...line.matchAll(productTokens)]
-    const externalRanges = [...externalTokens, externalContext].flatMap((pattern) =>
-      [...line.matchAll(new RegExp(pattern.source, `${pattern.flags.replace("g", "")}g`))].map((match) => [match.index ?? 0, (match.index ?? 0) + match[0].length]),
+    const contractRanges = strictExternal
+      ? productContractAllowlist
+          .filter((rule) => rule.file.test(file))
+          .flatMap((rule) =>
+            [...line.matchAll(new RegExp(rule.line.source, `${rule.line.flags.replace("g", "")}g`))].map((match) => [
+              match.index ?? 0,
+              (match.index ?? 0) + match[0].length,
+            ]),
+          )
+      : []
+    const externalRanges = [...externalTokens, ...(strictExternal ? [] : [externalContext])].flatMap((pattern) =>
+      [...line.matchAll(new RegExp(pattern.source, `${pattern.flags.replace("g", "")}g`))].map((match) => [
+        match.index ?? 0,
+        (match.index ?? 0) + match[0].length,
+      ]),
     )
+    externalRanges.push(...contractRanges)
     return matches
       .filter((match) => !isAllowedExternalMatch(line, match.index ?? 0, match[0], externalRanges))
       .map((match) => `${file}:${index + 1}:${match[0]}`)
   })
 }
 
-const productSourceRules = [
-  { pattern: /opencode\.local|opencode-\$\{port\}/g, allow: [] as RegExp[] },
-  {
-    pattern: /["'`]User-Agent["'`]\s*:\s*["'`]opencode(?:\/[^"'`]+)?["'`]/g,
-    allow: [
-      /packages\/core\/src\/plugin\/provider\//,
-      /packages\/core\/src\/tool\/(?:webfetch|websearch)\.ts/,
-      /packages\/opencode\/src\/plugin\//,
-      /packages\/opencode\/src\/provider\/provider\.ts/,
-    ],
-  },
-  {
-    pattern: /\bOPENCODE_[A-Z0-9_]+\b/g,
-    allow: [
-      /packages\/opencode\/src\/cli\/cmd\/run\/footer\.(?:prompt|view)\.tsx/,
-      /packages\/opencode\/src\/plugin\/openai\/README\.md/,
-      /packages\/opencode\/src\/session\/llm\/AGENTS\.md/,
-      /packages\/core\/src\/plugin\/provider\/opencode\.ts/,
-      /packages\/app\/src\/pages\/layout\/helpers\.ts/,
-    ],
-  },
-]
-
 export function scanProductSource(source: string, file: string) {
-  return source.split("\n").flatMap((line, index) =>
-    productSourceRules.flatMap((rule) => {
-      if (rule.allow.some((pattern) => pattern.test(file))) return []
-      return [...line.matchAll(new RegExp(rule.pattern.source, `${rule.pattern.flags.replace("g", "")}g`))].map(
-        (match) => `${file}:${index + 1}:${match[0]}`,
-      )
-    }),
-  )
+  const violations = scanText(source, file, true)
+  if (file === "packages/opencode/src/server/mdns.ts") {
+    violations.push(
+      ...source
+        .split("\n")
+        .flatMap((line, index) =>
+          [...line.matchAll(/opencode\.local|opencode-\$\{port\}/g)].map((match) => `${file}:${index + 1}:${match[0]}`),
+        ),
+    )
+  }
+  if (file === "packages/opencode/src/tool/webfetch.ts") {
+    violations.push(
+      ...source
+        .split("\n")
+        .flatMap((line, index) =>
+          [...line.matchAll(/["'`]User-Agent["'`]\s*:\s*["'`]opencode(?:\/[^"'`]+)?["'`]/g)].map(
+            (match) => `${file}:${index + 1}:${match[0]}`,
+          ),
+        ),
+    )
+  }
+  if (file === "packages/core/src/oauth/page.ts") {
+    violations.push(
+      ...source
+        .split("\n")
+        .flatMap((line, index) => [...line.matchAll(/OpenCode/g)].map((match) => `${file}:${index + 1}:${match[0]}`)),
+    )
+  }
+  return [...new Set(violations)]
 }
 
 if (import.meta.main) await run()
@@ -129,8 +279,18 @@ async function run() {
   ])
   const violations = await Promise.all(
     tracked.map(async (file) => {
-      if (ignored.has(file) || !auditedScopes.some((scope) => file.startsWith(scope)) || !/\.(md|mdx|ts|tsx|json|jsonc)$/.test(file)) return []
-      if (file.startsWith("packages/core/src/") || file.startsWith("packages/opencode/src/") || file.startsWith("packages/app/src/") || file.startsWith("packages/desktop/src/")) {
+      if (
+        ignored.has(file) ||
+        !auditedScopes.some((scope) => file.startsWith(scope)) ||
+        !/\.(md|mdx|ts|tsx|json|jsonc)$/.test(file)
+      )
+        return []
+      if (
+        file.startsWith("packages/core/src/") ||
+        file.startsWith("packages/opencode/src/") ||
+        file.startsWith("packages/app/src/") ||
+        file.startsWith("packages/desktop/src/")
+      ) {
         return scanProductSource(await Bun.file(path.join(root, file)).text(), file)
       }
       return scanText(await Bun.file(path.join(root, file)).text(), file)

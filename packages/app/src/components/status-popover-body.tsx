@@ -1,4 +1,5 @@
 import { Button } from "@openctrlc/ui/button"
+import { Brand } from "@openctrlc/identity"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { Icon } from "@openctrlc/ui/icon"
 import { Switch } from "@openctrlc/ui/switch"
@@ -295,7 +296,7 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
     (sync().data.config.plugin ?? []).map((item) => (typeof item === "string" ? item : item[0])),
   )
   const pluginCount = createMemo(() => plugins().length)
-  const pluginEmpty = createMemo(() => pluginEmptyMessage(language.t("dialog.plugins.empty"), "opencode.json"))
+  const pluginEmpty = createMemo(() => pluginEmptyMessage(language.t("dialog.plugins.empty"), Brand.configFile))
 
   return (
     <div class="flex items-center gap-1 w-[360px] rounded-xl shadow-[var(--shadow-lg-border-base)]">

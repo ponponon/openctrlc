@@ -1,4 +1,5 @@
 import { withAlpha } from "@openctrlc/ui/theme/color"
+import { Brand } from "@openctrlc/identity"
 import { useTheme } from "@openctrlc/ui/theme/context"
 import { resolveThemeVariant } from "@openctrlc/ui/theme/resolve"
 import { resolveThemeVariantV2 } from "@openctrlc/ui/theme/v2/resolve"
@@ -180,7 +181,7 @@ export const Terminal = (props: TerminalProps) => {
   const directory = sdk().directory
   const url = sdk().url
   const auth = connection.http
-  const username = auth?.username ?? "opencode"
+  const username = auth?.username ?? Brand.cli
   const password = auth?.password ?? ""
   const authToken = connection.type === "http" ? connection.authToken : false
   const sameOrigin = new URL(url, location.href).origin === location.origin

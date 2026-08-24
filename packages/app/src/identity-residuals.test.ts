@@ -19,6 +19,19 @@ test("uses the OpenCtrlC Vite server contract", async () => {
   expect(playwright).not.toContain("VITE_OPENCODE_SERVER_")
 })
 
+test("uses the product identity for server defaults and config copy", async () => {
+  const selectServer = await read("./src/components/dialog-select-server.tsx")
+  const terminal = await read("./src/components/terminal.tsx")
+  const status = await read("./src/components/status-popover-body.tsx")
+
+  expect(selectServer).toContain("const DEFAULT_USERNAME = Brand.cli")
+  expect(terminal).toContain("const username = auth?.username ?? Brand.cli")
+  expect(status).toContain("Brand.configFile")
+  expect(selectServer).not.toContain('DEFAULT_USERNAME = "opencode"')
+  expect(terminal).not.toContain('auth?.username ?? "opencode"')
+  expect(status).not.toContain('"opencode.json"')
+})
+
 test("all E2E TypeScript fixtures use OpenCtrlC keys except the exact legacy negative", async () => {
   const specs: string[] = []
   for await (const path of new Bun.Glob("e2e/**/*.ts").scan({ cwd: "." })) specs.push(path)
