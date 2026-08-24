@@ -224,7 +224,7 @@ export const dict = {
   "provider.connect.apiKey.label": "{{provider}} API ቁልፍ",
   "provider.connect.apiKey.placeholder": "API ቁልፍ",
   "provider.connect.apiKey.required": "API ቁልፍ ያስፈልጋል",
-  "provider.connect.opencodeZen.line1": "OpenCtrlC ዜን ለኮድ ወኪሎች የተመቻቹ አስተማማኝ ሞዴሎች ስብስብ መዳረሻ ይሰጥዎታል።",
+  "provider.connect.opencodeZen.line1": "OpenCode ዜን ለኮድ ወኪሎች የተመቻቹ አስተማማኝ ሞዴሎች ስብስብ መዳረሻ ይሰጥዎታል።",
   "provider.connect.opencodeZen.line2": "በአንድ የAPI ቁልፍ እንደ Claude፣ GPT፣ Gemini፣ GLM እና ሌሎችም ያሉ ሞዴሎችን መድረስ ይችላሉ።",
   "provider.connect.opencodeZen.visit.prefix": "ጎብኝ ",
   "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
@@ -239,7 +239,8 @@ export const dict = {
   "provider.connect.oauth.code.invalid": "ልክ ያልሆነ የፈቀዳ ኮድ",
   "provider.connect.oauth.auto.visit.prefix": "ጎብኝ ",
   "provider.connect.oauth.auto.visit.link": "ይህ ሊንክ",
-  "provider.connect.oauth.auto.visit.suffix": " እና መለያዎን ለማገናኘት ከታች ያለውን ኮድ ያስገቡ እና {{provider}} ሞዴሎችን በOpenCtrlC ይጠቀሙ።",
+  "provider.connect.oauth.auto.visit.suffix":
+    " እና መለያዎን ለማገናኘት ከታች ያለውን ኮድ ያስገቡ እና {{provider}} ሞዴሎችን በOpenCtrlC ይጠቀሙ።",
   "provider.connect.oauth.auto.confirmationCode": "የማረጋገጫ ኮድ",
   "provider.connect.toast.connected.title": "{{provider}}ተገናኝቷል",
   "provider.connect.toast.connected.description": "{{provider}} ሞዴሎች አሁን ለመጠቀም ይገኛሉ።",

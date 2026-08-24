@@ -40,7 +40,10 @@ describe("i18n parity", () => {
     const keys = Object.keys(english).filter(
       (key) => key.startsWith("wsl.onboarding.") || key.startsWith("desktop.wsl.error."),
     )
-    const bundles = [english, ...(await Promise.all(appLocales.map(async (locale) => (await import(`./${locale}`)).dict)))]
+    const bundles = [
+      english,
+      ...(await Promise.all(appLocales.map(async (locale) => (await import(`./${locale}`)).dict))),
+    ]
     for (const bundle of bundles) {
       for (const key of keys) {
         const value = String(bundle[key as keyof typeof bundle] ?? "")
@@ -48,6 +51,18 @@ describe("i18n parity", () => {
         expect(value).not.toContain("opencode")
       }
     }
+  })
+
+  test("external OpenCode Zen copy keeps its service identity", async () => {
+    const amharic = await import("./am")
+    const greek = await import("./el")
+
+    expect(amharic.dict["provider.connect.opencodeZen.line1"]).toContain("OpenCode")
+    expect(amharic.dict["provider.connect.opencodeZen.line1"]).not.toContain("OpenCtrlC")
+    expect(greek.dict["provider.connect.opencodeZen.line1"]).toContain("OpenCode")
+    expect(greek.dict["provider.connect.opencodeZen.line1"]).not.toContain("OpenCtrlC")
+    expect(amharic.dict["provider.connect.opencodeZen.visit.link"]).toBe("opencode.ai/zen")
+    expect(greek.dict["provider.connect.opencodeZen.visit.link"]).toBe("opencode.ai/zen")
   })
   test("non-English locales have every English key and required plural variants", async () => {
     for (const domain of domains) {

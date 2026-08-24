@@ -18,16 +18,20 @@ test("uses the OpenCtrlC Vite server contract", async () => {
   expect(playwright).not.toContain("VITE_OPENCODE_SERVER_")
 })
 
-test("e2e fixtures use OpenCtrlC persistence keys", async () => {
-  const helper = await read("./e2e/performance/timeline/timeline-test-helpers.ts")
-  const regression = await read("./e2e/regression/cross-server-tab-close.spec.ts")
+test("all E2E persistence fixtures use OpenCtrlC keys except the legacy negative", async () => {
+  const specs: string[] = []
+  for await (const path of new Bun.Glob("e2e/**/*.spec.ts").scan({ cwd: "." })) specs.push(path)
 
-  expect(helper).toContain("openctrlc.global.dat")
-  expect(helper).toContain("openctrlc.window.browser.dat")
-  expect(regression).toContain("openctrlc.global.dat")
-  expect(regression).toContain("openctrlc.window.browser.dat")
-  expect(helper).not.toContain("opencode.global.dat")
-  expect(helper).not.toContain("opencode.window.browser.dat")
-  expect(regression).not.toContain("opencode.global.dat")
-  expect(regression).not.toContain("opencode.window.browser.dat")
+  for (const path of specs) {
+    const source = await read(path)
+    if (path === "e2e/regression/legacy-new-session.spec.ts") {
+      expect(source).toContain('"opencode.window.browser.dat:tabs"')
+      expect(source).toContain("legacy persistence key is migrated")
+      continue
+    }
+    expect(source).not.toContain("opencode.global.dat")
+    expect(source).not.toContain("opencode.window.browser.dat")
+  }
+
+  expect(specs.length).toBeGreaterThan(0)
 })

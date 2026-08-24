@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# OpenCtrlC Desktop
 
-The OpenCode Desktop app, built with Electron.
+The OpenCtrlC Desktop app, built with Electron.
 
 ## Development
 

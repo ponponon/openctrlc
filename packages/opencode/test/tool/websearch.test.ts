@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import { Effect } from "effect"
 import { parseResponse } from "../../src/tool/mcp-websearch"
-import { selectWebSearchProvider, webSearchModelName, webSearchProviderLabel } from "../../src/tool/websearch"
+import {
+  parallelAuthHeaders,
+  selectWebSearchProvider,
+  webSearchModelName,
+  webSearchProviderLabel,
+} from "../../src/tool/websearch"
 
 import { webSearchEnabled } from "../../src/tool/registry"
 import { it } from "../lib/effect"
@@ -60,6 +65,31 @@ describe("websearch provider", () => {
         },
       }),
     ).toBe("claude-opus-4.7")
+  })
+
+  test("sends the product user agent without an API key", () => {
+    const original = process.env.PARALLEL_API_KEY
+    try {
+      delete process.env.PARALLEL_API_KEY
+      expect(parallelAuthHeaders()).toEqual({ "User-Agent": expect.stringMatching(/^openctrlc\//) })
+    } finally {
+      if (original === undefined) delete process.env.PARALLEL_API_KEY
+      else process.env.PARALLEL_API_KEY = original
+    }
+  })
+
+  test("adds the Parallel authorization header when an API key is configured", () => {
+    const original = process.env.PARALLEL_API_KEY
+    try {
+      process.env.PARALLEL_API_KEY = "parallel-test-key"
+      expect(parallelAuthHeaders()).toEqual({
+        "User-Agent": expect.stringMatching(/^openctrlc\//),
+        Authorization: "Bearer parallel-test-key",
+      })
+    } finally {
+      if (original === undefined) delete process.env.PARALLEL_API_KEY
+      else process.env.PARALLEL_API_KEY = original
+    }
   })
 })
 

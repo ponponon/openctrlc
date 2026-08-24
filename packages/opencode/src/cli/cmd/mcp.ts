@@ -5,7 +5,6 @@ import { Cause } from "effect"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js"
-import { LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/sdk/types.js"
 import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
 import { MCP } from "../../mcp"
@@ -21,6 +20,7 @@ import { Global } from "@openctrlc/core/global"
 import { modify, applyEdits } from "jsonc-parser"
 import { Filesystem } from "@/util/filesystem"
 import { Effect } from "effect"
+import { debugInitializeRequest } from "../../mcp/client-info"
 
 function getAuthStatusIcon(status: MCP.AuthStatus): string {
   switch (status) {
@@ -744,16 +744,7 @@ export const McpDebugCommand = effectCmd({
             "Content-Type": "application/json",
             Accept: "application/json, text/event-stream",
           },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            method: "initialize",
-            params: {
-              protocolVersion: LATEST_PROTOCOL_VERSION,
-              capabilities: {},
-              clientInfo: { name: "opencode-debug", version: InstallationVersion },
-            },
-            id: 1,
-          }),
+          body: JSON.stringify(debugInitializeRequest()),
         })
 
         spinner.stop(`HTTP response: ${response.status} ${response.statusText}`)
@@ -794,7 +785,7 @@ export const McpDebugCommand = effectCmd({
 
           try {
             const client = new Client({
-              name: "opencode-debug",
+              name: Brand.cli,
               version: InstallationVersion,
             })
             await client.connect(transport)

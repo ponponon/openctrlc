@@ -226,7 +226,7 @@ export const dict = {
   "provider.connect.apiKey.placeholder": "API κλειδί",
   "provider.connect.apiKey.required": "API απαιτείται κλειδί",
   "provider.connect.opencodeZen.line1":
-    "OpenCtrlC Το Zen σάς δίνει πρόσβαση σε ένα επιμελημένο σύνολο αξιόπιστων βελτιστοποιημένων μοντέλων για πράκτορες κωδικοποίησης.",
+    "OpenCode Το Zen σάς δίνει πρόσβαση σε ένα επιμελημένο σύνολο αξιόπιστων βελτιστοποιημένων μοντέλων για πράκτορες κωδικοποίησης.",
   "provider.connect.opencodeZen.line2":
     "Με ένα μόνο κλειδί API θα έχετε πρόσβαση σε μοντέλα όπως Claude, GPT, Gemini, GLM και άλλα.",
   "provider.connect.opencodeZen.visit.prefix": "Επίσκεψη ",

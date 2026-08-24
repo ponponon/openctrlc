@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { Brand } from "@openctrlc/identity"
+import { debugInitializeRequest } from "../src/mcp/client-info"
 
 const read = (path: string) => Bun.file(path).text()
 
@@ -30,4 +31,25 @@ test("uses the product CLI in the web search User-Agent", async () => {
 
   expect(source).toContain('"User-Agent": `${Brand.cli}/${InstallationVersion}`')
   expect(source).not.toContain('"User-Agent": `opencode/${InstallationVersion}`')
+})
+
+test("uses product identity for all MCP client initialization paths", async () => {
+  const mcp = await read("./src/mcp/index.ts")
+  const debug = await read("./src/cli/cmd/mcp.ts")
+  const oauth = await read("./src/mcp/oauth-provider.ts")
+
+  expect(mcp).toContain("name: Brand.cli")
+  expect(debug).toContain("debugInitializeRequest")
+  expect(debug).toContain("name: Brand.cli")
+  expect(oauth).toContain("client_name: Brand.name")
+  expect(mcp).not.toContain('name: "opencode"')
+  expect(debug).not.toContain('name: "opencode-debug"')
+  expect(oauth).not.toContain('client_name: "OpenCode"')
+})
+
+test("builds the debug initialize payload with the product CLI identity", () => {
+  expect(debugInitializeRequest()).toMatchObject({
+    method: "initialize",
+    params: { clientInfo: { name: Brand.cli } },
+  })
 })

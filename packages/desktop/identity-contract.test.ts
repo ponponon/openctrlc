@@ -32,7 +32,7 @@ test("keeps renderer deep links and channel declarations on OpenCtrlC names", as
   expect(renderer).toContain('import { getLastActiveUrl, setLastActiveUrl } from "./window-state"')
   expect(renderer).toContain("import.meta.env.VITE_OPENCTRLC_CHANNEL")
   expect(rendererEnv).toContain("__OPENCTRLC__")
-  expect(appDeepLinks).toContain('`${Brand.cli}:deep-link`')
+  expect(appDeepLinks).toContain("`${Brand.cli}:deep-link`")
   expect(appDeepLinks).toContain("Brand.urlScheme")
 })
 
@@ -72,4 +72,15 @@ test("keeps product-owned publishing metadata on OpenCtrlC targets", async () =>
   expect(metainfo).toContain("https://github.com/ponponon/openctrlc")
   expect(metainfo).not.toContain("anomalyco/opencode")
   expect(metainfo).not.toContain("https://opencode.ai")
+})
+
+test("uses the OpenCtrlC renderer title and README copy", async () => {
+  const renderer = await read("./src/renderer/index.html")
+  const readme = await read("./README.md")
+
+  expect(renderer).toContain("<title>OpenCtrlC</title>")
+  expect(renderer).not.toContain("<title>OpenCode</title>")
+  expect(readme).toContain("# OpenCtrlC Desktop")
+  expect(readme).toContain("The OpenCtrlC Desktop app")
+  expect(readme).not.toContain("# OpenCode Desktop")
 })

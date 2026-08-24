@@ -40,6 +40,11 @@ describe("McpOAuthProvider.clientMetadata", () => {
     expect(provider.clientMetadata.redirect_uris).toEqual([`http://127.0.0.1:6620${OAUTH_CALLBACK_PATH}`])
   })
 
+  test("uses the OpenCtrlC product identity for OAuth registration", () => {
+    const provider = makeProvider({})
+    expect(provider.clientMetadata.client_name).toBe("OpenCtrlC")
+  })
+
   test("includes scope when set in config", () => {
     const provider = makeProvider({ scope: "openid offline_access" })
     expect(provider.clientMetadata.scope).toBe("openid offline_access")
