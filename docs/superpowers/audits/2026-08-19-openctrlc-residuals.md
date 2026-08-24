@@ -36,9 +36,10 @@ historical chain is
 The follow-up product repair is
 `c5d2a79 fix(identity): isolate runtime legacy-variable audit`, whose full SHA
 is `c5d2a797ba83bb9307e77bc1e66e2010828b15bb` and whose parent is
-`4b84c063586046370f9f6d9923b1896103e7430a`. This audit document is validated
-by that parent product repair; the current audit commit is intentionally not
-embedded here to avoid self-reference.
+`f64503569cae8aa78fbd999fa7a78f876e88b25e`. This audit document is validated
+by that parent audit commit. The current audit commit is created with
+`c5d2a797ba83bb9307e77bc1e66e2010828b15bb` as its parent and is intentionally
+not embedded here to avoid self-reference.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
