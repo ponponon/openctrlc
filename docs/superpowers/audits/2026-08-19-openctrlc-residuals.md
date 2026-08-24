@@ -4,28 +4,28 @@ Date: 2026-08-24
 
 ## Current Result
 
-The product repair boundary for this audit is:
+The historical product boundary for this audit is:
 
 `ffc81a94685bede3e24647b279b15883de66d745 fix(identity): close source allowlist bypasses`
 
-The current audit boundary before this document's next audit commit is:
+The historical audit boundary before the later repair is:
 
 `4f515e61ad7064d499c02f5ab2e78f47c40d37b5 docs(identity): record OpenCtrlC namespace audit`
 
-The chain is: the product repair `ffc81a94685bede3e24647b279b15883de66d745`
-has parent `eb38fc1a2822b93edbfa8810bb12bc58ef87c31e`; the audit boundary
+The historical chain is: product repair `ffc81a94685bede3e24647b279b15883de66d745`
+has parent `eb38fc1a2822b93edbfa8810bb12bc58ef87c31e`; audit boundary
 `4f515e61ad7064d499c02f5ab2e78f47c40d37b5` has parent
-`ffc81a94685bede3e24647b279b15883de66d745`. The next product fix is committed
-separately, followed by an audit commit with the exact message
-`docs(identity): record OpenCtrlC namespace audit`. That future audit commit's
-SHA is intentionally not embedded here because doing so would be
-self-referential.
+`ffc81a94685bede3e24647b279b15883de66d745`.
 
-For this review round, the product fix is
-`e5e33c9 fix(identity): close final audit boundary gaps`, whose parent is the
-audit boundary `4f515e61ad7064d499c02f5ab2e78f47c40d37b5`. The audit commit for
-this document is created immediately after that product fix; its SHA is not
-embedded in the document to avoid self-reference.
+For the previous subsequent review round, the product fix is
+`e5e33c9aa836a2068ae01ae251e44df01a27540e fix(identity): close final audit boundary gaps`,
+whose parent is `4f515e61ad7064d499c02f5ab2e78f47c40d37b5`. The current audit
+commit `4232dd8ea07c7a904268852d15c0a754334936a9` had that product fix as its
+parent. The current product fix is
+`fe8c0aa3ae236746c45d8a8c7631f2995599afe1 fix(identity): close final audit verification gaps`,
+whose parent is `4232dd8ea07c7a904268852d15c0a754334936a9`. This audit commit is
+created with `fe8c0aa3ae236746c45d8a8c7631f2995599afe1` as its parent; its own
+future SHA is intentionally not embedded to avoid self-reference.
 
 The product-owned residual checks now cover the complete App E2E TypeScript
 fixture tree, including performance helpers and fixtures. The only old
@@ -78,6 +78,7 @@ The following script is self-contained and can be copied and run from
 recursively rejects old paths, asserts the expected `openctrlc` directories,
 and fails when the sentinel changes. Bun may create `cache/bun`; that is
 explicitly reported as Bun tool noise and excluded from product assertions.
+The CLI assertions require `openctrlc` and reject `opencode` case-insensitively.
 
 ```bash
 set -eu
@@ -98,6 +99,10 @@ serve_help="$(run bun run --conditions=browser ./src/index.ts serve --help 2>&1)
 test -n "$version" || { printf '%s\n' 'FAIL: --version returned no output' >&2; exit 1; }
 case "$help" in *openctrlc*) ;; *) printf '%s\n' 'FAIL: --help lacks openctrlc' >&2; exit 1 ;; esac
 case "$serve_help" in *openctrlc*) ;; *) printf '%s\n' 'FAIL: serve --help lacks openctrlc' >&2; exit 1 ;; esac
+help_lower=$(printf '%s\n' "$help" | tr '[:upper:]' '[:lower:]')
+serve_help_lower=$(printf '%s\n' "$serve_help" | tr '[:upper:]' '[:lower:]')
+case "$help_lower" in *opencode*) printf '%s\n' 'FAIL: --help contains legacy opencode identity' >&2; exit 1 ;; esac
+case "$serve_help_lower" in *opencode*) printf '%s\n' 'FAIL: serve --help contains legacy opencode identity' >&2; exit 1 ;; esac
 for root in "$tmp/home" "$tmp/data" "$tmp/cache" "$tmp/config" "$tmp/state" "$tmp/tmp" "$tmp/legacy-sentinel"; do
   old="$(/usr/bin/find "$root" \( -iname '*opencode*' -o -name '.opencode' \) -print -quit)"
   if [ -n "$old" ]; then printf 'FAIL: legacy path: %s\n' "$old" >&2; exit 1; fi
@@ -146,9 +151,14 @@ cd packages/app && bun test ./src/identity-residuals.test.ts ./src/i18n/parity.t
 cd packages/desktop && bun test src/renderer/html.test.ts && bun typecheck
 ```
 
+The complete isolated runtime smoke command is the full script shown above,
+run from `packages/opencode`; it includes `--version`, `--help`, `serve --help`,
+case-insensitive legacy-identity rejection, path checks, Bun-noise reporting,
+and sentinel verification.
+
 Observed results:
 
-- Namespace regression tests: `17 pass, 0 fail`; namespace audit passed with zero output.
+- Namespace regression tests: `18 pass, 0 fail`; namespace audit passed with zero output.
 - Script translation tests: `16 pass, 0 fail`.
 - Distribution audit: passed for OpenCtrlC (`openctrlc`).
 - Core OAuth focused tests: `3 pass, 0 fail`; Core typecheck passed.
@@ -156,6 +166,8 @@ Observed results:
 - OpenCode `webfetch` and mDNS focused tests passed.
 - App focused identity/parity tests: `10 pass, 0 fail`; App typecheck passed.
 - Desktop renderer HTML focused tests: `6 pass, 0 fail`; Desktop typecheck passed.
+- OpenCode SDK smoke, webfetch, and mDNS focused tests: `14 pass, 0 fail`; OpenCode typecheck passed.
+- App persistence residual and i18n parity tests: `10 pass, 0 fail`; App typecheck passed.
 - `git diff --check`: passed.
 
 The historical Task 8 built-binary smoke verified `dist/openctrlc-darwin-arm64/bin/openctrlc`
