@@ -3,9 +3,11 @@ import { chmod, copyFile, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-const CLI_VERSION = "0.0.0-next-16350"
-
 export type Channel = "dev" | "beta" | "prod"
+
+export function resolveCliVersion(env: Record<string, string | undefined>) {
+  return env.OPENCTRLC_CLI_VERSION ?? "0.1.0"
+}
 
 export function resolveChannel(): Channel {
   const raw = Bun.env.OPENCTRLC_CHANNEL
@@ -71,10 +73,11 @@ export function getCurrentCli(target = RUST_TARGET ?? nativeTarget()) {
 
 export async function downloadCliToResources() {
   const cli = getCurrentCli()
+  const cliVersion = resolveCliVersion(Bun.env)
   const directory = await mkdtemp(join(tmpdir(), "openctrlc-cli-"))
   const dest = windowsify("resources/openctrlc")
   try {
-    await $`bun install --no-save --cwd ${directory} ${`${cli.package}@${CLI_VERSION}`} ${`--os=${cli.os}`} ${`--cpu=${cli.cpu}`}`
+    await $`bun install --no-save --cwd ${directory} ${`${cli.package}@${cliVersion}`} ${`--os=${cli.os}`} ${`--cpu=${cli.cpu}`}`
     await copyFile(
       join(directory, "node_modules", cli.package, "bin", cli.os === "win32" ? "openctrlc.exe" : "openctrlc"),
       dest,
