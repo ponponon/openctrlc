@@ -6,5 +6,5 @@ test("uses the 0.1.1 CLI release by default", () => {
 })
 
 test("allows the CLI release to be overridden by the environment", () => {
-  expect(resolveCliVersion({ OPENCTRLC_CLI_VERSION: "0.1.1" })).toBe("0.1.1")
+  expect(resolveCliVersion({ OPENCTRLC_CLI_VERSION: "9.9.9" })).toBe("9.9.9")
 })
