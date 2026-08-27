@@ -3,7 +3,7 @@ import { $ } from "bun"
 import pkg from "../package.json"
 import { Script } from "@openctrlc/script"
 import { fileURLToPath } from "url"
-import { createProductPackageManifest, ProductBinaryName, ProductPackageName } from "./package-contract"
+import { createProductPackageManifest, npmPublishTag, ProductBinaryName, ProductPackageName } from "./package-contract"
 
 const dir = fileURLToPath(new URL("..", import.meta.url))
 process.chdir(dir)
@@ -21,13 +21,13 @@ async function publish(dir: string, name: string, version: string) {
     return
   }
   await $`bun pm pack`.cwd(dir)
-  await $`npm publish *.tgz --access public --tag ${Script.channel}`.cwd(dir)
+  await $`npm publish *.tgz --access public --tag ${npmPublishTag(Script.channel)}`.cwd(dir)
 }
 
 const binaries: Record<string, string> = {}
 for (const filepath of new Bun.Glob("*/package.json").scanSync({ cwd: "./dist" })) {
   const pkg = await Bun.file(`./dist/${filepath}`).json()
-  binaries[pkg.name] = pkg.version
+  if (pkg.name !== ProductPackageName) binaries[pkg.name] = pkg.version
 }
 console.log("binaries", binaries)
 const version = Object.values(binaries)[0]
@@ -66,6 +66,8 @@ const tasks = Object.entries(binaries).map(async ([name]) => {
 })
 await Promise.all(tasks)
 await publish(rootDirectory, ProductPackageName, version)
+
+if (process.env.OPENCTRLC_NPM_ONLY === "1") process.exit(0)
 
 const image = "ghcr.io/ponponon/openctrlc"
 const platforms = "linux/amd64,linux/arm64"

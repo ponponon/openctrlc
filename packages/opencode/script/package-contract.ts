@@ -7,6 +7,10 @@ export function releaseTag(channel: string, version: string) {
   return channel === "beta" ? "beta" : `v${version}`
 }
 
+export function npmPublishTag(channel: string) {
+  return channel === "beta" ? "beta" : "latest"
+}
+
 export function createProductPackageManifest(input: {
   version: string
   license: string
