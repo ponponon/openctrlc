@@ -161,7 +161,9 @@ Result: passed with exit code 0.
 
 ## Review Fix Commit
 
-`PENDING`
+- `0fb3348 fix(app): complete traditional chinese permission locale`
+- `8fb76b1 docs(app): record traditional chinese permission locale fix`
+- `5136e88 docs(app): record final locale verification`
 
 ## Review Fix Concerns
 
