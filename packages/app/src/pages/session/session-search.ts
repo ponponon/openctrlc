@@ -35,13 +35,16 @@ export function findSessionSearchMatches(documents: SessionSearchDocument[], que
   if (!needle) return []
 
   return documents.flatMap((document) => {
-    const text = document.text.toLocaleLowerCase()
+    const normalized = normalizeWithOffsets(document.text)
+    const text = normalized.text
     const matches: SessionSearchMatch[] = []
     let start = 0
     while (start < text.length) {
       const index = text.indexOf(needle, start)
       if (index < 0) break
-      matches.push({ messageID: document.messageID, start: index, end: index + query.length })
+      const first = normalized.offsets[index]
+      const last = normalized.offsets[index + needle.length - 1]
+      if (first && last) matches.push({ messageID: document.messageID, start: first.start, end: last.end })
       start = index + needle.length
     }
     return matches
@@ -59,10 +62,8 @@ export function hydrateSessionSearchHistory(input: {
   loading: () => boolean
   loadMore: (sessionID: string) => Promise<void>
 }): Promise<void> {
-  if (input.loading() || !input.more()) return Promise.resolve()
-
   const sessionID = input.sessionID()
-  if (!sessionID) return Promise.resolve()
+  if (!sessionID || !input.more()) return Promise.resolve()
 
   const activeForLoader = activeHydrations.get(input.loadMore) ?? new Map<string, Promise<void>>()
   const existing = activeForLoader.get(sessionID)
@@ -70,7 +71,8 @@ export function hydrateSessionSearchHistory(input: {
 
   const hydration = (async () => {
     while (input.more()) {
-      if (input.loading()) return
+      while (input.loading()) await waitForHydrationState()
+      if (!input.more()) return
       await input.loadMore(sessionID)
     }
   })().finally(() => {
@@ -79,6 +81,25 @@ export function hydrateSessionSearchHistory(input: {
   activeForLoader.set(sessionID, hydration)
   activeHydrations.set(input.loadMore, activeForLoader)
   return hydration
+}
+
+function normalizeWithOffsets(text: string) {
+  const offsets: { start: number; end: number }[] = []
+  let originalOffset = 0
+  const normalized = Array.from(text)
+    .map((character) => {
+      const start = originalOffset
+      originalOffset += character.length
+      const value = character.toLocaleLowerCase()
+      offsets.push(...Array.from({ length: value.length }, () => ({ start, end: originalOffset })))
+      return value
+    })
+    .join("")
+  return { text: normalized, offsets }
+}
+
+function waitForHydrationState() {
+  return new Promise<void>((resolve) => setTimeout(resolve, 10))
 }
 
 function partText(part: Part, scope: SessionSearchScope) {

@@ -49,6 +49,16 @@ describe("searchableText", () => {
     expect(text).toBe("User request")
   })
 
+  test("includes assistant text parts in the default conversation scope", () => {
+    expect(
+      searchableText({
+        message: assistant("assistant-1"),
+        parts: [part({ type: "text", text: "assistant answer" }), part({ type: "reasoning", text: "hidden" })],
+        scope: "conversation",
+      }),
+    ).toBe("assistant answer")
+  })
+
   test("includes reasoning, tool values, and error text in the all-content scope", () => {
     const text = searchableText({
       message: {
@@ -110,7 +120,7 @@ describe("createSessionSearchDocuments", () => {
 
     expect(documents[0]).toEqual({ messageID: "first", text: "a" })
     expect(documents[1]?.messageID).toBe("second")
-    expect(documents[1]?.text.length).toBeLessThanOrEqual(100_000)
+    expect(documents[1]?.text.length).toBe(100_000)
   })
 
   test("creates a document even when a message has no readable parts", () => {
@@ -125,6 +135,28 @@ describe("findSessionSearchMatches", () => {
     expect(findSessionSearchMatches([{ messageID: "message-1", text: "Ababa foo FOO" }], "foo")).toEqual([
       { messageID: "message-1", start: 6, end: 9 },
       { messageID: "message-1", start: 10, end: 13 },
+    ])
+  })
+
+  test("preserves document order and original offsets across documents", () => {
+    expect(
+      findSessionSearchMatches(
+        [
+          { messageID: "first", text: "prefix needle" },
+          { messageID: "second", text: "needle suffix needle" },
+        ],
+        "NEEDLE",
+      ),
+    ).toEqual([
+      { messageID: "first", start: 7, end: 13 },
+      { messageID: "second", start: 0, end: 6 },
+      { messageID: "second", start: 14, end: 20 },
+    ])
+  })
+
+  test("maps expanded lowercase Unicode matches back to original UTF-16 offsets", () => {
+    expect(findSessionSearchMatches([{ messageID: "unicode", text: "İfoo" }], "i\u0307f")).toEqual([
+      { messageID: "unicode", start: 0, end: 2 },
     ])
   })
 
@@ -165,16 +197,64 @@ describe("hydrateSessionSearchHistory", () => {
     expect(calls).toEqual(["session-1", "session-1", "session-1"])
   })
 
-  test("does not load when there is no session or a load is already active", async () => {
+  test("does not load when there is no session and waits for an existing load", async () => {
     let calls = 0
+    let loading = true
     const loadMore = async () => {
       calls += 1
     }
 
     await hydrateSessionSearchHistory({ sessionID: () => undefined, more: () => true, loading: () => false, loadMore })
-    await hydrateSessionSearchHistory({ sessionID: () => "session-1", more: () => true, loading: () => true, loadMore })
+    const hydration = hydrateSessionSearchHistory({
+      sessionID: () => "session-1",
+      more: () => calls < 1,
+      loading: () => loading,
+      loadMore,
+    })
+    loading = false
+    await hydration
 
-    expect(calls).toBe(0)
+    expect(calls).toBe(1)
+  })
+
+  test("waits instead of succeeding while pagination is externally loading", async () => {
+    let loading = false
+    let remaining = 2
+    let release: (() => void) | undefined
+    let started: (() => void) | undefined
+    const firstPageStarted = new Promise<void>((resolve) => {
+      started = resolve
+    })
+    const firstPage = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const loadMore = async () => {
+      if (remaining === 2) {
+        loading = true
+        started?.()
+        await firstPage
+        loading = false
+      }
+      remaining -= 1
+    }
+
+    const hydration = hydrateSessionSearchHistory({
+      sessionID: () => "session-1",
+      more: () => remaining > 0,
+      loading: () => loading,
+      loadMore,
+    })
+    await firstPageStarted
+    let settled = false
+    hydration.then(() => {
+      settled = true
+    })
+    await Promise.resolve()
+
+    expect(settled).toBe(false)
+    release?.()
+    await hydration
+    expect(remaining).toBe(0)
   })
 
   test("prevents concurrent duplicate pagination and propagates failures", async () => {
