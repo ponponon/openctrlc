@@ -34,7 +34,10 @@ const required: Array<[string, string[]]> = [
   ["packages/desktop/src/main/background-cli.ts", ["Brand.cli"]],
   ["nix/opencode.nix", ['pname = "openctrlc"', 'mainProgram = "openctrlc"']],
   ["nix/desktop.nix", ['pname = "openctrlc-desktop"', 'mainProgram = "openctrlc-desktop"']],
-  [".github/workflows/publish.yml", ["name: openctrlc-cli", "name: openctrlc-desktop-"]],
+  [
+    ".github/workflows/publish.yml",
+    ["name: openctrlc-cli", "packages/opencode/dist/*.zip", "packages/opencode/dist/*.tar.gz"],
+  ],
   ["install", ["APP=openctrlc", "OPENCTRLC_INSTALL_DIR", "ponponon/openctrlc", "openctrlc_path", "openctrlc"]],
   ["packages/console/app/src/routes/download/[channel]/[platform].ts", ["ponponon/openctrlc", "openctrlc-linux-x64.deb", "openctrlc-linux-arm64.deb", "OpenCtrlC"]],
   ["packages/desktop/electron-builder.config.ts", ["owner: \"ponponon\"", "repo: \"openctrlc\"", "artifactName: \"openctrlc-"]],
