@@ -198,6 +198,10 @@ export const dict = {
 
   "command.prompt.mode.shell": "Shell",
   "command.prompt.mode.normal": "Prompt",
+  "prompt.permissions.autoaccept": "自动接受权限",
+  "prompt.permissions.autoaccept.enabled": "正在自动接受权限",
+  "prompt.permissions.autoaccept.enable": "开启自动接受权限",
+  "prompt.permissions.autoaccept.disable": "停止自动接受权限",
 
   "command.permissions.autoaccept.enable": "自动接受权限",
   "command.permissions.autoaccept.disable": "停止自动接受权限",
