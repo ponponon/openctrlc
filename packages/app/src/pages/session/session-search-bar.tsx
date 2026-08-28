@@ -39,6 +39,17 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
           <TextField
             value={props.query}
             onChange={props.onQueryChange}
+            onKeyDown={(event: KeyboardEvent) => {
+              if (event.key === "Escape") {
+                event.preventDefault()
+                props.onClose()
+                return
+              }
+              if (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault()
+                props.onNavigate(event.key === "ArrowUp" || (event.key === "Enter" && event.shiftKey) ? -1 : 1)
+              }
+            }}
             placeholder={language.t("session.search.placeholder")}
             aria-label={language.t("session.search.input")}
             hideLabel

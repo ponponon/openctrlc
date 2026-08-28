@@ -5,6 +5,7 @@ import {
   findSessionSearchMatches,
   hydrateSessionSearchHistory,
   nextSessionSearchMatchIndex,
+  preserveSessionSearchActiveIndex,
   searchableText,
 } from "./session-search"
 
@@ -190,6 +191,30 @@ describe("nextSessionSearchMatchIndex", () => {
 
   test("returns zero when there are no matches", () => {
     expect(nextSessionSearchMatchIndex(4, 0, 1)).toBe(0)
+  })
+})
+
+describe("preserveSessionSearchActiveIndex", () => {
+  test("keeps the active match when results are recomputed", () => {
+    const previous = { messageID: "message-2", start: 3, end: 8 }
+    const matches = [
+      { messageID: "message-1", start: 0, end: 5 },
+      previous,
+      { messageID: "message-3", start: 1, end: 6 },
+    ]
+
+    expect(preserveSessionSearchActiveIndex(previous, matches, 1)).toBe(1)
+  })
+
+  test("falls back to the nearest result when the active match disappears", () => {
+    const previous = { messageID: "message-2", start: 3, end: 8 }
+    const matches = [
+      { messageID: "message-1", start: 0, end: 5 },
+      { messageID: "message-3", start: 1, end: 6 },
+    ]
+
+    expect(preserveSessionSearchActiveIndex(previous, matches, 1)).toBe(1)
+    expect(preserveSessionSearchActiveIndex(previous, [], 1)).toBe(0)
   })
 })
 

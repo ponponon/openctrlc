@@ -56,6 +56,22 @@ export function nextSessionSearchMatchIndex(current: number, count: number, dire
   return (current + direction + count) % count
 }
 
+export function preserveSessionSearchActiveIndex(
+  previous: SessionSearchMatch | undefined,
+  matches: SessionSearchMatch[],
+  fallback: number,
+) {
+  if (matches.length === 0) return 0
+  if (previous) {
+    const exact = matches.findIndex(
+      (match) =>
+        match.messageID === previous.messageID && match.start === previous.start && match.end === previous.end,
+    )
+    if (exact >= 0) return exact
+  }
+  return Math.min(Math.max(fallback, 0), matches.length - 1)
+}
+
 export function hydrateSessionSearchHistory(input: {
   sessionID: () => string | undefined
   more: () => boolean
