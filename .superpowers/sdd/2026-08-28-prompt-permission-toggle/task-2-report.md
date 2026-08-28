@@ -165,6 +165,68 @@ Result: passed with exit code 0.
 - `8fb76b1 docs(app): record traditional chinese permission locale fix`
 - `5136e88 docs(app): record final locale verification`
 
+## Fix Round 2
+
+### Files Changed
+
+- Added the four localized `prompt.permissions.autoaccept*` keys to all 59 app locale dictionaries required by `packages/app/src/i18n/parity.test.ts`.
+- Each locale reuses its existing permission terminology from `command.permissions.autoaccept.*` and `toast.permissions.autoaccept.*`; no English source copy was used as a fallback.
+
+### Verification
+
+Command:
+
+```bash
+bun test --conditions=solid --preload ./happydom.ts ./src/i18n/parity.test.ts
+```
+
+Output:
+
+```text
+bun test v1.3.14 (0d9b296a)
+
+src/i18n/parity.test.ts:
+(pass) i18n parity > WSL product-owned values use the OpenCtrlC identity [67.19ms]
+(pass) i18n parity > external OpenCode Zen copy keeps its service identity [6.27ms]
+(pass) i18n parity > non-English locales have every English key and required plural variants [41.74ms]
+(pass) i18n parity > non-English locales preserve English placeholders [70.66ms]
+(pass) i18n parity > non-English locales translate targeted unseen session keys [1.61ms]
+(pass) i18n parity > changed-file summary keys preserve rendered English copy and localize complete phrases [1.21ms]
+(pass) i18n plural parity > locale-specific categories exist and preserve count placeholders [2.35ms]
+
+7 pass
+0 fail
+11458 expect() calls
+Ran 7 tests across 1 file. [271.00ms]
+```
+
+Result: passed with exit code 0.
+
+Command:
+
+```bash
+bun typecheck
+```
+
+Output:
+
+```text
+$ tsgo -b
+```
+
+Result: passed with exit code 0.
+
+Command:
+
+```bash
+```
+
+Result: passed with no output.
+
+### Concerns
+
+- The locale parity test now passes for all app, UI, and desktop locale checks; no known concerns remain for this fix round.
+
 ## Review Fix Concerns
 
 - The focused parity test remains blocked by the next existing locale gap in `ko.ts`; only `zht.ts` was changed as explicitly requested.
