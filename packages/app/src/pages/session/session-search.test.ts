@@ -166,6 +166,14 @@ describe("findSessionSearchMatches", () => {
     ])
   })
 
+  test("maps matches at the end of the maximum-size document", () => {
+    const text = `${"a".repeat(99_997)}İfoo`
+
+    expect(findSessionSearchMatches([{ messageID: "long", text }], "i\u0307f")).toEqual([
+      { messageID: "long", start: 99_997, end: 99_999 },
+    ])
+  })
+
   test("returns no matches for an empty query or missing text", () => {
     const documents = [{ messageID: "message-1", text: "content" }, { messageID: "message-2", text: "" }]
     expect(findSessionSearchMatches(documents, "")).toEqual([])

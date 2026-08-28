@@ -88,14 +88,20 @@ function normalizeWithOffsets(text: string) {
   const normalized = text.toLocaleLowerCase()
   const offsets: { start: number; end: number }[] = []
   let originalOffset = 0
+  let normalizedOffset = 0
 
   codePoints.forEach((character) => {
     const start = originalOffset
     originalOffset += character.length
-    const previousLength = text.slice(0, start).toLocaleLowerCase().length
-    const nextLength = text.slice(0, originalOffset).toLocaleLowerCase().length
-    offsets.push(...Array.from({ length: nextLength - previousLength }, () => ({ start, end: originalOffset })))
+    const value = character.toLocaleLowerCase()
+    offsets.push(...Array.from({ length: value.length }, () => ({ start, end: originalOffset })))
+    normalizedOffset += value.length
   })
+
+  if (normalizedOffset < normalized.length) {
+    const last = offsets.at(-1)
+    if (last) offsets.push(...Array.from({ length: normalized.length - normalizedOffset }, () => last))
+  }
 
   return { text: normalized, offsets }
 }

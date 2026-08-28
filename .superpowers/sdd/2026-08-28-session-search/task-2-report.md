@@ -146,3 +146,35 @@ The Greek regression test failed against the prior per-code-point normalization 
 
 - No hydration or public helper interface was changed.
 - Full-string locale lowercasing is performed once per document plus cumulative prefixes for offset construction; this keeps correctness for contextual Unicode casing but may be more CPU-intensive for very large documents. Documents are already bounded to 100,000 UTF-16 code units.
+
+## Performance Review Fix Report
+
+### Changes
+
+- Replaced the per-code-point `text.slice(0, offset).toLocaleLowerCase()` prefix recalculation in `normalizeWithOffsets` with a single full-document `toLocaleLowerCase()` plus one linear pass over original code points.
+- The full-string normalized value remains the matching source, preserving contextual casing semantics such as Greek final sigma. The linear pass assigns each normalized code unit to its original UTF-16 span, including expanded lowercase characters such as `İ`; any context-only expansion is conservatively attached to the final source span.
+- Added a maximum-size document regression test that searches at the end of a 100,000-character document and verifies the original UTF-16 range. This exercises the offset builder without the former quadratic prefix conversions.
+
+### Test Command And Output
+
+Command, run from `packages/app`:
+
+```text
+bun test --conditions=solid --preload ./happydom.ts ./src/pages/session/session-search.test.ts
+```
+
+Final output:
+
+```text
+18 pass
+0 fail
+33 expect() calls
+Ran 18 tests across 1 file.
+```
+
+The new maximum-size offset test first timed out against the old quadratic implementation, then passed after the linear mapping change. The existing `İfoo` and `ΟΣ`/`ος` tests also remain passing.
+
+### Concerns
+
+- Full-string lowercasing is intentionally retained for Unicode context semantics. Per-code-point lowercasing is used only to determine each source span's normalized width; it does not provide the searchable normalized text.
+- The test suite does not assert machine-dependent duration thresholds. It verifies the 100,000-character boundary and correct terminal offset, while the implementation removes the repeated prefix conversion that caused the O(n²) behavior.
