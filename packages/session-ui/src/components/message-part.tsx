@@ -62,6 +62,7 @@ import { AnimatedCountList } from "./tool-count-summary"
 import { ToolStatusTitle } from "./tool-status-title"
 import { patchFiles } from "./apply-patch-file"
 import { partDefaultOpen } from "./part-default-open"
+import { assistantStatistics } from "./message-statistics"
 import { animate } from "motion"
 import { attached, inline, kind, typeLabel } from "./message-file"
 import { readPartText } from "./message-part-text"
@@ -1689,6 +1690,25 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     })
   })
 
+  const statistics = createMemo(() => {
+    if (props.message.role !== "assistant") return
+    const message = props.message as AssistantMessage
+    return assistantStatistics({
+      output: message.tokens?.output,
+      created: message.time?.created,
+      completed: message.time?.completed,
+    })
+  })
+
+  const statsMeta = createMemo(() => {
+    const value = statistics()
+    if (!value) return []
+    return [
+      i18n.t("ui.message.tokens", { count: numfmt().format(value.output) }),
+      i18n.t("ui.message.tokensPerSecond", { count: value.tokensPerSecond.toFixed(2) }),
+    ]
+  })
+
   const meta = createMemo(() => {
     if (props.message.role !== "assistant") return ""
     const agent = (props.message as AssistantMessage).agent
@@ -1697,6 +1717,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
       model(),
       duration(),
       interrupted() ? i18n.t("ui.message.interrupted") : "",
+      ...statsMeta(),
     ]
     return items.filter((x) => !!x).join(" \u00B7 ")
   })
