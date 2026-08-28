@@ -1,4 +1,4 @@
-export type HistoryAnchorSnapshot = { key: string; offset: number; anchor?: string }
+export type HistoryAnchorSnapshot = { key: symbol; offset: number; anchor?: string }
 export type HistoryAnchorKind = "normal" | "search"
 
 export function createHistoryAnchorRegistry(input: {
@@ -8,6 +8,7 @@ export function createHistoryAnchorRegistry(input: {
   update?: (snapshot: HistoryAnchorSnapshot) => HistoryAnchorSnapshot
 }) {
   const active = new Map<symbol, { kind: HistoryAnchorKind; snapshot: HistoryAnchorSnapshot; done: boolean }>()
+  let cleanup: (() => void) | undefined
 
   const capture = (kind: HistoryAnchorKind) => {
     const token = Symbol(kind)
@@ -18,7 +19,6 @@ export function createHistoryAnchorRegistry(input: {
         if (entry.done) return
         entry.done = done
         input.restore(entry.snapshot, done)
-        if (done) active.delete(token)
       },
       cancel() {
         if (entry.done) return
@@ -43,6 +43,18 @@ export function createHistoryAnchorRegistry(input: {
       return active.size > 0
     },
     cancelAll() {
+      for (const [token, entry] of active) {
+        entry.done = true
+        active.delete(token)
+        input.cancel(entry.snapshot)
+      }
+    },
+    setCleanup(value: () => void) {
+      cleanup = value
+    },
+    cleanup() {
+      cleanup?.()
+      cleanup = undefined
       for (const [token, entry] of active) {
         entry.done = true
         active.delete(token)

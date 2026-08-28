@@ -351,19 +351,20 @@ export function MessageTimeline(props: {
   const timelineRowByKey = projection.rowByKey
   const timelineRows = projection.rows
 
-  const prependAnchorFrames = new Map<string, number>()
+  const prependAnchorFrames = new Map<symbol, number>()
   const snapshotPrependAnchor = (kind: HistoryAnchorKind) => {
     const root = listRoot()
-    if (!root) return { key: `${kind}-${Date.now()}`, offset: 0 }
+    const key = Symbol(kind)
+    if (!root) return { key, offset: 0 }
     const view = root.getBoundingClientRect()
     const anchor = [...root.querySelectorAll<HTMLElement>("[data-timeline-key]")]
       .map((element) => ({ element, rect: element.getBoundingClientRect() }))
       .filter((item) => item.rect.bottom > view.top && item.rect.top < view.bottom)
       .sort((a, b) => a.rect.top - b.rect.top)[0]
-    if (!anchor || !anchor.element.dataset.timelineKey) return { key: `${kind}-${Date.now()}`, offset: 0 }
-    return { key: `${kind}-${Date.now()}`, anchor: anchor.element.dataset.timelineKey, offset: anchor.rect.top - view.top }
+    if (!anchor || !anchor.element.dataset.timelineKey) return { key, offset: 0 }
+    return { key, anchor: anchor.element.dataset.timelineKey, offset: anchor.rect.top - view.top }
   }
-  const updatePrependAnchor = (snapshot: { key: string; offset: number; anchor?: string }) => {
+  const updatePrependAnchor = (snapshot: { key: symbol; offset: number; anchor?: string }) => {
     const root = listRoot()
     if (!root || !snapshot.anchor) return snapshot
     const view = root.getBoundingClientRect()
@@ -371,7 +372,7 @@ export function MessageTimeline(props: {
     if (!element) return snapshot
     return { ...snapshot, offset: element.getBoundingClientRect().top - view.top }
   }
-  const restorePrependAnchor = (snapshot: { key: string; offset: number; anchor?: string }, done: boolean) => {
+  const restorePrependAnchor = (snapshot: { key: symbol; offset: number; anchor?: string }, done: boolean) => {
     const previous = prependAnchorFrames.get(snapshot.key)
     if (previous !== undefined) cancelAnimationFrame(previous)
     let frames = 0
@@ -396,6 +397,7 @@ export function MessageTimeline(props: {
       }
       prependAnchorFrames.set(snapshot.key, requestAnimationFrame(apply))
     }
+    if (!done && previous === undefined) return
     prependAnchorFrames.set(snapshot.key, requestAnimationFrame(apply))
   }
   const anchorRegistry = createHistoryAnchorRegistry({
@@ -407,6 +409,10 @@ export function MessageTimeline(props: {
       prependAnchorFrames.delete(snapshot.key)
     },
     update: updatePrependAnchor,
+  })
+  anchorRegistry.setCleanup(() => {
+    for (const frame of prependAnchorFrames.values()) cancelAnimationFrame(frame)
+    prependAnchorFrames.clear()
   })
   const clearPrependAnchor = () => anchorRegistry.cancelAll()
 
@@ -541,7 +547,7 @@ export function MessageTimeline(props: {
   })
 
   onCleanup(() => {
-    clearPrependAnchor()
+    anchorRegistry.cleanup()
     timelineCache.delete(ownerSessionKey)
     timelineCache.set(ownerSessionKey, { measurements: virtualizer.takeSnapshot(), toolOpen: { ...toolOpen } })
     while (timelineCache.size > 16) timelineCache.delete(timelineCache.keys().next().value!)

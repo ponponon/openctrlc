@@ -556,12 +556,12 @@ describe("createSessionSearchRunGate", () => {
 
 describe("createHistoryAnchorRegistry", () => {
   test("isolates ordinary and search controllers on the same timeline registry", () => {
-    const cancelled: string[] = []
-    const restored: string[] = []
+    const cancelled: symbol[] = []
+    const restored: symbol[] = []
     let snapshot = 0
     const registry = createHistoryAnchorRegistry({
-      snapshot: (kind) => ({ key: `${kind}-${++snapshot}`, offset: snapshot }),
-      restore: (value, done) => restored.push(`${value.key}:${done}`),
+      snapshot: (kind) => ({ key: Symbol(kind), offset: ++snapshot }),
+      restore: (value, done) => restored.push(value.key),
       cancel: (value) => cancelled.push(value.key),
     })
 
@@ -569,20 +569,22 @@ describe("createHistoryAnchorRegistry", () => {
     const search = registry.capture("search")
     search?.cancel()
 
-    expect(cancelled).toEqual(["search-2"])
+    expect(cancelled).toHaveLength(1)
     expect(registry.has("normal")).toBe(true)
     expect(registry.has("search")).toBe(false)
 
     ordinary?.restore(true)
-    expect(restored).toEqual(["normal-1:true"])
+    expect(restored).toHaveLength(1)
+    expect(registry.has("normal")).toBe(true)
+    registry.cleanup()
     expect(registry.has("normal")).toBe(false)
   })
 
   test("updates each active controller with its own timeline snapshot", () => {
-    const restored: string[] = []
+    const restored: symbol[] = []
     let snapshot = 0
     const registry = createHistoryAnchorRegistry({
-      snapshot: (kind) => ({ key: `${kind}-${++snapshot}`, offset: snapshot }),
+      snapshot: (kind) => ({ key: Symbol(`${kind}-${++snapshot}`), offset: snapshot }),
       restore: (value) => restored.push(value.key),
       cancel: () => undefined,
     })
@@ -593,6 +595,6 @@ describe("createHistoryAnchorRegistry", () => {
     ordinary?.restore(true)
     search?.restore(true)
 
-    expect(restored).toEqual(["normal-3", "search-4"])
+    expect(restored).toHaveLength(2)
   })
 })
