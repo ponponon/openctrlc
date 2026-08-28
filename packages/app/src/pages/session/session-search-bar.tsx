@@ -1,3 +1,4 @@
+/** @jsxImportSource solid-js */
 import { Show } from "solid-js"
 import { Button } from "@openctrlc/ui/button"
 import { Icon } from "@openctrlc/ui/icon"
@@ -46,7 +47,7 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
             autofocus={true}
           />
         </div>
-          <Select
+        <Select
           options={scopes}
           current={props.scope}
           value={(scope) => scope}
