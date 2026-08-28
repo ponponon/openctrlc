@@ -160,6 +160,12 @@ describe("findSessionSearchMatches", () => {
     ])
   })
 
+  test("uses contextual lowercase rules for Greek final sigma", () => {
+    expect(findSessionSearchMatches([{ messageID: "greek", text: "ΟΣ" }], "ος")).toEqual([
+      { messageID: "greek", start: 0, end: 2 },
+    ])
+  })
+
   test("returns no matches for an empty query or missing text", () => {
     const documents = [{ messageID: "message-1", text: "content" }, { messageID: "message-2", text: "" }]
     expect(findSessionSearchMatches(documents, "")).toEqual([])

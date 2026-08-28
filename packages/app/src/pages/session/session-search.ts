@@ -84,17 +84,19 @@ export function hydrateSessionSearchHistory(input: {
 }
 
 function normalizeWithOffsets(text: string) {
+  const codePoints = Array.from(text)
+  const normalized = text.toLocaleLowerCase()
   const offsets: { start: number; end: number }[] = []
   let originalOffset = 0
-  const normalized = Array.from(text)
-    .map((character) => {
-      const start = originalOffset
-      originalOffset += character.length
-      const value = character.toLocaleLowerCase()
-      offsets.push(...Array.from({ length: value.length }, () => ({ start, end: originalOffset })))
-      return value
-    })
-    .join("")
+
+  codePoints.forEach((character) => {
+    const start = originalOffset
+    originalOffset += character.length
+    const previousLength = text.slice(0, start).toLocaleLowerCase().length
+    const nextLength = text.slice(0, originalOffset).toLocaleLowerCase().length
+    offsets.push(...Array.from({ length: nextLength - previousLength }, () => ({ start, end: originalOffset })))
+  })
+
   return { text: normalized, offsets }
 }
 

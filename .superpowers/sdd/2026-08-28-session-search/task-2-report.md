@@ -115,3 +115,34 @@ It still exits with existing unrelated errors in model dialogs, provider setting
 ### Review Concerns
 
 - Hydration waits by a bounded 10ms condition poll because the required callback-only interface exposes no notification or promise for external loading completion. This avoids busy looping and preserves the existing pure-helper API, but callers must ensure `loading()` eventually becomes false or the promise remains pending by design.
+
+## Scoped Re-Review Fix Report
+
+### Changes
+
+- Added a Greek final-sigma regression test for `text="ΟΣ"` and `query="ος"`.
+- Changed normalization to lowercase the complete document string, matching the complete-query lowercase behavior. Offset mapping is still built per original code point using cumulative full-string lowercase lengths, so contextual Unicode rules such as Greek final sigma and expansion such as `İ` remain mapped to original UTF-16 ranges.
+
+### Test Command And Output
+
+Command, run from `packages/app`:
+
+```text
+bun test --conditions=solid --preload ./happydom.ts ./src/pages/session/session-search.test.ts
+```
+
+Final output:
+
+```text
+17 pass
+0 fail
+32 expect() calls
+Ran 17 tests across 1 file.
+```
+
+The Greek regression test failed against the prior per-code-point normalization and passed after full-string normalization was implemented. The existing `İfoo` offset regression also remains passing.
+
+### Concerns
+
+- No hydration or public helper interface was changed.
+- Full-string locale lowercasing is performed once per document plus cumulative prefixes for offset construction; this keeps correctness for contextual Unicode casing but may be more CPU-intensive for very large documents. Documents are already bounded to 100,000 UTF-16 code units.
