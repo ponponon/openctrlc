@@ -227,6 +227,51 @@ Result: passed with no output.
 
 - The locale parity test now passes for all app, UI, and desktop locale checks; no known concerns remain for this fix round.
 
+### Post-Commit Verification
+
+Command:
+
+```bash
+bun test --conditions=solid --preload ./happydom.ts ./src/i18n/parity.test.ts
+```
+
+Output:
+
+```text
+bun test v1.3.14 (0d9b296a)
+
+src/i18n/parity.test.ts:
+(pass) i18n parity > WSL product-owned values use the OpenCtrlC identity [68.43ms]
+(pass) i18n parity > external OpenCode Zen copy keeps its service identity [6.27ms]
+(pass) i18n parity > non-English locales have every English key and required plural variants [42.54ms]
+(pass) i18n parity > non-English locales preserve English placeholders [73.02ms]
+(pass) i18n parity > non-English locales translate targeted unseen session keys [1.14ms]
+(pass) i18n parity > changed-file summary keys preserve rendered English copy and localize complete phrases [1.01ms]
+(pass) i18n plural parity > locale-specific categories exist and preserve count placeholders [2.48ms]
+
+7 pass
+0 fail
+11458 expect() calls
+Ran 7 tests across 1 file. [272.00ms]
+```
+
+Command:
+
+```bash
+bun typecheck
+```
+
+Output:
+
+```text
+$ tsgo -b
+```
+
+Commits:
+
+- `74ae46c fix(app): complete permission translations`
+- `a4077a4 docs(app): report complete permission translations`
+
 ## Review Fix Concerns
 
 - The focused parity test remains blocked by the next existing locale gap in `ko.ts`; only `zht.ts` was changed as explicitly requested.
