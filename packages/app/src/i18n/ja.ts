@@ -1166,4 +1166,17 @@ export const dict = {
 
   "titlebar.update": "アップデート",
   "titlebar.updateVersion": "アップデート {{version}}",
+  "session.search.placeholder": "Search this session",
+  "session.search.input": "Search session messages",
+  "session.search.scope": "Search scope",
+  "session.search.scope.conversation": "Conversation",
+  "session.search.scope.all": "All content",
+  "session.search.results": "{{current}} of {{total}} results",
+  "session.search.noResults": "No results",
+  "session.search.loading": "Loading results...",
+  "session.search.partial": "Partial history",
+  "session.search.retry": "Retry",
+  "session.search.previous": "Previous result",
+  "session.search.next": "Next result",
+  "session.search.close": "Close search",
 }

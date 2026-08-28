@@ -1245,4 +1245,17 @@ export const dict = {
   "help.tabs.persistence": "Dine faner er stadig åbne, når du åbner appen igen.",
   "help.tabs.worktrees":
     "Det nye design understøtter endnu ikke Git Worktrees, men understøttelsen kommer snart. Hvis du foretrækker at fortsætte med det tidligere layout, kan du skifte mellem layoutene under Indstillinger. Bemærk, at det nye layout bliver permanent om nogle få uger.",
+  "session.search.placeholder": "Search this session",
+  "session.search.input": "Search session messages",
+  "session.search.scope": "Search scope",
+  "session.search.scope.conversation": "Conversation",
+  "session.search.scope.all": "All content",
+  "session.search.results": "{{current}} of {{total}} results",
+  "session.search.noResults": "No results",
+  "session.search.loading": "Loading results...",
+  "session.search.partial": "Partial history",
+  "session.search.retry": "Retry",
+  "session.search.previous": "Previous result",
+  "session.search.next": "Next result",
+  "session.search.close": "Close search",
 }
