@@ -1711,14 +1711,14 @@ export default function Page() {
     },
   )
 
-  let captureHistoryAnchor = () => ({ restore: (_done: boolean) => {}, cancel: () => {} })
+  let captureHistoryAnchor = (_kind: "normal" | "search") => ({ restore: (_done: boolean) => {}, cancel: () => {} })
   searchHydrator = createSessionSearchHydrator({
     sessionID: () => params.id,
     more: timeline.history.more,
     loading: timeline.history.loading,
     beforeLoad: (sessionID) => {
       const owner = sessionOwnership.capture()
-      const anchor = owner.run(captureHistoryAnchor)
+      const anchor = owner.run(() => captureHistoryAnchor("search"))
       if (!anchor) return
       return {
         restore: (done: boolean) => owner.run(() => anchor.restore(done)),
@@ -1763,7 +1763,7 @@ export default function Page() {
     try {
       await timeline.history.loadOlder({
         before: () => owner.run(() => {
-          anchor = captureHistoryAnchor()
+          anchor = captureHistoryAnchor("normal")
         }),
         after: (done) => owner.run(() => anchor?.restore(done)),
       })

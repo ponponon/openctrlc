@@ -10,6 +10,7 @@ import {
   createSessionSearchRunGate,
   searchableText,
 } from "./session-search"
+import { createHistoryAnchorRegistry } from "./timeline/history-anchor"
 
 const user = (id: string): Message => ({
   id,
@@ -550,5 +551,48 @@ describe("createSessionSearchRunGate", () => {
     expect(gate.has("owner-1")).toBe(true)
     gate.remove("owner-1", second)
     expect(gate.has("owner-1")).toBe(false)
+  })
+})
+
+describe("createHistoryAnchorRegistry", () => {
+  test("isolates ordinary and search controllers on the same timeline registry", () => {
+    const cancelled: string[] = []
+    const restored: string[] = []
+    let snapshot = 0
+    const registry = createHistoryAnchorRegistry({
+      snapshot: (kind) => ({ key: `${kind}-${++snapshot}`, offset: snapshot }),
+      restore: (value, done) => restored.push(`${value.key}:${done}`),
+      cancel: (value) => cancelled.push(value.key),
+    })
+
+    const ordinary = registry.capture("normal")
+    const search = registry.capture("search")
+    search?.cancel()
+
+    expect(cancelled).toEqual(["search-2"])
+    expect(registry.has("normal")).toBe(true)
+    expect(registry.has("search")).toBe(false)
+
+    ordinary?.restore(true)
+    expect(restored).toEqual(["normal-1:true"])
+    expect(registry.has("normal")).toBe(false)
+  })
+
+  test("updates each active controller with its own timeline snapshot", () => {
+    const restored: string[] = []
+    let snapshot = 0
+    const registry = createHistoryAnchorRegistry({
+      snapshot: (kind) => ({ key: `${kind}-${++snapshot}`, offset: snapshot }),
+      restore: (value) => restored.push(value.key),
+      cancel: () => undefined,
+    })
+
+    const ordinary = registry.capture("normal")
+    const search = registry.capture("search")
+    registry.update()
+    ordinary?.restore(true)
+    search?.restore(true)
+
+    expect(restored).toEqual(["normal-3", "search-4"])
   })
 })
