@@ -90,7 +90,11 @@ export function createSessionSearchHydrator(input: {
   more: () => boolean
   loading: () => boolean
   loadMore: (sessionID: string) => Promise<void>
-  beforeLoad?: (sessionID: string) => ((done: boolean) => void) | undefined
+  beforeLoad?: (sessionID: string) =>
+    | ((done: boolean) => void)
+    | { restore: (done: boolean) => void; cancel: () => void }
+    | undefined
+  onRunStart?: () => (() => void) | undefined
   setTimeout?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
   clearTimeout?: (timer: ReturnType<typeof setTimeout>) => void
 }) {
@@ -98,6 +102,7 @@ export function createSessionSearchHydrator(input: {
   const clearTimer = input.clearTimeout ?? clearTimeout
   const runs = new Map<string, Promise<void>>()
   const timers = new Map<ReturnType<typeof setTimeout>, () => void>()
+  const activeAnchors = new Set<{ cancel: () => void }>()
   let generation = 0
   let disposed = false
 
@@ -119,21 +124,30 @@ export function createSessionSearchHydrator(input: {
     if (existing) return existing
 
     const runGeneration = generation
+    const releaseRun = input.onRunStart?.()
     let hydration: Promise<void>
     hydration = (async () => {
-      while (isCurrent(sessionID, runGeneration) && input.more()) {
-        while (isCurrent(sessionID, runGeneration) && input.loading()) await waitForState()
-        if (!isCurrent(sessionID, runGeneration) || !input.more()) return
+      try {
+        while (isCurrent(sessionID, runGeneration) && input.more()) {
+          while (isCurrent(sessionID, runGeneration) && input.loading()) await waitForState()
+          if (!isCurrent(sessionID, runGeneration) || !input.more()) return
 
-        const restore = input.beforeLoad?.(sessionID)
-        try {
-          await input.loadMore(sessionID)
-        } catch (error) {
-          if (isCurrent(sessionID, runGeneration)) restore?.(true)
-          throw error
+          const anchor = input.beforeLoad?.(sessionID)
+          const restore = typeof anchor === "function" ? anchor : anchor?.restore
+          if (anchor && typeof anchor !== "function") activeAnchors.add(anchor)
+          try {
+            await input.loadMore(sessionID)
+          } catch (error) {
+            if (isCurrent(sessionID, runGeneration)) restore?.(true)
+            throw error
+          } finally {
+            if (anchor && typeof anchor !== "function") activeAnchors.delete(anchor)
+          }
+          if (!isCurrent(sessionID, runGeneration)) return
+          restore?.(true)
         }
-        if (!isCurrent(sessionID, runGeneration)) return
-        restore?.(true)
+      } finally {
+        releaseRun?.()
       }
     })().finally(() => {
       if (runs.get(sessionID) === hydration) runs.delete(sessionID)
@@ -144,6 +158,10 @@ export function createSessionSearchHydrator(input: {
 
   const invalidate = () => {
     generation += 1
+    for (const anchor of activeAnchors) {
+      anchor.cancel()
+      activeAnchors.delete(anchor)
+    }
     runs.clear()
     for (const [timer, resolve] of timers) {
       clearTimer(timer)

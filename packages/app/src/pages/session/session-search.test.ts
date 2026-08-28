@@ -363,12 +363,18 @@ describe("createSessionSearchHydrator", () => {
     let remaining = 1
     let calls = 0
     let fail = true
+    let release: (() => void) | undefined
+    let pending = Promise.resolve()
     const hydrator = createSessionSearchHydrator({
       sessionID: () => "session-1",
       more: () => remaining > 0,
       loading: () => false,
       loadMore: async () => {
         calls += 1
+        pending = new Promise<void>((resolve) => {
+          release = resolve
+        })
+        await pending
         if (fail) {
           fail = false
           throw new Error("history failed")
@@ -381,10 +387,93 @@ describe("createSessionSearchHydrator", () => {
 
     const first = hydrator.hydrate("session-1")
     const joined = hydrator.hydrate("session-1")
+    await Promise.resolve()
+    expect(calls).toBe(1)
+    expect(first).toBe(joined)
+    release?.()
     await expect(first).rejects.toThrow("history failed")
     await expect(joined).rejects.toThrow("history failed")
-    await hydrator.hydrate("session-1")
+    const retry = hydrator.hydrate("session-1")
+    release?.()
+    await retry
 
     expect(calls).toBe(2)
+  })
+
+  test("cancels a captured anchor when an in-flight page becomes stale", async () => {
+    let release: (() => void) | undefined
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let captured = 0
+    let restored = 0
+    let cancelled = 0
+    const hydrator = createSessionSearchHydrator({
+      sessionID: () => "session-1",
+      more: () => true,
+      loading: () => false,
+      loadMore: async () => pending,
+      beforeLoad: () => ({
+        restore: () => {
+          restored += 1
+        },
+        cancel: () => {
+          cancelled += 1
+        },
+      }),
+    })
+
+    const run = hydrator.hydrate("session-1")
+    captured += 1
+    hydrator.invalidate()
+    expect(captured).toBe(1)
+    expect(cancelled).toBe(1)
+    expect(restored).toBe(0)
+    release?.()
+    await run
+    expect(restored).toBe(0)
+  })
+
+  test("restores captured anchors and releases run ownership on success and failure", async () => {
+    let remaining = 2
+    let fail = false
+    let activeRuns = 0
+    let restored = 0
+    let cancelled = 0
+    const hydrator = createSessionSearchHydrator({
+      sessionID: () => "session-1",
+      more: () => remaining > 0,
+      loading: () => false,
+      beforeLoad: () => ({
+        restore: () => {
+          restored += 1
+        },
+        cancel: () => {
+          cancelled += 1
+        },
+      }),
+      loadMore: async () => {
+        remaining -= 1
+        if (fail) throw new Error("history failed")
+      },
+      onRunStart: () => {
+        activeRuns += 1
+        return () => {
+          activeRuns -= 1
+        }
+      },
+    })
+
+    await hydrator.hydrate("session-1")
+    expect(activeRuns).toBe(0)
+    expect(restored).toBe(2)
+    expect(cancelled).toBe(0)
+
+    remaining = 1
+    fail = true
+    await expect(hydrator.hydrate("session-1")).rejects.toThrow("history failed")
+    expect(activeRuns).toBe(0)
+    expect(restored).toBe(3)
+    expect(cancelled).toBe(0)
   })
 })

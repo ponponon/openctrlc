@@ -255,7 +255,7 @@ export function MessageTimeline(props: {
   setRevealMessage?: (fn: (id: string) => void) => void
   activeSearchMessageID?: string
   setScrollToEnd?: (fn: () => void) => void
-  setHistoryAnchor?: (handlers: { capture: () => void; restore: (done: boolean) => void }) => void
+  setHistoryAnchor?: (handlers: { capture: () => void; restore: (done: boolean) => void; cancel: () => void }) => void
 }) {
   let touchGesture: number | undefined
 
@@ -505,7 +505,7 @@ export function MessageTimeline(props: {
       virtualizer.scrollToIndex(index, { align: "center" })
     })
     props.setScrollToEnd?.(() => virtualizer.scrollToEnd())
-    props.setHistoryAnchor?.({ capture: capturePrependAnchor, restore: restorePrependAnchor })
+    props.setHistoryAnchor?.({ capture: capturePrependAnchor, restore: restorePrependAnchor, cancel: clearPrependAnchor })
   })
 
   let overscanFrame: number | undefined
@@ -549,7 +549,7 @@ export function MessageTimeline(props: {
     if (overscanFrame !== undefined) cancelAnimationFrame(overscanFrame)
     props.setRevealMessage?.(() => {})
     props.setScrollToEnd?.(() => {})
-    props.setHistoryAnchor?.({ capture: () => {}, restore: () => {} })
+    props.setHistoryAnchor?.({ capture: () => {}, restore: () => {}, cancel: clearPrependAnchor })
   })
 
   const [title, setTitle] = createStore({
