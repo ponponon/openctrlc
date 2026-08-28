@@ -47,3 +47,20 @@ test("renders the production session search bar and handles every state", async 
   await expect(bar).toHaveCount(0)
   await expect.poll(() => page.evaluate(() => window.__sessionSearchHarness?.state.closed)).toBe(1)
 })
+
+test("applies the narrow layout at 500px and 639px but not at 640px", async ({ page }) => {
+  for (const width of [500, 639]) {
+    await page.setViewportSize({ width, height: 800 })
+    await page.goto("/")
+    await page.evaluate(() => window.__sessionSearchHarness?.set({ open: true }))
+
+    await expect(page.locator('[data-component="session-search-bar"]')).toBeVisible()
+    await expect(page.locator('[data-component="session-search-bar"]')).toHaveCSS("padding-top", "8px")
+  }
+
+  await page.setViewportSize({ width: 640, height: 800 })
+  await page.goto("/")
+  await page.evaluate(() => window.__sessionSearchHarness?.set({ open: true }))
+  await expect(page.locator('[data-component="session-search-bar"]')).toBeVisible()
+  await expect(page.locator('[data-component="session-search-bar"]')).toHaveCSS("padding-top", "4px")
+})

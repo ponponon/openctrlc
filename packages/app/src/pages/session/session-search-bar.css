@@ -96,7 +96,7 @@
   margin-inline-start: auto;
 }
 
-@media (max-width: calc(var(--session-search-bar-breakpoint) - 1px)) {
+@media (max-width: 639px) {
   [data-component="session-search-bar"] {
     padding: calc(var(--spacing) * 2);
   }
