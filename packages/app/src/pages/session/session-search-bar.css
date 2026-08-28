@@ -1,7 +1,9 @@
 [data-component="session-search-bar"] {
+  --session-search-bar-breakpoint: var(--breakpoint-sm);
   --session-search-bar-height: 40px;
   --session-search-bar-input-height: 28px;
   --session-search-bar-field-basis: var(--container-sm);
+  --session-search-bar-error-max-width: var(--container-2xs);
 
   position: relative;
   width: 100%;
@@ -64,7 +66,7 @@
 }
 
 .session-search-bar__error {
-  max-width: 14rem;
+  max-width: var(--session-search-bar-error-max-width);
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 calc(var(--spacing) * 1.5);
@@ -92,4 +94,10 @@
 
 .session-search-bar__actions {
   margin-inline-start: auto;
+}
+
+@media (max-width: calc(var(--session-search-bar-breakpoint) - 1px)) {
+  [data-component="session-search-bar"] {
+    padding: calc(var(--spacing) * 2);
+  }
 }

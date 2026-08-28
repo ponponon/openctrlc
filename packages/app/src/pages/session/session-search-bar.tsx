@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 import { Show } from "solid-js"
 import { Button } from "@openctrlc/ui/button"
 import { Icon } from "@openctrlc/ui/icon"
