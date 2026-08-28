@@ -166,3 +166,62 @@ Result: passed with exit code 0.
 ## Review Fix Concerns
 
 - The focused parity test remains blocked by the next existing locale gap in `ko.ts`; only `zht.ts` was changed as explicitly requested.
+
+### Exact Verification Output
+
+The commands were rerun after the fix commits. The exact output was:
+
+```text
+$ bun test --conditions=solid --preload ./happydom.ts ./src/i18n/parity.test.ts
+bun test v1.3.14 (0d9b296a)
+
+src/i18n/parity.test.ts:
+(pass) i18n parity > WSL product-owned values use the OpenCtrlC identity [55.56ms]
+(pass) i18n parity > external OpenCode Zen copy keeps its service identity [4.50ms]
+82 |           .filter((key) => !Object.hasOwn(source, key))
+83 |           .sort()
+84 |         const expected = pluralFamilies(source)
+85 |           .flatMap((key) => (pluralCategories.get(locale) ?? []).map((category) => `${key}.${category}`))
+86 |           .sort()
+87 |         expect({ domain: domain.name, locale, missing, extra }).toEqual({
+                                                                     ^
+error: expect(received).toEqual(expected)
+
+  {
+    "domain": "app",
+    "extra": [],
+    "locale": "ko",
+-   "missing": [],
++   "missing": [
++     "prompt.permissions.autoaccept",
++     "prompt.permissions.autoaccept.enabled",
++     "prompt.permissions.autoaccept.enable",
++     "prompt.permissions.autoaccept.disable",
++   ],
+  }
+
+- Expected  - 1
++ Received  + 6
+
+      at /Users/ponponon/Desktop/code/me/ai_agent/openctrlc/.worktrees/prompt-permission/packages/app/src/i18n/parity.test.ts:87:65
+(fail) i18n parity > non-English locales have every English key and required plural variants [1.20ms]
+(pass) i18n parity > non-English locales preserve English placeholders [99.12ms]
+(pass) i18n parity > targeted unseen session keys [0.86ms]
+(pass) i18n parity > changed-file summary keys preserve rendered English copy and localize complete phrases [0.84ms]
+(pass) i18n plural parity > locale-specific categories exist and preserve count placeholders [2.59ms]
+
+6 pass
+1 fail
+11278 expect() calls
+Ran 7 tests across 1 file. [237.00ms]
+```
+
+```text
+$ bun typecheck
+$ tsgo -b
+```
+
+Fix commits:
+
+- `0fb3348 fix(app): complete traditional chinese permission locale`
+- `8fb76b1 docs(app): record traditional chinese locale fix`
