@@ -107,7 +107,7 @@ import { SessionSearchBar } from "./session/session-search-bar"
 import {
   createSessionSearchDocuments,
   findSessionSearchMatches,
-  hydrateSessionSearchHistory,
+  createSessionSearchHydrator,
   nextSessionSearchMatchIndex,
   preserveSessionSearchActiveIndex,
   type SessionSearchScope,
@@ -583,9 +583,9 @@ export default function Page() {
   )
   const searchMatches = createMemo(() => findSessionSearchMatches(searchDocuments(), search.query))
   let searchQueryTimer: number | undefined
-  let searchHydrationRun = 0
   let previousSearchMatch = undefined as ReturnType<typeof searchMatches>[number] | undefined
   let searchHistoryLoading = false
+  let searchHydrator: ReturnType<typeof createSessionSearchHydrator> | undefined
 
   const setSearchQuery = (query: string) => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
@@ -594,7 +594,7 @@ export default function Page() {
 
   const resetSearch = () => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
-    searchHydrationRun += 1
+    searchHydrator?.invalidate()
     previousSearchMatch = undefined
     setSearch({
       open: false,
@@ -610,32 +610,21 @@ export default function Page() {
   const hydrateSearch = async () => {
     const id = params.id
     if (!id) return
-    const run = ++searchHydrationRun
+    const owner = sessionOwnership.capture()
+    if (!searchHydrator) return
     setSearch({ hydrating: true, partial: false, error: undefined })
-    await hydrateSessionSearchHistory({
-      sessionID: () => (params.id === id && searchHydrationRun === run ? id : undefined),
-      more: () => params.id === id && searchHydrationRun === run && timeline.history.more(),
-      loading: timeline.history.loading,
-      loadMore: async (sessionID) => {
-        searchHistoryLoading = true
-        try {
-          await sync().session.history.loadMore(sessionID)
-        } finally {
-          searchHistoryLoading = false
-        }
-      },
-    }).then(
+    await searchHydrator.hydrate(id).then(
       () => {
-        if (params.id !== id || searchHydrationRun !== run) return
-        setSearch({ hydrating: false, partial: false })
+        owner.run(() => setSearch({ hydrating: false, partial: false }))
       },
       (error: unknown) => {
-        if (params.id !== id || searchHydrationRun !== run) return
-        setSearch({
-          hydrating: false,
-          partial: true,
-          error: error instanceof Error ? error.message : language.t("common.requestFailed"),
-        })
+        owner.run(() =>
+          setSearch({
+            hydrating: false,
+            partial: true,
+            error: formatServerError(error, language.t, language.t("common.requestFailed")),
+          }),
+        )
       },
     )
   }
@@ -1714,6 +1703,30 @@ export default function Page() {
 
   let captureHistoryAnchor = () => {}
   let restoreHistoryAnchor = (_done: boolean) => {}
+  searchHydrator = createSessionSearchHydrator({
+    sessionID: () => params.id,
+    more: timeline.history.more,
+    loading: timeline.history.loading,
+    beforeLoad: (sessionID) => {
+      const owner = sessionOwnership.capture()
+      owner.run(captureHistoryAnchor)
+      return (done: boolean) => owner.run(() => restoreHistoryAnchor(done))
+    },
+    loadMore: async (sessionID) => {
+      const owner = sessionOwnership.capture()
+      if (!owner.current()) return
+      searchHistoryLoading = true
+      try {
+        await sync().session.history.loadMore(sessionID)
+      } finally {
+        searchHistoryLoading = false
+      }
+    },
+  })
+  onCleanup(() => {
+    if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
+    searchHydrator?.dispose()
+  })
   const historyRequests = new Set<string>()
   let historyContinuationFrame: number | undefined
   const loadOlder = async () => {

@@ -5,11 +5,7 @@ export type SessionSearchDocument = { messageID: string; text: string }
 export type SessionSearchMatch = { messageID: string; start: number; end: number }
 
 const MAX_SEARCH_DOCUMENT_LENGTH = 100_000
-const activeHydrations = new WeakMap<
-  (sessionID: string) => Promise<void>,
-  Map<string, Promise<void>>
->()
-
+const activeHydrations = new WeakMap<object, Map<string, Promise<void>>>()
 export function searchableText(input: { message: Message; parts: Part[]; scope: SessionSearchScope }) {
   const values = input.parts.flatMap((part) => partText(part, input.scope))
   if (input.scope === "all" && input.message.role === "assistant" && input.message.error) {
@@ -80,23 +76,91 @@ export function hydrateSessionSearchHistory(input: {
 }): Promise<void> {
   const sessionID = input.sessionID()
   if (!sessionID || !input.more()) return Promise.resolve()
-
-  const activeForLoader = activeHydrations.get(input.loadMore) ?? new Map<string, Promise<void>>()
-  const existing = activeForLoader.get(sessionID)
+  const active = activeHydrations.get(input) ?? new Map<string, Promise<void>>()
+  const existing = active.get(sessionID)
   if (existing) return existing
-
-  const hydration = (async () => {
-    while (input.more()) {
-      while (input.loading()) await waitForHydrationState()
-      if (!input.more()) return
-      await input.loadMore(sessionID)
-    }
-  })().finally(() => {
-    activeForLoader.delete(sessionID)
-  })
-  activeForLoader.set(sessionID, hydration)
-  activeHydrations.set(input.loadMore, activeForLoader)
+  const hydration = createSessionSearchHydrator(input).hydrate(sessionID).finally(() => active.delete(sessionID))
+  active.set(sessionID, hydration)
+  activeHydrations.set(input, active)
   return hydration
+}
+
+export function createSessionSearchHydrator(input: {
+  sessionID: () => string | undefined
+  more: () => boolean
+  loading: () => boolean
+  loadMore: (sessionID: string) => Promise<void>
+  beforeLoad?: (sessionID: string) => ((done: boolean) => void) | undefined
+  setTimeout?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
+  clearTimeout?: (timer: ReturnType<typeof setTimeout>) => void
+}) {
+  const setTimer = input.setTimeout ?? setTimeout
+  const clearTimer = input.clearTimeout ?? clearTimeout
+  const runs = new Map<string, Promise<void>>()
+  const timers = new Map<ReturnType<typeof setTimeout>, () => void>()
+  let generation = 0
+  let disposed = false
+
+  const isCurrent = (sessionID: string, runGeneration = generation) =>
+    !disposed && generation === runGeneration && input.sessionID() === sessionID
+
+  const waitForState = () =>
+    new Promise<void>((resolve) => {
+      const timer = setTimer(() => {
+        timers.delete(timer)
+        resolve()
+      }, 10)
+      timers.set(timer, resolve)
+    })
+
+  const hydrate = (sessionID: string) => {
+    if (disposed || input.sessionID() !== sessionID || !input.more()) return Promise.resolve()
+    const existing = runs.get(sessionID)
+    if (existing) return existing
+
+    const runGeneration = generation
+    let hydration: Promise<void>
+    hydration = (async () => {
+      while (isCurrent(sessionID, runGeneration) && input.more()) {
+        while (isCurrent(sessionID, runGeneration) && input.loading()) await waitForState()
+        if (!isCurrent(sessionID, runGeneration) || !input.more()) return
+
+        const restore = input.beforeLoad?.(sessionID)
+        try {
+          await input.loadMore(sessionID)
+        } catch (error) {
+          if (isCurrent(sessionID, runGeneration)) restore?.(true)
+          throw error
+        }
+        if (!isCurrent(sessionID, runGeneration)) return
+        restore?.(true)
+      }
+    })().finally(() => {
+      if (runs.get(sessionID) === hydration) runs.delete(sessionID)
+    })
+    runs.set(sessionID, hydration)
+    return hydration
+  }
+
+  const invalidate = () => {
+    generation += 1
+    runs.clear()
+    for (const [timer, resolve] of timers) {
+      clearTimer(timer)
+      timers.delete(timer)
+      resolve()
+    }
+  }
+
+  return {
+    hydrate,
+    isCurrent,
+    invalidate,
+    dispose() {
+      disposed = true
+      invalidate()
+    },
+  }
 }
 
 function normalizeWithOffsets(text: string) {
@@ -120,10 +184,6 @@ function normalizeWithOffsets(text: string) {
   }
 
   return { text: normalized, offsets }
-}
-
-function waitForHydrationState() {
-  return new Promise<void>((resolve) => setTimeout(resolve, 10))
 }
 
 function partText(part: Part, scope: SessionSearchScope) {

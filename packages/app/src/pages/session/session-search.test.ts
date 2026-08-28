@@ -6,6 +6,7 @@ import {
   hydrateSessionSearchHistory,
   nextSessionSearchMatchIndex,
   preserveSessionSearchActiveIndex,
+  createSessionSearchHydrator,
   searchableText,
 } from "./session-search"
 
@@ -315,5 +316,75 @@ describe("hydrateSessionSearchHistory", () => {
     release?.()
     await expect(first).rejects.toThrow("history unavailable")
     await expect(second).rejects.toThrow("history unavailable")
+  })
+})
+
+describe("createSessionSearchHydrator", () => {
+  test("invalidates stale loads and clears its timer on dispose", async () => {
+    let sessionID: string | undefined = "session-1"
+    let more = true
+    let loading = true
+    let release: (() => void) | undefined
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const timers: ReturnType<typeof setTimeout>[] = []
+    let cleared = 0
+    const hydrator = createSessionSearchHydrator({
+      sessionID: () => sessionID,
+      more: () => more,
+      loading: () => loading,
+      loadMore: async () => pending,
+      setTimeout: (callback: () => void, delay: number) => {
+        const timer = setTimeout(callback, delay)
+        timers.push(timer)
+        return timer
+      },
+      clearTimeout: (timer) => {
+        cleared += 1
+        clearTimeout(timer)
+      },
+    })
+
+    const run = hydrator.hydrate("session-1")
+    hydrator.dispose()
+    sessionID = undefined
+    more = false
+    loading = false
+    release?.()
+
+    await run
+    expect(timers).toHaveLength(1)
+    expect(cleared).toBe(1)
+    expect(hydrator.isCurrent("session-1")).toBe(false)
+  })
+
+  test("joins duplicate requests and permits retry after failure", async () => {
+    let remaining = 1
+    let calls = 0
+    let fail = true
+    const hydrator = createSessionSearchHydrator({
+      sessionID: () => "session-1",
+      more: () => remaining > 0,
+      loading: () => false,
+      loadMore: async () => {
+        calls += 1
+        if (fail) {
+          fail = false
+          throw new Error("history failed")
+        }
+        remaining = 0
+      },
+      setTimeout,
+      clearTimeout,
+    })
+
+    const first = hydrator.hydrate("session-1")
+    const joined = hydrator.hydrate("session-1")
+    await expect(first).rejects.toThrow("history failed")
+    await expect(joined).rejects.toThrow("history failed")
+    await hydrator.hydrate("session-1")
+
+    expect(calls).toBe(2)
   })
 })
