@@ -1,0 +1,200 @@
+import { describe, expect, test } from "bun:test"
+import type { AssistantMessage, Message, Part } from "@openctrlc/sdk/v2/client"
+import {
+  createSessionSearchDocuments,
+  findSessionSearchMatches,
+  hydrateSessionSearchHistory,
+  nextSessionSearchMatchIndex,
+  searchableText,
+} from "./session-search"
+
+const user = (id: string): Message => ({
+  id,
+  sessionID: "session",
+  role: "user",
+  time: { created: 1 },
+  agent: "agent",
+  model: { providerID: "provider", modelID: "model" },
+})
+
+const assistant = (id: string): AssistantMessage => ({
+  id,
+  sessionID: "session",
+  role: "assistant",
+  time: { created: 2 },
+  parentID: "user",
+  modelID: "model",
+  providerID: "provider",
+  mode: "build",
+  agent: "agent",
+  path: { cwd: "/tmp", root: "/tmp" },
+  cost: 0,
+  tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+})
+
+const part = (value: object) => value as unknown as Part
+
+describe("searchableText", () => {
+  test("includes readable text parts in the default conversation scope", () => {
+    const text = searchableText({
+      message: user("user-1"),
+      parts: [
+        part({ type: "text", text: "User request" }),
+        part({ type: "reasoning", text: "private reasoning" }),
+        part({ type: "file", mime: "image/png", url: "data:image/png;base64,encoded" }),
+      ],
+      scope: "conversation",
+    })
+
+    expect(text).toBe("User request")
+  })
+
+  test("includes reasoning, tool values, and error text in the all-content scope", () => {
+    const text = searchableText({
+      message: {
+        ...assistant("assistant-1"),
+        error: { name: "UnknownError", data: { message: "provider failed" } },
+      },
+      parts: [
+        part({ type: "text", text: "visible answer" }),
+        part({ type: "reasoning", text: "private reasoning" }),
+        part({
+          type: "tool",
+          tool: "bash",
+          state: {
+            status: "completed",
+            input: { command: "bun test", nested: { path: "src/app.ts" } },
+            output: "tool output",
+            title: "Bash",
+            metadata: {},
+            time: { start: 1, end: 2 },
+          },
+        }),
+      ],
+      scope: "all",
+    })
+
+    expect(text).toContain("visible answer")
+    expect(text).toContain("private reasoning")
+    expect(text).toContain("bun test")
+    expect(text).toContain("src/app.ts")
+    expect(text).toContain("tool output")
+    expect(text).toContain("provider failed")
+  })
+
+  test("skips unsupported values instead of stringifying them", () => {
+    const text = searchableText({
+      message: user("user-1"),
+      parts: [
+        part({ type: "text", text: "readable" }),
+        part({ type: "file", mime: "application/octet-stream", url: "data:application/octet-stream;base64:binary" }),
+        part({ type: "snapshot", snapshot: { large: "object" } }),
+      ],
+      scope: "all",
+    })
+
+    expect(text).toBe("readable")
+    expect(text).not.toContain("[object Object]")
+    expect(text).not.toContain("binary")
+  })
+})
+
+describe("createSessionSearchDocuments", () => {
+  test("preserves message order and bounds each document", () => {
+    const messages = [user("first"), assistant("second")]
+    const documents = createSessionSearchDocuments({
+      messages,
+      parts: (messageID) => [part({ type: "text", text: messageID === "first" ? "a" : "b".repeat(100_001) })],
+      scope: "conversation",
+    })
+
+    expect(documents[0]).toEqual({ messageID: "first", text: "a" })
+    expect(documents[1]?.messageID).toBe("second")
+    expect(documents[1]?.text.length).toBeLessThanOrEqual(100_000)
+  })
+
+  test("creates a document even when a message has no readable parts", () => {
+    expect(
+      createSessionSearchDocuments({ messages: [user("user-1")], parts: () => [], scope: "conversation" }),
+    ).toEqual([{ messageID: "user-1", text: "" }])
+  })
+})
+
+describe("findSessionSearchMatches", () => {
+  test("finds case-insensitive non-overlapping matches with document offsets", () => {
+    expect(findSessionSearchMatches([{ messageID: "message-1", text: "Ababa foo FOO" }], "foo")).toEqual([
+      { messageID: "message-1", start: 6, end: 9 },
+      { messageID: "message-1", start: 10, end: 13 },
+    ])
+  })
+
+  test("returns no matches for an empty query or missing text", () => {
+    const documents = [{ messageID: "message-1", text: "content" }, { messageID: "message-2", text: "" }]
+    expect(findSessionSearchMatches(documents, "")).toEqual([])
+    expect(findSessionSearchMatches(documents, "missing")).toEqual([])
+  })
+})
+
+describe("nextSessionSearchMatchIndex", () => {
+  test("wraps forward and backward at both ends", () => {
+    expect(nextSessionSearchMatchIndex(0, 3, -1)).toBe(2)
+    expect(nextSessionSearchMatchIndex(2, 3, 1)).toBe(0)
+    expect(nextSessionSearchMatchIndex(1, 3, 1)).toBe(2)
+  })
+
+  test("returns zero when there are no matches", () => {
+    expect(nextSessionSearchMatchIndex(4, 0, 1)).toBe(0)
+  })
+})
+
+describe("hydrateSessionSearchHistory", () => {
+  test("loads pages until history is exhausted", async () => {
+    let remaining = 3
+    const calls: string[] = []
+
+    await hydrateSessionSearchHistory({
+      sessionID: () => "session-1",
+      more: () => remaining > 0,
+      loading: () => false,
+      loadMore: async (sessionID) => {
+        calls.push(sessionID)
+        remaining -= 1
+      },
+    })
+
+    expect(calls).toEqual(["session-1", "session-1", "session-1"])
+  })
+
+  test("does not load when there is no session or a load is already active", async () => {
+    let calls = 0
+    const loadMore = async () => {
+      calls += 1
+    }
+
+    await hydrateSessionSearchHistory({ sessionID: () => undefined, more: () => true, loading: () => false, loadMore })
+    await hydrateSessionSearchHistory({ sessionID: () => "session-1", more: () => true, loading: () => true, loadMore })
+
+    expect(calls).toBe(0)
+  })
+
+  test("prevents concurrent duplicate pagination and propagates failures", async () => {
+    let release: (() => void) | undefined
+    let calls = 0
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const loadMore = async () => {
+      calls += 1
+      await pending
+      throw new Error("history unavailable")
+    }
+    const input = { sessionID: () => "session-1", more: () => true, loading: () => false, loadMore }
+    const first = hydrateSessionSearchHistory(input)
+    const second = hydrateSessionSearchHistory(input)
+
+    expect(calls).toBe(1)
+    release?.()
+    await expect(first).rejects.toThrow("history unavailable")
+    await expect(second).rejects.toThrow("history unavailable")
+  })
+})
