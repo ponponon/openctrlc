@@ -7,6 +7,7 @@ import {
   nextSessionSearchMatchIndex,
   preserveSessionSearchActiveIndex,
   createSessionSearchHydrator,
+  createSessionSearchRunGate,
   searchableText,
 } from "./session-search"
 
@@ -434,6 +435,62 @@ describe("createSessionSearchHydrator", () => {
     expect(restored).toBe(0)
   })
 
+  test("isolates an old pending run from a reopened run for the same session", async () => {
+    let calls = 0
+    let releaseOld: (() => void) | undefined
+    let releaseNew: (() => void) | undefined
+    const oldPending = new Promise<void>((resolve) => {
+      releaseOld = resolve
+    })
+    const newPending = new Promise<void>((resolve) => {
+      releaseNew = resolve
+    })
+    const hydrator = createSessionSearchHydrator({
+      sessionID: () => "session-1",
+      more: () => calls < 2,
+      loading: () => false,
+      loadMore: async () => {
+        calls += 1
+        await (calls === 1 ? oldPending : newPending)
+      },
+    })
+
+    const oldRun = hydrator.hydrateRun("session-1")
+    await Promise.resolve()
+    hydrator.invalidate()
+    const newRun = hydrator.hydrateRun("session-1")
+    expect(newRun.token).not.toBe(oldRun.token)
+    releaseOld?.()
+    await oldRun.promise
+    expect(calls).toBe(2)
+    releaseNew?.()
+    await newRun.promise
+  })
+
+  test("does not cancel an ordinary anchor when search hydration is invalidated", async () => {
+    let release: (() => void) | undefined
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let ordinaryCancelled = 0
+    let searchCancelled = 0
+    const hydrator = createSessionSearchHydrator({
+      sessionID: () => "session-1",
+      more: () => true,
+      loading: () => false,
+      loadMore: async () => pending,
+      beforeLoad: () => ({ restore: () => {}, cancel: () => searchCancelled++ }),
+    })
+
+    const ordinaryAnchor = { cancel: () => ordinaryCancelled++ }
+    const run = hydrator.hydrate("session-1")
+    hydrator.invalidate()
+    release?.()
+    await run
+    expect(searchCancelled).toBe(1)
+    expect(ordinaryCancelled).toBe(0)
+  })
+
   test("restores captured anchors and releases run ownership on success and failure", async () => {
     let remaining = 2
     let fail = false
@@ -475,5 +532,23 @@ describe("createSessionSearchHydrator", () => {
     expect(activeRuns).toBe(0)
     expect(restored).toBe(3)
     expect(cancelled).toBe(0)
+  })
+})
+
+describe("createSessionSearchRunGate", () => {
+  test("tracks hydration runs by current session owner", () => {
+    const gate = createSessionSearchRunGate()
+    const first = Symbol("first")
+    const second = Symbol("second")
+    const releaseFirst = gate.add("owner-1", first)
+
+    expect(gate.has("owner-1")).toBe(true)
+    expect(gate.has("owner-2")).toBe(false)
+    gate.add("owner-1", second)
+    expect(gate.has("owner-1")).toBe(true)
+    releaseFirst()
+    expect(gate.has("owner-1")).toBe(true)
+    gate.remove("owner-1", second)
+    expect(gate.has("owner-1")).toBe(false)
   })
 })

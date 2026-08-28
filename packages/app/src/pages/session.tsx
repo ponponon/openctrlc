@@ -108,6 +108,7 @@ import {
   createSessionSearchDocuments,
   findSessionSearchMatches,
   createSessionSearchHydrator,
+  createSessionSearchRunGate,
   nextSessionSearchMatchIndex,
   preserveSessionSearchActiveIndex,
   type SessionSearchScope,
@@ -584,9 +585,10 @@ export default function Page() {
   const searchMatches = createMemo(() => findSessionSearchMatches(searchDocuments(), search.query))
   let searchQueryTimer: number | undefined
   let previousSearchMatch = undefined as ReturnType<typeof searchMatches>[number] | undefined
-  let searchHistoryLoadingOwner: string | undefined
-  const searchHydrationOwners = new Set<string>()
+  let searchHistoryLoading: { owner: string; token: symbol } | undefined
+  const searchHydrationOwners = createSessionSearchRunGate()
   let searchHydrator: ReturnType<typeof createSessionSearchHydrator> | undefined
+  let searchActiveRunToken: symbol | undefined
 
   const setSearchQuery = (query: string) => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
@@ -595,8 +597,8 @@ export default function Page() {
 
   const resetSearch = () => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
-    cancelHistoryAnchor()
     searchHydrator?.invalidate()
+    searchActiveRunToken = undefined
     previousSearchMatch = undefined
     setSearch({
       open: false,
@@ -615,18 +617,24 @@ export default function Page() {
     const owner = sessionOwnership.capture()
     if (!searchHydrator) return
     setSearch({ hydrating: true, partial: false, error: undefined })
-    await searchHydrator.hydrate(id).then(
+    const run = searchHydrator.hydrateRun(id)
+    searchActiveRunToken = run.token
+    await run.promise.then(
       () => {
-        owner.run(() => setSearch({ hydrating: false, partial: false }))
+        owner.run(() => {
+          if (searchActiveRunToken !== run.token) return
+          setSearch({ hydrating: false, partial: false })
+        })
       },
       (error: unknown) => {
-        owner.run(() =>
+        owner.run(() => {
+          if (searchActiveRunToken !== run.token) return
           setSearch({
             hydrating: false,
             partial: true,
             error: formatServerError(error, language.t, language.t("common.requestFailed")),
-          }),
-        )
+          })
+        })
       },
     )
   }
@@ -1703,54 +1711,61 @@ export default function Page() {
     },
   )
 
-  let captureHistoryAnchor = () => {}
-  let restoreHistoryAnchor = (_done: boolean) => {}
-  let cancelHistoryAnchor = () => {}
+  let captureHistoryAnchor = () => ({ restore: (_done: boolean) => {}, cancel: () => {} })
   searchHydrator = createSessionSearchHydrator({
     sessionID: () => params.id,
     more: timeline.history.more,
     loading: timeline.history.loading,
     beforeLoad: (sessionID) => {
       const owner = sessionOwnership.capture()
-      const restore = restoreHistoryAnchor
-      const cancel = cancelHistoryAnchor
-      owner.run(captureHistoryAnchor)
+      const anchor = owner.run(captureHistoryAnchor)
+      if (!anchor) return
       return {
-        restore: (done: boolean) => owner.run(() => restore(done)),
-        cancel,
+        restore: (done: boolean) => owner.run(() => anchor.restore(done)),
+        cancel: anchor.cancel,
       }
     },
-    onRunStart: () => {
+    onRunStart: (token) => {
       const owner = sessionOwnership.capture()
-      searchHydrationOwners.add(owner.key)
-      return () => searchHydrationOwners.delete(owner.key)
+      return searchHydrationOwners.add(owner.key, token)
     },
-    loadMore: async (sessionID) => {
+    loadMore: async (sessionID, token) => {
       const owner = sessionOwnership.capture()
       if (!owner.current()) return
-      searchHistoryLoadingOwner = owner.key
+      if (!token) return
+      searchHistoryLoading = { owner: owner.key, token }
       try {
         await sync().session.history.loadMore(sessionID)
       } finally {
-        if (searchHistoryLoadingOwner === owner.key) searchHistoryLoadingOwner = undefined
+        if (searchHistoryLoading?.owner === owner.key && searchHistoryLoading.token === token)
+          searchHistoryLoading = undefined
       }
     },
   })
   onCleanup(() => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
+    searchActiveRunToken = undefined
     searchHydrator?.dispose()
   })
   const historyRequests = new Set<string>()
   let historyContinuationFrame: number | undefined
   const loadOlder = async () => {
     const owner = sessionOwnership.capture()
-    if (historyLoading() || searchHistoryLoadingOwner !== undefined || searchHydrationOwners.has(owner.key) || historyRequests.has(owner.key)) return
+    if (
+      historyLoading() ||
+      (searchHistoryLoading?.owner === owner.key || searchHydrationOwners.has(owner.key)) ||
+      historyRequests.has(owner.key)
+    )
+      return
     historyRequests.add(owner.key)
     const before = timeline.messages().length
+    let anchor: ReturnType<typeof captureHistoryAnchor> | undefined
     try {
       await timeline.history.loadOlder({
-        before: () => owner.run(captureHistoryAnchor),
-        after: (done) => owner.run(() => restoreHistoryAnchor(done)),
+        before: () => owner.run(() => {
+          anchor = captureHistoryAnchor()
+        }),
+        after: (done) => owner.run(() => anchor?.restore(done)),
       })
     } finally {
       historyRequests.delete(owner.key)
@@ -2275,8 +2290,6 @@ export default function Page() {
                     userMessages={visibleUserMessages()}
                     setHistoryAnchor={(handlers) => {
                       captureHistoryAnchor = handlers.capture
-                      restoreHistoryAnchor = handlers.restore
-                      cancelHistoryAnchor = handlers.cancel
                     }}
                     anchor={anchor}
                     setRevealMessage={(fn) => {

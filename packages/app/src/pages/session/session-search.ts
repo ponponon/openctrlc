@@ -5,7 +5,7 @@ export type SessionSearchDocument = { messageID: string; text: string }
 export type SessionSearchMatch = { messageID: string; start: number; end: number }
 
 const MAX_SEARCH_DOCUMENT_LENGTH = 100_000
-const activeHydrations = new WeakMap<object, Map<string, Promise<void>>>()
+const activeHydrations = new WeakMap<object, Map<string, { token: symbol; promise: Promise<void> }>>()
 export function searchableText(input: { message: Message; parts: Part[]; scope: SessionSearchScope }) {
   const values = input.parts.flatMap((part) => partText(part, input.scope))
   if (input.scope === "all" && input.message.role === "assistant" && input.message.error) {
@@ -72,35 +72,38 @@ export function hydrateSessionSearchHistory(input: {
   sessionID: () => string | undefined
   more: () => boolean
   loading: () => boolean
-  loadMore: (sessionID: string) => Promise<void>
+  loadMore: (sessionID: string, token?: symbol) => Promise<void>
 }): Promise<void> {
   const sessionID = input.sessionID()
   if (!sessionID || !input.more()) return Promise.resolve()
-  const active = activeHydrations.get(input) ?? new Map<string, Promise<void>>()
+  const active = activeHydrations.get(input) ?? new Map<string, { token: symbol; promise: Promise<void> }>()
   const existing = active.get(sessionID)
-  if (existing) return existing
-  const hydration = createSessionSearchHydrator(input).hydrate(sessionID).finally(() => active.delete(sessionID))
-  active.set(sessionID, hydration)
+  if (existing) return existing.promise
+  const token = Symbol()
+  const promise = createSessionSearchHydrator(input).hydrate(sessionID).finally(() => {
+    if (active.get(sessionID)?.token === token) active.delete(sessionID)
+  })
+  active.set(sessionID, { token, promise })
   activeHydrations.set(input, active)
-  return hydration
+  return promise
 }
 
 export function createSessionSearchHydrator(input: {
   sessionID: () => string | undefined
   more: () => boolean
   loading: () => boolean
-  loadMore: (sessionID: string) => Promise<void>
+  loadMore: (sessionID: string, token?: symbol) => Promise<void>
   beforeLoad?: (sessionID: string) =>
     | ((done: boolean) => void)
     | { restore: (done: boolean) => void; cancel: () => void }
     | undefined
-  onRunStart?: () => (() => void) | undefined
+  onRunStart?: (token: symbol) => (() => void) | undefined
   setTimeout?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
   clearTimeout?: (timer: ReturnType<typeof setTimeout>) => void
 }) {
   const setTimer = input.setTimeout ?? setTimeout
   const clearTimer = input.clearTimeout ?? clearTimeout
-  const runs = new Map<string, Promise<void>>()
+  const runs = new Map<string, { token: symbol; promise: Promise<void> }>()
   const timers = new Map<ReturnType<typeof setTimeout>, () => void>()
   const activeAnchors = new Set<{ cancel: () => void }>()
   let generation = 0
@@ -118,15 +121,15 @@ export function createSessionSearchHydrator(input: {
       timers.set(timer, resolve)
     })
 
-  const hydrate = (sessionID: string) => {
-    if (disposed || input.sessionID() !== sessionID || !input.more()) return Promise.resolve()
+  const hydrateRun = (sessionID: string) => {
+    if (disposed || input.sessionID() !== sessionID || !input.more()) return { token: Symbol(), promise: Promise.resolve() }
     const existing = runs.get(sessionID)
     if (existing) return existing
 
     const runGeneration = generation
-    const releaseRun = input.onRunStart?.()
-    let hydration: Promise<void>
-    hydration = (async () => {
+    const token = Symbol()
+    const releaseRun = input.onRunStart?.(token)
+    const promise = (async () => {
       try {
         while (isCurrent(sessionID, runGeneration) && input.more()) {
           while (isCurrent(sessionID, runGeneration) && input.loading()) await waitForState()
@@ -136,7 +139,7 @@ export function createSessionSearchHydrator(input: {
           const restore = typeof anchor === "function" ? anchor : anchor?.restore
           if (anchor && typeof anchor !== "function") activeAnchors.add(anchor)
           try {
-            await input.loadMore(sessionID)
+            await input.loadMore(sessionID, token)
           } catch (error) {
             if (isCurrent(sessionID, runGeneration)) restore?.(true)
             throw error
@@ -150,11 +153,14 @@ export function createSessionSearchHydrator(input: {
         releaseRun?.()
       }
     })().finally(() => {
-      if (runs.get(sessionID) === hydration) runs.delete(sessionID)
+      if (runs.get(sessionID)?.token === token) runs.delete(sessionID)
     })
-    runs.set(sessionID, hydration)
-    return hydration
+    const run = { token, promise }
+    runs.set(sessionID, run)
+    return run
   }
+
+  const hydrate = (sessionID: string) => hydrateRun(sessionID).promise
 
   const invalidate = () => {
     generation += 1
@@ -172,11 +178,38 @@ export function createSessionSearchHydrator(input: {
 
   return {
     hydrate,
+    hydrateRun,
     isCurrent,
     invalidate,
     dispose() {
       disposed = true
       invalidate()
+    },
+  }
+}
+
+export function createSessionSearchRunGate() {
+  const active = new Map<string, Set<symbol>>()
+  return {
+    add(owner: string, token: symbol) {
+      const tokens = active.get(owner) ?? new Set<symbol>()
+      tokens.add(token)
+      active.set(owner, tokens)
+      return () => {
+        const current = active.get(owner)
+        if (!current) return
+        current.delete(token)
+        if (current.size === 0) active.delete(owner)
+      }
+    },
+    has(owner: string) {
+      return active.has(owner)
+    },
+    remove(owner: string, token: symbol) {
+      const tokens = active.get(owner)
+      if (!tokens) return
+      tokens.delete(token)
+      if (tokens.size === 0) active.delete(owner)
     },
   }
 }
