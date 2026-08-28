@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { createPromptPermissionController } from "./prompt-permission-controller"
 
 const read = (path: string) => Bun.file(new URL(path, import.meta.url)).text()
 
@@ -21,4 +22,31 @@ test("keeps the legacy permission control inside the normal-mode prompt control 
   expect(modelControlRegion).toBeGreaterThan(normalControlRegion)
   expect(permissionControl).toBeGreaterThan(modelControlRegion)
   expect(source.slice(permissionControl)).toMatch(/<PromptPermissionControl[^>]+>\s*<\/Show>\s*<\/Show>/)
+})
+
+test("reports the directory state and delegates each toggle action", () => {
+  const directory = "/tmp/project"
+  let enabled = false
+  const actions: string[] = []
+  const controller = createPromptPermissionController({
+    directory,
+    isAutoAcceptingDirectory: (value) => value === directory && enabled,
+    enableAutoAcceptDirectory: (value) => {
+      actions.push(`enable:${value}`)
+      enabled = true
+    },
+    disableAutoAcceptDirectory: (value) => {
+      actions.push(`disable:${value}`)
+      enabled = false
+    },
+  })
+
+  expect(controller.enabled()).toBe(false)
+  controller.toggle()
+  expect(controller.enabled()).toBe(true)
+  expect(actions).toEqual([`enable:${directory}`])
+
+  controller.toggle()
+  expect(controller.enabled()).toBe(false)
+  expect(actions).toEqual([`enable:${directory}`, `disable:${directory}`])
 })

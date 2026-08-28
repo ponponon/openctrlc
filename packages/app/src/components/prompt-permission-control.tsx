@@ -5,22 +5,22 @@ import { MenuV2 } from "@openctrlc/ui/v2/menu-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
 import { useLanguage } from "@/context/language"
 import { usePermission } from "@/context/permission"
+import { createPromptPermissionController } from "./prompt-permission-controller"
 
 export function PromptPermissionControl(props: { directory: string; visible?: boolean }) {
   const language = useLanguage()
   const permission = usePermission()
-  const accepting = () => permission.isAutoAcceptingDirectory(props.directory)
+  const controller = createPromptPermissionController({
+    directory: props.directory,
+    isAutoAcceptingDirectory: permission.isAutoAcceptingDirectory,
+    enableAutoAcceptDirectory: permission.enableAutoAcceptDirectory,
+    disableAutoAcceptDirectory: permission.disableAutoAcceptDirectory,
+  })
+  const accepting = controller.enabled
   const actionLabel = () =>
     language.t(
       accepting() ? "prompt.permissions.autoaccept.disable" : "prompt.permissions.autoaccept.enable",
     )
-  const toggle = () => {
-    if (accepting()) {
-      permission.disableAutoAcceptDirectory(props.directory)
-      return
-    }
-    permission.enableAutoAcceptDirectory(props.directory)
-  }
 
   return (
     <Show when={props.visible !== false && props.directory.length > 0}>
@@ -40,7 +40,7 @@ export function PromptPermissionControl(props: { directory: string; visible?: bo
           </MenuV2.Trigger>
           <MenuV2.Portal>
             <MenuV2.Content>
-              <MenuV2.Item onSelect={toggle}>{actionLabel()}</MenuV2.Item>
+              <MenuV2.Item onSelect={controller.toggle}>{actionLabel()}</MenuV2.Item>
             </MenuV2.Content>
           </MenuV2.Portal>
         </MenuV2>
