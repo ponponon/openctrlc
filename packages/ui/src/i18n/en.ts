@@ -202,6 +202,8 @@ export const dict: Record<string, string> = {
   "ui.message.copied": "Copied",
   "ui.message.duration.seconds": "{{count}}s",
   "ui.message.duration.minutesSeconds": "{{minutes}}m {{seconds}}s",
+  "ui.message.tokens": "{{count}} tokens",
+  "ui.message.tokensPerSecond": "{{count}} tokens/s",
   "ui.message.interrupted": "Interrupted",
   "ui.message.queued": "Queued",
   "ui.message.attachment.alt": "attachment",
