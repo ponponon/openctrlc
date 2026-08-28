@@ -160,3 +160,56 @@
 
 - Desktop app identity, Desktop runtime/release consumers, CLI bin, and Core XDG runtime paths remain intentionally out of scope for Task 3.
 - External OpenCode service/provider identifiers remain intentionally unchanged.
+
+## Round 4 Review Fixes
+
+- Restored `packages/opencode/test/provider/transform.test.ts` external provider contract: `https://api.opencode.ai`, `providerOptions.opencode`, and `Provider ID` value `opencode`.
+- Updated product-owned documentation paths and variables across the root and multilingual docs to `.openctrlc`, `openctrlc.json(c)`, and `OPENCTRLC_*`; external provider names, schema URLs, `OPENCODE_API_KEY`, and external service URLs remain unchanged.
+- Updated namespace audit scripts to ignore `.openctrlc/`; translation namespace assertions now use only the OpenCtrlC namespace.
+- Added old-variable rejection tests for `OPENCODE_CONFIG_DIR` and `OPENCODE_DISABLE_PROJECT_CONFIG`, while asserting the corresponding `OPENCTRLC_*` values take effect.
+- Strengthened `Config.update()` JSON and JSONC tests to dispose and rediscover the instance, verify the updated value is loaded, and verify no `config.json` is created.
+- Kept this report out of the implementation commit; it is appended locally for the next handoff.
+
+## Round 4 Verification
+
+- `cd packages/core && bun test test/config/config.test.ts test/global.test.ts test/location-layer.test.ts && bun typecheck`: `24 pass, 0 fail`; typecheck exit `0`.
+- `cd packages/opencode && bun test test/config/config.test.ts test/config/tui.test.ts test/server/httpapi-config.test.ts test/server/httpapi-provider.test.ts test/server/httpapi-sdk.test.ts test/cli/tui/plugin-loader.test.ts test/provider/transform.test.ts test/provider/provider.test.ts test/session/llm-native-recorded.test.ts && bun typecheck`: `687 pass, 5 skip, 0 fail`; typecheck exit `0`.
+- `cd packages/sdk/js && bun test test/server-config-env.test.ts && bun typecheck`: `1 pass, 0 fail`; typecheck exit `0`.
+- `cd packages/app && bun typecheck`: exit `0`.
+- `cd script && bun test ./translate-app.test.ts`: `16 pass, 0 fail`.
+- `bun install --frozen-lockfile --ignore-scripts`: exit `0`, `Checked 2424 installs across 2713 packages (no changes)`.
+- `git diff --check`: exit `0`.
+- Residual audit: no product-owned `.opencode`, `opencode.json(c)`, `OPENCODE_CONFIG_DIR`, or `OPENCODE_DISABLE_PROJECT_CONFIG` remains in docs, audit scripts, or product test fixtures; provider and external-contract residuals remain intentional.
+
+## Round 4 Concerns
+
+- Desktop app identity, Desktop runtime/release consumers, CLI bin, and Core XDG runtime paths remain intentionally out of scope for Task 3.
+- External `ProviderV2.ID.opencode`, `providerOptions.opencode`, `https://opencode.ai`, `https://api.opencode.ai`, `https://console.opencode.ai`, `models.opencode.ai`, schema URLs, `OPENCODE_API_KEY`, and third-party metadata remain unchanged.
+
+## Round 4 Commit
+
+`fix(config): finalize OpenCtrlC namespace migration`
+
+Commit: `ce3ee65`
+
+## Final Review Fixes
+
+- Updated product-owned specs and context documents to use `.openctrlc`, `openctrlc.json(c)`, and `OPENCTRLC_*`, including TUI plugin, Effect, v2 config/session/schema, provider-policy, and root context guidance.
+- Restored managed preference documentation and test metadata to the implemented `ai.opencode.managed` domain. This remains the external/future Desktop contract; Task 3 does not migrate the managed preference implementation.
+- Split config-directory rejection coverage into two isolated tests: one sets only `OPENCODE_CONFIG_DIR` and proves it has no effect; the other sets only `OPENCTRLC_CONFIG_DIR` and proves it is effective.
+- Updated the root ignore rules to `/openctrlc.json` and `/openctrlc.jsonc`.
+
+## Final Verification
+
+- `cd packages/core && bun test test/config/config.test.ts test/global.test.ts test/location-layer.test.ts`: `24 pass, 0 fail`.
+- `cd packages/opencode && bun test test/config/config.test.ts test/config/tui.test.ts test/server/httpapi-config.test.ts`: `136 pass, 3 skip, 0 fail`.
+- `cd packages/core && bun typecheck`: exit `0`.
+- `cd packages/opencode && bun typecheck`: exit `0`.
+- `bun install --frozen-lockfile --ignore-scripts`: exit `0`, `Checked 2424 installs across 2713 packages (no changes)`.
+- `git diff --check`: exit `0`.
+- Residual audit: normal product-owned discovery/documentation paths contain no `.opencode`, `opencode.json(c)`, or product-owned `OPENCODE_*` configuration names. The old `OPENCODE_CONFIG_DIR` appears only in the intentionally negative rejection test. `ai.opencode.managed` remains in managed implementation, test metadata, and documentation as the external/future Desktop contract. Provider IDs, provider option namespaces, external URLs, schema URLs, `OPENCODE_API_KEY`, and `OTEL_*` remain intentional external or out-of-scope boundaries.
+
+## Final Concerns
+
+- Desktop app identity, Desktop runtime/release consumers, CLI bin, Core XDG runtime paths, and managed preference implementation remain intentionally out of scope for Task 3.
+- The report remains in `.superpowers` scratch and is not included in the implementation commit.
