@@ -25,9 +25,12 @@ export function assistantStatistics(input: AssistantStatisticsInput): AssistantS
   }
 
   const durationMs = input.completed - input.created
+  const tokensPerSecond = (input.output / durationMs) * 1000
+  if (!Number.isFinite(durationMs) || !Number.isFinite(tokensPerSecond)) return
+
   return {
     output: input.output,
     durationMs,
-    tokensPerSecond: (input.output / durationMs) * 1000,
+    tokensPerSecond,
   }
 }

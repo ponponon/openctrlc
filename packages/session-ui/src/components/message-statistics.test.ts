@@ -14,6 +14,16 @@ describe("assistantStatistics", () => {
     expect(assistantStatistics({ output: 408, created: 0, completed: 2_600 })?.tokensPerSecond).toBeCloseTo(156.9230769)
   })
 
+  test("rejects finite timestamps whose duration overflows", () => {
+    expect(
+      assistantStatistics({
+        output: 100,
+        created: -Number.MAX_VALUE,
+        completed: Number.MAX_VALUE,
+      }),
+    ).toBeUndefined()
+  })
+
   test.each([
     { output: 0, created: 1_000, completed: 2_000 },
     { output: undefined, created: 1_000, completed: 2_000 },
