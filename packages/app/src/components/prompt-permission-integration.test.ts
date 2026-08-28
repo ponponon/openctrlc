@@ -1,0 +1,24 @@
+import { expect, test } from "bun:test"
+
+const read = (path: string) => Bun.file(new URL(path, import.meta.url)).text()
+
+test("mounts the permission control from the active SDK directory in both prompt compositions", async () => {
+  const [legacy, v2] = await Promise.all([read("./prompt-input.tsx"), read("./prompt-input-v2.tsx")])
+
+  expect(legacy).toContain('import { PromptPermissionControl } from "@/components/prompt-permission-control"')
+  expect(legacy).toContain('<PromptPermissionControl directory={sdk().directory} />')
+  expect(v2).toContain('import { PromptPermissionControl } from "@/components/prompt-permission-control"')
+  expect(v2).toContain('<PromptPermissionControl directory={sdk().directory} />')
+})
+
+test("keeps the legacy permission control inside the normal-mode prompt control region", async () => {
+  const source = await read("./prompt-input.tsx")
+  const normalControlRegion = source.indexOf('<Show when={store.mode === "normal" || store.mode === "shell"}>')
+  const modelControlRegion = source.indexOf('<Show when={store.mode !== "shell"}>', normalControlRegion)
+  const permissionControl = source.indexOf("<PromptPermissionControl", modelControlRegion)
+
+  expect(normalControlRegion).toBeGreaterThanOrEqual(0)
+  expect(modelControlRegion).toBeGreaterThan(normalControlRegion)
+  expect(permissionControl).toBeGreaterThan(modelControlRegion)
+  expect(source.slice(permissionControl)).toMatch(/<PromptPermissionControl[^>]+>\s*<\/Show>\s*<\/Show>/)
+})
