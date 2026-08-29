@@ -117,6 +117,7 @@ import {
 type FollowupItem = FollowupDraft & { id: string }
 type FollowupEdit = Pick<FollowupItem, "id" | "prompt" | "context">
 const emptyFollowups: FollowupItem[] = []
+type HistoryAnchor = { restore: (done: boolean) => void; cancel: () => void }
 
 type ChangeMode = "git" | "branch" | "turn"
 type VcsMode = "git" | "branch"
@@ -1711,14 +1712,14 @@ export default function Page() {
     },
   )
 
-  let captureHistoryAnchor = (_kind: "normal" | "search") => ({ restore: (_done: boolean) => {}, cancel: () => {} })
+  let captureHistoryAnchor: ((kind: "normal" | "search") => HistoryAnchor | undefined) | undefined
   searchHydrator = createSessionSearchHydrator({
     sessionID: () => params.id,
     more: timeline.history.more,
     loading: timeline.history.loading,
     beforeLoad: (sessionID) => {
       const owner = sessionOwnership.capture()
-      const anchor = owner.run(() => captureHistoryAnchor("search"))
+      const anchor = owner.run(() => captureHistoryAnchor?.("search"))
       if (!anchor) return
       return {
         restore: (done: boolean) => owner.run(() => anchor.restore(done)),
@@ -1759,11 +1760,11 @@ export default function Page() {
       return
     historyRequests.add(owner.key)
     const before = timeline.messages().length
-    let anchor: ReturnType<typeof captureHistoryAnchor> | undefined
+    let anchor: HistoryAnchor | undefined
     try {
       await timeline.history.loadOlder({
         before: () => owner.run(() => {
-          anchor = captureHistoryAnchor("normal")
+          anchor = captureHistoryAnchor?.("normal")
         }),
         after: (done) => owner.run(() => anchor?.restore(done)),
       })
@@ -2289,7 +2290,7 @@ export default function Page() {
                     }}
                     userMessages={visibleUserMessages()}
                     setHistoryAnchor={(handlers) => {
-                      captureHistoryAnchor = handlers.capture
+                      captureHistoryAnchor = handlers?.capture
                     }}
                     anchor={anchor}
                     setRevealMessage={(fn) => {

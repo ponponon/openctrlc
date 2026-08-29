@@ -561,7 +561,10 @@ describe("createHistoryAnchorRegistry", () => {
     let snapshot = 0
     const registry = createHistoryAnchorRegistry({
       snapshot: (kind) => ({ key: Symbol(kind), offset: ++snapshot }),
-      restore: (value, done) => restored.push(value.key),
+      restore: (value) => {
+        restored.push(value.key)
+        return () => {}
+      },
       cancel: (value) => cancelled.push(value.key),
     })
 
@@ -585,13 +588,17 @@ describe("createHistoryAnchorRegistry", () => {
     let snapshot = 0
     const registry = createHistoryAnchorRegistry({
       snapshot: (kind) => ({ key: Symbol(`${kind}-${++snapshot}`), offset: snapshot }),
-      restore: (value) => restored.push(value.key),
+      restore: (value, done, settled) => {
+        restored.push(value.key)
+        if (done) settled()
+        return () => {}
+      },
       cancel: () => undefined,
     })
 
     const ordinary = registry.capture("normal")
     const search = registry.capture("search")
-    registry.update()
+    registry.updatePending()
     ordinary?.restore(true)
     search?.restore(true)
 

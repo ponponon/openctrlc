@@ -77,7 +77,7 @@ import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
-import { createHistoryAnchorRegistry, type HistoryAnchorKind } from "./history-anchor"
+import { createHistoryAnchorRegistry, startHistoryAnchorCorrection, type HistoryAnchorKind } from "./history-anchor"
 
 const emptyMessages: MessageType[] = []
 const emptyParts: PartType[] = []
@@ -257,7 +257,7 @@ export function MessageTimeline(props: {
   setRevealMessage?: (fn: (id: string) => void) => void
   activeSearchMessageID?: string
   setScrollToEnd?: (fn: () => void) => void
-  setHistoryAnchor?: (handlers: { capture: (kind: HistoryAnchorKind) => HistoryAnchor }) => void
+  setHistoryAnchor?: (handlers?: { capture: (kind: HistoryAnchorKind) => HistoryAnchor }) => void
 }) {
   let touchGesture: number | undefined
 
@@ -372,33 +372,38 @@ export function MessageTimeline(props: {
     if (!element) return snapshot
     return { ...snapshot, offset: element.getBoundingClientRect().top - view.top }
   }
-  const restorePrependAnchor = (snapshot: { key: symbol; offset: number; anchor?: string }, done: boolean) => {
-    const previous = prependAnchorFrames.get(snapshot.key)
-    if (previous !== undefined) cancelAnimationFrame(previous)
-    let frames = 0
-    let stable = 0
-    const apply = () => {
-      prependAnchorFrames.delete(snapshot.key)
-      const root = listRoot()
-      if (!root || !snapshot.anchor) return
-      const element = root.querySelector<HTMLElement>(`[data-timeline-key="${CSS.escape(snapshot.anchor)}"]`)
-      const delta = element
-        ? element.getBoundingClientRect().top - root.getBoundingClientRect().top - snapshot.offset
-        : undefined
-      if (delta !== undefined && Math.abs(delta) > 0.5) {
-        root.scrollTop += delta
-        stable = 0
-      } else {
-        stable += 1
-      }
-      frames += 1
-      if (stable >= 30 || frames >= 180) {
-        return
-      }
-      prependAnchorFrames.set(snapshot.key, requestAnimationFrame(apply))
-    }
-    if (!done && previous === undefined) return
-    prependAnchorFrames.set(snapshot.key, requestAnimationFrame(apply))
+  const restorePrependAnchor = (
+    snapshot: { key: symbol; offset: number; anchor?: string },
+    done: boolean,
+    settled: () => void,
+  ) => {
+    if (!done) return
+    return startHistoryAnchorCorrection({
+      snapshot,
+      resolve: (anchor) => {
+        const root = listRoot()
+        const element = root?.querySelector<HTMLElement>(`[data-timeline-key="${CSS.escape(anchor)}"]`)
+        return element?.getBoundingClientRect()
+      },
+      rootTop: () => listRoot()?.getBoundingClientRect().top ?? 0,
+      scrollBy: (delta) => {
+        const root = listRoot()
+        if (root) root.scrollTop += delta
+      },
+      requestFrame: (callback) => {
+        const frame = requestAnimationFrame(callback)
+        prependAnchorFrames.set(snapshot.key, frame)
+        return frame
+      },
+      cancelFrame: (frame) => {
+        cancelAnimationFrame(frame)
+        prependAnchorFrames.delete(snapshot.key)
+      },
+      settled: () => {
+        prependAnchorFrames.delete(snapshot.key)
+        settled()
+      },
+    })
   }
   const anchorRegistry = createHistoryAnchorRegistry({
     snapshot: snapshotPrependAnchor,
@@ -409,10 +414,6 @@ export function MessageTimeline(props: {
       prependAnchorFrames.delete(snapshot.key)
     },
     update: updatePrependAnchor,
-  })
-  anchorRegistry.setCleanup(() => {
-    for (const frame of prependAnchorFrames.values()) cancelAnimationFrame(frame)
-    prependAnchorFrames.clear()
   })
   const clearPrependAnchor = () => anchorRegistry.cancelAll()
 
@@ -555,7 +556,7 @@ export function MessageTimeline(props: {
     if (overscanFrame !== undefined) cancelAnimationFrame(overscanFrame)
     props.setRevealMessage?.(() => {})
     props.setScrollToEnd?.(() => {})
-    props.setHistoryAnchor?.({ capture: () => ({ restore: () => {}, cancel: () => {} }) })
+    props.setHistoryAnchor?.()
   })
 
   const [title, setTitle] = createStore({
@@ -580,7 +581,7 @@ export function MessageTimeline(props: {
   }
 
   const handleListWheel = (event: WheelEvent & { currentTarget: HTMLDivElement }) => {
-    if (!anchorRegistry.hasAny()) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     const root = event.currentTarget
     const delta = normalizeWheelDelta({
       deltaY: event.deltaY,
@@ -592,11 +593,12 @@ export function MessageTimeline(props: {
   }
 
   const handleListTouchStart = (event: TouchEvent) => {
-    if (!anchorRegistry.hasAny()) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     touchGesture = event.touches[0]?.clientY
   }
 
   const handleListTouchMove = (event: TouchEvent & { currentTarget: HTMLDivElement }) => {
+    anchorRegistry.cancelCorrections()
     const next = event.touches[0]?.clientY
     const prev = touchGesture
     touchGesture = next
@@ -618,7 +620,7 @@ export function MessageTimeline(props: {
   }
 
   const handleListPointerDown = (event: PointerEvent & { currentTarget: HTMLDivElement }) => {
-    if (!anchorRegistry.hasAny()) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     props.onMarkScrollGesture(event.target)
   }
 
@@ -632,12 +634,12 @@ export function MessageTimeline(props: {
     if (!key) return
     if (!isScrollKeyTarget(event.target, key)) return
     if (scrollKeyOwner(event.currentTarget, event.target, key) !== event.currentTarget) return
-    if (!anchorRegistry.hasAny()) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     props.onMarkScrollGesture(event.currentTarget)
   }
 
   const handleListScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
-    if (anchorRegistry.hasAny()) anchorRegistry.update()
+    if (anchorRegistry.hasPending()) anchorRegistry.updatePending()
     props.onScheduleScrollState(event.currentTarget)
     props.onHistoryScroll()
     if (!props.hasScrollGesture()) return
