@@ -16,7 +16,6 @@ test.describe("session search timeline reveal", () => {
       const timelineElement = await timeline.elementHandle()
       expect(timelineElement).not.toBeNull()
       const scroller = page.locator(".scroll-view__viewport", { has: timeline })
-      const target = page.locator('[data-timeline-row="UserMessage"][data-message-id="msg_00017_history_a_user"]')
       await expect
         .poll(() =>
           page.evaluate((id) => {
