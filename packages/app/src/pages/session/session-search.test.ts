@@ -138,6 +138,24 @@ describe("searchableText", () => {
     ).not.toThrow()
   })
 
+  test("stops reading later patch files when the shared UTF-16 budget is exhausted", () => {
+    const files = ["x".repeat(100_000)]
+    Object.defineProperty(files, "1", {
+      enumerable: true,
+      get() {
+        throw new Error("read past patch extraction budget")
+      },
+    })
+
+    expect(() =>
+      searchableText({
+        message: user("user-1"),
+        parts: [part({ type: "patch", files })],
+        scope: "all",
+      }),
+    ).not.toThrow()
+  })
+
   test("does not recurse forever through cyclic all-content values", () => {
     const input: Record<string, unknown> = { value: "cycle value" }
     input.self = input

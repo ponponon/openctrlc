@@ -319,7 +319,11 @@ function* partText(part: Part, scope: SessionSearchScope, remaining: () => numbe
     if (part.source) yield part.source.value
   }
   if (part.type === "patch") {
-    yield* part.files
+    if (remaining() <= 0) return
+    const files = part.files
+    for (let index = 0; remaining() > 0 && index < files.length; index += 1) {
+      yield files[index]
+    }
   }
   if (part.type === "retry") yield* readableStrings(part.error.data, remaining, seen, nodes)
   if (part.type === "file" && part.source && remaining() > 0) yield part.source.text.value

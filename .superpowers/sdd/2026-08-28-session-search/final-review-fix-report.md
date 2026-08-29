@@ -10,6 +10,7 @@ Final whole-branch review fix wave implemented. No Protocol or Server public API
 2. Stale-session coverage now performs same-page router navigation with the mounted app. Old and new sessions use unique text markers; after releasing the old request, the test asserts that the old marker is absent from the new session's visible message body and search results, that no old active marker remains, and that the new marker remains visible.
 3. The timeline fixture tracks page-request overlap. A real mounted timeline scroll is exercised while a search page is blocked; the request counter verifies normal history does not start or overlap before search releases.
 4. Partial-failure data uses a broad query with initial-page matches. The test verifies partial results remain visible with the error and that retry adds the earlier-page results.
+5. Patch file extraction now checks the shared document budget before reading each indexed file. Once the first file consumes the 100,000 UTF-16-character budget, later patch-file getters are not accessed. The regression test also preserves the existing recursion/depth coverage.
 
 ## Verification
 
@@ -24,9 +25,9 @@ bun test --conditions=solid --preload ./happydom.ts \
   ./src/pages/session/timeline/projection.test.ts \
   ./src/pages/session/timeline/model.test.ts
 
-58 pass
+61 pass
 0 fail
-145 expect() calls
+148 expect() calls
 ```
 
 ### Browser-condition coverage
@@ -64,19 +65,19 @@ git diff --check
 exit 0
 ```
 
-### Full timeline stability
+### Fresh Full Timeline Stability
 
 ```text
-PLAYWRIGHT_PORT=3005 \
+PLAYWRIGHT_PORT=3007 \
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-mac-arm64/chrome-headless-shell" \
 bun run test:stability
 
 23 pass, 0 fail: visual-stability unit tests
-47 passed
-3 failed: timeline-stability Playwright tests
+48 passed
+2 failed: timeline-stability Playwright tests
 ```
 
-The three failures are unrelated stability scenarios: `adverse.spec.ts` explicit shell virtualization, `context-matrix.spec.ts` first context-member removal, and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. This is the latest fresh post-fix run; the previous fresh run observed 48 passed and 2 failed, without the context-matrix failure. The non-search stability outcomes are machine/timing-sensitive.
+The current fresh failures are `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. The historical 47 passed and 3 failed result included `context-matrix.spec.ts` first context-member removal; it is not the current result. The non-search stability outcomes are machine/timing-sensitive.
 
 ## Stability Baseline
 
@@ -84,16 +85,16 @@ The requested baseline worktrees at `fd19281` and `f63a2cf` were rechecked with 
 
 ## Concerns
 
-- Full timeline stability remains non-green at 47 passed and 3 failed. Baseline attribution is unresolved because both detached baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency before tests could run.
+- Full timeline stability remains non-green at 48 passed and 2 failed. The current failures are explicitly listed above; the historical 47/3 result is not the current result. Baseline attribution is unresolved because both detached baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency before tests could run.
 - The production build continues to emit existing Vite warnings for mixed dynamic/static imports, duplicate WASM map output, and large chunks.
-- The requested focused tests, browser-condition tests, Playwright search integration, `bun typecheck`, and `bun run typecheck:e2e` passed. The full suite remains non-green as recorded above.
+- The requested focused tests, browser-condition tests, Playwright search integration, `bun typecheck`, `bun run typecheck:e2e`, and `git diff --check` passed. The full suite remains non-green as recorded above.
 
 ## Final Review Fix Wave
 
 ### Fixes
 
 1. Search result recomputation now reveals the first valid active match automatically and reveals again only when the active match identity or range changes. Manual navigation keeps its existing immediate reveal path, while streaming updates that leave the active match unchanged do not force-scroll repeatedly. The search Playwright scenario now fills an offscreen query and verifies the marker and centered result without clicking Next.
-2. All-content extraction now shares the document's remaining UTF-16 budget with nested readable-string traversal. Traversal stops before reading later fields once the budget is exhausted and is bounded by explicit depth and node limits with a `WeakSet` cycle guard. Boundary tests cover a throwing later getter and cyclic input.
+2. All-content extraction now shares the document's remaining UTF-16 budget with nested readable-string traversal. Traversal stops before reading later fields once the budget is exhausted and is bounded by explicit depth and node limits with a `WeakSet` cycle guard. Boundary tests cover throwing later getters, patch files, and cyclic input.
 
 ### Fresh Verification
 
@@ -106,9 +107,9 @@ bun test --conditions=solid --preload ./happydom.ts \
   ./src/pages/session/timeline/projection.test.ts \
   ./src/pages/session/timeline/model.test.ts
 
-60 pass
+61 pass
 0 fail
-147 expect() calls
+148 expect() calls
 
 bun test --conditions=browser --preload ./happydom.ts \
   ./test-browser/session-search.test.ts ./src/i18n/parity.test.ts
@@ -130,7 +131,7 @@ bunx playwright test --config e2e/performance/timeline-stability/playwright.conf
 6 passed
 0 failed
 
-PLAYWRIGHT_PORT=3006 \
+PLAYWRIGHT_PORT=3007 \
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-mac-arm64/chrome-headless-shell" \
 bun run test:stability
 
@@ -140,4 +141,4 @@ bun run test:stability
 
 The two full-stability failures were the pre-existing machine/timing-sensitive scenarios `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. This fresh run improves the prior recorded outcome from 47 passed and 3 failed; full stability remains non-green.
 
-`git diff --check` also passed. The reverse mutual-exclusion test was intentionally not added and remains a Minor residual.
+`git diff --check` also passed. The optional active-match-unchanged reveal test was not added because it was not required for this fix wave.
