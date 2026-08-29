@@ -667,7 +667,8 @@ export default function Page() {
     if (match) {
       previousSearchMatch = match
       const message = params.id ? sync().data.message[params.id]?.find((item) => item.id === match.messageID) : undefined
-      revealMessage(message?.role === "assistant" ? message.parentID : match.messageID)
+      const userMessageID = message?.role === "assistant" ? message.parentID : match.messageID
+      requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
     }
   }
 
@@ -2286,7 +2287,11 @@ export default function Page() {
                     onHistoryScroll={onHistoryScroll}
                     onAutoScrollInteraction={autoScroll.handleInteraction}
                     shouldAnchorBottom={() =>
-                      !location.hash && !store.messageId && !ui.pendingMessage && !autoScroll.userScrolled()
+                      searchMatches().length === 0 &&
+                      !location.hash &&
+                      !store.messageId &&
+                      !ui.pendingMessage &&
+                      !autoScroll.userScrolled()
                     }
                     centered={centered()}
                     setContentRef={(el) => {

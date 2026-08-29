@@ -7,3 +7,14 @@ export function indexUserMessageRows(rows: TimelineRow.TimelineRow[]) {
   })
   return result
 }
+
+export function includeUserMessageRow(
+  indexes: number[],
+  messageID: string | undefined,
+  userMessageRows: ReadonlyMap<string, number>,
+  count: number,
+) {
+  const index = messageID === undefined ? undefined : userMessageRows.get(messageID)
+  if (index === undefined || index < 0 || index >= count) return indexes
+  return [...new Set([...indexes, index])].sort((a, b) => a - b)
+}

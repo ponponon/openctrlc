@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test"
-import { setupTimeline } from "./fixture"
+import { historyMessages, setupTimeline } from "./fixture"
 
 test.describe("session search timeline reveal", () => {
   for (const newLayoutDesigns of [true, false]) {
     test(`reveals and marks an offscreen match in the ${newLayoutDesigns ? "new" : "legacy"} layout`, async ({ page }) => {
       await setupTimeline(page, {
-        seedHistory: true,
+        messages: historyMessages(80),
         settings: { newLayoutDesigns },
         viewport: { width: 900, height: 420 },
       })
@@ -16,29 +16,38 @@ test.describe("session search timeline reveal", () => {
       const timelineElement = await timeline.elementHandle()
       expect(timelineElement).not.toBeNull()
       const scroller = page.locator(".scroll-view__viewport", { has: timeline })
+      const targetID = "msg_00079_history_a_user"
+      const target = page.locator(`[data-timeline-row="UserMessage"][data-message-id="${targetID}"]`)
+      await expect(target).toBeAttached()
+      await scroller.hover()
+      await page.mouse.wheel(0, -1000)
       await expect
         .poll(() =>
           page.evaluate((id) => {
             const view = document.querySelector<HTMLElement>(".scroll-view__viewport")
             const element = document.querySelector<HTMLElement>(`[data-timeline-row="UserMessage"][data-message-id="${id}"]`)
-            if (!view || !element) return true
+            if (!view) return { view: "missing", element: element ? "mounted" : "missing" }
+            if (!element) return { view: "mounted", element: "missing" }
             const viewBox = view.getBoundingClientRect()
             const box = element.getBoundingClientRect()
-            return !element || box.bottom <= viewBox.top || box.top >= viewBox.bottom
-          }, "msg_00017_history_a_user"),
+            return {
+              view: "mounted",
+              element: box.bottom <= viewBox.top || box.top >= viewBox.bottom ? "offscreen" : "onscreen",
+            }
+          }, targetID),
         )
-        .toBe(true)
+        .toEqual({ view: "mounted", element: "offscreen" })
 
       await page.keyboard.press("Control+f")
       const search = page.getByRole("search")
       await expect(search).toBeVisible()
       const input = page.getByRole("textbox", { name: "Search session messages" })
-      await input.fill("Historical response 17.")
+      await input.fill("Historical response 79.")
       await expect(search).toContainText("1 of 1 results")
       await page.getByRole("button", { name: "Next result" }).click()
 
       const active = page.locator(
-        '[data-timeline-row="UserMessage"][data-search-active][data-message-id="msg_00017_history_a_user"]',
+        `[data-timeline-row="UserMessage"][data-search-active][data-message-id="${targetID}"]`,
       )
       const markers = page.locator('[data-timeline-row="UserMessage"][data-search-active]')
       await expect(markers).toHaveCount(1)
@@ -53,10 +62,10 @@ test.describe("session search timeline reveal", () => {
         .poll(async () => {
           const view = await scroller.boundingBox()
           const box = await active.boundingBox()
-          if (!view || !box) return 0
+          if (!view || !box) return Number.POSITIVE_INFINITY
           return Math.abs(box.y + box.height / 2 - (view.y + view.height / 2))
         })
-        .toBeLessThan(240)
+        .toBeLessThanOrEqual(40)
     })
   }
 

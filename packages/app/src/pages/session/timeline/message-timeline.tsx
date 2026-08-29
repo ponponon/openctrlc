@@ -69,6 +69,7 @@ import { useSettings } from "@/context/settings"
 import { useTabs } from "@/context/tabs"
 import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/session-route"
 import { isActiveSearchMessage } from "@/pages/session/session-search"
+import { includeUserMessageRow } from "./user-message-row-index"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { notifySessionTabsRemoved } from "@/components/titlebar-session-events"
@@ -459,21 +460,11 @@ export function MessageTimeline(props: {
       const id = activeMessageID()
       const active = id ? (messageLastRowIndex().get(id) ?? -1) : -1
       const searchID = props.activeSearchMessageID
-      const searchActive = searchID ? (messageLastRowIndex().get(searchID) ?? -1) : -1
-      const searchActiveStart = searchID ? (messageRowIndex().get(searchID) ?? -1) : -1
       const indexes = defaultRangeExtractor({ ...range, overscan: renderOverscan() })
-      return filterVirtualIndexes(
-        [
-          ...new Set([
-            ...resizePinnedIndexes,
-            ...indexes,
-            ...(active < 0 ? [] : [active]),
-            ...(searchActive < 0 ? [] : [searchActive]),
-            ...(searchActiveStart < 0 ? [] : [searchActiveStart]),
-          ]),
-        ].sort((a, b) => a - b),
-        range.count,
+      const fixed = [...new Set([...resizePinnedIndexes, ...indexes, ...(active < 0 ? [] : [active])])].sort(
+        (a, b) => a - b,
       )
+      return filterVirtualIndexes(includeUserMessageRow(fixed, searchID, userMessageRowIndex(), range.count), range.count)
     },
   })
   const resizeItem = virtualizer.resizeItem

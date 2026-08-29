@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import type { PartGroup } from "@openctrlc/session-ui/message-part"
 import { reuseTimelineRows } from "./row-reconciliation"
 import { TimelineRow } from "./timeline-row"
-import { indexUserMessageRows } from "./user-message-row-index"
+import { includeUserMessageRow, indexUserMessageRows } from "./user-message-row-index"
 
 const context = (key: string, partIDs: string[], userMessageID = "user-1") =>
   new TimelineRow.AssistantPart({
@@ -109,4 +109,16 @@ test("indexes the actual user-message row when a turn has preceding rows", () =>
   ]
 
   expect(indexUserMessageRows(rows)).toEqual(new Map([["user-2", 2]]))
+})
+
+test("adds the marker row without dropping the projected range boundaries", () => {
+  const rows = [
+    new TimelineRow.TurnGap({ userMessageID: "user-2" }),
+    new TimelineRow.CommentStrip({ userMessageID: "user-2" }),
+    new TimelineRow.UserMessage({ userMessageID: "user-2", anchor: false }),
+  ]
+  const userRows = indexUserMessageRows(rows)
+
+  expect(includeUserMessageRow([0, 4], "user-2", userRows, rows.length + 3)).toEqual([0, 2, 4])
+  expect(includeUserMessageRow([0, 4], "missing", userRows, rows.length + 3)).toEqual([0, 4])
 })
