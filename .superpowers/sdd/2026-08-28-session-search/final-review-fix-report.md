@@ -75,7 +75,7 @@ Visual stability unit: 23 pass, 0 fail
 Timeline stability Playwright: 48 passed, 2 failed
 ```
 
-The two current failures are `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag-selection. They were observed in both the current and historical fresh runs. The earlier result was `47 passed, 3 failed`; the current result is `48 passed, 2 failed`. Because the baseline worktrees could not run due to the missing `@happy-dom/global-registrator`, these failures cannot be reliably attributed to this branch. These outcomes have machine/timing sensitivity. Full timeline stability is not green, and this report does not claim the full suite is green.
+The current and historical fresh runs observed machine/timing-sensitive scenarios in `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag-selection. The earlier result was `47 passed, 3 failed`; the current result is `48 passed, 2 failed`. Because the baseline worktrees could not execute due to the missing `@happy-dom/global-registrator`, it is not possible to reliably determine whether these scenarios were introduced by this branch. Full timeline stability remains non-green, and this report does not claim the full suite is green.
 
 ## Stability Baseline
 
