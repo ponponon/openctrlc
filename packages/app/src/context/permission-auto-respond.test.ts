@@ -122,4 +122,10 @@ describe("isDirectoryAutoAccepting", () => {
     const autoAccept = { [`${base64Encode(directory)}/*`]: false }
     expect(isDirectoryAutoAccepting(autoAccept, directory)).toBe(false)
   })
+
+  test("ignores session-specific keys", () => {
+    const directory = "/tmp/project"
+    const autoAccept = { session: true }
+    expect(isDirectoryAutoAccepting(autoAccept, directory)).toBe(false)
+  })
 })
