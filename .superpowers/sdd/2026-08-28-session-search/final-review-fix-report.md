@@ -72,11 +72,11 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/Library/Caches/ms-playwright/chromium
 bun run test:stability
 
 23 pass, 0 fail: visual-stability unit tests
-48 passed
-2 failed: timeline-stability Playwright tests
+47 passed
+3 failed: timeline-stability Playwright tests
 ```
 
-The two failures are unrelated stability scenarios: `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. An immediately preceding fresh run observed 47 passed and 3 failed, with the same two failures plus the existing `context-matrix.spec.ts` first context-member removal failure; the non-search stability outcomes are machine/timing-sensitive.
+The three failures are unrelated stability scenarios: `adverse.spec.ts` explicit shell virtualization, `context-matrix.spec.ts` first context-member removal, and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. This is the latest fresh post-fix run; the previous fresh run observed 48 passed and 2 failed, without the context-matrix failure. The non-search stability outcomes are machine/timing-sensitive.
 
 ## Stability Baseline
 
@@ -84,6 +84,6 @@ The requested baseline worktrees at `fd19281` and `f63a2cf` were rechecked with 
 
 ## Concerns
 
-- Full timeline stability remains non-green; the latest fresh run was 48 passed and 2 failed, while the immediately preceding fresh run was 47 passed and 3 failed. Baseline attribution is unresolved because both detached baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency before tests could run.
+- Full timeline stability remains non-green at 47 passed and 3 failed. Baseline attribution is unresolved because both detached baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency before tests could run.
 - The production build continues to emit existing Vite warnings for mixed dynamic/static imports, duplicate WASM map output, and large chunks.
 - The requested focused tests, browser-condition tests, Playwright search integration, `bun typecheck`, and `bun run typecheck:e2e` passed. The full suite remains non-green as recorded above.

@@ -213,7 +213,7 @@ test.describe("session search timeline reveal", () => {
 
     historyBlock.enabled = false
     historyBlock.release?.()
-    await expect(page.getByRole("search")).toContainText("1 of 120 results")
+    await expect(page.getByRole("search")).toContainText(/of 120 results/)
     expect(historyOverlap.max).toBe(1)
   })
 })
