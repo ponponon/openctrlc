@@ -619,16 +619,6 @@ export function MessageTimeline(props: {
     touchGesture = undefined
   }
 
-  const handleListPointerDown = (event: PointerEvent & { currentTarget: HTMLDivElement }) => {
-    anchorRegistry.cancelCorrections()
-    props.onMarkScrollGesture(event.target)
-  }
-
-  const handleListPointerMove = (event: PointerEvent) => {
-    if (event.buttons !== 1) return
-    props.onMarkScrollGesture(event.target)
-  }
-
   const handleListKeyDown = (event: KeyboardEvent & { currentTarget: HTMLDivElement }) => {
     const key = scrollKey(event)
     if (!key) return
@@ -1414,8 +1404,7 @@ export function MessageTimeline(props: {
         onTouchMove={handleListTouchMove}
         onTouchEnd={handleListTouchEnd}
         onTouchCancel={handleListTouchEnd}
-        onPointerDown={handleListPointerDown}
-        onPointerMove={handleListPointerMove}
+        onThumbPointerDown={() => anchorRegistry.cancelCorrections()}
         onKeyDown={handleListKeyDown}
         onScroll={handleListScroll}
         onClick={props.onAutoScrollInteraction}

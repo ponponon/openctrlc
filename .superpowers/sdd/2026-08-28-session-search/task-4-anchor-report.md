@@ -81,3 +81,21 @@ Result: **passed** with no whitespace errors.
 - The focused timeline correction test exercises the extracted deterministic correction loop rather than mounting the full Solid timeline. The full consumer path is typechecked, and the registry plus correction loop are tested through their real interfaces.
 - No browser/e2e runtime test was run because the brief required focused tests and typechecks; no app or server process was restarted.
 - Stability thresholds remain the existing values of 30 consecutive stable frames and 180 total frames. They are now explicit and enforceable, but tuning them against production telemetry may still be useful.
+
+## Review Follow-up
+
+This follow-up addresses three Important findings from the anchor lifecycle review:
+
+- `ScrollView` now exposes `onThumbPointerDown`. `MessageTimeline` uses this explicit ScrollView event boundary, so a thumb mounted through a Portal and stopped before viewport bubbling still cancels correcting RAFs without changing thumb drag behavior.
+- The correction loop resets consecutive stability to zero whenever the timeline key cannot currently resolve. It keeps retrying by key until the row remounts, while the hard frame limit remains enforced.
+- The viewport pointerdown handler no longer cancels correction for ordinary content. It only classifies a custom scrollbar thumb path as correction-cancelling; wheel, touch gesture start/move, and scroll-key paths remain the other cancellation sources.
+
+Additional deterministic coverage verifies anchor missing/remount recovery and connected DOM pointer-path classification. No dummy disconnected DOM is used.
+
+### Follow-up Verification
+
+- App focused tests: **38 pass, 0 fail, 101 expect() calls**.
+- ScrollView focused tests: **9 pass, 0 fail, 19 expect() calls**.
+- App `bun typecheck`: **passed**.
+- App `bun run typecheck:e2e`: **passed**.
+- `git diff --check`: **passed**.

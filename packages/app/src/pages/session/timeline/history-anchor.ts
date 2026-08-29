@@ -3,6 +3,10 @@ export type HistoryAnchorKind = "normal" | "search"
 
 type HistoryAnchorPhase = "pending" | "correcting"
 
+export function isHistoryAnchorScrollbarPointerDown(event: Event | undefined) {
+  return event?.composedPath().some((target) => target instanceof Element && target.matches(".scroll-view__thumb")) ?? false
+}
+
 export function startHistoryAnchorCorrection(input: {
   snapshot: HistoryAnchorSnapshot
   resolve: (anchor: string) => { top: number } | undefined
@@ -31,8 +35,10 @@ export function startHistoryAnchorCorrection(input: {
     if (!active) return
     const element = input.resolve(input.snapshot.anchor!)
     const delta = element ? element.top - input.rootTop() - input.snapshot.offset : undefined
-    if (delta !== undefined && Math.abs(delta) > 0.5) {
-      input.scrollBy(delta)
+    if (element === undefined) {
+      stable = 0
+    } else if (Math.abs(delta!) > 0.5) {
+      input.scrollBy(delta!)
       stable = 0
     } else {
       stable += 1

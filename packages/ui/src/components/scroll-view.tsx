@@ -18,6 +18,7 @@ export type ScrollViewThumbVisibility = "hover" | "scroll"
 
 export interface ScrollViewProps extends ComponentProps<"div"> {
   viewportRef?: (el: HTMLDivElement) => void
+  onThumbPointerDown?: (event: PointerEvent) => void
   orientation?: "vertical" | "horizontal" // currently only vertical is fully implemented for thumb
   /**
    * `hover`: show while hovered or scrolling. `scroll`: show only while scrolling.
@@ -96,6 +97,10 @@ export function scrollTopFromThumbPointer(input: {
   return (thumbTop / maxThumbTop) * Math.max(0, input.scrollHeight - (input.scrollClientHeight ?? input.clientHeight))
 }
 
+export function isScrollViewThumbPointerDown(event: Event | undefined) {
+  return event?.composedPath().some((target) => target instanceof Element && target.matches(".scroll-view__thumb")) ?? false
+}
+
 export function ScrollView(props: ScrollViewProps) {
   const i18n = useI18n()
   const merged = mergeProps({ orientation: "vertical", thumbVisibility: "hover" }, props)
@@ -105,6 +110,7 @@ export function ScrollView(props: ScrollViewProps) {
       "class",
       "children",
       "viewportRef",
+      "onThumbPointerDown",
       "orientation",
       "thumbVisibility",
       "thumbContainer",
@@ -235,6 +241,7 @@ export function ScrollView(props: ScrollViewProps) {
   })
 
   const onThumbPointerDown = (e: PointerEvent) => {
+    local.onThumbPointerDown?.(e)
     e.preventDefault()
     e.stopPropagation()
     setState("isDragging", true)

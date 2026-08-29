@@ -9,10 +9,10 @@ function createHarness() {
 
   const registry = createHistoryAnchorRegistry({
     snapshot: (kind) => ({ key: Symbol(`${kind}-${++snapshot}`), offset: snapshot }),
-      restore: (value, done, onSettled) => {
-        restored.push({ key: value.key, done })
-        if (done) settled.push(onSettled)
-        return () => stopped.push(value.key)
+    restore: (value, done, onSettled) => {
+      restored.push({ key: value.key, done })
+      if (done) settled.push(onSettled)
+      return () => stopped.push(value.key)
     },
     cancel: (value) => stopped.push(value.key),
     update: (value) => ({ ...value, offset: value.offset + 100 }),
@@ -173,6 +173,36 @@ describe("startHistoryAnchorCorrection", () => {
     frames.shift()?.()
     frames.shift()?.()
 
+    expect(settled).toBe(1)
+  })
+
+  test("does not count missing anchor frames as stable before remount", () => {
+    const frames: Array<() => void> = []
+    const elements = [undefined, { top: 100 }, { top: 100 }]
+    let resolved = 0
+    let settled = 0
+    startHistoryAnchorCorrection({
+      snapshot: { key: Symbol("anchor"), anchor: "row", offset: 100 },
+      resolve: () => elements[resolved++],
+      rootTop: () => 0,
+      scrollBy: () => {},
+      requestFrame: (callback) => {
+        frames.push(callback)
+        return frames.length
+      },
+      cancelFrame: () => {},
+      settled: () => settled++,
+      stableFrames: 2,
+      maxFrames: 10,
+    })
+
+    frames.shift()?.()
+    expect(settled).toBe(0)
+    frames.shift()?.()
+    expect(settled).toBe(0)
+    frames.shift()?.()
+
+    expect(resolved).toBe(3)
     expect(settled).toBe(1)
   })
 })
