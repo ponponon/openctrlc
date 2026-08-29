@@ -90,14 +90,18 @@ test.describe("session search timeline reveal", () => {
     await expect(timeline).toHaveAttribute("data-timeline-mount-probe", "mounted")
   })
 
-  test("hydrates paginated history, preserves partial results for retry, and ignores stale session loads", async ({ page }) => {
+  test("hydrates paginated history, preserves initial results for retry, and ignores stale session loads", async ({ page }) => {
     const firstSession = makeSession({ id: "ses_timeline_stability" })
     const secondSession = makeSession({ id: "ses_search_second", title: "Search second" })
     const firstMessages = historyMessages(120)
     const secondMessages = historyMessages(8).map((message) => ({
       ...message,
       info: { ...message.info, sessionID: secondSession.id },
-      parts: message.parts.map((part) => ({ ...part, sessionID: secondSession.id })),
+      parts: message.parts.map((part) => ({
+        ...part,
+        sessionID: secondSession.id,
+        ...(part.type === "text" ? { text: part.text.replace("Historical response", "Second session response") } : {}),
+      })),
     })) as typeof firstMessages
     const timeline = await setupTimeline(page, {
       sessions: [firstSession, secondSession],
@@ -109,20 +113,24 @@ test.describe("session search timeline reveal", () => {
     })
     await page.keyboard.press("Control+f")
     const input = page.getByRole("textbox", { name: "Search session messages" })
-    await input.fill("Historical response 0.")
+    await input.fill("Historical response")
     await expect(page.getByRole("search")).toContainText("500 Internal Server Error")
+    await expect(page.getByRole("search")).toContainText("Partial history")
+    await expect(page.getByRole("search")).toContainText(/1 of \d+ results/)
     await expect(page.getByRole("button", { name: "Retry" })).toBeVisible()
     await page.getByRole("button", { name: "Retry" }).click()
-    await expect(page.getByRole("search")).toContainText("1 of 1 results")
+    await expect(page.getByRole("search")).toContainText(/\d+ of 120 results/)
     await expect.poll(() => timeline.historyRequests.length).toBeGreaterThan(2)
     expect(timeline.historyRequests.every((request) => request.sessionID === firstSession.id)).toBe(true)
 
     await page.getByRole("button", { name: "Close search" }).click()
-    await page.goto(`/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
+    await navigateInApp(page, `/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
     await expect(page.getByRole("heading", { name: "Search second" })).toBeVisible()
     await page.keyboard.press("Control+f")
     await input.fill("Historical response 119.")
     await expect(page.getByRole("search")).toContainText("No results")
+    await expect(page.locator('[data-search-active]')).toHaveCount(0)
+    await expect(page.locator("body")).not.toContainText("Historical response 119.")
     await timeline.settle()
   })
 
@@ -149,7 +157,7 @@ test.describe("session search timeline reveal", () => {
     await input.fill("Historical response 0.")
     await expect.poll(() => historyBlock.release !== undefined).toBe(true)
 
-    await page.goto(`/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
+    await navigateInApp(page, `/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
     await expect(page.getByRole("heading", { name: "Search second" })).toBeVisible()
     historyBlock.enabled = false
     historyBlock.release?.()
@@ -158,4 +166,45 @@ test.describe("session search timeline reveal", () => {
     await expect(page.getByRole("search")).toContainText("No results")
     expect(timeline.historyRequests.some((request) => request.sessionID === firstSession.id && request.before)).toBe(true)
   })
+
+  test("keeps normal history paging behind pending search hydration", async ({ page }) => {
+    const firstSession = makeSession({ id: "ses_timeline_stability" })
+    const secondSession = makeSession({ id: "ses_search_second", title: "Search second" })
+    const historyBlock = { enabled: false as boolean, release: undefined as (() => void) | undefined }
+    const historyOverlap = { active: 0, max: 0 }
+    const timeline = await setupTimeline(page, {
+      sessions: [firstSession, secondSession],
+      messages: historyMessages(120),
+      historyPageSize: 50,
+      historyBlock,
+      historyOverlap,
+      viewport: { width: 900, height: 420 },
+    })
+
+    await expect(page.locator("[data-timeline-virtual-content]")).toBeAttached()
+    await page.keyboard.press("Control+f")
+    const input = page.getByRole("textbox", { name: "Search session messages" })
+    historyBlock.enabled = true
+    await input.fill("Historical response")
+    await expect.poll(() => historyBlock.release !== undefined).toBe(true)
+    const requestsBeforeScroll = timeline.historyRequests.length
+
+    const scroller = page.locator(".scroll-view__viewport", { has: page.locator("[data-timeline-virtual-content]") })
+    await scroller.hover()
+    await page.mouse.wheel(0, -1000)
+    await expect.poll(() => timeline.historyRequests.length).toBe(requestsBeforeScroll)
+    expect(historyOverlap.max).toBe(1)
+
+    historyBlock.enabled = false
+    historyBlock.release?.()
+    await expect(page.getByRole("search")).toContainText("1 of 120 results")
+    expect(historyOverlap.max).toBe(1)
+  })
 })
+
+async function navigateInApp(page: import("@playwright/test").Page, href: string) {
+  await page.evaluate((next) => {
+    window.history.pushState({}, "", next)
+    window.dispatchEvent(new PopStateEvent("popstate"))
+  }, href)
+}

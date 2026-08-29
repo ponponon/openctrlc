@@ -243,6 +243,31 @@ describe("preserveSessionSearchActiveIndex", () => {
 })
 
 describe("hydrateSessionSearchHistory", () => {
+  test("waits for loading history metadata before treating more=false as exhausted", async () => {
+    let more = false
+    let loading = true
+    const calls: string[] = []
+
+    const hydration = hydrateSessionSearchHistory({
+      sessionID: () => "session-1",
+      ready: () => true,
+      more: () => more,
+      loading: () => loading,
+      loadMore: async (sessionID) => {
+        calls.push(sessionID)
+        more = false
+      },
+    })
+
+    await Promise.resolve()
+    expect(calls).toEqual([])
+    more = true
+    loading = false
+    await hydration
+
+    expect(calls).toEqual(["session-1"])
+  })
+
   test("waits for initial history readiness before treating more=false as exhausted", async () => {
     let ready = false
     let remaining = 0

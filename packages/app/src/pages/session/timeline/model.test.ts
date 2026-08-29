@@ -15,9 +15,9 @@ describe("timeline model", () => {
     expect(selectVisibleUserMessages(users)).toBe(users)
   })
 
-  test("waits for an assistant-only load to hydrate its user root", () => {
+  test("waits for the initial history load to settle", () => {
     expect(isTimelineReady([assistant("msg_2")], true)).toBe(false)
-    expect(isTimelineReady([user("msg_1"), assistant("msg_2")], true)).toBe(true)
+    expect(isTimelineReady([user("msg_1"), assistant("msg_2")], true)).toBe(false)
     expect(isTimelineReady([], false)).toBe(true)
   })
 

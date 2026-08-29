@@ -102,6 +102,7 @@ export async function setupTimeline(
     messagesBySession?: Record<string, TimelineMessage[]>
     historyFailureCount?: number
     historyBlock?: { enabled: boolean; release?: () => void }
+    historyOverlap?: { active: number; max: number }
   } = {},
 ) {
   const sessions = input.sessions ?? [session()]
@@ -129,14 +130,22 @@ export async function setupTimeline(
     sessionStatus: { [sessionID]: initialStatus },
     beforeMessagesResponse: async ({ sessionID, before }) => {
       historyRequests.push({ sessionID, before })
-      if (before && input.historyBlock?.enabled) {
-        await new Promise<void>((resolve) => {
-          input.historyBlock!.release = resolve
-        })
+      if (input.historyOverlap) {
+        input.historyOverlap.active += 1
+        input.historyOverlap.max = Math.max(input.historyOverlap.max, input.historyOverlap.active)
       }
-      if (!before || historyFailuresRemaining <= 0) return
-      historyFailuresRemaining -= 1
-      return { status: 500 }
+      try {
+        if (before && input.historyBlock?.enabled) {
+          await new Promise<void>((resolve) => {
+            input.historyBlock!.release = resolve
+          })
+        }
+        if (!before || historyFailuresRemaining <= 0) return
+        historyFailuresRemaining -= 1
+        return { status: 500 }
+      } finally {
+        if (input.historyOverlap) input.historyOverlap.active -= 1
+      }
     },
     pageMessages: (sessionID, limit, before) => {
       const sessionMessages = input.messagesBySession?.[sessionID] ?? messages
@@ -223,6 +232,7 @@ export async function setupTimeline(
       await expect(part).toBeVisible()
     },
     historyRequests,
+    historyOverlap: input.historyOverlap,
   }
 }
 

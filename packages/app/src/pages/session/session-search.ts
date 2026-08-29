@@ -169,7 +169,7 @@ export function createSessionSearchHydrator(input: {
     const releaseRun = input.onRunStart?.(token)
     const promise = (async () => {
       try {
-        while (isCurrent(sessionID, runGeneration) && !ready()) await waitForState()
+        while (isCurrent(sessionID, runGeneration) && (!ready() || input.loading())) await waitForState()
         while (isCurrent(sessionID, runGeneration) && input.more()) {
           while (isCurrent(sessionID, runGeneration) && input.loading()) await waitForState()
           if (!isCurrent(sessionID, runGeneration) || !input.more()) return
