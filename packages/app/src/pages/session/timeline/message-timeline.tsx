@@ -349,6 +349,7 @@ export function MessageTimeline(props: {
   const messageByID = projection.messageByID
   const messageLastRowIndex = projection.messageLastRowIndex
   const messageRowIndex = projection.messageRowIndex
+  const userMessageRowIndex = projection.userMessageRowIndex
   const timelineRowByKey = projection.rowByKey
   const timelineRows = projection.rows
 
@@ -520,7 +521,7 @@ export function MessageTimeline(props: {
   const virtualRowKeys = createMemo(() => virtualizer.getVirtualItems().map((item) => item.key as string))
   createEffect(() => {
     props.setRevealMessage?.((id) => {
-      const index = messageRowIndex().get(id)
+      const index = userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
       if (index === undefined) return
       virtualizer.scrollToIndex(index, { align: "center" })
     })
@@ -1124,7 +1125,7 @@ export function MessageTimeline(props: {
           "md:max-w-200 2xl:max-w-[1000px]": props.centered,
           "md:mx-auto": props.centered,
           "pt-3": previousAssistantPart(),
-          "outline outline-1 outline-v2-border-border-focus bg-v2-overlay-simple-overlay-hover/30": searchActive(),
+          "bg-v2-overlay-simple-overlay-hover [box-shadow:inset_0_0_0_2px_var(--v2-border-border-focus)]": searchActive(),
         }}
       >
         <div data-component="session-turn" class="min-w-0 w-full relative" style={{ height: "auto" }}>

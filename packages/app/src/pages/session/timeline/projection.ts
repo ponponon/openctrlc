@@ -3,8 +3,10 @@ import type { AssistantMessage, Message, Part, SessionStatus, UserMessage } from
 import { createMemo, type Accessor } from "solid-js"
 import { reuseTimelineRows } from "./row-reconciliation"
 import { Timeline, TimelineRow } from "./rows"
+import { indexUserMessageRows } from "./user-message-row-index"
 
 export { reuseTimelineRows } from "./row-reconciliation"
+export { indexUserMessageRows } from "./user-message-row-index"
 
 export function createTimelineProjection(input: {
   messages: Accessor<Message[]>
@@ -60,6 +62,7 @@ export function createTimelineProjection(input: {
     })
     return result
   })
+  const userMessageRowIndex = createMemo(() => indexUserMessageRows(rows()))
   const lastAssistantGroupKey = createMemo(() => {
     const result = new Map<string, string>()
     rows().forEach((row) => {
@@ -75,6 +78,7 @@ export function createTimelineProjection(input: {
     messageByID,
     messageRowIndex,
     messageLastRowIndex,
+    userMessageRowIndex,
     rowByKey,
     rows,
   }
