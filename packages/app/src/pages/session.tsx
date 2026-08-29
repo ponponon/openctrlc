@@ -105,7 +105,7 @@ import { createSessionOwnership } from "./session/session-ownership"
 import { createSessionLineage } from "./session/session-lineage"
 import { SessionSearchBar } from "./session/session-search-bar"
 import {
-  createSessionSearchDocuments,
+  createSessionSearchIndex,
   findSessionSearchMatches,
   createSessionSearchHydrator,
   createSessionSearchRunGate,
@@ -576,14 +576,20 @@ export default function Page() {
   const userMessages = timeline.userMessages
   const visibleUserMessages = timeline.visibleUserMessages
 
-  const searchDocuments = createMemo(() =>
-    createSessionSearchDocuments({
-      messages: params.id ? (sync().data.message[params.id] ?? []) : [],
+  const searchDocuments = createMemo(() => {
+    if (!search.open || !search.query || !params.id) return []
+    return createSessionSearchIndex({
+      messages: sync().data.message[params.id] ?? [],
       parts: (messageID) => sync().data.part[messageID] ?? [],
       scope: search.scope,
-    }),
-  )
-  const searchMatches = createMemo(() => findSessionSearchMatches(searchDocuments(), search.query))
+      open: true,
+      query: search.query,
+    })
+  })
+  const searchMatches = createMemo(() => {
+    if (!search.open || !search.query) return []
+    return findSessionSearchMatches(searchDocuments(), search.query)
+  })
   const activeSearchMessageID = createMemo(() => {
     const id = params.id
     const messageID = searchMatches()[search.activeIndex]?.messageID
@@ -1724,6 +1730,7 @@ export default function Page() {
   let captureHistoryAnchor: ((kind: "normal" | "search") => HistoryAnchor | undefined) | undefined
   searchHydrator = createSessionSearchHydrator({
     sessionID: () => params.id,
+    ready: () => messagesReady(),
     more: timeline.history.more,
     loading: timeline.history.loading,
     beforeLoad: (sessionID) => {

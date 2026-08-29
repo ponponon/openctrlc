@@ -54,7 +54,7 @@ The complete timeline-stability suite was also run. The fresh result was **45 pa
 
 ## Review Resolution
 
-All five Important review items were addressed within the Task 5 files and the timeline projection needed for the actual user-row index:
+All six review items were addressed within the Task 5 files and the timeline projection needed for the actual user-row index:
 
 1. The focused browser test verifies real centered geometry after the production reveal callback runs. The existing `scrollToIndex(index, { align: "center" })` call remains the reveal mechanism.
 2. The Playwright test checks the target's pre-search viewport geometry, then checks marker visibility, centered reveal geometry, and identity of the original virtual-content DOM node after search.

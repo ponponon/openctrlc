@@ -11,11 +11,41 @@ export function isActiveSearchMessage(messageID: string, activeSearchMessageID: 
 const MAX_SEARCH_DOCUMENT_LENGTH = 100_000
 const activeHydrations = new WeakMap<object, Map<string, { token: symbol; promise: Promise<void> }>>()
 export function searchableText(input: { message: Message; parts: Part[]; scope: SessionSearchScope }) {
-  const values = input.parts.flatMap((part) => partText(part, input.scope))
-  if (input.scope === "all" && input.message.role === "assistant" && input.message.error) {
-    values.push(input.message.error.name, ...readableStrings(input.message.error.data))
+  const values: string[] = []
+  let length = 0
+  const append = (value: string | undefined) => {
+    if (!value || length >= MAX_SEARCH_DOCUMENT_LENGTH) return
+    const prefix = values.length === 0 ? "" : "\n"
+    const available = MAX_SEARCH_DOCUMENT_LENGTH - length - prefix.length
+    if (available <= 0) return
+    const next = `${prefix}${value.slice(0, available)}`
+    values.push(next)
+    length += next.length
   }
-  return values.join("\n").slice(0, MAX_SEARCH_DOCUMENT_LENGTH)
+
+  for (const part of input.parts) {
+    for (const value of partText(part, input.scope)) append(value)
+    if (length >= MAX_SEARCH_DOCUMENT_LENGTH) break
+  }
+  if (input.scope === "all" && input.message.role === "assistant" && input.message.error && length < MAX_SEARCH_DOCUMENT_LENGTH) {
+    append(input.message.error.name)
+    for (const value of readableStrings(input.message.error.data)) {
+      append(value)
+      if (length >= MAX_SEARCH_DOCUMENT_LENGTH) break
+    }
+  }
+  return values.join("")
+}
+
+export function createSessionSearchIndex(input: {
+  messages: Message[]
+  parts: (messageID: string) => Part[]
+  scope: SessionSearchScope
+  open: boolean
+  query: string
+}) {
+  if (!input.open || !input.query) return []
+  return createSessionSearchDocuments(input)
 }
 
 export function createSessionSearchDocuments(input: {
@@ -74,17 +104,19 @@ export function preserveSessionSearchActiveIndex(
 
 export function hydrateSessionSearchHistory(input: {
   sessionID: () => string | undefined
+  ready?: () => boolean
   more: () => boolean
   loading: () => boolean
   loadMore: (sessionID: string, token?: symbol) => Promise<void>
 }): Promise<void> {
+  const ready = input.ready ?? (() => true)
   const sessionID = input.sessionID()
-  if (!sessionID || !input.more()) return Promise.resolve()
+  if (!sessionID) return Promise.resolve()
   const active = activeHydrations.get(input) ?? new Map<string, { token: symbol; promise: Promise<void> }>()
   const existing = active.get(sessionID)
   if (existing) return existing.promise
   const token = Symbol()
-  const promise = createSessionSearchHydrator(input).hydrate(sessionID).finally(() => {
+  const promise = createSessionSearchHydrator({ ...input, ready }).hydrate(sessionID).finally(() => {
     if (active.get(sessionID)?.token === token) active.delete(sessionID)
   })
   active.set(sessionID, { token, promise })
@@ -94,6 +126,7 @@ export function hydrateSessionSearchHistory(input: {
 
 export function createSessionSearchHydrator(input: {
   sessionID: () => string | undefined
+  ready?: () => boolean
   more: () => boolean
   loading: () => boolean
   loadMore: (sessionID: string, token?: symbol) => Promise<void>
@@ -112,6 +145,7 @@ export function createSessionSearchHydrator(input: {
   const activeAnchors = new Set<{ cancel: () => void }>()
   let generation = 0
   let disposed = false
+  const ready = input.ready ?? (() => true)
 
   const isCurrent = (sessionID: string, runGeneration = generation) =>
     !disposed && generation === runGeneration && input.sessionID() === sessionID
@@ -126,7 +160,7 @@ export function createSessionSearchHydrator(input: {
     })
 
   const hydrateRun = (sessionID: string) => {
-    if (disposed || input.sessionID() !== sessionID || !input.more()) return { token: Symbol(), promise: Promise.resolve() }
+    if (disposed || input.sessionID() !== sessionID) return { token: Symbol(), promise: Promise.resolve() }
     const existing = runs.get(sessionID)
     if (existing) return existing
 
@@ -135,6 +169,7 @@ export function createSessionSearchHydrator(input: {
     const releaseRun = input.onRunStart?.(token)
     const promise = (async () => {
       try {
+        while (isCurrent(sessionID, runGeneration) && !ready()) await waitForState()
         while (isCurrent(sessionID, runGeneration) && input.more()) {
           while (isCurrent(sessionID, runGeneration) && input.loading()) await waitForState()
           if (!isCurrent(sessionID, runGeneration) || !input.more()) return
@@ -241,29 +276,43 @@ function normalizeWithOffsets(text: string) {
   return { text: normalized, offsets }
 }
 
-function partText(part: Part, scope: SessionSearchScope) {
-  if (part.type === "text") return [part.text]
-  if (scope === "conversation") return []
-  if (part.type === "reasoning") return [part.text]
-  if (part.type === "subtask") return [part.prompt, part.description, part.agent]
-  if (part.type === "tool") {
-    const values = readableStrings(part.state.input)
-    if (part.state.status === "pending") values.push(part.state.raw)
-    if (part.state.status === "completed") values.push(part.state.output, part.state.title)
-    if (part.state.status === "error") values.push(part.state.error)
-    return values
+function* partText(part: Part, scope: SessionSearchScope) {
+  if (part.type === "text") yield part.text
+  if (scope === "conversation") return
+  if (part.type === "reasoning") yield part.text
+  if (part.type === "subtask") {
+    yield part.prompt
+    yield part.description
+    yield part.agent
   }
-  if (part.type === "step-finish") return [part.reason]
-  if (part.type === "agent") return [part.name, ...(part.source ? [part.source.value] : [])]
-  if (part.type === "patch") return part.files
-  if (part.type === "retry") return readableStrings(part.error.data)
-  if (part.type === "file" && part.source) return [part.source.text.value]
-  return []
+  if (part.type === "tool") {
+    yield* readableStrings(part.state.input)
+    if (part.state.status === "pending") yield part.state.raw
+    if (part.state.status === "completed") {
+      yield part.state.output
+      yield part.state.title
+    }
+    if (part.state.status === "error") yield part.state.error
+  }
+  if (part.type === "step-finish") yield part.reason
+  if (part.type === "agent") {
+    yield part.name
+    if (part.source) yield part.source.value
+  }
+  if (part.type === "patch") yield* part.files
+  if (part.type === "retry") yield* readableStrings(part.error.data)
+  if (part.type === "file" && part.source) yield part.source.text.value
 }
 
-function readableStrings(value: unknown): string[] {
-  if (typeof value === "string") return [value]
-  if (!value || typeof value !== "object") return []
-  if (Array.isArray(value)) return value.flatMap(readableStrings)
-  return Object.values(value).flatMap(readableStrings)
+function* readableStrings(value: unknown): Generator<string> {
+  if (typeof value === "string") {
+    yield value
+    return
+  }
+  if (!value || typeof value !== "object") return
+  if (Array.isArray(value)) {
+    for (const item of value) yield* readableStrings(item)
+    return
+  }
+  for (const item of Object.values(value)) yield* readableStrings(item)
 }

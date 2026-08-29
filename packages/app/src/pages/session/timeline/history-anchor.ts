@@ -3,10 +3,6 @@ export type HistoryAnchorKind = "normal" | "search"
 
 type HistoryAnchorPhase = "pending" | "correcting"
 
-export function isHistoryAnchorScrollbarPointerDown(event: Event | undefined) {
-  return event?.composedPath().some((target) => target instanceof Element && target.matches(".scroll-view__thumb")) ?? false
-}
-
 export function startHistoryAnchorCorrection(input: {
   snapshot: HistoryAnchorSnapshot
   resolve: (anchor: string) => { top: number } | undefined

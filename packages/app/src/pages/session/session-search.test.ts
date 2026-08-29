@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import type { AssistantMessage, Message, Part } from "@openctrlc/sdk/v2/client"
 import {
   createSessionSearchDocuments,
+  createSessionSearchIndex,
   findSessionSearchMatches,
   hydrateSessionSearchHistory,
   nextSessionSearchMatchIndex,
@@ -132,6 +133,26 @@ describe("createSessionSearchDocuments", () => {
       createSessionSearchDocuments({ messages: [user("user-1")], parts: () => [], scope: "conversation" }),
     ).toEqual([{ messageID: "user-1", text: "" }])
   })
+
+  test("does not extract documents while search is closed or query is empty", () => {
+    let calls = 0
+    const input = {
+      messages: [user("user-1")],
+      parts: () => {
+        calls += 1
+        return [part({ type: "text", text: "needle" })]
+      },
+      scope: "conversation" as const,
+    }
+
+    expect(createSessionSearchIndex({ ...input, open: false, query: "needle" })).toEqual([])
+    expect(createSessionSearchIndex({ ...input, open: true, query: "" })).toEqual([])
+    expect(calls).toBe(0)
+    expect(createSessionSearchIndex({ ...input, open: true, query: "needle" })).toEqual([
+      { messageID: "user-1", text: "needle" },
+    ])
+    expect(calls).toBe(1)
+  })
 })
 
 describe("findSessionSearchMatches", () => {
@@ -222,6 +243,29 @@ describe("preserveSessionSearchActiveIndex", () => {
 })
 
 describe("hydrateSessionSearchHistory", () => {
+  test("waits for initial history readiness before treating more=false as exhausted", async () => {
+    let ready = false
+    let remaining = 0
+    const calls: string[] = []
+    const hydration = hydrateSessionSearchHistory({
+      sessionID: () => "session-1",
+      ready: () => ready,
+      more: () => remaining > 0,
+      loading: () => false,
+      loadMore: async (sessionID) => {
+        calls.push(sessionID)
+        remaining -= 1
+      },
+    })
+
+    await Promise.resolve()
+    expect(calls).toEqual([])
+    ready = true
+    remaining = 2
+    await hydration
+    expect(calls).toEqual(["session-1", "session-1"])
+  })
+
   test("loads pages until history is exhausted", async () => {
     let remaining = 3
     const calls: string[] = []
@@ -246,7 +290,7 @@ describe("hydrateSessionSearchHistory", () => {
       calls += 1
     }
 
-    await hydrateSessionSearchHistory({ sessionID: () => undefined, more: () => true, loading: () => false, loadMore })
+    await hydrateSessionSearchHistory({ sessionID: () => undefined, ready: () => true, more: () => true, loading: () => false, loadMore })
     const hydration = hydrateSessionSearchHistory({
       sessionID: () => "session-1",
       more: () => calls < 1,

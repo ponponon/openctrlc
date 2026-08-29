@@ -98,6 +98,10 @@ export async function setupTimeline(
     deviceScaleFactor?: number
     seedHistory?: boolean
     protocol?: "v1" | "v2"
+    historyPageSize?: number
+    messagesBySession?: Record<string, TimelineMessage[]>
+    historyFailureCount?: number
+    historyBlock?: { enabled: boolean; release?: () => void }
   } = {},
 ) {
   const sessions = input.sessions ?? [session()]
@@ -105,6 +109,8 @@ export async function setupTimeline(
     ...(input.seedHistory ? historyMessages(18) : []),
     ...(input.messages ?? [userMessage(), assistantMessage()]),
   ])
+  const historyRequests: { sessionID: string; before?: string }[] = []
+  let historyFailuresRemaining = input.historyFailureCount ?? 0
   const active = messages.findLast((message) => message.info.role === "assistant")
   const initialStatus = decodeStatus(
     active?.info.role === "assistant" && active.info.time.completed === undefined ? { type: "busy" } : { type: "idle" },
@@ -121,9 +127,24 @@ export async function setupTimeline(
     provider: provider(),
     sessions,
     sessionStatus: { [sessionID]: initialStatus },
-    pageMessages: () => ({
-      items: messages,
-    }),
+    beforeMessagesResponse: async ({ sessionID, before }) => {
+      historyRequests.push({ sessionID, before })
+      if (before && input.historyBlock?.enabled) {
+        await new Promise<void>((resolve) => {
+          input.historyBlock!.release = resolve
+        })
+      }
+      if (!before || historyFailuresRemaining <= 0) return
+      historyFailuresRemaining -= 1
+      return { status: 500 }
+    },
+    pageMessages: (sessionID, limit, before) => {
+      const sessionMessages = input.messagesBySession?.[sessionID] ?? messages
+      if (!input.historyPageSize) return { items: sessionMessages }
+      const end = before ? Number(before) : sessionMessages.length
+      const start = Math.max(0, end - Math.min(limit, input.historyPageSize))
+      return { items: sessionMessages.slice(start, end), cursor: start > 0 ? String(start) : undefined }
+    },
   })
   await page.addInitScript((settings) => {
     localStorage.setItem(
@@ -201,6 +222,7 @@ export async function setupTimeline(
       await expect(part).toHaveCount(1)
       await expect(part).toBeVisible()
     },
+    historyRequests,
   }
 }
 

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
-import { historyMessages, setupTimeline } from "./fixture"
+import { base64Encode } from "@openctrlc/core/util/encode"
+import { historyMessages, session as makeSession, setupTimeline } from "./fixture"
 
 test.describe("session search timeline reveal", () => {
   for (const newLayoutDesigns of [true, false]) {
@@ -87,5 +88,74 @@ test.describe("session search timeline reveal", () => {
     await expect(timeline).toBeAttached()
     await expect(page.locator('[data-timeline-virtual-content]')).toHaveCount(1)
     await expect(timeline).toHaveAttribute("data-timeline-mount-probe", "mounted")
+  })
+
+  test("hydrates paginated history, preserves partial results for retry, and ignores stale session loads", async ({ page }) => {
+    const firstSession = makeSession({ id: "ses_timeline_stability" })
+    const secondSession = makeSession({ id: "ses_search_second", title: "Search second" })
+    const firstMessages = historyMessages(120)
+    const secondMessages = historyMessages(8).map((message) => ({
+      ...message,
+      info: { ...message.info, sessionID: secondSession.id },
+      parts: message.parts.map((part) => ({ ...part, sessionID: secondSession.id })),
+    })) as typeof firstMessages
+    const timeline = await setupTimeline(page, {
+      sessions: [firstSession, secondSession],
+      messages: firstMessages,
+      messagesBySession: { [firstSession.id]: firstMessages, [secondSession.id]: secondMessages },
+      historyPageSize: 50,
+      historyFailureCount: 1,
+      viewport: { width: 900, height: 420 },
+    })
+    await page.keyboard.press("Control+f")
+    const input = page.getByRole("textbox", { name: "Search session messages" })
+    await input.fill("Historical response 0.")
+    await expect(page.getByRole("search")).toContainText("500 Internal Server Error")
+    await expect(page.getByRole("button", { name: "Retry" })).toBeVisible()
+    await page.getByRole("button", { name: "Retry" }).click()
+    await expect(page.getByRole("search")).toContainText("1 of 1 results")
+    await expect.poll(() => timeline.historyRequests.length).toBeGreaterThan(2)
+    expect(timeline.historyRequests.every((request) => request.sessionID === firstSession.id)).toBe(true)
+
+    await page.getByRole("button", { name: "Close search" }).click()
+    await page.goto(`/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
+    await expect(page.getByRole("heading", { name: "Search second" })).toBeVisible()
+    await page.keyboard.press("Control+f")
+    await input.fill("Historical response 119.")
+    await expect(page.getByRole("search")).toContainText("No results")
+    await timeline.settle()
+  })
+
+  test("does not apply a blocked search page after switching sessions", async ({ page }) => {
+    const firstSession = makeSession({ id: "ses_timeline_stability" })
+    const secondSession = makeSession({ id: "ses_search_second", title: "Search second" })
+    const firstMessages = historyMessages(120)
+    const secondMessages = historyMessages(8).map((message) => ({
+      ...message,
+      info: { ...message.info, sessionID: secondSession.id },
+      parts: message.parts.map((part) => ({ ...part, sessionID: secondSession.id })),
+    })) as typeof firstMessages
+    const historyBlock = { enabled: true as boolean, release: undefined as (() => void) | undefined }
+    const timeline = await setupTimeline(page, {
+      sessions: [firstSession, secondSession],
+      messages: firstMessages,
+      messagesBySession: { [firstSession.id]: firstMessages, [secondSession.id]: secondMessages },
+      historyPageSize: 50,
+      historyBlock,
+      viewport: { width: 900, height: 420 },
+    })
+    await page.keyboard.press("Control+f")
+    const input = page.getByRole("textbox", { name: "Search session messages" })
+    await input.fill("Historical response 0.")
+    await expect.poll(() => historyBlock.release !== undefined).toBe(true)
+
+    await page.goto(`/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
+    await expect(page.getByRole("heading", { name: "Search second" })).toBeVisible()
+    historyBlock.enabled = false
+    historyBlock.release?.()
+    await page.keyboard.press("Control+f")
+    await input.fill("Historical response 119.")
+    await expect(page.getByRole("search")).toContainText("No results")
+    expect(timeline.historyRequests.some((request) => request.sessionID === firstSession.id && request.before)).toBe(true)
   })
 })
