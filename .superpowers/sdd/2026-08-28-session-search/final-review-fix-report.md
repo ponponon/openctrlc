@@ -139,6 +139,6 @@ bun run test:stability
 48 passed, 2 failed: timeline-stability Playwright tests
 ```
 
-The two full-stability failures were the pre-existing machine/timing-sensitive scenarios `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. This fresh run improves the prior recorded outcome from 47 passed and 3 failed; full stability remains non-green.
+The two full-stability failures were machine/timing-sensitive scenarios observed in the current and prior fresh runs: `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. Because both baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency, there is no reliable evidence to determine whether either failure was introduced by this branch. All six session-search stability tests passed. No unrelated stability test was modified. This fresh run improves the prior recorded outcome from 47 passed and 3 failed; full stability remains non-green.
 
 `git diff --check` also passed. The optional active-match-unchanged reveal test was not added because it was not required for this fix wave.
