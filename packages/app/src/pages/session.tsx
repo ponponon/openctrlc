@@ -584,6 +584,13 @@ export default function Page() {
     }),
   )
   const searchMatches = createMemo(() => findSessionSearchMatches(searchDocuments(), search.query))
+  const activeSearchMessageID = createMemo(() => {
+    const id = params.id
+    const messageID = searchMatches()[search.activeIndex]?.messageID
+    const message = id && messageID ? sync().data.message[id]?.find((item) => item.id === messageID) : undefined
+    if (message?.role === "assistant") return message.parentID
+    return message?.id
+  })
   let searchQueryTimer: number | undefined
   let previousSearchMatch = undefined as ReturnType<typeof searchMatches>[number] | undefined
   let searchHistoryLoading: { owner: string; token: symbol } | undefined
@@ -659,7 +666,8 @@ export default function Page() {
     const match = matches[index]
     if (match) {
       previousSearchMatch = match
-      revealMessage(match.messageID)
+      const message = params.id ? sync().data.message[params.id]?.find((item) => item.id === match.messageID) : undefined
+      revealMessage(message?.role === "assistant" ? message.parentID : match.messageID)
     }
   }
 
@@ -2266,7 +2274,7 @@ export default function Page() {
                 {(_id) => (
                   <MessageTimeline
                     actions={actions}
-                    activeSearchMessageID={searchMatches()[search.activeIndex]?.messageID}
+                    activeSearchMessageID={activeSearchMessageID()}
                     scroll={ui.scroll}
                     onResumeScroll={resumeScroll}
                     setScrollRef={setScrollRef}

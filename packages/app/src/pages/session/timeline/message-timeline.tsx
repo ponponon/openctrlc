@@ -68,6 +68,7 @@ import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { useTabs } from "@/context/tabs"
 import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/session-route"
+import { isActiveSearchMessage } from "@/pages/session/session-search"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { notifySessionTabsRemoved } from "@/components/titlebar-session-events"
@@ -456,9 +457,20 @@ export function MessageTimeline(props: {
     rangeExtractor: (range) => {
       const id = activeMessageID()
       const active = id ? (messageLastRowIndex().get(id) ?? -1) : -1
+      const searchID = props.activeSearchMessageID
+      const searchActive = searchID ? (messageLastRowIndex().get(searchID) ?? -1) : -1
+      const searchActiveStart = searchID ? (messageRowIndex().get(searchID) ?? -1) : -1
       const indexes = defaultRangeExtractor({ ...range, overscan: renderOverscan() })
       return filterVirtualIndexes(
-        [...new Set([...resizePinnedIndexes, ...indexes, ...(active < 0 ? [] : [active])])].sort((a, b) => a - b),
+        [
+          ...new Set([
+            ...resizePinnedIndexes,
+            ...indexes,
+            ...(active < 0 ? [] : [active]),
+            ...(searchActive < 0 ? [] : [searchActive]),
+            ...(searchActiveStart < 0 ? [] : [searchActiveStart]),
+          ]),
+        ].sort((a, b) => a - b),
         range.count,
       )
     },
@@ -1096,17 +1108,23 @@ export function MessageTimeline(props: {
       const row = input.row()
       return row._tag === "AssistantPart" && row.previousAssistantPart
     }
+    const searchActive = () => {
+      const row = input.row()
+      return row._tag === "UserMessage" && isActiveSearchMessage(row.userMessageID, props.activeSearchMessageID)
+    }
 
     return (
       <div
         id={anchor() ? props.anchor(input.row().userMessageID) : undefined}
         data-message-id={input.row().userMessageID}
         data-timeline-row={input.row()._tag}
+        data-search-active={searchActive() ? "" : undefined}
         classList={{
           "min-w-0 w-full max-w-full": true,
           "md:max-w-200 2xl:max-w-[1000px]": props.centered,
           "md:mx-auto": props.centered,
           "pt-3": previousAssistantPart(),
+          "outline outline-1 outline-v2-border-border-focus bg-v2-overlay-simple-overlay-hover/30": searchActive(),
         }}
       >
         <div data-component="session-turn" class="min-w-0 w-full relative" style={{ height: "auto" }}>

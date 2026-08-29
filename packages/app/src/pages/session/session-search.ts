@@ -4,6 +4,10 @@ export type SessionSearchScope = "conversation" | "all"
 export type SessionSearchDocument = { messageID: string; text: string }
 export type SessionSearchMatch = { messageID: string; start: number; end: number }
 
+export function isActiveSearchMessage(messageID: string, activeSearchMessageID: string | undefined) {
+  return messageID === activeSearchMessageID
+}
+
 const MAX_SEARCH_DOCUMENT_LENGTH = 100_000
 const activeHydrations = new WeakMap<object, Map<string, { token: symbol; promise: Promise<void> }>>()
 export function searchableText(input: { message: Message; parts: Part[]; scope: SessionSearchScope }) {
