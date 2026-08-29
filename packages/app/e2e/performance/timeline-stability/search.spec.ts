@@ -137,11 +137,22 @@ test.describe("session search timeline reveal", () => {
   test("does not apply a blocked search page after switching sessions", async ({ page }) => {
     const firstSession = makeSession({ id: "ses_timeline_stability" })
     const secondSession = makeSession({ id: "ses_search_second", title: "Search second" })
-    const firstMessages = historyMessages(120)
+    const oldMarker = "OLD_SESSION_SEARCH_MARKER"
+    const newMarker = "NEW_SESSION_SEARCH_MARKER"
+    const firstMessages = historyMessages(120).map((message) => ({
+      ...message,
+      parts: message.parts.map((part) =>
+        part.type === "text" ? { ...part, text: `${oldMarker}: ${part.text}` } : part,
+      ),
+    }))
     const secondMessages = historyMessages(8).map((message) => ({
       ...message,
       info: { ...message.info, sessionID: secondSession.id },
-      parts: message.parts.map((part) => ({ ...part, sessionID: secondSession.id })),
+      parts: message.parts.map((part) => ({
+        ...part,
+        sessionID: secondSession.id,
+        ...(part.type === "text" ? { text: `${newMarker}: ${part.text}` } : {}),
+      })),
     })) as typeof firstMessages
     const historyBlock = { enabled: true as boolean, release: undefined as (() => void) | undefined }
     const timeline = await setupTimeline(page, {
@@ -154,7 +165,7 @@ test.describe("session search timeline reveal", () => {
     })
     await page.keyboard.press("Control+f")
     const input = page.getByRole("textbox", { name: "Search session messages" })
-    await input.fill("Historical response 0.")
+    await input.fill(oldMarker)
     await expect.poll(() => historyBlock.release !== undefined).toBe(true)
 
     await navigateInApp(page, `/${base64Encode("C:/OpenCode/TimelineStability")}/session/${secondSession.id}`)
@@ -162,9 +173,14 @@ test.describe("session search timeline reveal", () => {
     historyBlock.enabled = false
     historyBlock.release?.()
     await page.keyboard.press("Control+f")
-    await input.fill("Historical response 119.")
+    await expect(page.getByRole("search")).toBeVisible()
+    await input.fill(oldMarker)
     await expect(page.getByRole("search")).toContainText("No results")
+    await expect(page.getByRole("search")).not.toContainText(oldMarker)
     expect(timeline.historyRequests.some((request) => request.sessionID === firstSession.id && request.before)).toBe(true)
+    await expect(page.locator("body")).toContainText(newMarker)
+    await expect(page.locator("body")).not.toContainText(oldMarker)
+    await expect(page.locator('[data-timeline-row="UserMessage"][data-search-active]')).toHaveCount(0)
   })
 
   test("keeps normal history paging behind pending search hydration", async ({ page }) => {
