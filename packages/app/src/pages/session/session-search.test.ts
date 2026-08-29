@@ -112,6 +112,44 @@ describe("searchableText", () => {
     expect(text).not.toContain("[object Object]")
     expect(text).not.toContain("binary")
   })
+
+  test("stops reading object fields when the shared UTF-16 budget is exhausted", () => {
+    const input: Record<string, unknown> = {
+      first: "x".repeat(100_000),
+    }
+    Object.defineProperty(input, "second", {
+      enumerable: true,
+      get() {
+        throw new Error("read past extraction budget")
+      },
+    })
+
+    expect(() =>
+      searchableText({
+        message: user("user-1"),
+        parts: [
+          part({
+            type: "tool",
+            state: { status: "completed", input, output: "later output", title: "later title" },
+          }),
+        ],
+        scope: "all",
+      }),
+    ).not.toThrow()
+  })
+
+  test("does not recurse forever through cyclic all-content values", () => {
+    const input: Record<string, unknown> = { value: "cycle value" }
+    input.self = input
+
+    expect(
+      searchableText({
+        message: user("user-1"),
+        parts: [part({ type: "tool", state: { status: "completed", input, output: "output", title: "title" } })],
+        scope: "all",
+      }),
+    ).toContain("cycle value")
+  })
 })
 
 describe("createSessionSearchDocuments", () => {

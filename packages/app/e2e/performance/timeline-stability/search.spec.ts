@@ -45,7 +45,6 @@ test.describe("session search timeline reveal", () => {
       const input = page.getByRole("textbox", { name: "Search session messages" })
       await input.fill("Historical response 79.")
       await expect(search).toContainText("1 of 1 results")
-      await page.getByRole("button", { name: "Next result" }).click()
 
       const active = page.locator(
         `[data-timeline-row="UserMessage"][data-search-active][data-message-id="${targetID}"]`,
@@ -55,6 +54,14 @@ test.describe("session search timeline reveal", () => {
       await expect(markers).toHaveAttribute("data-message-id", /history_a_user$/)
       await expect(active).toBeVisible()
       await expect(active).toHaveAttribute("data-search-active", "")
+      await expect
+        .poll(async () => {
+          const view = await scroller.boundingBox()
+          const box = await active.boundingBox()
+          if (!view || !box) return Number.POSITIVE_INFINITY
+          return Math.abs(box.y + box.height / 2 - (view.y + view.height / 2))
+        })
+        .toBeLessThanOrEqual(40)
       await expect(timeline).toHaveAttribute("data-timeline-mount-probe", "search-reveal")
       await expect
         .poll(() => page.evaluate((element) => element === document.querySelector("[data-timeline-virtual-content]"), timelineElement))

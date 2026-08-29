@@ -9,10 +9,15 @@ export function isActiveSearchMessage(messageID: string, activeSearchMessageID: 
 }
 
 const MAX_SEARCH_DOCUMENT_LENGTH = 100_000
+const MAX_READABLE_DEPTH = 32
+const MAX_READABLE_NODES = 10_000
 const activeHydrations = new WeakMap<object, Map<string, { token: symbol; promise: Promise<void> }>>()
 export function searchableText(input: { message: Message; parts: Part[]; scope: SessionSearchScope }) {
   const values: string[] = []
   let length = 0
+  const seen = new WeakSet<object>()
+  const nodes = { value: 0 }
+  const remaining = () => MAX_SEARCH_DOCUMENT_LENGTH - length - (values.length === 0 ? 0 : 1)
   const append = (value: string | undefined) => {
     if (!value || length >= MAX_SEARCH_DOCUMENT_LENGTH) return
     const prefix = values.length === 0 ? "" : "\n"
@@ -24,12 +29,12 @@ export function searchableText(input: { message: Message; parts: Part[]; scope: 
   }
 
   for (const part of input.parts) {
-    for (const value of partText(part, input.scope)) append(value)
+    for (const value of partText(part, input.scope, remaining, seen, nodes)) append(value)
     if (length >= MAX_SEARCH_DOCUMENT_LENGTH) break
   }
   if (input.scope === "all" && input.message.role === "assistant" && input.message.error && length < MAX_SEARCH_DOCUMENT_LENGTH) {
     append(input.message.error.name)
-    for (const value of readableStrings(input.message.error.data)) {
+    for (const value of readableStrings(input.message.error.data, remaining, seen, nodes)) {
       append(value)
       if (length >= MAX_SEARCH_DOCUMENT_LENGTH) break
     }
@@ -276,43 +281,77 @@ function normalizeWithOffsets(text: string) {
   return { text: normalized, offsets }
 }
 
-function* partText(part: Part, scope: SessionSearchScope) {
+function* partText(part: Part, scope: SessionSearchScope, remaining: () => number, seen: WeakSet<object>, nodes: { value: number }) {
   if (part.type === "text") yield part.text
   if (scope === "conversation") return
   if (part.type === "reasoning") yield part.text
   if (part.type === "subtask") {
+    if (remaining() <= 0) return
     yield part.prompt
+    if (remaining() <= 0) return
     yield part.description
+    if (remaining() <= 0) return
     yield part.agent
   }
   if (part.type === "tool") {
-    yield* readableStrings(part.state.input)
+    yield* readableStrings(part.state.input, remaining, seen, nodes)
+    if (remaining() <= 0) return
     if (part.state.status === "pending") yield part.state.raw
     if (part.state.status === "completed") {
+      if (remaining() <= 0) return
       yield part.state.output
+      if (remaining() <= 0) return
       yield part.state.title
     }
-    if (part.state.status === "error") yield part.state.error
+    if (part.state.status === "error") {
+      if (remaining() <= 0) return
+      yield part.state.error
+    }
   }
-  if (part.type === "step-finish") yield part.reason
+  if (part.type === "step-finish") {
+    if (remaining() <= 0) return
+    yield part.reason
+  }
   if (part.type === "agent") {
+    if (remaining() <= 0) return
     yield part.name
+    if (remaining() <= 0) return
     if (part.source) yield part.source.value
   }
-  if (part.type === "patch") yield* part.files
-  if (part.type === "retry") yield* readableStrings(part.error.data)
-  if (part.type === "file" && part.source) yield part.source.text.value
+  if (part.type === "patch") {
+    yield* part.files
+  }
+  if (part.type === "retry") yield* readableStrings(part.error.data, remaining, seen, nodes)
+  if (part.type === "file" && part.source && remaining() > 0) yield part.source.text.value
 }
 
-function* readableStrings(value: unknown): Generator<string> {
+function* readableStrings(
+  value: unknown,
+  remaining: () => number,
+  seen: WeakSet<object>,
+  nodes: { value: number },
+  depth = 0,
+): Generator<string> {
+  if (remaining() <= 0) return
+  if (depth > MAX_READABLE_DEPTH || nodes.value >= MAX_READABLE_NODES) return
   if (typeof value === "string") {
-    yield value
+    yield value.slice(0, remaining())
     return
   }
   if (!value || typeof value !== "object") return
+  if (seen.has(value)) return
+  seen.add(value)
+  nodes.value += 1
   if (Array.isArray(value)) {
-    for (const item of value) yield* readableStrings(item)
+    for (const item of value) {
+      yield* readableStrings(item, remaining, seen, nodes, depth + 1)
+      if (remaining() <= 0) return
+    }
     return
   }
-  for (const item of Object.values(value)) yield* readableStrings(item)
+  for (const key of Object.keys(value)) {
+    if (remaining() <= 0 || nodes.value >= MAX_READABLE_NODES) return
+    yield* readableStrings(value[key as keyof typeof value], remaining, seen, nodes, depth + 1)
+    if (remaining() <= 0) return
+  }
 }

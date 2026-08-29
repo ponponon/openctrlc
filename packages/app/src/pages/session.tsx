@@ -683,9 +683,22 @@ export default function Page() {
       () => [params.id, search.query, search.scope, searchMatches()] as const,
       ([id, _query, _scope, matches]) => {
         if (!id) return
+        const previous = previousSearchMatch
         const nextIndex = preserveSessionSearchActiveIndex(previousSearchMatch, matches, search.activeIndex)
+        const nextMatch = matches[nextIndex]
         setSearch("activeIndex", nextIndex)
-        previousSearchMatch = matches[nextIndex]
+        previousSearchMatch = nextMatch
+        if (
+          nextMatch &&
+          (previous === undefined ||
+            previous.messageID !== nextMatch.messageID ||
+            previous.start !== nextMatch.start ||
+            previous.end !== nextMatch.end)
+        ) {
+          const message = sync().data.message[id]?.find((item) => item.id === nextMatch.messageID)
+          const userMessageID = message?.role === "assistant" ? message.parentID : nextMatch.messageID
+          requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
+        }
       },
       { defer: true },
     ),
