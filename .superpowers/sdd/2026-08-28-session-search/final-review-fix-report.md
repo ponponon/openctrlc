@@ -75,11 +75,11 @@ Visual stability unit: 23 pass, 0 fail
 Timeline stability Playwright: 48 passed, 2 failed
 ```
 
-The two current failures are `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag-selection. The earlier `47 passed, 3 failed` result is historical; the current result is `48 passed, 2 failed`. These outcomes have machine/timing sensitivity. Full timeline stability is not green, and this report does not claim the full suite is green.
+The two current failures are `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag-selection. They were observed in both the current and historical fresh runs. The earlier result was `47 passed, 3 failed`; the current result is `48 passed, 2 failed`. Because the baseline worktrees could not run due to the missing `@happy-dom/global-registrator`, these failures cannot be reliably attributed to this branch. These outcomes have machine/timing sensitivity. Full timeline stability is not green, and this report does not claim the full suite is green.
 
 ## Stability Baseline
 
-The requested baseline worktrees at `fd19281` and `f63a2cf` were rechecked with the same `bun run test:stability` command. Both were blocked before the stability tests could run because their worktrees could not resolve `@happy-dom/global-registrator` from `packages/app/happydom.ts`; each reported `Cannot find module '@happy-dom/global-registrator'`. They provide no baseline pass/fail data, so no stability failure is attributed to either baseline.
+The requested baseline worktrees at `fd19281` and `f63a2cf` were rechecked with the same `bun run test:stability` command. Both were blocked before the stability tests could run because their worktrees could not resolve `@happy-dom/global-registrator` from `packages/app/happydom.ts`; each reported `Cannot find module '@happy-dom/global-registrator'`. They provide no baseline pass/fail data, so it is not possible to reliably determine whether either failure was introduced by this branch.
 
 ## Concerns
 
