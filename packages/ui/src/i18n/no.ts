@@ -2,6 +2,8 @@ import { dict as en } from "./en"
 type Keys = keyof typeof en
 
 export const dict: Record<Keys, string> = {
+  "ui.message.tokens": "{{count}} tokens",
+  "ui.message.tokensPerSecond": "{{count}} tokens/s",
   "ui.sessionReview.title": "Sesjonsendringer",
   "ui.sessionReview.title.lastTurn": "Endringer i siste runde",
   "ui.sessionReview.diffStyle.unified": "Samlet",

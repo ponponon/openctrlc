@@ -1,4 +1,6 @@
 export const dict = {
+  "ui.message.tokens": "{{count}} tokens",
+  "ui.message.tokensPerSecond": "{{count}} tokens/s",
   "ui.sessionReview.title": "Sessionsændringer",
   "ui.sessionReview.title.git": "Git-ændringer",
   "ui.sessionReview.title.branch": "Grenændringer",

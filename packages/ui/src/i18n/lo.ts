@@ -1,4 +1,6 @@
 export const dict = {
+  "ui.message.tokens": "{{count}} ໂທເຄັນ",
+  "ui.message.tokensPerSecond": "{{count}} ໂທເຄັນ/ວິນາທີ",
   "ui.sessionReview.title": "ການປ່ຽນແປງເຊດຊັນ",
   "ui.sessionReview.title.git": "ການປ່ຽນແປງ Git",
   "ui.sessionReview.title.branch": "ການປ່ຽນແປງສາຂາ",

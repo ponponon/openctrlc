@@ -1,4 +1,6 @@
 export const dict = {
+  "ui.message.tokens": "{{count}} တိုကင်",
+  "ui.message.tokensPerSecond": "{{count}} တိုကင်/စက္ကန့်",
   "ui.sessionReview.title": "စက်ရှင် အပြောင်းအလဲများ",
   "ui.sessionReview.title.git": "Git အပြောင်းအလဲများ",
   "ui.sessionReview.title.branch": "ဌာနခွဲအပြောင်းအလဲများ",

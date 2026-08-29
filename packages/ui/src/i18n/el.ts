@@ -1,4 +1,6 @@
 export const dict: Record<string, string> = {
+  "ui.message.tokens": "{{count}} διακριτικά",
+  "ui.message.tokensPerSecond": "{{count}} διακριτικά/δευτερόλεπτο",
   "ui.sessionReview.title": "Αλλαγές συνεδρίας",
   "ui.sessionReview.title.git": "Git αλλαγές",
   "ui.sessionReview.title.branch": "Αλλαγές κλάδου",

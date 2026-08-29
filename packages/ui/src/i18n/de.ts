@@ -3,6 +3,8 @@ import { dict as en } from "./en"
 type Keys = keyof typeof en
 
 export const dict = {
+  "ui.message.tokens": "{{count}} Token",
+  "ui.message.tokensPerSecond": "{{count}} Token/s",
   "ui.sessionReview.title": "Sitzungsänderungen",
   "ui.sessionReview.title.git": "Git-Änderungen",
   "ui.sessionReview.title.branch": "Branch-Änderungen",

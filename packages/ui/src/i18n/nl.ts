@@ -1,4 +1,6 @@
 export const dict: Record<string, string> = {
+  "ui.message.tokens": "{{count}} tokens",
+  "ui.message.tokensPerSecond": "{{count}} tokens/s",
   "ui.sessionReview.title": "Sessiewijzigingen",
   "ui.sessionReview.title.git": "Git-wijzigingen",
   "ui.sessionReview.title.branch": "Branchwijzigingen",
