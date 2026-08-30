@@ -6,7 +6,7 @@ import { join } from "node:path"
 export type Channel = "dev" | "beta" | "prod"
 
 export function resolveCliVersion(env: Record<string, string | undefined>) {
-  return env.OPENCTRLC_CLI_VERSION ?? "0.1.1"
+  return env.OPENCTRLC_CLI_VERSION ?? "0.1.2"
 }
 
 export function resolveChannel(): Channel {

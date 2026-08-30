@@ -41,7 +41,7 @@ nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
-> The current stable CLI release is `0.1.1`.
+> The current stable CLI release is `0.1.2`.
 
 ## Why OpenCtrlC?
 
@@ -80,12 +80,12 @@ periods. The following improvements are part of the product roadmap:
   branch of work while preserving the original session.
 
 These items describe planned OpenCtrlC improvements. They should not be read as
-features already available in the current `v0.1.1` release.
+features already available in the current `v0.1.2` release.
 
 ## CLI Release
 
-OpenCtrlC `v0.1.1` is available from the
-[GitHub Release](https://github.com/ponponon/openctrlc/releases/tag/v0.1.1).
+OpenCtrlC `v0.1.2` is available from the
+[GitHub Release](https://github.com/ponponon/openctrlc/releases/tag/v0.1.2).
 The release contains platform-specific CLI/TUI archives for macOS, Linux, and
 Windows. Each archive contains one `openctrlc` executable for its target platform.
 
