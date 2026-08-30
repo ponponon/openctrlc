@@ -15,7 +15,7 @@ export interface MockServerConfig {
   pageMessages: (sessionId: string, limit: number, before?: string) => { items: unknown[]; cursor?: string }
   vcsDiff?: unknown[]
   messageDelay?: number
-  beforeMessagesResponse?: (input: { sessionID: string; before?: string }) => Promise<void>
+  beforeMessagesResponse?: (input: { sessionID: string; before?: string }) => Promise<{ status: number } | void>
   onMessages?: (input: { sessionID: string; before?: string; phase: "start" | "end" }) => void
   message?: (sessionID: string, messageID: string) => unknown
   onMessage?: (input: { sessionID: string; messageID: string }) => void
@@ -280,7 +280,8 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
       const before = token ? cursors.get(token) : undefined
       if (token && !before) return json(route, { error: "Invalid cursor" }, undefined, 400)
       config.onMessages?.({ sessionID: currentMessagesMatch[1], before, phase: "start" })
-      await config.beforeMessagesResponse?.({ sessionID: currentMessagesMatch[1]!, before })
+      const beforeResponse = await config.beforeMessagesResponse?.({ sessionID: currentMessagesMatch[1]!, before })
+      if (beforeResponse) return json(route, { error: "History fixture failure" }, undefined, beforeResponse.status)
       if (config.messageDelay !== undefined) await new Promise((resolve) => setTimeout(resolve, config.messageDelay))
       const pageData = config.pageMessages(currentMessagesMatch[1], Number(url.searchParams.get("limit") ?? 50), before)
       config.onMessages?.({ sessionID: currentMessagesMatch[1], before, phase: "end" })
@@ -298,7 +299,8 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
       const before = token ? cursors.get(token) : undefined
       if (token && !before) return json(route, { error: "Invalid cursor" }, undefined, 400)
       config.onMessages?.({ sessionID: messagesMatch[1], before, phase: "start" })
-      await config.beforeMessagesResponse?.({ sessionID: messagesMatch[1]!, before })
+      const beforeResponse = await config.beforeMessagesResponse?.({ sessionID: messagesMatch[1]!, before })
+      if (beforeResponse) return json(route, { error: "History fixture failure" }, undefined, beforeResponse.status)
       if (config.messageDelay !== undefined) await new Promise((resolve) => setTimeout(resolve, config.messageDelay))
       const limit = Number(url.searchParams.get("limit") ?? 80)
       const pageData = config.pageMessages(messagesMatch[1], limit, before)

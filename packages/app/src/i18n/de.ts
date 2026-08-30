@@ -1186,4 +1186,17 @@ export const dict = {
   "help.tabs.persistence": "Wenn Sie die App erneut öffnen, sind Ihre Tabs weiterhin geöffnet.",
   "help.tabs.worktrees":
     "Das neue Design unterstützt Git-Worktrees noch nicht. Diese Funktion folgt in Kürze. Wenn Sie das bisherige Layout vorerst weiterverwenden möchten, können Sie in den Einstellungen zwischen den Layouts wechseln. Beachten Sie jedoch, dass das neue Layout in einigen Wochen dauerhaft verwendet wird.",
+  "session.search.placeholder": "Diese Sitzung durchsuchen",
+  "session.search.input": "Sitzungsnachrichten durchsuchen",
+  "session.search.scope": "Suchbereich",
+  "session.search.scope.conversation": "Unterhaltung",
+  "session.search.scope.all": "Alle Inhalte",
+  "session.search.results": "{{current}} von {{total}} Ergebnissen",
+  "session.search.noResults": "Keine Ergebnisse",
+  "session.search.loading": "Ergebnisse werden geladen...",
+  "session.search.partial": "Unvollständiger Verlauf",
+  "session.search.retry": "Erneut versuchen",
+  "session.search.previous": "Vorheriges Ergebnis",
+  "session.search.next": "Nächstes Ergebnis",
+  "session.search.close": "Suche schließen",
 } satisfies Partial<Record<Keys, string>>

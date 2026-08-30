@@ -68,6 +68,8 @@ import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { useTabs } from "@/context/tabs"
 import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/session-route"
+import { isActiveSearchMessage } from "@/pages/session/session-search"
+import { includeUserMessageRow } from "./user-message-row-index"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { notifySessionTabsRemoved } from "@/components/titlebar-session-events"
@@ -77,6 +79,12 @@ import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
+import {
+  createHistoryAnchorRegistry,
+  markPointerScrollGesture,
+  startHistoryAnchorCorrection,
+  type HistoryAnchorKind,
+} from "./history-anchor"
 
 const emptyMessages: MessageType[] = []
 const emptyParts: PartType[] = []
@@ -86,6 +94,7 @@ const idle = { type: "idle" as const }
 
 type FramedTimelineRow = Exclude<TimelineRow.TimelineRow, { _tag: "TurnGap" }>
 type TimelineRowByTag<T extends TimelineRow.TimelineRow["_tag"]> = Extract<TimelineRow.TimelineRow, { _tag: T }>
+type HistoryAnchor = { restore: (done: boolean) => void; cancel: () => void }
 
 const timelineFallbackItemSize = 60
 const timelineCache = new Map<string, { measurements: VirtualItem[]; toolOpen: Record<string, boolean | undefined> }>()
@@ -253,8 +262,9 @@ export function MessageTimeline(props: {
   userMessages: UserMessage[]
   anchor: (id: string) => string
   setRevealMessage?: (fn: (id: string) => void) => void
+  activeSearchMessageID?: string
   setScrollToEnd?: (fn: () => void) => void
-  setHistoryAnchor?: (handlers: { capture: () => void; restore: (done: boolean) => void }) => void
+  setHistoryAnchor?: (handlers?: { capture: (kind: HistoryAnchorKind) => HistoryAnchor }) => void
 }) {
   let touchGesture: number | undefined
 
@@ -345,68 +355,75 @@ export function MessageTimeline(props: {
   const messageByID = projection.messageByID
   const messageLastRowIndex = projection.messageLastRowIndex
   const messageRowIndex = projection.messageRowIndex
+  const userMessageRowIndex = projection.userMessageRowIndex
   const timelineRowByKey = projection.rowByKey
   const timelineRows = projection.rows
 
-  let prependAnchor: { key: string; offset: number } | undefined
-  let prependAnchorFrame: number | undefined
-  let prependLoading = false
-  const clearPrependAnchor = () => {
-    prependLoading = false
-    prependAnchor = undefined
-    if (prependAnchorFrame === undefined) return
-    cancelAnimationFrame(prependAnchorFrame)
-    prependAnchorFrame = undefined
-  }
-  const capturePrependAnchor = () => {
-    prependLoading = true
-    updatePrependAnchor()
-  }
-  const updatePrependAnchor = () => {
+  const prependAnchorFrames = new Map<symbol, number>()
+  const snapshotPrependAnchor = (kind: HistoryAnchorKind) => {
     const root = listRoot()
-    if (!root) return
+    const key = Symbol(kind)
+    if (!root) return { key, offset: 0 }
     const view = root.getBoundingClientRect()
     const anchor = [...root.querySelectorAll<HTMLElement>("[data-timeline-key]")]
       .map((element) => ({ element, rect: element.getBoundingClientRect() }))
       .filter((item) => item.rect.bottom > view.top && item.rect.top < view.bottom)
       .sort((a, b) => a.rect.top - b.rect.top)[0]
-    if (!anchor) return
-    if (!anchor.element.dataset.timelineKey) return
-    prependAnchor = { key: anchor.element.dataset.timelineKey, offset: anchor.rect.top - view.top }
+    if (!anchor || !anchor.element.dataset.timelineKey) return { key, offset: 0 }
+    return { key, anchor: anchor.element.dataset.timelineKey, offset: anchor.rect.top - view.top }
   }
-  const restorePrependAnchor = (done: boolean) => {
-    if (done) prependLoading = false
-    applyPrependAnchor()
-  }
-  const applyPrependAnchor = () => {
+  const updatePrependAnchor = (snapshot: { key: symbol; offset: number; anchor?: string }) => {
     const root = listRoot()
-    if (!root || !prependAnchor) return
-    if (prependAnchorFrame !== undefined) cancelAnimationFrame(prependAnchorFrame)
-    let frames = 0
-    let stable = 0
-    const apply = () => {
-      prependAnchorFrame = undefined
-      const anchor = prependAnchor
-      if (!anchor) return
-      const element = root.querySelector<HTMLElement>(`[data-timeline-key="${CSS.escape(anchor.key)}"]`)
-      const delta = element
-        ? element.getBoundingClientRect().top - root.getBoundingClientRect().top - anchor.offset
-        : undefined
-      if (delta !== undefined && Math.abs(delta) > 0.5) {
-        root.scrollTop += delta
-        stable = 0
-      } else {
-        stable += 1
-      }
-      frames += 1
-      if (stable >= 30 || frames >= 180) {
-        if (!prependLoading) prependAnchor = undefined
-        return
-      }
-      prependAnchorFrame = requestAnimationFrame(apply)
-    }
-    prependAnchorFrame = requestAnimationFrame(apply)
+    if (!root || !snapshot.anchor) return snapshot
+    const view = root.getBoundingClientRect()
+    const element = root.querySelector<HTMLElement>(`[data-timeline-key="${CSS.escape(snapshot.anchor)}"]`)
+    if (!element) return snapshot
+    return { ...snapshot, offset: element.getBoundingClientRect().top - view.top }
   }
+  const restorePrependAnchor = (
+    snapshot: { key: symbol; offset: number; anchor?: string },
+    done: boolean,
+    settled: () => void,
+  ) => {
+    if (!done) return
+    return startHistoryAnchorCorrection({
+      snapshot,
+      resolve: (anchor) => {
+        const root = listRoot()
+        const element = root?.querySelector<HTMLElement>(`[data-timeline-key="${CSS.escape(anchor)}"]`)
+        return element?.getBoundingClientRect()
+      },
+      rootTop: () => listRoot()?.getBoundingClientRect().top ?? 0,
+      scrollBy: (delta) => {
+        const root = listRoot()
+        if (root) root.scrollTop += delta
+      },
+      requestFrame: (callback) => {
+        const frame = requestAnimationFrame(callback)
+        prependAnchorFrames.set(snapshot.key, frame)
+        return frame
+      },
+      cancelFrame: (frame) => {
+        cancelAnimationFrame(frame)
+        prependAnchorFrames.delete(snapshot.key)
+      },
+      settled: () => {
+        prependAnchorFrames.delete(snapshot.key)
+        settled()
+      },
+    })
+  }
+  const anchorRegistry = createHistoryAnchorRegistry({
+    snapshot: snapshotPrependAnchor,
+    restore: restorePrependAnchor,
+    cancel: (snapshot) => {
+      const frame = prependAnchorFrames.get(snapshot.key)
+      if (frame !== undefined) cancelAnimationFrame(frame)
+      prependAnchorFrames.delete(snapshot.key)
+    },
+    update: updatePrependAnchor,
+  })
+  const clearPrependAnchor = () => anchorRegistry.cancelAll()
 
   const [toolOpen, setToolOpen] = createStore<Record<string, boolean | undefined>>(cached?.toolOpen ?? {})
   const [renderOverscan, setRenderOverscan] = createSignal(initialMeasurements?.length || coldBottomMount ? 6 : 20)
@@ -447,11 +464,12 @@ export function MessageTimeline(props: {
     rangeExtractor: (range) => {
       const id = activeMessageID()
       const active = id ? (messageLastRowIndex().get(id) ?? -1) : -1
+      const searchID = props.activeSearchMessageID
       const indexes = defaultRangeExtractor({ ...range, overscan: renderOverscan() })
-      return filterVirtualIndexes(
-        [...new Set([...resizePinnedIndexes, ...indexes, ...(active < 0 ? [] : [active])])].sort((a, b) => a - b),
-        range.count,
+      const fixed = [...new Set([...resizePinnedIndexes, ...indexes, ...(active < 0 ? [] : [active])])].sort(
+        (a, b) => a - b,
       )
+      return filterVirtualIndexes(includeUserMessageRow(fixed, searchID, userMessageRowIndex(), range.count), range.count)
     },
   })
   const resizeItem = virtualizer.resizeItem
@@ -499,12 +517,12 @@ export function MessageTimeline(props: {
   const virtualRowKeys = createMemo(() => virtualizer.getVirtualItems().map((item) => item.key as string))
   createEffect(() => {
     props.setRevealMessage?.((id) => {
-      const index = messageRowIndex().get(id)
+      const index = userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
       if (index === undefined) return
       virtualizer.scrollToIndex(index, { align: "center" })
     })
     props.setScrollToEnd?.(() => virtualizer.scrollToEnd())
-    props.setHistoryAnchor?.({ capture: capturePrependAnchor, restore: restorePrependAnchor })
+    props.setHistoryAnchor?.({ capture: (kind) => anchorRegistry.capture(kind) })
   })
 
   let overscanFrame: number | undefined
@@ -524,7 +542,6 @@ export function MessageTimeline(props: {
     if (!props.shouldAnchorBottom() || props.hasScrollGesture()) return
     if (resizePinFrame !== undefined) cancelAnimationFrame(resizePinFrame)
     clearPrependAnchor()
-    if (prependAnchorFrame !== undefined) cancelAnimationFrame(prependAnchorFrame)
     virtualizer.scrollToEnd()
   }
 
@@ -540,7 +557,7 @@ export function MessageTimeline(props: {
   })
 
   onCleanup(() => {
-    clearPrependAnchor()
+    anchorRegistry.cleanup()
     timelineCache.delete(ownerSessionKey)
     timelineCache.set(ownerSessionKey, { measurements: virtualizer.takeSnapshot(), toolOpen: { ...toolOpen } })
     while (timelineCache.size > 16) timelineCache.delete(timelineCache.keys().next().value!)
@@ -548,7 +565,7 @@ export function MessageTimeline(props: {
     if (overscanFrame !== undefined) cancelAnimationFrame(overscanFrame)
     props.setRevealMessage?.(() => {})
     props.setScrollToEnd?.(() => {})
-    props.setHistoryAnchor?.({ capture: () => {}, restore: () => {} })
+    props.setHistoryAnchor?.()
   })
 
   const [title, setTitle] = createStore({
@@ -573,7 +590,7 @@ export function MessageTimeline(props: {
   }
 
   const handleListWheel = (event: WheelEvent & { currentTarget: HTMLDivElement }) => {
-    if (!prependLoading) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     const root = event.currentTarget
     const delta = normalizeWheelDelta({
       deltaY: event.deltaY,
@@ -585,11 +602,12 @@ export function MessageTimeline(props: {
   }
 
   const handleListTouchStart = (event: TouchEvent) => {
-    if (!prependLoading) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     touchGesture = event.touches[0]?.clientY
   }
 
   const handleListTouchMove = (event: TouchEvent & { currentTarget: HTMLDivElement }) => {
+    anchorRegistry.cancelCorrections()
     const next = event.touches[0]?.clientY
     const prev = touchGesture
     touchGesture = next
@@ -611,13 +629,11 @@ export function MessageTimeline(props: {
   }
 
   const handleListPointerDown = (event: PointerEvent & { currentTarget: HTMLDivElement }) => {
-    if (!prependLoading) clearPrependAnchor()
-    props.onMarkScrollGesture(event.target)
+    markPointerScrollGesture({ target: event.target, onMark: props.onMarkScrollGesture })
   }
 
   const handleListPointerMove = (event: PointerEvent) => {
-    if (event.buttons !== 1) return
-    props.onMarkScrollGesture(event.target)
+    markPointerScrollGesture({ target: event.target, buttons: event.buttons, onMark: props.onMarkScrollGesture })
   }
 
   const handleListKeyDown = (event: KeyboardEvent & { currentTarget: HTMLDivElement }) => {
@@ -625,12 +641,12 @@ export function MessageTimeline(props: {
     if (!key) return
     if (!isScrollKeyTarget(event.target, key)) return
     if (scrollKeyOwner(event.currentTarget, event.target, key) !== event.currentTarget) return
-    if (!prependLoading) clearPrependAnchor()
+    anchorRegistry.cancelCorrections()
     props.onMarkScrollGesture(event.currentTarget)
   }
 
   const handleListScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
-    if (prependLoading) updatePrependAnchor()
+    if (anchorRegistry.hasPending()) anchorRegistry.updatePending()
     props.onScheduleScrollState(event.currentTarget)
     props.onHistoryScroll()
     if (!props.hasScrollGesture()) return
@@ -1097,17 +1113,23 @@ export function MessageTimeline(props: {
       const row = input.row()
       return row._tag === "AssistantPart" && row.previousAssistantPart
     }
+    const searchActive = () => {
+      const row = input.row()
+      return row._tag === "UserMessage" && isActiveSearchMessage(row.userMessageID, props.activeSearchMessageID)
+    }
 
     return (
       <div
         id={anchor() ? props.anchor(input.row().userMessageID) : undefined}
         data-message-id={input.row().userMessageID}
         data-timeline-row={input.row()._tag}
+        data-search-active={searchActive() ? "" : undefined}
         classList={{
           "min-w-0 w-full max-w-full": true,
           "md:max-w-200 2xl:max-w-[1000px]": props.centered,
           "md:mx-auto": props.centered,
           "pt-3": previousAssistantPart(),
+          "bg-v2-overlay-simple-overlay-hover [box-shadow:inset_0_0_0_2px_var(--v2-border-border-focus)]": searchActive(),
         }}
       >
         <div data-component="session-turn" class="min-w-0 w-full relative" style={{ height: "auto" }}>
@@ -1407,6 +1429,7 @@ export function MessageTimeline(props: {
         onTouchCancel={handleListTouchEnd}
         onPointerDown={handleListPointerDown}
         onPointerMove={handleListPointerMove}
+        onThumbPointerDown={() => anchorRegistry.cancelCorrections()}
         onKeyDown={handleListKeyDown}
         onScroll={handleListScroll}
         onClick={props.onAutoScrollInteraction}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { canScrollKey, scrollKey, scrollTopFromThumbPointer } from "./scroll-view"
+import { canScrollKey, isScrollViewThumbPointerDown, scrollKey, scrollTopFromThumbPointer } from "./scroll-view"
 
 describe("scrollKey", () => {
   test("maps plain navigation keys", () => {
@@ -86,5 +86,40 @@ describe("scrollTopFromThumbPointer", () => {
     // track usable = 400 - 16 - 40 = 344; thumbTop = 400 - 100 - 8 = 292
     // maxScroll = 8000 - 800 = 7200 → 292/344 * 7200
     expect(scrollTopFromThumbPointer(input)).toBeCloseTo((292 / 344) * 7200)
+  })
+})
+
+describe("isScrollViewThumbPointerDown", () => {
+  test("classifies thumb events through connected DOM paths", () => {
+    const root = document.createElement("div")
+    const thumb = document.createElement("div")
+    const thumbChild = document.createElement("span")
+    const content = document.createElement("div")
+    thumb.className = "scroll-view__thumb"
+    thumb.append(thumbChild)
+    root.append(thumb, content)
+    document.body.append(root)
+
+    let thumbEvent: PointerEvent | undefined
+    let childEvent: PointerEvent | undefined
+    let contentEvent: PointerEvent | undefined
+    thumb.addEventListener("pointerdown", (event) => {
+      thumbEvent = event
+    })
+    thumbChild.addEventListener("pointerdown", (event) => {
+      childEvent = event
+    })
+    content.addEventListener("pointerdown", (event) => {
+      contentEvent = event
+    })
+
+    thumb.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }))
+    thumbChild.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }))
+    content.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }))
+
+    expect(isScrollViewThumbPointerDown(thumbEvent)).toBe(true)
+    expect(isScrollViewThumbPointerDown(childEvent)).toBe(true)
+    expect(isScrollViewThumbPointerDown(contentEvent)).toBe(false)
+    root.remove()
   })
 })

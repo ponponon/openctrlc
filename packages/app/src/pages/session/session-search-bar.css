@@ -1,0 +1,103 @@
+[data-component="session-search-bar"] {
+  --session-search-bar-breakpoint: var(--breakpoint-sm);
+  --session-search-bar-height: 40px;
+  --session-search-bar-input-height: 28px;
+  --session-search-bar-field-basis: var(--container-sm);
+  --session-search-bar-error-max-width: var(--container-2xs);
+
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 2);
+  min-height: var(--session-search-bar-height);
+  margin: calc(var(--spacing) * 3) 0 0;
+  padding: var(--spacing) calc(var(--spacing) * 2);
+  border: 1px solid var(--border-weak-base);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised-base);
+  box-shadow: var(--shadow-xs-border);
+}
+
+.session-search-bar__field {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 2);
+  min-width: 0;
+  flex: 1 1 var(--session-search-bar-field-basis);
+  color: var(--icon-base);
+}
+
+.session-search-bar__field [data-component="input"] {
+  min-width: 0;
+}
+
+.session-search-bar__field [data-slot="input-wrapper"] {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+
+  &:focus-within {
+    border-color: transparent;
+    box-shadow: var(--shadow-xs-border-focus);
+  }
+}
+
+.session-search-bar__field [data-slot="input-input"] {
+  height: var(--session-search-bar-input-height);
+  padding-inline: 0;
+}
+
+.session-search-bar__scope {
+  flex: 0 0 auto;
+}
+
+.session-search-bar__status {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 2);
+  min-width: 0;
+  color: var(--text-weak);
+  white-space: nowrap;
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-large);
+}
+
+.session-search-bar__error {
+  max-width: var(--session-search-bar-error-max-width);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 calc(var(--spacing) * 1.5);
+  border-radius: var(--radius-sm);
+  background: var(--surface-critical-weak);
+  color: var(--text-on-critical-strong);
+}
+
+.session-search-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing);
+  flex: 0 0 auto;
+}
+
+.session-search-bar__scope {
+  order: 3;
+}
+
+.session-search-bar__status {
+  order: 4;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.session-search-bar__actions {
+  margin-inline-start: auto;
+}
+
+@media (max-width: 639px) {
+  [data-component="session-search-bar"] {
+    padding: calc(var(--spacing) * 2);
+  }
+}

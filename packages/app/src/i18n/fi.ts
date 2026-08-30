@@ -1169,4 +1169,17 @@ export const dict = {
   "help.tabs.persistence": "Kun avaat sovelluksen uudelleen, välilehtesi ovat yhä avoinna.",
   "help.tabs.worktrees":
     "Uusi ulkoasu ei vielä tue Git-työpuita, mutta tuki on tulossa pian. Jos haluat jatkaa aiemman ulkoasun käyttöä, voit vaihtaa ulkoasua asetuksissa. Huomaa kuitenkin, että uudesta ulkoasusta tulee pysyvä muutaman viikon kuluttua.",
+  "session.search.placeholder": "Hae tästä istunnosta",
+  "session.search.input": "Hae istunnon viesteistä",
+  "session.search.scope": "Haun alue",
+  "session.search.scope.conversation": "Keskustelu",
+  "session.search.scope.all": "Kaikki sisältö",
+  "session.search.results": "{{current}} / {{total}} tulosta",
+  "session.search.noResults": "Ei tuloksia",
+  "session.search.loading": "Ladataan tuloksia...",
+  "session.search.partial": "Osittainen historia",
+  "session.search.retry": "Yritä uudelleen",
+  "session.search.previous": "Edellinen tulos",
+  "session.search.next": "Seuraava tulos",
+  "session.search.close": "Sulje haku",
 }

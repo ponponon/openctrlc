@@ -1200,4 +1200,17 @@ export const dict = {
 
   "titlebar.update": "Mettre à jour",
   "titlebar.updateVersion": "Mettre à jour {{version}}",
+  "session.search.placeholder": "Rechercher dans cette session",
+  "session.search.input": "Rechercher dans les messages de la session",
+  "session.search.scope": "Portée de la recherche",
+  "session.search.scope.conversation": "Conversation",
+  "session.search.scope.all": "Tout le contenu",
+  "session.search.results": "{{current}} sur {{total}} résultats",
+  "session.search.noResults": "Aucun résultat",
+  "session.search.loading": "Chargement des résultats...",
+  "session.search.partial": "Historique partiel",
+  "session.search.retry": "Réessayer",
+  "session.search.previous": "Résultat précédent",
+  "session.search.next": "Résultat suivant",
+  "session.search.close": "Fermer la recherche",
 }

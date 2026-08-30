@@ -1170,4 +1170,17 @@ export const dict = {
 
   "titlebar.update": "アップデート",
   "titlebar.updateVersion": "アップデート {{version}}",
+  "session.search.placeholder": "このセッションを検索",
+  "session.search.input": "セッションのメッセージを検索",
+  "session.search.scope": "検索範囲",
+  "session.search.scope.conversation": "会話",
+  "session.search.scope.all": "すべてのコンテンツ",
+  "session.search.results": "{{total}}件中{{current}}件目",
+  "session.search.noResults": "結果がありません",
+  "session.search.loading": "結果を読み込み中...",
+  "session.search.partial": "履歴が不完全です",
+  "session.search.retry": "再試行",
+  "session.search.previous": "前の結果",
+  "session.search.next": "次の結果",
+  "session.search.close": "検索を閉じる",
 }

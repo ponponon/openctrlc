@@ -1172,4 +1172,17 @@ export const dict = {
   "workspace.reset.archived.many": "{{count}} sessies worden gearchiveerd.",
   "workspace.reset.note":
     "Hierdoor wordt de werkruimte opnieuw ingesteld zodat deze overeenkomt met de standaardbranch.",
+  "session.search.placeholder": "Deze sessie doorzoeken",
+  "session.search.input": "Sessieberichten doorzoeken",
+  "session.search.scope": "Zoekbereik",
+  "session.search.scope.conversation": "Gesprek",
+  "session.search.scope.all": "Alle inhoud",
+  "session.search.results": "{{current}} van {{total}} resultaten",
+  "session.search.noResults": "Geen resultaten",
+  "session.search.loading": "Resultaten worden geladen...",
+  "session.search.partial": "Gedeeltelijke geschiedenis",
+  "session.search.retry": "Opnieuw proberen",
+  "session.search.previous": "Vorig resultaat",
+  "session.search.next": "Volgend resultaat",
+  "session.search.close": "Zoeken sluiten",
 }

@@ -103,10 +103,21 @@ import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/sessio
 import { useUsageExceededDialogs } from "./session/usage-exceeded-dialogs"
 import { createSessionOwnership } from "./session/session-ownership"
 import { createSessionLineage } from "./session/session-lineage"
+import { SessionSearchBar } from "./session/session-search-bar"
+import {
+  createSessionSearchIndex,
+  findSessionSearchMatches,
+  createSessionSearchHydrator,
+  createSessionSearchRunGate,
+  nextSessionSearchMatchIndex,
+  preserveSessionSearchActiveIndex,
+  type SessionSearchScope,
+} from "./session/session-search"
 
 type FollowupItem = FollowupDraft & { id: string }
 type FollowupEdit = Pick<FollowupItem, "id" | "prompt" | "context">
 const emptyFollowups: FollowupItem[] = []
+type HistoryAnchor = { restore: (done: boolean) => void; cancel: () => void }
 
 type ChangeMode = "git" | "branch" | "turn"
 type VcsMode = "git" | "branch"
@@ -398,6 +409,16 @@ export default function Page() {
     },
   })
 
+  const [search, setSearch] = createStore({
+    open: false,
+    query: "",
+    scope: "conversation" as SessionSearchScope,
+    activeIndex: 0,
+    hydrating: false,
+    partial: false,
+    error: undefined as string | undefined,
+  })
+
   const composer = createSessionComposerController()
   const inputController = createPromptInputController({
     sessionKey,
@@ -554,6 +575,134 @@ export default function Page() {
   const sessionSync = timeline.resource
   const userMessages = timeline.userMessages
   const visibleUserMessages = timeline.visibleUserMessages
+
+  const searchDocuments = createMemo(() => {
+    if (!search.open || !search.query || !params.id) return []
+    return createSessionSearchIndex({
+      messages: sync().data.message[params.id] ?? [],
+      parts: (messageID) => sync().data.part[messageID] ?? [],
+      scope: search.scope,
+      open: true,
+      query: search.query,
+    })
+  })
+  const searchMatches = createMemo(() => {
+    if (!search.open || !search.query) return []
+    return findSessionSearchMatches(searchDocuments(), search.query)
+  })
+  const activeSearchMessageID = createMemo(() => {
+    const id = params.id
+    const messageID = searchMatches()[search.activeIndex]?.messageID
+    const message = id && messageID ? sync().data.message[id]?.find((item) => item.id === messageID) : undefined
+    if (message?.role === "assistant") return message.parentID
+    return message?.id
+  })
+  let searchQueryTimer: number | undefined
+  let previousSearchMatch = undefined as ReturnType<typeof searchMatches>[number] | undefined
+  let searchHistoryLoading: { owner: string; token: symbol } | undefined
+  const searchHydrationOwners = createSessionSearchRunGate()
+  let searchHydrator: ReturnType<typeof createSessionSearchHydrator> | undefined
+  let searchActiveRunToken: symbol | undefined
+
+  const setSearchQuery = (query: string) => {
+    if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
+    searchQueryTimer = window.setTimeout(() => setSearch("query", query), 80)
+  }
+
+  const resetSearch = () => {
+    if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
+    searchHydrator?.invalidate()
+    searchActiveRunToken = undefined
+    previousSearchMatch = undefined
+    setSearch({
+      open: false,
+      query: "",
+      scope: "conversation",
+      activeIndex: 0,
+      hydrating: false,
+      partial: false,
+      error: undefined,
+    })
+  }
+
+  const hydrateSearch = async () => {
+    const id = params.id
+    if (!id) return
+    const owner = sessionOwnership.capture()
+    if (!searchHydrator) return
+    setSearch({ hydrating: true, partial: false, error: undefined })
+    const run = searchHydrator.hydrateRun(id)
+    searchActiveRunToken = run.token
+    await run.promise.then(
+      () => {
+        owner.run(() => {
+          if (searchActiveRunToken !== run.token) return
+          setSearch({ hydrating: false, partial: false })
+        })
+      },
+      (error: unknown) => {
+        owner.run(() => {
+          if (searchActiveRunToken !== run.token) return
+          setSearch({
+            hydrating: false,
+            partial: true,
+            error: formatServerError(error, language.t, language.t("common.requestFailed")),
+          })
+        })
+      },
+    )
+  }
+
+  const openSearch = () => {
+    if (!params.id) return
+    setSearch("open", true)
+    void hydrateSearch()
+  }
+
+  const closeSearch = () => {
+    resetSearch()
+    requestAnimationFrame(focusInput)
+  }
+
+  const navigateSearch = (direction: -1 | 1) => {
+    const matches = searchMatches()
+    if (matches.length === 0) return
+    const index = nextSessionSearchMatchIndex(search.activeIndex, matches.length, direction)
+    setSearch("activeIndex", index)
+    const match = matches[index]
+    if (match) {
+      previousSearchMatch = match
+      const message = params.id ? sync().data.message[params.id]?.find((item) => item.id === match.messageID) : undefined
+      const userMessageID = message?.role === "assistant" ? message.parentID : match.messageID
+      requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
+    }
+  }
+
+  createEffect(
+    on(
+      () => [params.id, search.query, search.scope, searchMatches()] as const,
+      ([id, _query, _scope, matches]) => {
+        if (!id) return
+        const previous = previousSearchMatch
+        const nextIndex = preserveSessionSearchActiveIndex(previousSearchMatch, matches, search.activeIndex)
+        const nextMatch = matches[nextIndex]
+        setSearch("activeIndex", nextIndex)
+        previousSearchMatch = nextMatch
+        if (
+          nextMatch &&
+          (previous === undefined ||
+            previous.messageID !== nextMatch.messageID ||
+            previous.start !== nextMatch.start ||
+            previous.end !== nextMatch.end)
+        ) {
+          const message = sync().data.message[id]?.find((item) => item.id === nextMatch.messageID)
+          const userMessageID = message?.role === "assistant" ? message.parentID : nextMatch.messageID
+          requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
+        }
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(() => {
     const tab = activeFileTab()
@@ -939,12 +1088,13 @@ export default function Page() {
   )
 
   createEffect(
-    on(
-      sessionKey,
-      () => {
-        setStore(sessionViewState())
-        setUi("pendingMessage", undefined)
-      },
+      on(
+        sessionKey,
+        () => {
+          setStore(sessionViewState())
+          setUi("pendingMessage", undefined)
+          resetSearch()
+        },
       { defer: true },
     ),
   )
@@ -1141,6 +1291,7 @@ export default function Page() {
     navigateMessageByOffset,
     setActiveMessage,
     focusInput,
+    openSearch,
     review: reviewTab,
     fileBrowser: () => newSessionDesign() && isDesktop() && !!params.id,
   })
@@ -1589,19 +1740,62 @@ export default function Page() {
     },
   )
 
-  let captureHistoryAnchor = () => {}
-  let restoreHistoryAnchor = (_done: boolean) => {}
+  let captureHistoryAnchor: ((kind: "normal" | "search") => HistoryAnchor | undefined) | undefined
+  searchHydrator = createSessionSearchHydrator({
+    sessionID: () => params.id,
+    ready: () => messagesReady(),
+    more: timeline.history.more,
+    loading: timeline.history.loading,
+    beforeLoad: (sessionID) => {
+      const owner = sessionOwnership.capture()
+      const anchor = owner.run(() => captureHistoryAnchor?.("search"))
+      if (!anchor) return
+      return {
+        restore: (done: boolean) => owner.run(() => anchor.restore(done)),
+        cancel: anchor.cancel,
+      }
+    },
+    onRunStart: (token) => {
+      const owner = sessionOwnership.capture()
+      return searchHydrationOwners.add(owner.key, token)
+    },
+    loadMore: async (sessionID, token) => {
+      const owner = sessionOwnership.capture()
+      if (!owner.current()) return
+      if (!token) return
+      searchHistoryLoading = { owner: owner.key, token }
+      try {
+        await sync().session.history.loadMore(sessionID)
+      } finally {
+        if (searchHistoryLoading?.owner === owner.key && searchHistoryLoading.token === token)
+          searchHistoryLoading = undefined
+      }
+    },
+  })
+  onCleanup(() => {
+    if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
+    searchActiveRunToken = undefined
+    searchHydrator?.dispose()
+  })
   const historyRequests = new Set<string>()
   let historyContinuationFrame: number | undefined
   const loadOlder = async () => {
     const owner = sessionOwnership.capture()
-    if (historyLoading() || historyRequests.has(owner.key)) return
+    if (
+      historyLoading() ||
+      (searchHistoryLoading?.owner === owner.key || searchHydrationOwners.has(owner.key)) ||
+      historyRequests.has(owner.key)
+    )
+      return
     historyRequests.add(owner.key)
     const before = timeline.messages().length
+    let anchor: HistoryAnchor | undefined
     try {
       await timeline.history.loadOlder({
-        before: () => owner.run(captureHistoryAnchor),
-        after: (done) => owner.run(() => restoreHistoryAnchor(done)),
+        before: () => owner.run(() => {
+          anchor = captureHistoryAnchor?.("normal")
+        }),
+        after: (done) => owner.run(() => anchor?.restore(done)),
       })
     } finally {
       historyRequests.delete(owner.key)
@@ -2064,68 +2258,89 @@ export default function Page() {
       <Show when={!isDesktop() && !!params.id && settings.general.newLayoutDesigns() && !mobileTabsBottom()}>
         {mobileTabs(true)}
       </Show>
-      <div class="flex-1 min-h-0 overflow-hidden">
-        <Switch>
-          <Match when={params.id && mobileChanges()}>
-            <div class="relative h-full overflow-hidden">
-              {reviewContent({
-                diffStyle: "unified",
-                classes: {
-                  root: "pb-8 [&_[data-slot=session-review-list]]:pb-0",
-                  header: "px-4 !h-16 !pb-4",
-                  container: "px-4",
-                },
-                loadingClass: "px-4 py-4 text-text-weak",
-                emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
-              })}
-            </div>
-          </Match>
-          <Match when={params.id}>
-            <Show when={messagesReady() ? params.id : undefined} keyed>
-              {(_id) => (
-                <MessageTimeline
-                  actions={actions}
-                  scroll={ui.scroll}
-                  onResumeScroll={resumeScroll}
-                  setScrollRef={setScrollRef}
-                  onScheduleScrollState={scheduleScrollState}
-                  onAutoScrollHandleScroll={autoScroll.handleScroll}
-                  onMarkScrollGesture={markScrollGesture}
-                  hasScrollGesture={hasScrollGesture}
-                  onUserScroll={markUserScroll}
-                  onHistoryScroll={onHistoryScroll}
-                  onAutoScrollInteraction={autoScroll.handleInteraction}
-                  shouldAnchorBottom={() =>
-                    !location.hash && !store.messageId && !ui.pendingMessage && !autoScroll.userScrolled()
-                  }
-                  centered={centered()}
-                  setContentRef={(el) => {
-                    content = el
-                    autoScroll.contentRef(el)
+      <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <SessionSearchBar
+          open={search.open}
+          query={search.query}
+          scope={search.scope}
+          matches={searchMatches().length}
+          activeMatch={search.activeIndex}
+          loading={search.hydrating}
+          partial={search.partial}
+          error={search.error}
+          onQueryChange={setSearchQuery}
+          onScopeChange={(scope) => setSearch("scope", scope)}
+          onNavigate={navigateSearch}
+          onRetry={() => void hydrateSearch()}
+          onClose={closeSearch}
+        />
+        <div class="flex-1 min-h-0 overflow-hidden">
+          <Switch>
+            <Match when={params.id && mobileChanges()}>
+              <div class="relative h-full overflow-hidden">
+                {reviewContent({
+                  diffStyle: "unified",
+                  classes: {
+                    root: "pb-8 [&_[data-slot=session-review-list]]:pb-0",
+                    header: "px-4 !h-16 !pb-4",
+                    container: "px-4",
+                  },
+                  loadingClass: "px-4 py-4 text-text-weak",
+                  emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
+                })}
+              </div>
+            </Match>
+            <Match when={params.id}>
+              <Show when={messagesReady() ? params.id : undefined} keyed>
+                {(_id) => (
+                  <MessageTimeline
+                    actions={actions}
+                    activeSearchMessageID={activeSearchMessageID()}
+                    scroll={ui.scroll}
+                    onResumeScroll={resumeScroll}
+                    setScrollRef={setScrollRef}
+                    onScheduleScrollState={scheduleScrollState}
+                    onAutoScrollHandleScroll={autoScroll.handleScroll}
+                    onMarkScrollGesture={markScrollGesture}
+                    hasScrollGesture={hasScrollGesture}
+                    onUserScroll={markUserScroll}
+                    onHistoryScroll={onHistoryScroll}
+                    onAutoScrollInteraction={autoScroll.handleInteraction}
+                    shouldAnchorBottom={() =>
+                      searchMatches().length === 0 &&
+                      !location.hash &&
+                      !store.messageId &&
+                      !ui.pendingMessage &&
+                      !autoScroll.userScrolled()
+                    }
+                    centered={centered()}
+                    setContentRef={(el) => {
+                      content = el
+                      autoScroll.contentRef(el)
 
-                    const root = scroller
-                    if (root) scheduleScrollState(root)
-                  }}
-                  userMessages={visibleUserMessages()}
-                  setHistoryAnchor={(handlers) => {
-                    captureHistoryAnchor = handlers.capture
-                    restoreHistoryAnchor = handlers.restore
-                  }}
-                  anchor={anchor}
-                  setRevealMessage={(fn) => {
-                    revealMessage = fn
-                  }}
-                  setScrollToEnd={(fn) => {
-                    scrollToEnd = fn
-                  }}
-                />
-              )}
-            </Show>
-          </Match>
-          <Match when={true}>
-            <NewSessionView worktree={newSessionWorktree()} />
-          </Match>
-        </Switch>
+                      const root = scroller
+                      if (root) scheduleScrollState(root)
+                    }}
+                    userMessages={visibleUserMessages()}
+                    setHistoryAnchor={(handlers) => {
+                      captureHistoryAnchor = handlers?.capture
+                    }}
+                    anchor={anchor}
+                    setRevealMessage={(fn) => {
+                      revealMessage = fn
+                    }}
+                    setScrollToEnd={(fn) => {
+                      scrollToEnd = fn
+                    }}
+                  />
+                )}
+              </Show>
+            </Match>
+            <Match when={true}>
+              <NewSessionView worktree={newSessionWorktree()} />
+            </Match>
+          </Switch>
+        </div>
       </div>
 
       <Show when={(params.id || !newSessionDesign()) && !mobileChanges()}>

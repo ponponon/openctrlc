@@ -25,6 +25,7 @@ export type SessionCommandContext = {
   navigateMessageByOffset: (offset: number) => void
   setActiveMessage: (message: UserMessage | undefined) => void
   focusInput: () => void
+  openSearch: () => void
   review?: () => boolean
   fileBrowser?: () => boolean
 }
@@ -131,6 +132,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const navigateMessageByOffset = actions.navigateMessageByOffset
   const setActiveMessage = actions.setActiveMessage
   const focusInput = actions.focusInput
+  const openSearch = actions.openSearch
 
   const sessionCommand = withCategory(language.t("command.category.session"))
   const fileCommand = withCategory(language.t("command.category.file"))
@@ -444,6 +446,14 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   }
 
   const sessionCmds = () => [
+    sessionCommand({
+      id: "session.search",
+      title: language.t("session.search.placeholder"),
+      description: language.t("session.search.input"),
+      keybind: "mod+f",
+      disabled: !params.id,
+      onSelect: openSearch,
+    }),
     sessionCommand({
       id: "session.new",
       title: language.t("command.session.new"),

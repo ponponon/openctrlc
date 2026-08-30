@@ -1168,4 +1168,17 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "선택기에서 파일을 선택하지 않았습니다",
   "desktop.picker.error.sizeLimit": "선택한 첨부 파일이 {{limit}} MB 제한을 초과합니다",
+  "session.search.placeholder": "이 세션 검색",
+  "session.search.input": "세션 메시지 검색",
+  "session.search.scope": "검색 범위",
+  "session.search.scope.conversation": "대화",
+  "session.search.scope.all": "모든 콘텐츠",
+  "session.search.results": "{{total}}개 결과 중 {{current}}",
+  "session.search.noResults": "결과 없음",
+  "session.search.loading": "결과 로드 중...",
+  "session.search.partial": "일부 기록",
+  "session.search.retry": "다시 시도",
+  "session.search.previous": "이전 결과",
+  "session.search.next": "다음 결과",
+  "session.search.close": "검색 닫기",
 }
