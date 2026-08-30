@@ -65,7 +65,7 @@ git diff --check
 exit 0
 ```
 
-### Fresh Full Timeline Stability
+### Fresh Full Timeline Stability (Before Drag Fix)
 
 ```text
 PLAYWRIGHT_PORT=3007 \
@@ -77,7 +77,7 @@ bun run test:stability
 2 failed: timeline-stability Playwright tests
 ```
 
-The current fresh failures are `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. The historical 47 passed and 3 failed result included `context-matrix.spec.ts` first context-member removal; it is not the current result. The non-search stability outcomes are machine/timing-sensitive.
+This run recorded `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. All six session-search stability tests passed. No unrelated stability test was modified. The historical 47 passed and 3 failed result included `context-matrix.spec.ts` first context-member removal; it is not the current result. The non-search stability outcomes are machine/timing-sensitive.
 
 ## Stability Baseline
 
@@ -85,7 +85,7 @@ The requested baseline worktrees at `fd19281` and `f63a2cf` were rechecked with 
 
 ## Concerns
 
-- Full timeline stability remains non-green at 48 passed and 2 failed. The current failures are explicitly listed above; the historical 47/3 result is not the current result. Baseline attribution is unresolved because both detached baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency before tests could run.
+- Full timeline stability remained non-green in the pre-drag-fix run at 48 passed and 2 failed. The current failures from that run are explicitly listed above; the historical 47/3 result is not the current result. Baseline attribution is unresolved because both detached baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency before tests could run.
 - The production build continues to emit existing Vite warnings for mixed dynamic/static imports, duplicate WASM map output, and large chunks.
 - The requested focused tests, browser-condition tests, Playwright search integration, `bun typecheck`, `bun run typecheck:e2e`, and `git diff --check` passed. The full suite remains non-green as recorded above.
 
@@ -139,9 +139,27 @@ bun run test:stability
 48 passed, 2 failed: timeline-stability Playwright tests
 ```
 
-The two full-stability failures were machine/timing-sensitive scenarios observed in the current and prior fresh runs: `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. Because both baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency, there is no reliable evidence to determine whether either failure was introduced by this branch. All six session-search stability tests passed. No unrelated stability test was modified. This fresh run improves the prior recorded outcome from 47 passed and 3 failed; full stability remains non-green.
+The drag-selection failure was fixed in commit `147e7f3` by restoring pointer gesture tracking without cancelling history-anchor correction. Its focused test and the full stability run after the fix passed. The full stability run after that fix recorded `49 passed, 1 failed`; the remaining failure is `adverse.spec.ts` explicit shell virtualization. That scenario was also observed in the baseline comparison runs after dependencies were installed, so it is treated as an existing residual stability failure rather than a search-specific failure. No unrelated stability test was modified.
 
 `git diff --check` also passed. The optional active-match-unchanged reveal test was not added because it was not required for this fix wave.
+
+## Drag-Selection Regression Fix
+
+Commit `147e7f3` restored the timeline viewport's pointer gesture tracking. The handlers mark the existing outer scroll gesture for mouse selection drags but do not cancel correcting history anchors; custom scrollbar pointer-down still cancels correcting anchors through `ScrollView.onThumbPointerDown`.
+
+Verification after the fix:
+
+```text
+Focused session/timeline/message gesture tests: 69 pass, 0 fail
+Search and drag Playwright scenarios: 7 passed, 0 failed
+bun typecheck: exit 0
+bun run typecheck:e2e: exit 0
+Visual stability unit tests: 23 pass, 0 fail
+Timeline stability: 49 passed, 1 failed
+Remaining failure: adverse.spec.ts explicit shell virtualization
+```
+
+The baseline worktrees, after installing their locked dependencies, also failed the explicit shell virtualization scenario. This provides evidence that the remaining failure is not specific to session search, while the baseline instability is still documented rather than hidden.
 
 ## Drag-Selection Regression Fix
 
