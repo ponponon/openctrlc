@@ -2,7 +2,7 @@
 
 ## Status
 
-Final whole-branch review fix wave implemented. No Protocol or Server public API was changed, no unrelated stability test was modified, and no app/server process was restarted. This revision changes only this report.
+Final whole-branch review fix wave implemented. Fresh verification was performed against HEAD `147e7f3`. No Protocol or Server public API was changed, no unrelated stability test was modified, and no app/server process was restarted. This revision changes only this report.
 
 ## Fixes
 
@@ -15,52 +15,34 @@ Final whole-branch review fix wave implemented. No Protocol or Server public API
 
 All commands were run from `packages/app` unless noted.
 
-### Focused search and timeline tests
+### Focused session, timeline, and message gesture tests
 
 ```text
-bun test --conditions=solid --preload ./happydom.ts \
-  ./src/pages/session/session-search.test.ts \
-  ./src/pages/session/timeline/history-anchor.test.ts \
-  ./src/pages/session/timeline/projection.test.ts \
-  ./src/pages/session/timeline/model.test.ts
+Focused session/timeline/message gesture validation
 
-58 pass
+69 pass
 0 fail
-145 expect() calls
 ```
 
-### Browser-condition coverage
-
-```text
-bun test --conditions=browser --preload ./happydom.ts \
-  ./test-browser/session-search.test.ts ./src/i18n/parity.test.ts
-
-9 pass
-0 fail
-11463 expect() calls
-```
-
-### Playwright search integration
+### Search and drag focused Playwright
 
 ```text
 PLAYWRIGHT_PORT=3003 \
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-mac-arm64/chrome-headless-shell" \
-bunx playwright test --config e2e/performance/timeline-stability/playwright.config.ts search.spec.ts
+bunx playwright test --config e2e/performance/timeline-stability/playwright.config.ts \
+  search.spec.ts scroll-interaction.spec.ts
 
-6 passed
+7 passed
 0 failed
 ```
 
-### Type checks and diff hygiene
+### Type checks
 
 ```text
 bun typecheck
 exit 0
 
 bun run typecheck:e2e
-exit 0
-
-git diff --check
 exit 0
 ```
 
@@ -72,17 +54,17 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$HOME/Library/Caches/ms-playwright/chromium
 bun run test:stability
 
 Visual stability unit: 23 pass, 0 fail
-Timeline stability Playwright: 48 passed, 2 failed
+Timeline stability Playwright: 49 passed, 1 failed
 ```
 
-The current and historical fresh runs observed machine/timing-sensitive scenarios in `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag-selection. The earlier result was `47 passed, 3 failed`; the current result is `48 passed, 2 failed`. Because the baseline worktrees could not execute due to the missing `@happy-dom/global-registrator`, it is not possible to reliably determine whether these scenarios were introduced by this branch. Full timeline stability remains non-green, and this report does not claim the full suite is green.
+The only failure is the explicit shell virtualization scenario in `adverse.spec.ts`. Drag scrolling passed. The earlier `48 passed, 2 failed` result is historical, not the current result. Full timeline stability remains non-green, and this report does not claim the full suite is green.
 
 ## Stability Baseline
 
-The requested baseline worktrees at `fd19281` and `f63a2cf` were rechecked with the same `bun run test:stability` command. Both were blocked before the stability tests could run because their worktrees could not resolve `@happy-dom/global-registrator` from `packages/app/happydom.ts`; each reported `Cannot find module '@happy-dom/global-registrator'`. They provide no baseline pass/fail data, so it is not possible to reliably determine whether either failure was introduced by this branch.
+After installing dependencies, the requested baseline worktrees were able to run the target failure scenarios. At `fd19281`, `adverse.spec.ts` failed and drag scrolling passed. At `f63a2cf`, `adverse.spec.ts` failed and drag scrolling failed. On the current revision, drag scrolling passes while `adverse.spec.ts` still fails. This gives stronger evidence that the adverse failure predates the current revision, but does not justify over-attributing it without ruling out environment and timing effects. The drag failure has been fixed on the current revision.
 
 ## Concerns
 
-- Full timeline stability remains non-green at 48 passed and 2 failed. The two failures are machine/timing-sensitive and are recorded above.
+- Full timeline stability remains non-green at 49 passed and 1 failed. The remaining failure is the explicit shell virtualization scenario in `adverse.spec.ts` and is recorded above.
 - The production build continues to emit existing Vite warnings for mixed dynamic/static imports, duplicate WASM map output, and large chunks.
-- The focused search and timeline tests, browser-condition tests, Playwright search integration, `bun typecheck`, `bun run typecheck:e2e`, and `git diff --check` passed as recorded above. The full suite remains non-green.
+- The focused session/timeline/message gesture validation, search and drag Playwright coverage, `bun typecheck`, and `bun run typecheck:e2e` passed as recorded above. Build warnings remain, and full timeline stability is still not fully green.
