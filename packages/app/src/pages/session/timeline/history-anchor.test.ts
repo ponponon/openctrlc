@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { createHistoryAnchorRegistry, startHistoryAnchorCorrection } from "./history-anchor"
+import { createHistoryAnchorRegistry, markPointerScrollGesture, startHistoryAnchorCorrection } from "./history-anchor"
 
 function createHarness() {
   const restored: Array<{ key: symbol; done: boolean }> = []
@@ -22,6 +22,28 @@ function createHarness() {
 }
 
 describe("createHistoryAnchorRegistry", () => {
+  test("marks connected pointer drags without cancelling an active correction", () => {
+    const harness = createHarness()
+    const target = document.createElement("div")
+    document.body.append(target)
+    const marked: EventTarget[] = []
+    const correcting = harness.registry.capture("normal")
+    correcting.restore(true)
+
+    markPointerScrollGesture({ target, onMark: (value) => value && marked.push(value) })
+    expect(marked).toEqual([target])
+    expect(harness.registry.hasCorrecting()).toBe(true)
+    expect(harness.stopped).toHaveLength(0)
+
+    markPointerScrollGesture({ target, buttons: 1, onMark: (value) => value && marked.push(value) })
+    markPointerScrollGesture({ target, buttons: 0, onMark: (value) => value && marked.push(value) })
+
+    expect(marked).toEqual([target, target])
+    expect(harness.registry.hasCorrecting()).toBe(true)
+    expect(harness.stopped).toHaveLength(0)
+    target.remove()
+  })
+
   test("keeps a restored entry correcting until settled", () => {
     const harness = createHarness()
     harness.registry.capture("normal").restore(true)

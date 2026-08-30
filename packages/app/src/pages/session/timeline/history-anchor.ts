@@ -3,6 +3,15 @@ export type HistoryAnchorKind = "normal" | "search"
 
 type HistoryAnchorPhase = "pending" | "correcting"
 
+export function markPointerScrollGesture(input: {
+  target: EventTarget | null
+  buttons?: number
+  onMark: (target?: EventTarget | null) => void
+}) {
+  if (input.buttons !== undefined && input.buttons !== 1) return
+  input.onMark(input.target)
+}
+
 export function startHistoryAnchorCorrection(input: {
   snapshot: HistoryAnchorSnapshot
   resolve: (anchor: string) => { top: number } | undefined

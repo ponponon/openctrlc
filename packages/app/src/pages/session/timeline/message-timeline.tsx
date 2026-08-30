@@ -79,7 +79,12 @@ import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
-import { createHistoryAnchorRegistry, startHistoryAnchorCorrection, type HistoryAnchorKind } from "./history-anchor"
+import {
+  createHistoryAnchorRegistry,
+  markPointerScrollGesture,
+  startHistoryAnchorCorrection,
+  type HistoryAnchorKind,
+} from "./history-anchor"
 
 const emptyMessages: MessageType[] = []
 const emptyParts: PartType[] = []
@@ -621,6 +626,14 @@ export function MessageTimeline(props: {
 
   const handleListTouchEnd = () => {
     touchGesture = undefined
+  }
+
+  const handleListPointerDown = (event: PointerEvent & { currentTarget: HTMLDivElement }) => {
+    markPointerScrollGesture({ target: event.target, onMark: props.onMarkScrollGesture })
+  }
+
+  const handleListPointerMove = (event: PointerEvent) => {
+    markPointerScrollGesture({ target: event.target, buttons: event.buttons, onMark: props.onMarkScrollGesture })
   }
 
   const handleListKeyDown = (event: KeyboardEvent & { currentTarget: HTMLDivElement }) => {
@@ -1414,6 +1427,8 @@ export function MessageTimeline(props: {
         onTouchMove={handleListTouchMove}
         onTouchEnd={handleListTouchEnd}
         onTouchCancel={handleListTouchEnd}
+        onPointerDown={handleListPointerDown}
+        onPointerMove={handleListPointerMove}
         onThumbPointerDown={() => anchorRegistry.cancelCorrections()}
         onKeyDown={handleListKeyDown}
         onScroll={handleListScroll}

@@ -142,3 +142,52 @@ bun run test:stability
 The two full-stability failures were machine/timing-sensitive scenarios observed in the current and prior fresh runs: `adverse.spec.ts` explicit shell virtualization and `scroll-interaction.spec.ts` drag scrolling. Because both baseline worktrees were blocked by the missing `@happy-dom/global-registrator` dependency, there is no reliable evidence to determine whether either failure was introduced by this branch. All six session-search stability tests passed. No unrelated stability test was modified. This fresh run improves the prior recorded outcome from 47 passed and 3 failed; full stability remains non-green.
 
 `git diff --check` also passed. The optional active-match-unchanged reveal test was not added because it was not required for this fix wave.
+
+## Drag-Selection Regression Fix
+
+### Root Cause
+
+The session-search branch had removed `MessageTimeline`'s viewport pointer handlers. Mouse text selection therefore never called `onMarkScrollGesture`, so dragging past the timeline boundary did not keep the automatic scroll path active. The baseline `fd19281` passed the focused scenario; the session-search worktree reproduced the failure with a remaining scroll distance of 140 instead of greater than 500.
+
+### Fix
+
+1. Restored viewport `pointerdown` and button-1 `pointermove` handlers. They mark the existing scroll gesture only and do not cancel history-anchor correction.
+2. Kept `onThumbPointerDown={() => anchorRegistry.cancelCorrections()}` on `ScrollView`, so custom scrollbar drags still cancel correcting RAFs through the existing production callback.
+3. Added focused production-helper coverage proving connected pointer down/move marks the gesture while an active correction remains correcting. No `adverse.spec.ts` or unrelated stability test was modified.
+
+### Verification
+
+```text
+Initial focused reproduction, session-search worktree:
+PLAYWRIGHT_PORT=3015 bunx playwright test --config e2e/performance/timeline-stability/playwright.config.ts scroll-interaction.spec.ts:51
+1 failed: received remaining scroll distance 140, expected > 500
+
+Focused session/timeline tests:
+bun test --conditions=solid --preload ./happydom.ts ./src/pages/session/session-search.test.ts ./src/pages/session/timeline/history-anchor.test.ts ./src/pages/session/timeline/projection.test.ts ./src/pages/session/timeline/model.test.ts
+62 pass, 0 fail, 154 expect() calls
+
+Focused drag regression after fix:
+PLAYWRIGHT_PORT=3020 bunx playwright test --config e2e/performance/timeline-stability/playwright.config.ts scroll-interaction.spec.ts:51
+1 passed, 0 failed
+
+Search Playwright coverage:
+PLAYWRIGHT_PORT=3021 bunx playwright test --config e2e/performance/timeline-stability/playwright.config.ts search.spec.ts
+6 passed, 0 failed
+
+bun typecheck
+exit 0
+
+bun run typecheck:e2e
+exit 0
+
+git diff --check
+exit 0
+
+PLAYWRIGHT_PORT=3022 bun run test:stability
+23 pass, 0 fail: visual-stability unit tests
+49 passed, 1 failed: timeline-stability Playwright tests
+```
+
+### Remaining Stability
+
+The drag-selection regression now passes in the focused run and in the full stability run. Full stability remains non-green because the existing `adverse.spec.ts` explicit shell virtualization scenario failed; `adverse.spec.ts` was not changed. The full run also initially encountered the already-used default port and was rerun successfully with `PLAYWRIGHT_PORT=3022`. Existing Vite mixed dynamic/static import, duplicate WASM map, and large-chunk warnings remain unchanged.
