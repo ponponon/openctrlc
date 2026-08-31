@@ -30,6 +30,7 @@ const SKIP_PARTS = new Set(["patch", "step-start", "step-finish"])
 const initialMessagePageSize = 20
 const historyMessagePageSize = 200
 const sessionInfoLimit = 2_048
+const maxOrphanPartsPerSession = 256
 const emptyIDs: ReadonlySet<string> = new Set()
 
 function needsOlderTurnRoot(source: readonly SessionMessageInfo[]) {
@@ -216,6 +217,7 @@ export function createServerSession(
   const messageLoads = new Map<string, MessageLoadState>()
   const pendingParts = new Map<string, Map<string, Set<string>>>()
   const orphanParts = new Map<string, Set<string>>()
+  const orphanPartValues = new Map<string, Map<string, Part>>()
   const removedMessages = new Map<string, Set<string>>()
   const deltaBases = new Map<string, { base: string; sessionID: string }>()
   const deleteMessageParts = (
@@ -227,6 +229,36 @@ export function createServerSession(
       deltaBases.delete(part.id)
     }
     delete cache.part[messageID]
+  }
+  const trimOrphanParts = (sessionID: string) => {
+    const values = orphanPartValues.get(sessionID)
+    if (!values) return
+    while (values.size > maxOrphanPartsPerSession) {
+      const partID = values.keys().next().value
+      if (!partID) return
+      values.delete(partID)
+    }
+    if (values.size === 0) orphanPartValues.delete(sessionID)
+  }
+  const restoreOrphanParts = (sessionID: string, messageID: string) => {
+    const values = orphanPartValues.get(sessionID)
+    if (!values) return
+    const parts = [...values.values()].filter((part) => part.messageID === messageID)
+    if (parts.length === 0) return
+    setData("part", messageID, (current = []) => {
+      const existing = new Set(current.map((part) => part.id))
+      return [...current, ...parts.filter((part) => !existing.has(part.id))].sort((a, b) => cmp(a.id, b.id))
+    })
+    parts.forEach((part) => values.delete(part.id))
+    if (values.size === 0) orphanPartValues.delete(sessionID)
+  }
+  const clearOrphanPartValues = (sessionID: string, messageID: string) => {
+    const values = orphanPartValues.get(sessionID)
+    if (!values) return
+    values.forEach((part, partID) => {
+      if (part.messageID === messageID) values.delete(partID)
+    })
+    if (values.size === 0) orphanPartValues.delete(sessionID)
   }
   const seen = new Set<string>()
   const infoSeen = new Set<string>()
@@ -487,6 +519,7 @@ export function createServerSession(
       inflight.delete(sessionID)
       inflightTodo.delete(sessionID)
       messageLoads.delete(sessionID)
+      orphanPartValues.delete(sessionID)
       v2.clear(sessionID)
       pendingParts.delete(sessionID)
       orphanParts.delete(sessionID)
@@ -647,6 +680,7 @@ export function createServerSession(
         if (!fetchedIDs.has(partID)) touched.delete(partID)
       }
       const parts = reconcileFetched(fetched, data.part[item.id] ?? [], { touched })
+      clearOrphanPartValues(sessionID, item.id)
       if (!parts.length) {
         orphanParts.get(sessionID)?.delete(item.id)
         setData(produce((draft) => deleteMessageParts(draft, item.id)))
@@ -1042,6 +1076,7 @@ export function createServerSession(
         const orphans = orphanParts.get(info.sessionID)
         orphans?.delete(info.id)
         if (orphans?.size === 0) orphanParts.delete(info.sessionID)
+        restoreOrphanParts(info.sessionID, info.id)
         const removedMessagesForSession = removedMessages.get(info.sessionID)
         removedMessagesForSession?.delete(info.id)
         if (removedMessagesForSession?.size === 0) removedMessages.delete(info.sessionID)
@@ -1078,6 +1113,7 @@ export function createServerSession(
         const removedMessagesForSession = removedMessages.get(props.sessionID) ?? new Set<string>()
         removedMessagesForSession.add(props.messageID)
         removedMessages.set(props.sessionID, removedMessagesForSession)
+        clearOrphanPartValues(props.sessionID, props.messageID)
         clearOptimistic(props.sessionID, props.messageID)
         setData(
           produce((draft) => {
@@ -1097,19 +1133,24 @@ export function createServerSession(
         const messages = data.message[part.sessionID]
         const load = messageLoads.get(part.sessionID)
         const missing = !messages?.some((message) => message.id === part.messageID)
-        // Outside a page load, accepting a part without its ordered parent event would create an unbounded orphan.
+        // Keep bounded part data until its parent message event arrives; SSE delivery can reorder these events.
         if (
           missing &&
-          (!load ||
-            load.clearedMessageParts.has(part.messageID) ||
-            removedMessages.get(part.sessionID)?.has(part.messageID))
+          (load?.clearedMessageParts.has(part.messageID) || removedMessages.get(part.sessionID)?.has(part.messageID))
         )
           return
         if (missing) {
-          const orphans = orphanParts.get(part.sessionID) ?? new Set<string>()
-          orphans.add(part.messageID)
-          orphanParts.set(part.sessionID, orphans)
-          load?.orphanParents.add(part.messageID)
+          if (load) {
+            const orphans = orphanParts.get(part.sessionID) ?? new Set<string>()
+            orphans.add(part.messageID)
+            orphanParts.set(part.sessionID, orphans)
+            load.orphanParents.add(part.messageID)
+          }
+
+          const values = orphanPartValues.get(part.sessionID) ?? new Map<string, Part>()
+          values.set(part.id, part)
+          orphanPartValues.set(part.sessionID, values)
+          trimOrphanParts(part.sessionID)
         }
         const deltas = load?.deltaParts.get(part.messageID)
         deltas?.delete(part.id)
