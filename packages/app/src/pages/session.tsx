@@ -606,7 +606,7 @@ export default function Page() {
 
   const setSearchQuery = (query: string) => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
-    searchQueryTimer = window.setTimeout(() => setSearch("query", query), 80)
+    searchQueryTimer = window.setTimeout(() => setSearch("query", query), 100)
   }
 
   const resetSearch = () => {
@@ -688,13 +688,8 @@ export default function Page() {
         const nextMatch = matches[nextIndex]
         setSearch("activeIndex", nextIndex)
         previousSearchMatch = nextMatch
-        if (
-          nextMatch &&
-          (previous === undefined ||
-            previous.messageID !== nextMatch.messageID ||
-            previous.start !== nextMatch.start ||
-            previous.end !== nextMatch.end)
-        ) {
+        // 只有当命中的消息发生变化时才做 reveal 定位，避免在同一条消息内打字时重复拉扯视口
+        if (nextMatch && (previous === undefined || previous.messageID !== nextMatch.messageID)) {
           const message = sync().data.message[id]?.find((item) => item.id === nextMatch.messageID)
           const userMessageID = message?.role === "assistant" ? message.parentID : nextMatch.messageID
           requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))

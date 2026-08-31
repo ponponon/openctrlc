@@ -239,3 +239,19 @@
     flex: 1 1 120px;
   }
 }
+
+/* 搜索结果定位高亮：精准高亮消息本身与气泡，带柔和光晕，不再拉伸整屏直角大框 */
+[data-timeline-row="UserMessage"][data-search-active] {
+  border-radius: var(--radius-lg, 10px);
+  background: color-mix(in srgb, var(--v2-overlay-simple-overlay-hover, rgba(59, 130, 246, 0.08)) 45%, transparent);
+  transition: background-color 0.2s ease;
+}
+
+[data-timeline-row="UserMessage"][data-search-active] [data-component="user-message"] [data-slot="user-message-text"],
+[data-timeline-row="UserMessage"][data-search-active] [data-slot="user-message-body"] {
+  outline: 2px solid var(--border-focus, var(--v2-border-border-focus, #3b82f6));
+  outline-offset: 2px;
+  box-shadow: 0 0 16px -2px rgba(59, 130, 246, 0.35);
+  border-radius: var(--radius-md, 8px);
+  transition: outline 0.15s ease, box-shadow 0.15s ease;
+}

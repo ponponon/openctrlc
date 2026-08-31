@@ -1,9 +1,8 @@
-import { Show } from "solid-js"
+import { createEffect, createSignal, onCleanup, Show } from "solid-js"
 import { Button } from "@openctrlc/ui/button"
 import { Icon } from "@openctrlc/ui/icon"
 import { IconButton } from "@openctrlc/ui/icon-button"
 import { Select } from "@openctrlc/ui/select"
-import { TextField } from "@openctrlc/ui/text-field"
 import { useLanguage } from "@/context/language"
 import type { SessionSearchScope } from "./session-search"
 import "./session-search-bar.css"
@@ -31,31 +30,93 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
     scope === "conversation" ? language.t("session.search.scope.conversation") : language.t("session.search.scope.all")
   const state = () => sessionSearchBarState(props)
 
+  let inputRef: HTMLInputElement | undefined
+  let isComposing = false
+
+  // 当外部 query 变化（如重置清空）且输入法未在合成时，同步给 DOM input
+  createEffect(() => {
+    const externalQuery = props.query
+    if (inputRef && !isComposing && inputRef.value !== externalQuery) {
+      inputRef.value = externalQuery
+    }
+  })
+
+  // 当搜索栏打开时自动聚焦并选中文字
+  createEffect(() => {
+    if (props.open) {
+      requestAnimationFrame(() => {
+        if (inputRef) {
+          inputRef.focus()
+          inputRef.select()
+        }
+      })
+    }
+  })
+
+  const handleInput = (event: InputEvent & { currentTarget: HTMLInputElement }) => {
+    if (isComposing) return
+    props.onQueryChange(event.currentTarget.value)
+  }
+
+  const handleCompositionStart = () => {
+    isComposing = true
+  }
+
+  const handleCompositionEnd = (event: CompositionEvent & { currentTarget: HTMLInputElement }) => {
+    isComposing = false
+    props.onQueryChange(event.currentTarget.value)
+  }
+
+  const handleKeyDown = (event: KeyboardEvent & { currentTarget: HTMLInputElement }) => {
+    // 中文/输入法合成状态下（按键选词、空格、回车等）绝不拦截
+    if (event.isComposing || event.keyCode === 229) {
+      return
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault()
+      props.onClose()
+      return
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault()
+      props.onNavigate(event.shiftKey ? -1 : 1)
+      return
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault()
+      props.onNavigate(event.key === "ArrowUp" ? -1 : 1)
+      return
+    }
+  }
+
   return (
     <Show when={props.open}>
       <div class="session-search-bar" data-component="session-search-bar" role="search">
         <div class="session-search-bar__field">
           <Icon name="magnifying-glass" size="small" class="session-search-bar__search-icon" />
-          <TextField
-            value={props.query}
-            onChange={props.onQueryChange}
-            onKeyDown={(event: KeyboardEvent) => {
-              if (event.key === "Escape") {
-                event.preventDefault()
-                props.onClose()
-                return
-              }
-              if (event.key === "Enter" || event.key === "ArrowDown" || event.key === "ArrowUp") {
-                event.preventDefault()
-                props.onNavigate(event.key === "ArrowUp" || (event.key === "Enter" && event.shiftKey) ? -1 : 1)
-              }
-            }}
-            placeholder={language.t("session.search.placeholder")}
-            aria-label={language.t("session.search.input")}
-            hideLabel
-            variant="ghost"
-            autofocus={true}
-          />
+          <div data-component="input" data-variant="ghost" class="session-search-bar__input-container">
+            <div data-slot="input-wrapper">
+              <input
+                ref={(el) => {
+                  inputRef = el
+                }}
+                type="text"
+                data-slot="input-input"
+                class="session-search-bar__native-input"
+                value={props.query}
+                onInput={handleInput}
+                onCompositionStart={handleCompositionStart}
+                onCompositionEnd={handleCompositionEnd}
+                onKeyDown={handleKeyDown}
+                placeholder={language.t("session.search.placeholder")}
+                aria-label={language.t("session.search.input")}
+                autofocus={true}
+              />
+            </div>
+          </div>
         </div>
         <div class="session-search-bar__status" aria-live="polite">
           <Show when={state().hasResults}>
