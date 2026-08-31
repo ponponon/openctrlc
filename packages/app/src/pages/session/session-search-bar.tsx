@@ -35,7 +35,7 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
     <Show when={props.open}>
       <div class="session-search-bar" data-component="session-search-bar" role="search">
         <div class="session-search-bar__field">
-          <Icon name="magnifying-glass" size="small" />
+          <Icon name="magnifying-glass" size="small" class="session-search-bar__search-icon" />
           <TextField
             value={props.query}
             onChange={props.onQueryChange}
@@ -57,36 +57,48 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
             autofocus={true}
           />
         </div>
-        <Select
-          options={scopes}
-          current={props.scope}
-          value={(scope) => scope}
-          label={scopeLabel}
-          onSelect={(scope) => scope && props.onScopeChange(scope)}
-          variant="ghost"
-          size="small"
-          aria-label={language.t("session.search.scope")}
-          class="session-search-bar__scope"
-        />
         <div class="session-search-bar__status" aria-live="polite">
           <Show when={state().hasResults}>
-            {language.t("session.search.results", { current: props.activeMatch + 1, total: props.matches })}
+            <span class="session-search-bar__count">
+              {language.t("session.search.results", { current: props.activeMatch + 1, total: props.matches })}
+            </span>
           </Show>
-          <Show when={state().loading}>{language.t("session.search.loading")}</Show>
-          <Show when={state().noResults}>{language.t("session.search.noResults")}</Show>
-          <Show when={state().partial}>{language.t("session.search.partial")}</Show>
+          <Show when={state().loading}>
+            <span class="session-search-bar__loading">{language.t("session.search.loading")}</span>
+          </Show>
+          <Show when={state().noResults}>
+            <span class="session-search-bar__no-results">{language.t("session.search.noResults")}</span>
+          </Show>
+          <Show when={state().partial}>
+            <span class="session-search-bar__partial">{language.t("session.search.partial")}</span>
+          </Show>
           <Show when={props.error}>
             <span class="session-search-bar__error">{props.error}</span>
-            <Button size="small" variant="ghost" onClick={props.onRetry}>
+            <Button size="small" variant="ghost" class="session-search-bar__retry" onClick={props.onRetry}>
               {language.t("session.search.retry")}
             </Button>
           </Show>
         </div>
+        <div class="session-search-bar__divider" aria-hidden="true" />
+        <div class="session-search-bar__scope-wrapper">
+          <Select
+            options={scopes}
+            current={props.scope}
+            value={(scope) => scope}
+            label={scopeLabel}
+            onSelect={(scope) => scope && props.onScopeChange(scope)}
+            variant="ghost"
+            size="small"
+            aria-label={language.t("session.search.scope")}
+            class="session-search-bar__scope"
+          />
+        </div>
+        <div class="session-search-bar__divider" aria-hidden="true" />
         <div class="session-search-bar__actions">
           <IconButton
             icon="chevron-left"
             variant="ghost"
-            size="normal"
+            size="small"
             disabled={props.matches === 0}
             aria-label={language.t("session.search.previous")}
             onClick={() => props.onNavigate(-1)}
@@ -94,7 +106,7 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
           <IconButton
             icon="chevron-right"
             variant="ghost"
-            size="normal"
+            size="small"
             disabled={props.matches === 0}
             aria-label={language.t("session.search.next")}
             onClick={() => props.onNavigate(1)}
@@ -102,7 +114,7 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
           <IconButton
             icon="close"
             variant="ghost"
-            size="normal"
+            size="small"
             aria-label={language.t("session.search.close")}
             onClick={props.onClose}
           />

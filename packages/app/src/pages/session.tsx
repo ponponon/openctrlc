@@ -2258,7 +2258,7 @@ export default function Page() {
       <Show when={!isDesktop() && !!params.id && settings.general.newLayoutDesigns() && !mobileTabsBottom()}>
         {mobileTabs(true)}
       </Show>
-      <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div class="relative flex flex-col flex-1 min-h-0 overflow-hidden">
         <SessionSearchBar
           open={search.open}
           query={search.query}
