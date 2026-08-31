@@ -597,6 +597,7 @@ export default function Page() {
     if (message?.role === "assistant") return message.parentID
     return message?.id
   })
+  const activeSearchMatch = createMemo(() => searchMatches()[search.activeIndex])
   let searchQueryTimer: number | undefined
   let previousSearchMatch = undefined as ReturnType<typeof searchMatches>[number] | undefined
   let searchHistoryLoading: { owner: string; token: symbol } | undefined
@@ -2291,6 +2292,7 @@ export default function Page() {
                   <MessageTimeline
                     actions={actions}
                     activeSearchMessageID={activeSearchMessageID()}
+                    activeSearchMatch={activeSearchMatch()}
                     scroll={ui.scroll}
                     onResumeScroll={resumeScroll}
                     setScrollRef={setScrollRef}

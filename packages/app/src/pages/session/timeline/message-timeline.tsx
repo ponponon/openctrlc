@@ -69,6 +69,7 @@ import { useSettings } from "@/context/settings"
 import { useTabs } from "@/context/tabs"
 import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/session-route"
 import { isActiveSearchMessage } from "@/pages/session/session-search"
+import type { SessionSearchMatch } from "@/pages/session/session-search"
 import { includeUserMessageRow } from "./user-message-row-index"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
@@ -263,6 +264,7 @@ export function MessageTimeline(props: {
   anchor: (id: string) => string
   setRevealMessage?: (fn: (id: string) => void) => void
   activeSearchMessageID?: string
+  activeSearchMatch?: SessionSearchMatch
   setScrollToEnd?: (fn: () => void) => void
   setHistoryAnchor?: (handlers?: { capture: (kind: HistoryAnchorKind) => HistoryAnchor }) => void
 }) {
@@ -1202,9 +1204,14 @@ export function MessageTimeline(props: {
               {(message) => (
                 <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
                   <div data-slot="session-turn-message-content" aria-live="off">
-                    <Message
-                      message={message()}
-                      parts={getMsgParts(userMessageRow().userMessageID)}
+                        <Message
+                          message={message()}
+                          parts={getMsgParts(userMessageRow().userMessageID)}
+                          searchMatch={
+                            props.activeSearchMatch?.messageID === userMessageRow().userMessageID
+                              ? props.activeSearchMatch
+                              : undefined
+                          }
                       actions={props.actions}
                       useV2Actions={settings.general.newLayoutDesigns()}
                       comments={messageComments()}

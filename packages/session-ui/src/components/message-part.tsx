@@ -167,6 +167,7 @@ function DiagnosticsDisplay(props: { diagnostics: Diagnostic[] }): JSX.Element {
 export interface MessageProps {
   message: MessageType
   parts: PartType[]
+  searchMatch?: { start: number; end: number }
   actions?: UserActions
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
@@ -194,6 +195,7 @@ export type UserMessageComment = {
 export interface MessagePartProps {
   part: PartType
   message: MessageType
+  searchMatch?: { start: number; end: number }
   hideDetails?: boolean
   defaultOpen?: boolean
   toolOpen?: boolean
@@ -724,6 +726,7 @@ export { partDefaultOpen } from "./part-default-open"
 
 export function AssistantParts(props: {
   messages: AssistantMessage[]
+  searchMatch?: { start: number; end: number }
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   useV2Actions?: boolean
@@ -809,6 +812,7 @@ export function AssistantParts(props: {
                       <Part
                         part={item()!}
                         message={message()!}
+                        searchMatch={props.searchMatch}
                         showAssistantCopyPartID={props.showAssistantCopyPartID}
                         turnDurationMs={props.turnDurationMs}
                         useV2Actions={props.useV2Actions}
@@ -945,6 +949,7 @@ export function Message(props: MessageProps) {
             actions={props.actions}
             useV2Actions={props.useV2Actions}
             comments={props.comments}
+            searchMatch={props.searchMatch}
           />
         )}
       </Match>
@@ -956,6 +961,7 @@ export function Message(props: MessageProps) {
             showAssistantCopyPartID={props.showAssistantCopyPartID}
             showReasoningSummaries={props.showReasoningSummaries}
             useV2Actions={props.useV2Actions}
+            searchMatch={props.searchMatch}
           />
         )}
       </Match>
@@ -966,6 +972,7 @@ export function Message(props: MessageProps) {
 export function AssistantMessageDisplay(props: {
   message: AssistantMessage
   parts: PartType[]
+  searchMatch?: { start: number; end: number }
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
   useV2Actions?: boolean
@@ -1182,6 +1189,7 @@ function UserMessageComments(props: { comments: UserMessageComment[]; bounded: b
 export function UserMessageDisplay(props: {
   message: UserMessage
   parts: PartType[]
+  searchMatch?: { start: number; end: number }
   actions?: UserActions
   useV2Actions?: boolean
   comments?: UserMessageComment[]
@@ -1330,7 +1338,12 @@ export function UserMessageDisplay(props: {
             dir="auto"
             data-comments={messageComments().length > 0 ? "true" : undefined}
           >
-            <HighlightedText text={text()} references={inlineFiles()} agents={agents()} />
+            <HighlightedText
+              text={text()}
+              references={inlineFiles()}
+              agents={agents()}
+              searchMatch={props.searchMatch}
+            />
             <Show when={messageComments().length > 0}>
               <UserMessageComments comments={messageComments()} bounded />
             </Show>
@@ -1392,19 +1405,25 @@ export function UserMessageDisplay(props: {
   )
 }
 
-type HighlightSegment = { text: string; type?: "file" | "agent" }
+type HighlightSegment = { text: string; type?: "file" | "agent" | "search" }
 
-function HighlightedText(props: { text: string; references: FilePart[]; agents: AgentPart[] }) {
+function HighlightedText(props: {
+  text: string
+  references: FilePart[]
+  agents: AgentPart[]
+  searchMatch?: { start: number; end: number }
+}) {
   const segments = createMemo(() => {
     const text = props.text
 
-    const allRefs: { start: number; end: number; type: "file" | "agent" }[] = [
+    const allRefs: { start: number; end: number; type: "file" | "agent" | "search" }[] = [
       ...props.references
         .filter((r) => r.source?.text?.start !== undefined && r.source?.text?.end !== undefined)
         .map((r) => ({ start: r.source!.text!.start, end: r.source!.text!.end, type: "file" as const })),
       ...props.agents
         .filter((a) => a.source?.start !== undefined && a.source?.end !== undefined)
         .map((a) => ({ start: a.source!.start, end: a.source!.end, type: "agent" as const })),
+      ...(props.searchMatch ? [{ ...props.searchMatch, type: "search" as const }] : []),
     ].sort((a, b) => a.start - b.start)
 
     const result: HighlightSegment[] = []
@@ -1438,7 +1457,8 @@ export function Part(props: MessagePartProps) {
       <Dynamic
         component={component()}
         part={props.part}
-        message={props.message}
+         message={props.message}
+         searchMatch={props.searchMatch}
         hideDetails={props.hideDetails}
         defaultOpen={props.defaultOpen}
         toolOpen={props.toolOpen}
@@ -1753,7 +1773,32 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     <Show when={text()}>
       <div data-component="text-part" data-timeline-part-id={part().id}>
         <div data-slot="text-part-body">
-          <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+          <Show
+            when={props.searchMatch}
+            fallback={<PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />}
+          >
+            {(match) => (
+              <div class="session-search-text-match">
+                <PacedMarkdown
+                  text={text().slice(0, match().start)}
+                  cacheKey={`${part().id}:before`}
+                  streaming={false}
+                />
+                <mark data-search-match="active">
+                  <PacedMarkdown
+                    text={text().slice(match().start, match().end)}
+                    cacheKey={`${part().id}:match`}
+                    streaming={false}
+                  />
+                </mark>
+                <PacedMarkdown
+                  text={text().slice(match().end)}
+                  cacheKey={`${part().id}:after`}
+                  streaming={false}
+                />
+              </div>
+            )}
+          </Show>
         </div>
         <Show when={showCopy()}>
           <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
