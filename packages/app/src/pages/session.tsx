@@ -2292,7 +2292,6 @@ export default function Page() {
                   <MessageTimeline
                     actions={actions}
                     activeSearchMessageID={activeSearchMessageID()}
-                    activeSearchMatch={activeSearchMatch()}
                     scroll={ui.scroll}
                     onResumeScroll={resumeScroll}
                     setScrollRef={setScrollRef}
