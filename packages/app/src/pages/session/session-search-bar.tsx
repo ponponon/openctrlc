@@ -97,26 +97,21 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
       <div class="session-search-bar" data-component="session-search-bar" role="search">
         <div class="session-search-bar__field">
           <Icon name="magnifying-glass" size="small" class="session-search-bar__search-icon" />
-          <div data-component="input" data-variant="ghost" class="session-search-bar__input-container">
-            <div data-slot="input-wrapper">
-              <input
-                ref={(el) => {
-                  inputRef = el
-                }}
-                type="text"
-                data-slot="input-input"
-                class="session-search-bar__native-input"
-                value={props.query}
-                onInput={handleInput}
-                onCompositionStart={handleCompositionStart}
-                onCompositionEnd={handleCompositionEnd}
-                onKeyDown={handleKeyDown}
-                placeholder={language.t("session.search.placeholder")}
-                aria-label={language.t("session.search.input")}
-                autofocus={true}
-              />
-            </div>
-          </div>
+          <input
+            ref={(el) => {
+              inputRef = el
+            }}
+            type="text"
+            class="session-search-bar__native-input"
+            value={props.query}
+            onInput={handleInput}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
+            onKeyDown={handleKeyDown}
+            placeholder={language.t("session.search.placeholder")}
+            aria-label={language.t("session.search.input")}
+            autofocus={true}
+          />
         </div>
         <div class="session-search-bar__status" aria-live="polite">
           <Show when={state().hasResults}>
@@ -140,7 +135,6 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
             </Button>
           </Show>
         </div>
-        <div class="session-search-bar__divider" aria-hidden="true" />
         <div class="session-search-bar__scope-wrapper">
           <Select
             options={scopes}
@@ -154,7 +148,6 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
             class="session-search-bar__scope"
           />
         </div>
-        <div class="session-search-bar__divider" aria-hidden="true" />
         <div class="session-search-bar__actions">
           <IconButton
             icon="chevron-left"

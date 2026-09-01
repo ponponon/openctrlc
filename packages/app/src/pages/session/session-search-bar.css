@@ -1,7 +1,7 @@
 [data-component="session-search-bar"] {
-  --session-search-bar-height: 38px;
-  --session-search-bar-input-height: 26px;
-  --session-search-bar-field-basis: 180px;
+  --session-search-bar-height: 36px;
+  --session-search-bar-input-height: 24px;
+  --session-search-bar-field-basis: 200px;
   --session-search-bar-error-max-width: 140px;
 
   position: absolute;
@@ -10,33 +10,29 @@
   z-index: 40;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   height: var(--session-search-bar-height);
   width: auto;
   max-width: calc(100% - 32px);
   padding: 4px 6px 4px 10px;
-  background: color-mix(in srgb, var(--surface-raised-stronger-non-alpha, #ffffff) 92%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-weak-base, rgba(0, 0, 0, 0.08));
-  border-radius: var(--radius-lg, 10px);
-  box-shadow:
-    0 12px 32px -4px rgba(0, 0, 0, 0.12),
-    0 4px 12px -2px rgba(0, 0, 0, 0.06),
-    0 0 0 1px var(--border-weak-base, rgba(0, 0, 0, 0.08));
+  /* 浮层规范与 popover 一致：不透明浮层 + 单层细边框 + shadow-md，去掉了原来的
+     color-mix 半透明底、backdrop-filter 和 border+ring 双层灰框 */
+  background: var(--surface-raised-stronger-non-alpha, #ffffff);
+  border: 1px solid color-mix(in oklch, var(--border-base, rgba(0, 0, 0, 0.2)) 50%, transparent);
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--shadow-md);
   user-select: none;
-  animation: session-search-bar-appear 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  animation: session-search-bar-appear 0.15s ease-out;
 }
 
 @keyframes session-search-bar-appear {
   from {
     opacity: 0;
-    transform: translateY(-6px) scale(0.98);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -46,12 +42,13 @@
   }
 }
 
-[data-component="session-search-bar"]:focus-within {
-  border-color: var(--border-focus, var(--v2-border-border-focus, #3b82f6));
+/* 输入框聚焦时复用全局文本框聚焦语言（border-weak-selected 光晕 + border-selected 描边） */
+[data-component="session-search-bar"]:has(.session-search-bar__native-input:focus) {
+  border-color: transparent;
   box-shadow:
-    0 12px 36px -4px rgba(0, 0, 0, 0.16),
-    0 4px 12px -2px rgba(0, 0, 0, 0.08),
-    0 0 0 1px var(--border-focus, var(--v2-border-border-focus, #3b82f6));
+    0 0 0 3px var(--border-weak-selected, rgba(3, 76, 255, 0.24)),
+    0 0 0 1px var(--border-selected, rgba(3, 76, 255, 0.99)),
+    var(--shadow-md);
 }
 
 .session-search-bar__field {
@@ -60,38 +57,27 @@
   gap: 6px;
   min-width: 0;
   flex: 0 1 var(--session-search-bar-field-basis);
-  color: var(--icon-weak, var(--text-weak));
 }
 
 .session-search-bar__search-icon {
   flex-shrink: 0;
   color: var(--icon-weak, var(--text-weak));
-  opacity: 0.8;
 }
 
-.session-search-bar__field [data-component="input"] {
+.session-search-bar__native-input {
   min-width: 0;
   width: 100%;
-}
-
-.session-search-bar__field [data-slot="input-wrapper"] {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-.session-search-bar__field [data-slot="input-input"] {
   height: var(--session-search-bar-input-height);
   padding: 0;
-  font-size: var(--font-size-regular, 13px);
+  font-size: var(--font-size-small, 13px);
   color: var(--text-strong);
   background: transparent;
+  border: none;
+  outline: none;
 }
 
-.session-search-bar__field [data-slot="input-input"]::placeholder {
+.session-search-bar__native-input::placeholder {
   color: var(--text-weak);
-  font-size: var(--font-size-regular, 13px);
 }
 
 .session-search-bar__status {
@@ -99,44 +85,23 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
+  color: var(--text-weak);
 }
 
 .session-search-bar__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3px 6px;
-  border-radius: 4px;
-  background: var(--surface-base, rgba(0, 0, 0, 0.04));
-  color: var(--text-weak);
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
   white-space: nowrap;
 }
 
 .session-search-bar__no-results {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 6px;
-  border-radius: 4px;
-  background: var(--surface-critical-weak, rgba(239, 68, 68, 0.1));
-  color: var(--text-on-critical-strong, #ef4444);
-  font-size: 11px;
-  font-weight: 500;
+  color: var(--text-on-critical-base, #ed4831);
   white-space: nowrap;
 }
 
 .session-search-bar__loading,
 .session-search-bar__partial {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 6px;
-  border-radius: 4px;
-  background: var(--surface-base, rgba(0, 0, 0, 0.04));
-  color: var(--text-weak);
-  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -144,26 +109,14 @@
   max-width: var(--session-search-bar-error-max-width);
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--surface-critical-weak);
-  color: var(--text-on-critical-strong);
-  font-size: 11px;
+  color: var(--text-on-critical-base, #ed4831);
   white-space: nowrap;
 }
 
 .session-search-bar__retry {
   height: 22px !important;
   padding: 0 6px !important;
-  font-size: 11px !important;
-}
-
-.session-search-bar__divider {
-  width: 1px;
-  height: 14px;
-  background: var(--border-weak-base, rgba(0, 0, 0, 0.08));
-  margin: 0 1px;
-  flex-shrink: 0;
+  font-size: 12px !important;
 }
 
 .session-search-bar__scope-wrapper {
@@ -179,11 +132,13 @@
   font-size: 12px !important;
   font-weight: 400 !important;
   color: var(--text-base) !important;
-  border-radius: 4px !important;
+  border-radius: var(--radius-sm, 4px) !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .session-search-bar__scope [data-slot="select-select-trigger"]:hover {
@@ -201,19 +156,17 @@
 .session-search-bar__actions [data-component="icon-button"] {
   width: 24px !important;
   height: 24px !important;
-  border-radius: 4px !important;
+  border-radius: var(--radius-sm, 4px) !important;
   padding: 0 !important;
   color: var(--icon-base, var(--text-weak));
-  transition: all 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .session-search-bar__actions [data-component="icon-button"]:hover:not(:disabled) {
   background: var(--surface-base-hover);
   color: var(--text-strong);
-}
-
-.session-search-bar__actions [data-component="icon-button"]:active:not(:disabled) {
-  transform: scale(0.94);
 }
 
 .session-search-bar__actions [data-component="icon-button"]:disabled {
@@ -228,10 +181,10 @@
     left: 8px;
     max-width: none;
     height: auto;
-    min-height: 38px;
+    min-height: 36px;
     flex-wrap: wrap;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     padding-inline: 8px;
   }
 
@@ -240,18 +193,17 @@
   }
 }
 
-/* 搜索结果定位高亮：精准高亮消息本身与气泡，带柔和光晕，不再拉伸整屏直角大框 */
+/* 搜索命中定位：保留行属性供虚拟列表定位，不给父消息气泡添加蓝色描边。
+   当前命中由词级 highlight 单独表达，避免命中助手回复时错误框住对应的用户消息。 */
 [data-timeline-row="UserMessage"][data-search-active] {
-  border-radius: var(--radius-lg, 10px);
-  background: color-mix(in srgb, var(--v2-overlay-simple-overlay-hover, rgba(59, 130, 246, 0.08)) 45%, transparent);
-  transition: background-color 0.2s ease;
+  scroll-margin-top: 56px;
 }
 
-[data-timeline-row="UserMessage"][data-search-active] [data-component="user-message"] [data-slot="user-message-text"],
-[data-timeline-row="UserMessage"][data-search-active] [data-slot="user-message-body"] {
-  outline: 2px solid var(--border-focus, var(--v2-border-border-focus, #3b82f6));
-  outline-offset: 2px;
-  box-shadow: 0 0 16px -2px rgba(59, 130, 246, 0.35);
-  border-radius: var(--radius-md, 8px);
-  transition: outline 0.15s ease, box-shadow 0.15s ease;
+/* 普通命中浅黄，当前命中更深一层黄；两个 highlight 集合互斥，避免层叠顺序不确定。 */
+::highlight(session-search-hit) {
+  background-color: rgb(from var(--surface-warning-base, #fcf3cb) r g b / 0.55);
+}
+
+::highlight(session-search-hit-current) {
+  background-color: rgb(from var(--surface-warning-strong, #fbdd46) r g b / 0.85);
 }

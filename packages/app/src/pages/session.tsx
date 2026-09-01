@@ -109,6 +109,7 @@ import {
   findSessionSearchMatches,
   createSessionSearchHydrator,
   createSessionSearchRunGate,
+  nearestSessionSearchMatchIndex,
   nextSessionSearchMatchIndex,
   preserveSessionSearchActiveIndex,
   type SessionSearchScope,
@@ -607,7 +608,7 @@ export default function Page() {
 
   const setSearchQuery = (query: string) => {
     if (searchQueryTimer !== undefined) window.clearTimeout(searchQueryTimer)
-    searchQueryTimer = window.setTimeout(() => setSearch("query", query), 100)
+    searchQueryTimer = window.setTimeout(() => setSearch("query", query), 200)
   }
 
   const resetSearch = () => {
@@ -685,7 +686,23 @@ export default function Page() {
       ([id, _query, _scope, matches]) => {
         if (!id) return
         const previous = previousSearchMatch
-        const nextIndex = preserveSessionSearchActiveIndex(previousSearchMatch, matches, search.activeIndex)
+        // 首次出现命中结果时（刚打开搜索/输入关键词），有明确消息锚点就取锚点之后（含）的第一个命中；
+        // 没有明确锚点时从第一个结果开始。之后的更新（继续打字、历史加载）沿用 preserve 逻辑，保持当前查看的命中稳定。
+        const rowIndexes = new Map(visibleUserMessages().map((message, index) => [message.id, index]))
+        const nextIndex =
+          previous === undefined
+            ? nearestSessionSearchMatchIndex({
+                matches,
+                // 没有明确的消息锚点时从第一个结果开始；cursor() 只是视口测量值，
+                // 不应在首次搜索时把当前结果跳到列表末尾。
+                anchorRowID: store.messageId && messageMark === scrollMark ? store.messageId : undefined,
+                rowIndexOf: (rowID) => rowIndexes.get(rowID) ?? -1,
+                rowMessageID: (messageID) => {
+                  const message = sync().data.message[id]?.find((item) => item.id === messageID)
+                  return message?.role === "assistant" ? (message.parentID ?? messageID) : messageID
+                },
+              })
+            : preserveSessionSearchActiveIndex(previousSearchMatch, matches, search.activeIndex)
         const nextMatch = matches[nextIndex]
         setSearch("activeIndex", nextIndex)
         previousSearchMatch = nextMatch
@@ -2292,6 +2309,9 @@ export default function Page() {
                   <MessageTimeline
                     actions={actions}
                     activeSearchMessageID={activeSearchMessageID()}
+                    searchQuery={search.open ? search.query : undefined}
+                    searchScope={search.scope}
+                    activeSearchMatch={activeSearchMatch()}
                     scroll={ui.scroll}
                     onResumeScroll={resumeScroll}
                     setScrollRef={setScrollRef}

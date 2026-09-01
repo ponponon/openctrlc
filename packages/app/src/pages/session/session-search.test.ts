@@ -4,12 +4,16 @@ import {
   createSessionSearchDocuments,
   createSessionSearchIndex,
   findSessionSearchMatches,
+  findTextMatches,
   hydrateSessionSearchHistory,
+  nearestSessionSearchMatchIndex,
   nextSessionSearchMatchIndex,
   preserveSessionSearchActiveIndex,
   createSessionSearchHydrator,
   createSessionSearchRunGate,
   searchableText,
+  sessionSearchPartHits,
+  sessionSearchUserMessageHits,
 } from "./session-search"
 import { createHistoryAnchorRegistry } from "./timeline/history-anchor"
 
@@ -256,7 +260,10 @@ describe("findSessionSearchMatches", () => {
   })
 
   test("returns no matches for an empty query or missing text", () => {
-    const documents = [{ messageID: "message-1", text: "content" }, { messageID: "message-2", text: "" }]
+    const documents = [
+      { messageID: "message-1", text: "content" },
+      { messageID: "message-2", text: "" },
+    ]
     expect(findSessionSearchMatches(documents, "")).toEqual([])
     expect(findSessionSearchMatches(documents, "missing")).toEqual([])
   })
@@ -371,7 +378,13 @@ describe("hydrateSessionSearchHistory", () => {
       calls += 1
     }
 
-    await hydrateSessionSearchHistory({ sessionID: () => undefined, ready: () => true, more: () => true, loading: () => false, loadMore })
+    await hydrateSessionSearchHistory({
+      sessionID: () => undefined,
+      ready: () => true,
+      more: () => true,
+      loading: () => false,
+      loadMore,
+    })
     const hydration = hydrateSessionSearchHistory({
       sessionID: () => "session-1",
       more: () => calls < 1,
@@ -728,5 +741,156 @@ describe("createHistoryAnchorRegistry", () => {
     search?.restore(true)
 
     expect(restored).toHaveLength(2)
+  })
+})
+
+describe("findTextMatches", () => {
+  test("finds all case-insensitive occurrences with original offsets", () => {
+    expect(findTextMatches("Foo foo FOO", "foo")).toEqual([
+      { start: 0, end: 3 },
+      { start: 4, end: 7 },
+      { start: 8, end: 11 },
+    ])
+  })
+
+  test("handles multi-codepoint characters without offset drift", () => {
+    const text = "🌍 earth 🌍 earth"
+    expect(findTextMatches(text, "earth")).toEqual([
+      { start: 3, end: 8 },
+      { start: 12, end: 17 },
+    ])
+  })
+
+  test("returns empty for empty needle or no match", () => {
+    expect(findTextMatches("hello", "")).toEqual([])
+    expect(findTextMatches("hello", "world")).toEqual([])
+  })
+})
+
+describe("sessionSearchUserMessageHits", () => {
+  const parts = [
+    part({ type: "text", id: "part-1", text: "你是谁" }),
+    part({ type: "file", mime: "image/png", url: "data:image/png;base64,abc" }),
+    part({ type: "text", id: "part-2", text: "你是什么模型" }),
+  ]
+
+  test("marks the active hit by converting document offsets to part offsets", () => {
+    // 文档 = "你是谁\n你是什么模型"，第二个 text part 的文档起点是 3 + 1（\n 分隔符）= 4
+    const hits = sessionSearchUserMessageHits({
+      parts,
+      scope: "conversation",
+      query: "你是",
+      textPartID: "part-2",
+      active: { start: 4, end: 6 },
+    })
+
+    expect(hits).toEqual([{ start: 0, end: 2, active: true }])
+  })
+
+  test("returns hits without active flag when the active match belongs elsewhere", () => {
+    const hits = sessionSearchUserMessageHits({
+      parts,
+      scope: "conversation",
+      query: "你是",
+      textPartID: "part-1",
+      active: { start: 4, end: 6 },
+    })
+
+    expect(hits).toEqual([{ start: 0, end: 2, active: false }])
+  })
+
+  test("returns empty when the text part is missing", () => {
+    expect(
+      sessionSearchUserMessageHits({
+        parts,
+        scope: "conversation",
+        query: "你是",
+        textPartID: "missing",
+      }),
+    ).toEqual([])
+  })
+})
+
+describe("sessionSearchPartHits", () => {
+  test("marks an assistant text part's active occurrence", () => {
+    const parts = [
+      part({ type: "reasoning", id: "reasoning-1", text: "先想一下" }),
+      part({ type: "text", id: "answer-1", text: "你好，你好" }),
+    ]
+
+    expect(
+      sessionSearchPartHits({
+        parts,
+        scope: "all",
+        query: "你好",
+        partID: "answer-1",
+        active: { start: 8, end: 10 },
+      }),
+    ).toEqual([
+      { start: 0, end: 2, active: false },
+      { start: 3, end: 5, active: true },
+    ])
+  })
+})
+
+describe("nearestSessionSearchMatchIndex", () => {
+  // rowID 形如 "u-3"，助手消息映射到父用户消息 "a-3" -> "u-3"
+  const rowMessageID = (messageID: string) => (messageID.startsWith("a-") ? "u-" + messageID.slice(2) : messageID)
+  const rowIndexOf = (rowID: string) => {
+    const index = Number(rowID.slice(2))
+    return index >= 0 && index < 6 ? index : -1
+  }
+  const matches = (ids: string[]) => ids.map((messageID, index) => ({ messageID, start: index, end: index }))
+
+  test("picks the first match at or after the anchor message", () => {
+    expect(
+      nearestSessionSearchMatchIndex({
+        matches: matches(["u-1", "a-2", "u-3", "u-5"]),
+        anchorRowID: "u-3",
+        rowIndexOf,
+        rowMessageID,
+      }),
+    ).toBe(2)
+  })
+
+  test("matches inside the anchor message itself count as at-or-after", () => {
+    expect(
+      nearestSessionSearchMatchIndex({
+        matches: matches(["u-1", "a-2", "u-3"]),
+        anchorRowID: "u-2",
+        rowIndexOf,
+        rowMessageID,
+      }),
+    ).toBe(1)
+  })
+
+  test("falls back to the nearest match before the anchor when none follows", () => {
+    expect(
+      nearestSessionSearchMatchIndex({
+        matches: matches(["u-1", "a-2"]),
+        anchorRowID: "u-4",
+        rowIndexOf,
+        rowMessageID,
+      }),
+    ).toBe(1)
+  })
+
+  test("returns 0 without an anchor or when the anchor is unknown", () => {
+    expect(
+      nearestSessionSearchMatchIndex({
+        matches: matches(["u-1", "u-2"]),
+        anchorRowID: undefined,
+        rowIndexOf,
+        rowMessageID,
+      }),
+    ).toBe(0)
+    expect(
+      nearestSessionSearchMatchIndex({
+        matches: matches(["u-1", "u-2"]),
+        anchorRowID: "u-99",
+        rowIndexOf,
+        rowMessageID,
+      }),
+    ).toBe(0)
   })
 })

@@ -156,6 +156,18 @@
       unicode-bidi: isolate;
     }
 
+    /* 会话内搜索的词级命中标记：普通命中浅黄、当前命中亮黄（跟随主题 warning token） */
+    [data-search-hit] {
+      border-radius: 3px;
+      background: var(--surface-warning-base, #fcf3cb);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--border-warning-base, #e8d479) 60%, transparent);
+    }
+
+    [data-search-hit-active] {
+      background: var(--surface-warning-strong, #fbdd46);
+      box-shadow: 0 0 0 1px var(--border-warning-hover, #d8c158);
+    }
+
     max-width: 100%;
   }
 

@@ -1,8 +1,53 @@
 import { expect, test } from "@playwright/test"
 import { base64Encode } from "@openctrlc/core/util/encode"
-import { historyMessages, session as makeSession, setupTimeline } from "./fixture"
+import {
+  assistantMessage,
+  historyMessages,
+  session as makeSession,
+  setupTimeline,
+  textPart,
+  userMessage,
+} from "./fixture"
 
 test.describe("session search timeline reveal", () => {
+  test("distinguishes the active assistant hit without outlining the parent user bubble", async ({ page }) => {
+    const userID = "msg_0998_search_active_user"
+    await setupTimeline(page, {
+      messages: [
+        userMessage(undefined, { id: userID }),
+        assistantMessage([textPart("prt_0999_search_active_answer", "你好，助手回复。你好")], {
+          id: "msg_0999_search_active_assistant",
+          parentID: userID,
+        }),
+      ],
+      settings: { newLayoutDesigns: true },
+      viewport: { width: 900, height: 420 },
+    })
+
+    await page.keyboard.press("Control+f")
+    const input = page.getByRole("textbox", { name: "Search session messages" })
+    await input.fill("你好")
+    await expect(page.getByRole("search")).toContainText("1 of 2 results")
+
+    const highlightState = () =>
+      page.evaluate(() => {
+        const normal = CSS.highlights?.get("session-search-hit")
+        const active = CSS.highlights?.get("session-search-hit-current")
+        return {
+          normal: normal ? [...normal].map((range) => range.startOffset) : [],
+          active: active ? [...active].map((range) => range.startOffset) : [],
+        }
+      })
+
+    await expect.poll(highlightState).toEqual({ normal: [8], active: [0] })
+    await expect(
+      page.locator(`[data-timeline-row="UserMessage"][data-message-id="${userID}"] [data-slot="user-message-text"]`),
+    ).toHaveCSS("box-shadow", "none")
+
+    await input.press("Enter")
+    await expect.poll(highlightState).toEqual({ normal: [0], active: [8] })
+  })
+
   for (const newLayoutDesigns of [true, false]) {
     test(`reveals and marks an offscreen match in the ${newLayoutDesigns ? "new" : "legacy"} layout`, async ({ page }) => {
       await setupTimeline(page, {

@@ -68,7 +68,12 @@ import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { useTabs } from "@/context/tabs"
 import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/session-route"
-import { isActiveSearchMessage } from "@/pages/session/session-search"
+import {
+  isActiveSearchMessage,
+  sessionSearchPartHits,
+  sessionSearchUserMessageHits,
+  type SessionSearchScope,
+} from "@/pages/session/session-search"
 import { includeUserMessageRow } from "./user-message-row-index"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
@@ -263,6 +268,9 @@ export function MessageTimeline(props: {
   anchor: (id: string) => string
   setRevealMessage?: (fn: (id: string) => void) => void
   activeSearchMessageID?: string
+  searchQuery?: string
+  searchScope?: SessionSearchScope
+  activeSearchMatch?: { messageID: string; start: number; end: number }
   setScrollToEnd?: (fn: () => void) => void
   setHistoryAnchor?: (handlers?: { capture: (kind: HistoryAnchorKind) => HistoryAnchor }) => void
 }) {
@@ -469,7 +477,10 @@ export function MessageTimeline(props: {
       const fixed = [...new Set([...resizePinnedIndexes, ...indexes, ...(active < 0 ? [] : [active])])].sort(
         (a, b) => a - b,
       )
-      return filterVirtualIndexes(includeUserMessageRow(fixed, searchID, userMessageRowIndex(), range.count), range.count)
+      return filterVirtualIndexes(
+        includeUserMessageRow(fixed, searchID, userMessageRowIndex(), range.count),
+        range.count,
+      )
     },
   })
   const resizeItem = virtualizer.resizeItem
@@ -1078,6 +1089,32 @@ export function MessageTimeline(props: {
       if (!item) return
       return partDefaultOpen(item, settings.general.shellToolPartsExpanded(), settings.general.editToolPartsExpanded())
     })
+    // 词级命中高亮只挂在会被搜索文档统计的 part 上：text 始终计入，reasoning 仅 scope=all 计入
+    const highlightQuery = createMemo(() => {
+      const item = part()
+      const query = props.searchQuery
+      if (!query || !item) return undefined
+      if (item.type === "text") return query
+      if (item.type === "reasoning" && props.searchScope === "all") return query
+      return undefined
+    })
+    const highlightActiveIndex = createMemo(() => {
+      const item = part()
+      const currentMessage = message()
+      const query = props.searchQuery
+      if (!item || !currentMessage || !query) return undefined
+      if (item.type !== "text" && item.type !== "reasoning") return undefined
+      const active = props.activeSearchMatch?.messageID === currentMessage.id ? props.activeSearchMatch : undefined
+      const hits = sessionSearchPartHits({
+        parts: getMsgParts(currentMessage.id),
+        scope: props.searchScope ?? "conversation",
+        query,
+        partID: item.id,
+        active,
+      })
+      const index = hits.findIndex((hit) => hit.active)
+      return index >= 0 ? index : undefined
+    })
 
     return (
       <Show when={message()}>
@@ -1096,6 +1133,8 @@ export function MessageTimeline(props: {
                 deferToolContent
                 virtualizeDiff={false}
                 onContentRendered={onSizeChange}
+                highlightQuery={highlightQuery()}
+                highlightActiveIndex={highlightActiveIndex()}
               />
             )}
           </Show>
@@ -1196,6 +1235,24 @@ export function MessageTimeline(props: {
           if (!settings.general.newLayoutDesigns()) return []
           return getMsgParts(userMessageRow().userMessageID).flatMap((part) => MessageComment.fromPart(part) ?? [])
         })
+        // 词级搜索命中：与 UserMessageDisplay 的可见文本选取保持一致（第一个非 synthetic 的 text part）
+        const searchHits = createMemo(() => {
+          const query = props.searchQuery
+          const msg = message()
+          if (!query || !msg) return undefined
+          const parts = getMsgParts(userMessageRow().userMessageID)
+          const textPart = parts.find((part) => part.type === "text" && !part.synthetic)
+          if (!textPart) return undefined
+          const active =
+            props.activeSearchMatch?.messageID === userMessageRow().userMessageID ? props.activeSearchMatch : undefined
+          return sessionSearchUserMessageHits({
+            parts,
+            scope: props.searchScope ?? "conversation",
+            query,
+            textPartID: textPart.id,
+            active,
+          })
+        })
         return (
           <TimelineRowFrame row={userMessageRow}>
             <Show when={message()}>
@@ -1208,6 +1265,7 @@ export function MessageTimeline(props: {
                       actions={props.actions}
                       useV2Actions={settings.general.newLayoutDesigns()}
                       comments={messageComments()}
+                      searchHits={searchHits()}
                     />
                   </div>
                 </div>

@@ -45,6 +45,7 @@ import { ToolErrorCard } from "./tool-error-card"
 import { Checkbox } from "@openctrlc/ui/checkbox"
 import { DiffChanges } from "@openctrlc/ui/diff-changes"
 import { Markdown } from "./markdown"
+import { SearchTextHighlight } from "./search-highlight"
 import { ImagePreview } from "@openctrlc/ui/image-preview"
 import { getDirectory as _getDirectory, getFilename } from "@openctrlc/core/util/path"
 import { AttachmentCardV2 } from "../v2/components/attachment-card-v2"
@@ -172,7 +173,11 @@ export interface MessageProps {
   showReasoningSummaries?: boolean
   useV2Actions?: boolean
   comments?: UserMessageComment[]
+  searchHits?: UserMessageSearchHit[]
 }
+
+// 会话内搜索的词级命中区间（相对消息可见文本的偏移），active 为当前正在查看的那一处
+export type UserMessageSearchHit = { start: number; end: number; active?: boolean }
 
 export type SessionAction = (input: { sessionID: string; messageID: string }) => Promise<void> | void
 
@@ -204,6 +209,8 @@ export interface MessagePartProps {
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   useV2Actions?: boolean
+  highlightQuery?: string
+  highlightActiveIndex?: number
 }
 
 function MessageActionButton(
@@ -945,6 +952,7 @@ export function Message(props: MessageProps) {
             actions={props.actions}
             useV2Actions={props.useV2Actions}
             comments={props.comments}
+            searchHits={props.searchHits}
           />
         )}
       </Match>
@@ -1185,6 +1193,7 @@ export function UserMessageDisplay(props: {
   actions?: UserActions
   useV2Actions?: boolean
   comments?: UserMessageComment[]
+  searchHits?: UserMessageSearchHit[]
 }) {
   const data = useData()
   const dialog = useDialog()
@@ -1330,11 +1339,7 @@ export function UserMessageDisplay(props: {
             dir="auto"
             data-comments={messageComments().length > 0 ? "true" : undefined}
           >
-            <HighlightedText
-              text={text()}
-              references={inlineFiles()}
-              agents={agents()}
-            />
+            <HighlightedText text={text()} references={inlineFiles()} agents={agents()} searchHits={props.searchHits} />
             <Show when={messageComments().length > 0}>
               <UserMessageComments comments={messageComments()} bounded />
             </Show>
@@ -1396,17 +1401,20 @@ export function UserMessageDisplay(props: {
   )
 }
 
-type HighlightSegment = { text: string; type?: "file" | "agent" }
+type HighlightSegment = { text: string; type?: "file" | "agent"; hit?: boolean; active?: boolean }
 
 function HighlightedText(props: {
   text: string
   references: FilePart[]
   agents: AgentPart[]
+  searchHits?: UserMessageSearchHit[]
 }) {
   const segments = createMemo(() => {
     const text = props.text
 
-    const allRefs: { start: number; end: number; type: "file" | "agent" }[] = [
+    // file/agent 引用高亮区间与搜索命中区间合并为一条扁平的 segment 流，
+    // 一个 span 可同时携带两种标记（如关键词正好落在 @文件引用里）
+    const refs: { start: number; end: number; type: "file" | "agent" }[] = [
       ...props.references
         .filter((r) => r.source?.text?.start !== undefined && r.source?.text?.end !== undefined)
         .map((r) => ({ start: r.source!.text!.start, end: r.source!.text!.end, type: "file" as const })),
@@ -1415,28 +1423,54 @@ function HighlightedText(props: {
         .map((a) => ({ start: a.source!.start, end: a.source!.end, type: "agent" as const })),
     ].sort((a, b) => a.start - b.start)
 
+    const hits = (props.searchHits ?? []).filter((hit) => hit.end > hit.start)
+
+    if (refs.length === 0 && hits.length === 0) {
+      return text ? [{ text }] : []
+    }
+
+    const boundaries = new Set<number>([0, text.length])
+    for (const ref of refs) {
+      boundaries.add(Math.max(0, Math.min(text.length, ref.start)))
+      boundaries.add(Math.max(0, Math.min(text.length, ref.end)))
+    }
+    for (const hit of hits) {
+      boundaries.add(Math.max(0, Math.min(text.length, hit.start)))
+      boundaries.add(Math.max(0, Math.min(text.length, hit.end)))
+    }
+    const points = [...boundaries].sort((a, b) => a - b)
+
     const result: HighlightSegment[] = []
-    let lastIndex = 0
-
-    for (const ref of allRefs) {
-      if (ref.start < lastIndex) continue
-
-      if (ref.start > lastIndex) {
-        result.push({ text: text.slice(lastIndex, ref.start) })
+    for (let index = 0; index < points.length - 1; index++) {
+      const start = points[index]
+      const end = points[index + 1]
+      if (start >= end) continue
+      const ref = refs.find((r) => r.start <= start && end <= r.end)
+      const hit = hits.find((h) => h.start <= start && end <= h.end)
+      const segment: HighlightSegment = { text: text.slice(start, end) }
+      if (ref) segment.type = ref.type
+      if (hit) {
+        segment.hit = true
+        segment.active = hit.active
       }
-
-      result.push({ text: text.slice(ref.start, ref.end), type: ref.type })
-      lastIndex = ref.end
+      result.push(segment)
     }
-
-    if (lastIndex < text.length) {
-      result.push({ text: text.slice(lastIndex) })
-    }
-
     return result
   })
 
-  return <For each={segments()}>{(segment) => <span data-highlight={segment.type}>{segment.text}</span>}</For>
+  return (
+    <For each={segments()}>
+      {(segment) => (
+        <span
+          data-highlight={segment.type}
+          data-search-hit={segment.hit ? "" : undefined}
+          data-search-hit-active={segment.active ? "" : undefined}
+        >
+          {segment.text}
+        </span>
+      )}
+    </For>
+  )
 }
 
 export function Part(props: MessagePartProps) {
@@ -1457,6 +1491,8 @@ export function Part(props: MessagePartProps) {
         showAssistantCopyPartID={props.showAssistantCopyPartID}
         turnDurationMs={props.turnDurationMs}
         useV2Actions={props.useV2Actions}
+        highlightQuery={props.highlightQuery}
+        highlightActiveIndex={props.highlightActiveIndex}
       />
     </Show>
   )
@@ -1761,7 +1797,9 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     <Show when={text()}>
       <div data-component="text-part" data-timeline-part-id={part().id}>
         <div data-slot="text-part-body">
-          <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+          <SearchTextHighlight query={props.highlightQuery} activeOccurrence={props.highlightActiveIndex}>
+            <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+          </SearchTextHighlight>
         </div>
         <Show when={showCopy()}>
           <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
@@ -1796,7 +1834,9 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
   return (
     <Show when={text()}>
       <div data-component="reasoning-part" data-timeline-part-id={part().id}>
-        <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+        <SearchTextHighlight query={props.highlightQuery} activeOccurrence={props.highlightActiveIndex}>
+          <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+        </SearchTextHighlight>
       </div>
     </Show>
   )
