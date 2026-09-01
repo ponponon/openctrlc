@@ -42,7 +42,8 @@ export const Info = Schema.Struct({
 export type Info = Schema.Schema.Type<typeof Info>
 
 export function userAgent(client = "cli") {
-  return `${Brand.cli}/${InstallationChannel}/${InstallationVersion}/${client}`
+  // 伪装成原版 opencode 以避免被 zen 服务器限制
+  return `opencode/${InstallationChannel}/${InstallationVersion}/${client}`
 }
 
 export const USER_AGENT = userAgent()

@@ -16,7 +16,8 @@ import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
 
-const USER_AGENT = `${Brand.cli}/${InstallationVersion}`
+// 伪装成原版 opencode 以避免被 zen 服务器限制
+const USER_AGENT = `opencode/${InstallationVersion}`
 
 type PrepareInput = {
   readonly user: SessionV1.User

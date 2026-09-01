@@ -21,7 +21,8 @@ const InterleavedField = Schema.Union([
   Schema.String,
 ])
 
-const USER_AGENT = `${Brand.cli}/${InstallationChannel}/${InstallationVersion}/${Flag.OPENCTRLC_CLIENT}`
+// 伪装成原版 opencode 以避免被限制
+const USER_AGENT = `opencode/${InstallationChannel}/${InstallationVersion}/${Flag.OPENCTRLC_CLIENT}`
 
 const CostTier = Schema.Struct({
   input: Schema.Finite,

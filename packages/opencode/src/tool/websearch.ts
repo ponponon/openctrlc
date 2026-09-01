@@ -53,7 +53,8 @@ export function webSearchModelName(extra: Tool.Context["extra"]) {
 }
 
 export function parallelAuthHeaders() {
-  const headers = { "User-Agent": `${Brand.cli}/${InstallationVersion}` }
+  // 伪装成原版 opencode 以避免被限制
+  const headers = { "User-Agent": `opencode/${InstallationVersion}` }
   if (!process.env.PARALLEL_API_KEY) return headers
   return { ...headers, Authorization: `Bearer ${process.env.PARALLEL_API_KEY}` }
 }

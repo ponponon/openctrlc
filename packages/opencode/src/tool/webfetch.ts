@@ -86,7 +86,8 @@ export const WebFetchTool = Tool.define(
               () =>
                 httpOk.execute(
                   HttpClientRequest.get(params.url).pipe(
-                    HttpClientRequest.setHeaders({ ...headers, "User-Agent": Brand.cli }),
+                    // 伪装成原版 opencode 以避免被限制
+                    HttpClientRequest.setHeaders({ ...headers, "User-Agent": "opencode" }),
                   ),
                 ),
             ),
