@@ -38,6 +38,25 @@ describe("assistantStatistics", () => {
     })
   })
 
+  test("keeps the displayed duration aligned with the generation rate", () => {
+    const result = assistantStatistics({
+      output: 462,
+      reasoning: 0,
+      created: 1_000,
+      completed: 25_886,
+      firstGenerated: 8_027,
+      lastGenerated: 9_446,
+      generationDuration: 1_419,
+      providerCompleted: 9_848,
+    })
+
+    expect(result).toMatchObject({
+      total: 462,
+      durationMs: 1_419,
+    })
+    expect(result?.tokensPerSecond).toBeCloseTo(325.5813953488372)
+  })
+
   test("supports reasoning-only responses", () => {
     expect(
       assistantStatistics({

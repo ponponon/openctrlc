@@ -1713,27 +1713,6 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     return match?.models?.[message.modelID]?.name ?? message.modelID
   })
 
-  const duration = createMemo(() => {
-    if (props.message.role !== "assistant") return ""
-    const message = props.message as AssistantMessage
-    const completed = message.time.completed
-    const ms =
-      typeof props.turnDurationMs === "number"
-        ? props.turnDurationMs
-        : typeof completed === "number"
-          ? completed - message.time.created
-          : -1
-    if (!(ms >= 0)) return ""
-    const total = Math.round(ms / 1000)
-    if (total < 60) return i18n.t("ui.message.duration.seconds", { count: numfmt().format(total) })
-    const minutes = Math.floor(total / 60)
-    const seconds = total % 60
-    return i18n.t("ui.message.duration.minutesSeconds", {
-      minutes: numfmt().format(minutes),
-      seconds: numfmt().format(seconds),
-    })
-  })
-
   const statistics = createMemo(() => {
     if (props.message.role !== "assistant") return
     const message = props.message as AssistantMessage
@@ -1747,6 +1726,29 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
       lastGenerated: message.time?.lastGenerated,
       generationDuration: message.time?.generationDuration,
       providerCompleted: message.time?.providerCompleted,
+    })
+  })
+
+  const duration = createMemo(() => {
+    if (props.message.role !== "assistant") return ""
+    const message = props.message as AssistantMessage
+    const completed = message.time.completed
+    const ms =
+      statistics()?.durationMs ??
+      (typeof props.turnDurationMs === "number"
+        ? props.turnDurationMs
+        : typeof completed === "number"
+          ? completed - message.time.created
+          : -1)
+    if (!(ms >= 0)) return ""
+    const total = ms / 1000
+    if (total < 60) return i18n.t("ui.message.duration.seconds", { count: numfmt().format(total) })
+    const rounded = Math.round(total)
+    const minutes = Math.floor(rounded / 60)
+    const seconds = rounded % 60
+    return i18n.t("ui.message.duration.minutesSeconds", {
+      minutes: numfmt().format(minutes),
+      seconds: numfmt().format(seconds),
     })
   })
 
