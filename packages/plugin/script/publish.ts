@@ -15,13 +15,15 @@ const originalText = await Bun.file("package.json").text()
 const pkg = JSON.parse(originalText) as {
   name: string
   version: string
-  exports: Record<string, string>
+  exports: Record<string, string | { bun?: string; import?: string; types?: string }>
 }
 if (await published(pkg.name, pkg.version)) {
   console.log(`already published ${pkg.name}@${pkg.version}`)
 } else {
   for (const [key, value] of Object.entries(pkg.exports)) {
-    const file = value.replace("./src/", "./dist/").replace(".ts", "")
+    const source = typeof value === "string" ? value : (value.bun ?? value.import ?? value.types)
+    if (!source) throw new Error(`Missing source export for ${key}`)
+    const file = source.replace("./src/", "./dist/").replace(".ts", "")
     // @ts-ignore
     pkg.exports[key] = {
       import: file + ".js",
