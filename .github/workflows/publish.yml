@@ -47,8 +47,39 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       repo: ${{ steps.version.outputs.repo }}
 
-  build-cli:
+  ensure-tag:
     needs: version
+    runs-on: ubuntu-24.04
+    if: github.repository == 'ponponon/openctrlc'
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          fetch-depth: 0
+
+      - name: Ensure release tag points to the workflow commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+          TARGET: ${{ github.sha }}
+        run: |
+          git fetch origin --tags --force
+          if git rev-parse --verify --quiet "refs/tags/${TAG}^{commit}" >/dev/null; then
+            actual="$(git rev-parse "${TAG}^{commit}")"
+            if [ "$actual" != "$TARGET" ]; then
+              echo "Tag ${TAG} points to ${actual}, expected ${TARGET}" >&2
+              exit 1
+            fi
+            echo "Verified ${TAG} at ${TARGET}"
+            exit 0
+          fi
+
+          git tag -a "$TAG" "$TARGET" -m "Release $TAG"
+          git push origin "refs/tags/$TAG"
+
+  build-cli:
+    needs:
+      - version
+      - ensure-tag
     runs-on: ubuntu-24.04
     if: github.repository == 'ponponon/openctrlc'
     steps:

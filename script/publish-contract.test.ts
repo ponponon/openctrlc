@@ -13,7 +13,7 @@ test("GitHub release workflow is manual and CLI-only", async () => {
 
   expect(workflow.on?.push).toBeUndefined()
   expect(workflow.on?.workflow_dispatch).toBeDefined()
-  expect(Object.keys(workflow.jobs ?? {})).toEqual(["version", "build-cli", "publish"])
+  expect(Object.keys(workflow.jobs ?? {})).toEqual(["version", "ensure-tag", "build-cli", "publish"])
 
   for (const job of Object.values(workflow.jobs ?? {})) {
     expect(job["runs-on"]).toBe("ubuntu-24.04")
@@ -41,6 +41,16 @@ test("GitHub release workflow is manual and CLI-only", async () => {
   expect(buildSource).toContain("actions/upload-artifact")
   expect(buildSource).toContain("packages/opencode/dist/*.zip")
   expect(buildSource).toContain("packages/opencode/dist/*.tar.gz")
+
+  const ensureTag = workflow.jobs?.["ensure-tag"]
+  expect(ensureTag?.needs).toEqual("version")
+  expect(ensureTag?.["runs-on"]).toBe("ubuntu-24.04")
+  const ensureTagSource = JSON.stringify(ensureTag?.steps ?? [])
+  expect(ensureTagSource).toContain("git fetch origin --tags --force")
+  expect(ensureTagSource).toContain("git rev-parse")
+  expect(ensureTagSource).toContain("git tag -a")
+  expect(ensureTagSource).toContain("git push origin")
+  expect(ensureTagSource).toContain("TARGET")
 
   const publish = workflow.jobs?.publish
   const publishSource = JSON.stringify(publish?.steps ?? [])

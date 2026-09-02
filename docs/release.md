@@ -1,10 +1,17 @@
 # Release
 
-## CLI and npm packages
+## Current GitHub Actions release
 
-正式发布 CLI 时，不能只修改桌面端的默认版本号。必须先构建并发布所有平台包，再让桌面端使用这个版本。
+当前 GitHub Actions 发布流程是手动触发的 CLI 发布流程，不会因为向 `dev` 推送普通 commit 自动发布。
+在 Actions 页面手动运行 `publish`，填写 `version` 或选择 `bump`。
 
-从仓库根目录执行：
+流程会先创建 draft GitHub Release，然后显式确认对应 tag 指向本次工作流 commit；如果 tag 缺失，会创建并推送它。之后构建并上传 CLI 压缩包。
+
+当前流程不会调用根目录的 `script/publish.ts`，因此不会发布 npm 包、桌面端安装包或执行版本同步 commit。
+
+## Full package publishing
+
+如果要执行包含 npm 包的完整发布流程，从仓库根目录执行：
 
 ```bash
 OPENCTRLC_VERSION=<version> \
