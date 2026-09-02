@@ -12,6 +12,8 @@ import path from "path"
 import { FSUtil } from "@openctrlc/core/fs-util"
 import { Effect, Schema } from "effect"
 import type { InstanceContext } from "@/project/instance-context"
+import { opencodeDatabasePath, readOpencodeSession } from "../opencode-database"
+import { SessionID } from "../../session/schema"
 
 const decodeMessageInfo = Schema.decodeUnknownSync(SessionV1.Info)
 const decodePart = Schema.decodeUnknownSync(SessionV1.Part)
@@ -93,24 +95,43 @@ type ExportData = { info: SDKSession; messages: Array<{ info: Message; parts: Pa
 
 export const ImportCommand = effectCmd({
   command: "import <file>",
-  describe: "import session data from JSON file or URL",
+  describe: "import session data from JSON file, URL, or opencode",
   builder: (yargs) =>
-    yargs.positional("file", {
-      describe: "path to JSON file or share URL",
-      type: "string",
-      demandOption: true,
-    }),
+    yargs
+      .positional("file", {
+        describe: "path to JSON file, share URL, or opencode session ID",
+        type: "string",
+        demandOption: true,
+      })
+      .option("opencode-db", {
+        describe: "path to the opencode database",
+        type: "string",
+      }),
   handler: Effect.fn("Cli.import")(function* (args) {
     const ctx = yield* InstanceRef
     if (!ctx) return yield* Effect.die("InstanceRef not provided")
-    return yield* runImport(args.file, ctx)
+    return yield* runImport(args.file, ctx, args.opencodeDb)
   }),
 })
 
-const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: InstanceContext) {
+const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: InstanceContext, opencodeDb?: string) {
   const share = yield* ShareNext.Service
   const fs = yield* FSUtil.Service
   const { db } = yield* Database.Service
+
+  if (/^ses_[a-zA-Z0-9]+$/.test(file)) {
+    const databasePath = opencodeDatabasePath(opencodeDb)
+    const exportData = yield* Effect.try({
+      try: () => readOpencodeSession(databasePath, SessionID.make(file)),
+      catch: (error) =>
+        new CliError({
+          message: `Failed to read opencode session from ${databasePath}: ${error instanceof Error ? error.message : String(error)}`,
+        }),
+    })
+    if (!exportData) return yield* Effect.fail(new CliError({ message: `Session not found in opencode: ${file}` }))
+    yield* persistImport(exportData, ctx, db)
+    return
+  }
 
   let exportData: ExportData | undefined
 
@@ -176,6 +197,14 @@ const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: Ins
     return
   }
 
+  yield* persistImport(exportData, ctx, db)
+})
+
+const persistImport = Effect.fn("Cli.import.persist")(function* (
+  exportData: ExportData,
+  ctx: InstanceContext,
+  db: Database.Interface["db"],
+) {
   const info = Schema.decodeUnknownSync(Session.Info)({
     ...exportData.info,
     projectID: ctx.project.id,

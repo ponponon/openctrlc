@@ -34,10 +34,10 @@ Commands:
   openctrlc mcp debug <name>   debug OAuth connection for an MCP server
 
 Options:
-  -h, --help        show help                                                              [boolean]
-  -v, --version     show version number                                                    [boolean]
-      --print-logs  print logs to stderr                                                   [boolean]
-      --log-level   log level                   [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
+  -h, --help         show help                                                             [boolean]
+  -v, --version      show version number                                                   [boolean]
+      --print-logs   print logs to stderr                                                  [boolean]
+      --log-level    log level                  [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
       --pure        run without external plugins                                           [boolean]"
 `;
 
@@ -301,17 +301,18 @@ Options:
 exports[`openctrlc CLI help-text snapshots every documented command emits stable help text: openctrlc import --help 1`] = `
 "openctrlc import <file>
 
-import session data from JSON file or URL
+import session data from JSON file, URL, or opencode
 
 Positionals:
-  file  path to JSON file or share URL                                           [string] [required]
+  file  path to JSON file, share URL, or opencode session ID                     [string] [required]
 
 Options:
   -h, --help        show help                                                              [boolean]
   -v, --version     show version number                                                    [boolean]
       --print-logs  print logs to stderr                                                   [boolean]
       --log-level   log level                   [string] [choices: "DEBUG", "INFO", "WARN", "ERROR"]
-      --pure        run without external plugins                                           [boolean]"
+      --pure         run without external plugins                                          [boolean]
+      --opencode-db  path to the opencode database                                          [string]"
 `;
 
 exports[`openctrlc CLI help-text snapshots every documented command emits stable help text: openctrlc github --help 1`] = `

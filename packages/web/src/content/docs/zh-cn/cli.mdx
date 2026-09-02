@@ -442,7 +442,7 @@ openctrlc export [sessionID]
 
 ### import
 
-从 JSON 文件或 OpenCtrlC 分享链接导入会话数据。
+从 JSON 文件、OpenCtrlC 分享链接或现有的 OpenCode 会话导入会话数据。
 
 ```bash
 openctrlc import <file>
@@ -453,7 +453,12 @@ openctrlc import <file>
 ```bash
 openctrlc import session.json
 openctrlc import https://opncd.ai/s/abc123
+openctrlc import ses_01H...
 ```
+
+当参数是会话 ID 时，OpenCtrlC 会从
+`~/.local/share/opencode/opencode.db` 以只读方式读取该会话，不会修改源数据库。
+可以使用 `--opencode-db` 指定其他 OpenCode 数据库路径。
 
 ---
 
