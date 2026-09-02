@@ -456,6 +456,11 @@ export const Assistant = Schema.Struct({
   time: Schema.Struct({
     created: NonNegativeInt,
     completed: Schema.optional(NonNegativeInt),
+    requestStarted: Schema.optional(NonNegativeInt),
+    firstGenerated: Schema.optional(NonNegativeInt),
+    lastGenerated: Schema.optional(NonNegativeInt),
+    generationDuration: Schema.optional(NonNegativeInt),
+    providerCompleted: Schema.optional(NonNegativeInt),
   }),
   error: Schema.optional(AssistantErrorSchema),
   parentID: MessageID,

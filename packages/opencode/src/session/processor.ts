@@ -72,6 +72,11 @@ interface ProcessorContext extends Input {
   needsCompaction: boolean
   currentText: SessionV1.TextPart | undefined
   reasoningMap: Record<string, SessionV1.ReasoningPart>
+  generation: {
+    stepFirst: number | undefined
+    stepLast: number | undefined
+    duration: number
+  }
 }
 
 type StreamEvent = LLMEvent
@@ -111,8 +116,34 @@ const layer = Layer.effect(
         needsCompaction: false,
         currentText: undefined,
         reasoningMap: {},
+        generation: {
+          stepFirst: undefined,
+          stepLast: undefined,
+          duration: 0,
+        },
       }
       let aborted = false
+
+      const markGenerated = () => {
+        const now = Date.now()
+        ctx.generation.stepFirst ??= now
+        ctx.generation.stepLast = now
+        ctx.assistantMessage.time.firstGenerated ??= now
+        ctx.assistantMessage.time.lastGenerated = now
+      }
+
+      const finishGenerationStep = () => {
+        if (
+          ctx.generation.stepFirst !== undefined &&
+          ctx.generation.stepLast !== undefined &&
+          ctx.generation.stepLast > ctx.generation.stepFirst
+        ) {
+          ctx.generation.duration += ctx.generation.stepLast - ctx.generation.stepFirst
+          ctx.assistantMessage.time.generationDuration = ctx.generation.duration
+        }
+        ctx.generation.stepFirst = undefined
+        ctx.generation.stepLast = undefined
+      }
 
       const parse = (e: unknown) =>
         MessageV2.fromError(e, {
@@ -293,6 +324,7 @@ const layer = Layer.effect(
 
           case "reasoning-delta":
             // Match dev: silently drop orphan deltas (no preceding reasoning-start).
+            if (value.text.length > 0) markGenerated()
             if (!(value.id in ctx.reasoningMap)) return
             ctx.reasoningMap[value.id].text += value.text
             if (value.providerMetadata) ctx.reasoningMap[value.id].metadata = value.providerMetadata
@@ -320,6 +352,7 @@ const layer = Layer.effect(
             return
 
           case "tool-input-delta":
+            if (value.text.length > 0) markGenerated()
             yield* ensureToolCall(value)
             return
 
@@ -329,6 +362,7 @@ const layer = Layer.effect(
           }
 
           case "tool-call": {
+            markGenerated()
             if (ctx.assistantMessage.summary) {
               throw new Error(`Tool call not allowed while generating summary: ${value.name}`)
             }
@@ -433,6 +467,7 @@ const layer = Layer.effect(
             return
 
           case "step-finish": {
+            finishGenerationStep()
             const completedSnapshot = yield* snapshot.track()
             yield* Effect.forEach(Object.keys(ctx.reasoningMap), finishReasoning)
             const usage = Session.getUsage({
@@ -497,6 +532,7 @@ const layer = Layer.effect(
             return
 
           case "text-delta":
+            if (value.text.length > 0) markGenerated()
             if (!ctx.currentText) return
             ctx.currentText.text += value.text
             if (value.providerMetadata) ctx.currentText.metadata = value.providerMetadata
@@ -537,6 +573,7 @@ const layer = Layer.effect(
       })
 
       const cleanup = Effect.fn("SessionProcessor.cleanup")(function* () {
+        finishGenerationStep()
         if (ctx.snapshot) {
           const patch = yield* snapshot.patch(ctx.snapshot)
           if (patch.files.length) {
@@ -636,7 +673,11 @@ const layer = Layer.effect(
           yield* Effect.gen(function* () {
             ctx.currentText = undefined
             ctx.reasoningMap = {}
+            ctx.generation.stepFirst = undefined
+            ctx.generation.stepLast = undefined
             yield* status.set(ctx.sessionID, { type: "busy" })
+            ctx.assistantMessage.time.requestStarted ??= Date.now()
+            yield* session.updateMessage(ctx.assistantMessage)
             const stream = llm.stream(streamInput)
 
             yield* stream.pipe(
@@ -644,6 +685,7 @@ const layer = Layer.effect(
               Stream.takeUntil(() => ctx.needsCompaction),
               Stream.runDrain,
             )
+            ctx.assistantMessage.time.providerCompleted = Date.now()
           }).pipe(
             Effect.onInterrupt(() =>
               Effect.gen(function* () {

@@ -1739,8 +1739,14 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     const message = props.message as AssistantMessage
     return assistantStatistics({
       output: message.tokens?.output,
+      reasoning: message.tokens?.reasoning,
       created: message.time?.created,
       completed: message.time?.completed,
+      requestStarted: message.time?.requestStarted,
+      firstGenerated: message.time?.firstGenerated,
+      lastGenerated: message.time?.lastGenerated,
+      generationDuration: message.time?.generationDuration,
+      providerCompleted: message.time?.providerCompleted,
     })
   })
 
@@ -1748,7 +1754,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     const value = statistics()
     if (!value) return []
     return [
-      i18n.t("ui.message.tokens", { count: numfmt().format(value.output) }),
+      i18n.t("ui.message.tokens", { count: numfmt().format(value.total) }),
       i18n.t("ui.message.tokensPerSecond", { count: value.tokensPerSecond.toFixed(2) }),
     ]
   })
