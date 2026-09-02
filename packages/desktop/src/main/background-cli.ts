@@ -55,14 +55,30 @@ export async function startBackgroundCli(logger: Logger, shellStateHome?: string
 }
 
 export async function importOpenCodeSession(input: OpenCodeSessionImport, logger: Logger) {
-  const binary = await resolveCliBinary(logger)
-  const args = ["import", input.sessionID]
+  const command = await resolveImportCommand(logger)
+  const args = [...command.prefix, "import", input.sessionID]
   if (input.databasePath) args.push("--opencode-db", input.databasePath)
-  await run(binary, args, logger, {
+  await run(command.binary, args, logger, {
     cwd: input.directory,
     stateHome: process.env.XDG_STATE_HOME,
   })
   return { sessionID: input.sessionID }
+}
+
+async function resolveImportCommand(logger: Logger) {
+  if (!app.isPackaged) {
+    const entrypoint = join(root, "../../../opencode/src/index.ts")
+    const bun = process.env.OPENCTRLC_BUN_PATH ?? "bun"
+    logger.log("Using workspace CLI for OpenCode session import", { bun, entrypoint })
+    return { binary: bun, prefix: ["run", "--conditions=browser", entrypoint] }
+  }
+
+  const binary = await resolveCliBinary(logger)
+  const help = await run(binary, ["import", "--help"], logger, { includeStderr: true })
+  if (!help.includes("--opencode-db")) {
+    throw new Error("当前 Desktop 内置 CLI 不支持 OpenCode 会话导入，请更新到最新版本")
+  }
+  return { binary, prefix: [] }
 }
 
 async function resolveCliBinary(logger: Logger) {
@@ -98,7 +114,7 @@ async function run(
   binary: string,
   args: string[],
   logger: Logger,
-  options: { cwd?: string; redact?: boolean; stateHome?: string } = {},
+  options: { cwd?: string; includeStderr?: boolean; redact?: boolean; stateHome?: string } = {},
 ) {
   logger.log("v2 CLI command started", { binary, args })
   const env = { ...process.env }
@@ -109,7 +125,7 @@ async function run(
       const stdout = result.stdout.trim()
       const stderr = result.stderr.trim()
       logger.log("v2 CLI command completed", { args, stdout: options.redact ? "[redacted]" : stdout, stderr })
-      return stdout
+      return options.includeStderr ? [stdout, stderr].filter(Boolean).join("\n") : stdout
     },
     (error: unknown) => {
       const output = error as { stdout?: string; stderr?: string }
