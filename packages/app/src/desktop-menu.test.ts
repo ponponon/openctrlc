@@ -20,4 +20,16 @@ describe("desktop menu", () => {
     expect(windowMenu?.labelKey).toBe("desktop.menu.window")
     expect(roleItems.length).toBeGreaterThan(0)
   })
+
+  test("offers OpenCode session import through the command registry", () => {
+    const item = DESKTOP_MENU.flatMap((menu) => menu.items ?? []).find(
+      (entry) => entry.type === "item" && entry.command === "session.importOpencode",
+    )
+
+    expect(item).toMatchObject({
+      type: "item",
+      command: "session.importOpencode",
+      labelKey: "desktop.menu.importOpenCodeSession",
+    })
+  })
 })

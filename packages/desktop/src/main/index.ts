@@ -47,7 +47,7 @@ import { registerWslIpcHandlers } from "./wsl/ipc"
 import { spawnWslSidecar } from "./wsl/sidecar"
 import { migrate } from "./migrate"
 import { cleanupStoreFiles } from "./store-cleanup"
-import { startBackgroundCli } from "./background-cli"
+import { importOpenCodeSession, startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
 import { Brand } from "@openctrlc/identity"
 
@@ -307,6 +307,7 @@ const main = Effect.gen(function* () {
     showUpdater: () => showUpdaterDialog(updater, true),
     setBackgroundColor: (color) => setBackgroundColor(color),
     exportDebugLogs: () => exportDebugLogs(),
+    importOpenCodeSession: (input) => importOpenCodeSession(input, logger),
     recordFatalRendererError: (error) => writeLog("renderer", "fatal renderer error", { ...error }, "error"),
     setNativeTranslations: (bundle) => {
       if (setNativeTranslations(bundle)) createMenu(menuDeps)

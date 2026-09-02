@@ -1,7 +1,7 @@
 import "@/index.css"
 import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@openctrlc/ui/context"
-import { DialogProvider } from "@openctrlc/ui/context/dialog"
+import { DialogProvider, useDialog } from "@openctrlc/ui/context/dialog"
 import { FileComponentProvider } from "@openctrlc/ui/context/file"
 import { File } from "@openctrlc/session-ui/file"
 import { Font } from "@openctrlc/ui/font"
@@ -46,7 +46,7 @@ import { ServerSyncProvider, useServerSync } from "@/context/server-sync"
 import { GlobalProvider, useGlobal } from "@/context/global"
 import { HighlightsProvider } from "@/context/highlights"
 import { LanguageProvider, type Locale, useLanguage } from "@/context/language"
-import { LayoutProvider } from "@/context/layout"
+import { LayoutProvider, useLayout } from "@/context/layout"
 import { ModelsProvider } from "@/context/models"
 import { NotificationProvider } from "@/context/notification"
 import { PermissionProvider } from "@/context/permission"
@@ -64,6 +64,7 @@ import { ErrorPage } from "./pages/error"
 import { useCheckServerHealth } from "./utils/server-health"
 import { legacySessionHref, legacySessionServer, requireServerKey, sessionHref } from "./utils/session-route"
 import { createSessionLineage } from "@/pages/session/session-lineage"
+import { showToast } from "@/utils/toast"
 
 import { SessionPage, SessionRouteErrorBoundary, TargetSessionRouteContent } from "@/pages/session"
 import { NewHome } from "@/pages/home"
@@ -354,10 +355,63 @@ type ServerScopedShellProps = ParentProps<{
 function ServerScopedProviders(props: ServerScopedShellProps) {
   return (
     <LayoutProvider>
+      <DesktopSessionCommands />
       {props.serverScoped}
       <ModelsProvider directory={props.directory}>{props.children}</ModelsProvider>
     </LayoutProvider>
   )
+}
+
+function DesktopSessionCommands() {
+  const command = useCommand()
+  const dialog = useDialog()
+  const language = useLanguage()
+  const layout = useLayout()
+  const platform = usePlatform()
+  const server = useServer()
+  const serverSync = useServerSync()
+
+  const targetDirectory = createMemo(() => {
+    const route = layout.route()
+    if (route.type === "dir-new-sesssion") return route.dir
+    if (route.type === "session") return serverSync().session.get(route.sessionId)?.directory
+    const selection = layout.home.selection()
+    if (selection.server === server.key && selection.directory) return selection.directory
+    return layout.projects.list()[0]?.worktree
+  })
+
+  const localDesktop = createMemo(
+    () =>
+      platform.platform === "desktop" &&
+      !!platform.importOpenCodeSession &&
+      server.current?.type === "sidecar" &&
+      server.current.variant === "base",
+  )
+
+  command.register("desktop-session-import", () => [
+    {
+      id: "session.importOpencode",
+      title: language.t("command.session.importOpencode"),
+      description: language.t("command.session.importOpencode.description"),
+      category: language.t("command.category.session"),
+      disabled: !localDesktop() || !targetDirectory(),
+      onSelect: async () => {
+        if (!localDesktop()) {
+          showToast({ title: language.t("dialog.session.importOpencode.error.localOnly") })
+          return
+        }
+        const directory = targetDirectory()
+        if (!directory) {
+          showToast({ title: language.t("dialog.session.importOpencode.error.project") })
+          return
+        }
+        const module = await import("@/components/dialog-import-opencode-session")
+        void dialog.show(() => <module.DialogImportOpenCodeSession directory={directory} />)
+      },
+    },
+  ])
+
+  return null
 }
 
 function LegacyServerScopedShell(props: ServerScopedShellProps) {

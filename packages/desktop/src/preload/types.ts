@@ -42,6 +42,12 @@ export type FatalRendererError = {
   os?: string
 }
 
+export type OpenCodeSessionImport = {
+  sessionID: string
+  directory: string
+  databasePath?: string
+}
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -110,6 +116,7 @@ export type ElectronAPI = {
   runDesktopMenuAction: (action: DesktopMenuAction) => Promise<void>
   setBackgroundColor: (color: string) => Promise<void>
   exportDebugLogs: () => Promise<string>
+  importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   setForceFocus: (enabled: boolean) => Promise<void>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void>
   setNativeTranslations: (bundle: DesktopNativeBundle) => Promise<void>

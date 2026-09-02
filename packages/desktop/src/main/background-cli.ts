@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 import { app } from "electron"
 import { Brand } from "@openctrlc/identity"
+import type { OpenCodeSessionImport } from "../preload/types"
 
 const execFileAsync = promisify(execFile)
 const root = dirname(fileURLToPath(import.meta.url))
@@ -18,12 +19,7 @@ type Logger = {
 }
 
 export async function startBackgroundCli(logger: Logger, shellStateHome?: string) {
-  const bundled = app.isPackaged
-    ? join(process.resourcesPath, executableName())
-    : join(root, "../../resources", executableName())
-  logger.log("v2 CLI executable resolved", { bundled, packaged: app.isPackaged })
-  const version = await run(bundled, ["--version"], logger)
-  const binary = app.isPackaged ? await installCli(bundled, version, logger) : bundled
+  const binary = await resolveCliBinary(logger)
 
   const candidates = [
     ...new Set([stateHome, shellStateHome, ...desktopStateNames.map((name) => join(app.getPath("appData"), name))]),
@@ -58,6 +54,26 @@ export async function startBackgroundCli(logger: Logger, shellStateHome?: string
   }
 }
 
+export async function importOpenCodeSession(input: OpenCodeSessionImport, logger: Logger) {
+  const binary = await resolveCliBinary(logger)
+  const args = ["import", input.sessionID]
+  if (input.databasePath) args.push("--opencode-db", input.databasePath)
+  await run(binary, args, logger, {
+    cwd: input.directory,
+    stateHome: process.env.XDG_STATE_HOME,
+  })
+  return { sessionID: input.sessionID }
+}
+
+async function resolveCliBinary(logger: Logger) {
+  const bundled = app.isPackaged
+    ? join(process.resourcesPath, executableName())
+    : join(root, "../../resources", executableName())
+  logger.log("CLI executable resolved", { bundled, packaged: app.isPackaged })
+  const version = await run(bundled, ["--version"], logger)
+  return app.isPackaged ? installCli(bundled, version, logger) : bundled
+}
+
 async function installCli(source: string, version: string, logger: Logger) {
   const directory = join(app.getPath("userData"), "cli", version.replace(/[^a-zA-Z0-9._-]/g, "-"))
   const destination = join(directory, executableName())
@@ -82,13 +98,13 @@ async function run(
   binary: string,
   args: string[],
   logger: Logger,
-  options: { redact?: boolean; stateHome?: string } = {},
+  options: { cwd?: string; redact?: boolean; stateHome?: string } = {},
 ) {
   logger.log("v2 CLI command started", { binary, args })
   const env = { ...process.env }
   if (options.stateHome === undefined) delete env.XDG_STATE_HOME
   else env.XDG_STATE_HOME = options.stateHome
-  return execFileAsync(binary, args, { env, windowsHide: true }).then(
+  return execFileAsync(binary, args, { cwd: options.cwd, env, windowsHide: true }).then(
     (result) => {
       const stdout = result.stdout.trim()
       const stderr = result.stderr.trim()

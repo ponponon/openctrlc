@@ -17,6 +17,7 @@ export const dict = {
   "desktop.menu.exportLogs": "导出日志...",
   "desktop.menu.newSession": "新建会话",
   "desktop.menu.openProject": "打开项目...",
+  "desktop.menu.importOpenCodeSession": "从 OpenCode 导入会话...",
   "desktop.menu.newWindow": "新建窗口",
   "desktop.menu.closeWindow": "关闭窗口",
   "desktop.menu.undo": "撤销",
@@ -154,6 +155,8 @@ export const dict = {
   "command.language.set": "使用语言：{{language}}",
 
   "command.session.new": "新建会话",
+  "command.session.importOpencode": "从 OpenCode 导入会话",
+  "command.session.importOpencode.description": "根据 Session ID 从 OpenCode 导入会话记录",
 
   "command.file.open": "打开文件",
 
@@ -461,6 +464,21 @@ export const dict = {
   "dialog.directory.root": "根目录",
   "dialog.directory.parent": "上级目录",
   "dialog.directory.readError": "无法读取此文件夹",
+
+  "dialog.session.importOpencode.title": "从 OpenCode 导入会话",
+  "dialog.session.importOpencode.description": "从本机 OpenCode 数据库导入完整对话记录。",
+  "dialog.session.importOpencode.sessionID.label": "Session ID",
+  "dialog.session.importOpencode.sessionID.placeholder": "ses_...",
+  "dialog.session.importOpencode.database.label": "OpenCode 数据库",
+  "dialog.session.importOpencode.database.default": "使用默认 OpenCode 数据库",
+  "dialog.session.importOpencode.database.choose": "选择数据库",
+  "dialog.session.importOpencode.target.label": "导入到",
+  "dialog.session.importOpencode.error.sessionID": "请输入有效的 OpenCode Session ID，例如 ses_abc123。",
+  "dialog.session.importOpencode.error.unavailable": "当前 Desktop 会话不支持 OpenCode 导入。",
+  "dialog.session.importOpencode.error.localOnly": "OpenCode 导入仅支持 Desktop 本地服务器。",
+  "dialog.session.importOpencode.error.project": "请先打开一个项目，再导入 OpenCode 会话。",
+  "dialog.session.importOpencode.success.title": "会话导入成功",
+  "dialog.session.importOpencode.success.description": "已从 OpenCode 导入 {{id}}。",
 
   "dialog.server.title": "服务器",
   "dialog.server.description": "切换此应用连接的 OpenCtrlC 服务器。",

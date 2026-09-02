@@ -9,6 +9,7 @@ import type { DraftStore } from "@/utils/draft-store"
 
 type PickerPaths = string | string[] | null
 type OpenDirectoryPickerOptions = { title?: string; multiple?: boolean }
+type OpenFilePickerOptions = { title?: string; defaultPath?: string; extensions?: string[] }
 type OpenAttachmentPickerOptions = {
   title?: string
   multiple?: boolean
@@ -61,6 +62,16 @@ type PlatformBase = {
 
   /** Open a native save file picker dialog (desktop only) */
   saveFilePickerDialog?(opts?: SaveFilePickerOptions): Promise<string | null>
+
+  /** Open a native file picker and return the selected path (desktop only) */
+  openFilePickerDialog?(opts?: OpenFilePickerOptions): Promise<string | null>
+
+  /** Import an OpenCode session into the current local project (desktop only) */
+  importOpenCodeSession?(input: {
+    sessionID: string
+    directory: string
+    databasePath?: string
+  }): Promise<{ sessionID: string }>
 
   /** Storage mechanism, defaults to localStorage */
   storage?: (name?: string) => SyncStorage | AsyncStorage

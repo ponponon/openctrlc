@@ -1,12 +1,12 @@
 import { execFile } from "node:child_process"
 import { stat } from "node:fs/promises"
-import { basename, join } from "node:path"
+import { basename, isAbsolute, join } from "node:path"
 import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from "electron"
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron"
 import type { DesktopMenuAction } from "@openctrlc/app/desktop-menu"
 import { parseDesktopNativeBundle, type DesktopNativeBundle } from "@openctrlc/app/i18n/desktop-native"
 
-import type { FatalRendererError, ServerReadyData, TitlebarTheme } from "../preload/types"
+import type { FatalRendererError, OpenCodeSessionImport, ServerReadyData, TitlebarTheme } from "../preload/types"
 import { runDesktopMenuAction } from "./desktop-menu-actions"
 import { setForceFocus } from "./debug"
 import { assertAttachmentBudget, createPickedFileAuthorizations } from "./attachment-picker"
@@ -50,6 +50,7 @@ type Deps = {
   showUpdater: () => Promise<void> | void
   setBackgroundColor: (color: string) => void
   exportDebugLogs: () => Promise<string>
+  importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void> | void
   setNativeTranslations: (bundle: DesktopNativeBundle) => void
 }
@@ -96,6 +97,10 @@ export function registerIpcHandlers(deps: Deps) {
   ipcMain.handle("updater-install", () => deps.updater.install())
   ipcMain.handle("set-background-color", (_event: IpcMainInvokeEvent, color: string) => deps.setBackgroundColor(color))
   ipcMain.handle("export-debug-logs", () => deps.exportDebugLogs())
+  ipcMain.handle("import-opencode-session", (_event: IpcMainInvokeEvent, input: OpenCodeSessionImport) => {
+    if (!isOpenCodeSessionImport(input)) throw new Error("Invalid OpenCode session import request")
+    return deps.importOpenCodeSession(input)
+  })
   ipcMain.handle("set-force-focus", (event: IpcMainInvokeEvent, enabled: boolean) =>
     setForceFocus(event.sender, enabled),
   )
@@ -297,6 +302,17 @@ export function registerIpcHandlers(deps: Deps) {
       relaunch: deps.relaunch,
     })
   })
+}
+
+function isOpenCodeSessionImport(value: unknown): value is OpenCodeSessionImport {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const input = value as Partial<OpenCodeSessionImport>
+  if (typeof input.sessionID !== "string" || !/^ses_[a-zA-Z0-9]+$/.test(input.sessionID)) return false
+  if (typeof input.directory !== "string" || !isAbsolute(input.directory)) return false
+  if (input.databasePath !== undefined && (typeof input.databasePath !== "string" || !isAbsolute(input.databasePath))) {
+    return false
+  }
+  return true
 }
 
 export function sendMenuCommand(win: BrowserWindow, id: string) {
