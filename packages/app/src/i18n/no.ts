@@ -494,6 +494,7 @@ export const dict = {
   "context.export.session": "Eksporter sesjon",
 
   "context.stats.session": "Sesjon",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Meldinger",
   "context.stats.provider": "Leverandør",
   "context.stats.model": "Modell",
@@ -558,6 +559,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "Ingen linjevalg",
   "toast.context.noLineSelection.description": "Velg først et linjeområde i en filfane.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "Kunne ikke kopiere URL til utklippstavlen",
   "toast.session.share.success.title": "Sesjon delt",

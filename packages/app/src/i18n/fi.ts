@@ -451,6 +451,7 @@ export const dict = {
   "context.export.session": "Vie istunto",
 
   "context.stats.session": "Istunto",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Viestit",
   "context.stats.provider": "Palveluntarjoaja",
   "context.stats.model": "Malli",
@@ -507,6 +508,9 @@ export const dict = {
   "toast.file.listFailed.title": "Tiedostojen luettelointi epäonnistui",
   "toast.context.noLineSelection.title": "Ei rivivalintaa",
   "toast.context.noLineSelection.description": "Valitse ensin riviväli tiedostovälilehdeltä.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URL-osoitteen kopioiminen leikepöydälle epäonnistui",
   "toast.session.share.success.title": "Istunto jaettu",
   "toast.session.share.success.description": "Jakolinkki kopioitu leikepöydälle!",

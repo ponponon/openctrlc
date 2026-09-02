@@ -562,6 +562,7 @@ export const dict = {
   "context.export.session": "Sessiyanı ixrac et",
 
   "context.stats.session": "Sessiya",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Mesajlar",
   "context.stats.provider": "Provayder",
   "context.stats.model": "Model",
@@ -618,6 +619,9 @@ export const dict = {
   "toast.file.listFailed.title": "Fayllar siyahılana bilmədi",
   "toast.context.noLineSelection.title": "Sətir seçimi yoxdur",
   "toast.context.noLineSelection.description": "Əvvəlcə fayl tabında sətir aralığı seçin.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URL buferə kopyalana bilmədi",
   "toast.session.share.success.title": "Sessiya paylaşıldı",
   "toast.session.share.success.description": "Paylaşma URL-si buferə kopyalandı!",

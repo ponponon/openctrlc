@@ -447,6 +447,7 @@ export const dict = {
   "context.export.session": "Sitzung exportieren",
 
   "context.stats.session": "Sitzung",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Nachrichten",
   "context.stats.provider": "Anbieter",
   "context.stats.model": "Modell",
@@ -503,6 +504,9 @@ export const dict = {
   "toast.file.listFailed.title": "Dateien konnten nicht aufgelistet werden",
   "toast.context.noLineSelection.title": "Keine Zeilenauswahl",
   "toast.context.noLineSelection.description": "Wählen Sie zuerst einen Zeilenbereich in einem Datei-Tab aus.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URL konnte nicht in die Zwischenablage kopiert werden",
   "toast.session.share.success.title": "Sitzung geteilt",
   "toast.session.share.success.description": "URL zum Teilen in die Zwischenablage kopiert!",

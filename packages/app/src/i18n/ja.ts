@@ -554,6 +554,7 @@ export const dict = {
   "context.export.session": "セッションをエクスポート",
 
   "context.stats.session": "セッション",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "メッセージ",
   "context.stats.provider": "プロバイダー",
   "context.stats.model": "モデル",
@@ -610,6 +611,9 @@ export const dict = {
   "toast.file.listFailed.title": "ファイル一覧の取得に失敗しました",
   "toast.context.noLineSelection.title": "行が選択されていません",
   "toast.context.noLineSelection.description": "まずファイルタブで行範囲を選択してください。",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URLのコピーに失敗しました",
   "toast.session.share.success.title": "セッションを共有しました",
   "toast.session.share.success.description": "共有URLをクリップボードにコピーしました！",

@@ -556,6 +556,7 @@ export const dict = {
   "context.export.session": "Exportar sessão",
 
   "context.stats.session": "Sessão",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Mensagens",
   "context.stats.provider": "Provedor",
   "context.stats.model": "Modelo",
@@ -612,6 +613,9 @@ export const dict = {
   "toast.file.listFailed.title": "Falha ao listar arquivos",
   "toast.context.noLineSelection.title": "Nenhuma seleção de linhas",
   "toast.context.noLineSelection.description": "Selecione primeiro um intervalo de linhas em uma aba de arquivo.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "Falha ao copiar URL para a área de transferência",
   "toast.session.share.success.title": "Sessão compartilhada",
   "toast.session.share.success.description": "URL compartilhada copiada para a área de transferência!",

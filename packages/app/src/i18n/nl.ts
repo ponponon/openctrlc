@@ -561,6 +561,7 @@ export const dict = {
   "context.export.session": "Sessie exporteren",
 
   "context.stats.session": "Sessie",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Berichten",
   "context.stats.provider": "Aanbieder",
   "context.stats.model": "Model",
@@ -617,6 +618,9 @@ export const dict = {
   "toast.file.listFailed.title": "Kan bestanden niet weergeven",
   "toast.context.noLineSelection.title": "Geen regels geselecteerd",
   "toast.context.noLineSelection.description": "Selecteer eerst een reeks regels in een bestandstabblad.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "Kan de URL niet naar het klembord kopiëren",
   "toast.session.share.success.title": "Sessie gedeeld",
   "toast.session.share.success.description": "Deel-URL gekopieerd naar klembord!",

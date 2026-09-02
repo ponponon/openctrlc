@@ -588,6 +588,7 @@ export const dict = {
   "context.export.session": "Экспортировать сессию",
 
   "context.stats.session": "Сессия",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Сообщения",
   "context.stats.provider": "Провайдер",
   "context.stats.model": "Модель",
@@ -653,6 +654,9 @@ export const dict = {
   "toast.file.listFailed.title": "Не удалось получить список файлов",
   "toast.context.noLineSelection.title": "Нет выделения строк",
   "toast.context.noLineSelection.description": "Сначала выберите диапазон строк во вкладке файла.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "Не удалось скопировать URL в буфер обмена",
   "toast.session.share.success.title": "Сессия опубликована",
   "toast.session.share.success.description": "URL скопирован в буфер обмена!",

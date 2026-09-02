@@ -589,6 +589,7 @@ export const dict = {
   "context.export.session": "Izvezi sesiju",
 
   "context.stats.session": "Sesija",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Poruke",
   "context.stats.provider": "Provajder",
   "context.stats.model": "Model",
@@ -654,6 +655,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "Nema odabranih linija",
   "toast.context.noLineSelection.description": "Prvo odaberi raspon linija u kartici datoteke.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "Neuspjelo kopiranje URL-a u međuspremnik",
   "toast.session.share.success.title": "Sesija podijeljena",

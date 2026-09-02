@@ -552,6 +552,7 @@ export const dict = {
   "context.export.session": "تصدير الجلسة",
 
   "context.stats.session": "جلسة",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "رسائل",
   "context.stats.provider": "موفر",
   "context.stats.model": "نموذج",
@@ -608,6 +609,9 @@ export const dict = {
   "toast.file.listFailed.title": "فشل سرد الملفات",
   "toast.context.noLineSelection.title": "لا يوجد تحديد للأسطر",
   "toast.context.noLineSelection.description": "حدد نطاق أسطر في تبويب ملف أولاً.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "فشل نسخ عنوان URL إلى الحافظة",
   "toast.session.share.success.title": "تمت مشاركة الجلسة",
   "toast.session.share.success.description": "تم نسخ عنوان URL للمشاركة إلى الحافظة!",

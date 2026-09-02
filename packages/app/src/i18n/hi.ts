@@ -564,6 +564,7 @@ export const dict = {
   "context.export.session": "सेशन निर्यात करें",
 
   "context.stats.session": "सेशन",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "संदेश",
   "context.stats.provider": "प्रोवाइडर",
   "context.stats.model": "मॉडल",
@@ -620,6 +621,9 @@ export const dict = {
   "toast.file.listFailed.title": "फ़ाइलें सूचीबद्ध करने में विफल",
   "toast.context.noLineSelection.title": "कोई पंक्ति चयन नहीं",
   "toast.context.noLineSelection.description": "पहले फ़ाइल टैब में एक पंक्ति श्रेणी का चयन करें।",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URL को क्लिपबोर्ड पर कॉपी करने में विफल",
   "toast.session.share.success.title": "सेशन साझा किया गया",
   "toast.session.share.success.description": "साझा URL क्लिपबोर्ड पर कॉपी किया गया!",

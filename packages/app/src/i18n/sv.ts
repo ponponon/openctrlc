@@ -560,6 +560,7 @@ export const dict = {
   "context.export.session": "Exportera session",
 
   "context.stats.session": "Session",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Meddelanden",
   "context.stats.provider": "Leverantör",
   "context.stats.model": "Modell",
@@ -616,6 +617,9 @@ export const dict = {
   "toast.file.listFailed.title": "Det gick inte att lista filer",
   "toast.context.noLineSelection.title": "Inget radval",
   "toast.context.noLineSelection.description": "Välj ett radintervall på en filflik först.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "Det gick inte att kopiera URL till urklipp",
   "toast.session.share.success.title": "Sessionen har delats",
   "toast.session.share.success.description": "Delningsadressen har kopierats till urklipp!",

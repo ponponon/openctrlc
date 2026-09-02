@@ -592,6 +592,7 @@ export const dict = {
   "context.export.session": "Oturumu dışa aktar",
 
   "context.stats.session": "Oturum",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Mesajlar",
   "context.stats.provider": "Sağlayıcı",
   "context.stats.model": "Model",
@@ -657,6 +658,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "Satır seçimi yok",
   "toast.context.noLineSelection.description": "Önce bir dosya sekmesinde satır aralığı seçin.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "URL panoya kopyalanamadı",
   "toast.session.share.success.title": "Oturum paylaşıldı",

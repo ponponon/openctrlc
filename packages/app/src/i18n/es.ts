@@ -591,6 +591,7 @@ export const dict = {
   "context.export.session": "Exportar sesión",
 
   "context.stats.session": "Sesión",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Mensajes",
   "context.stats.provider": "Proveedor",
   "context.stats.model": "Modelo",
@@ -656,6 +657,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "Sin selección de líneas",
   "toast.context.noLineSelection.description": "Primero selecciona un rango de líneas en una pestaña de archivo.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "Fallo al copiar URL al portapapeles",
   "toast.session.share.success.title": "Sesión compartida",

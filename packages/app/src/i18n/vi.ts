@@ -565,6 +565,7 @@ export const dict = {
   "context.export.session": "Xuất phiên",
 
   "context.stats.session": "Phiên",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Tin nhắn",
   "context.stats.provider": "Nhà cung cấp",
   "context.stats.model": "Mô hình",
@@ -621,6 +622,9 @@ export const dict = {
   "toast.file.listFailed.title": "Không thể liệt kê các tệp",
   "toast.context.noLineSelection.title": "Không có lựa chọn dòng",
   "toast.context.noLineSelection.description": "Trước tiên, hãy chọn một phạm vi dòng trong tab tệp.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "Không sao chép được URL vào bảng tạm",
   "toast.session.share.success.title": "Đã chia sẻ phiên",
   "toast.session.share.success.description": "Đã sao chép URL chia sẻ vào bảng tạm!",

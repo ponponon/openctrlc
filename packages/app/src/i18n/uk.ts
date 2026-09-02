@@ -602,6 +602,7 @@ export const dict = {
   "context.export.session": "Експортувати сесію",
 
   "context.stats.session": "Сесія",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Повідомлення",
   "context.stats.provider": "Провайдер",
   "context.stats.model": "Модель",
@@ -667,6 +668,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "Не вибрано рядків",
   "toast.context.noLineSelection.description": "Спочатку виберіть діапазон рядків у вкладці файлу.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "Не вдалося скопіювати URL у буфер обміну",
   "toast.session.share.success.title": "Сесію опубліковано",

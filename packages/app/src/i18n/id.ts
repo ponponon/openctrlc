@@ -599,6 +599,7 @@ export const dict = {
   "context.export.session": "Ekspor sesi",
 
   "context.stats.session": "Sesi",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "Pesan",
   "context.stats.provider": "Penyedia",
   "context.stats.model": "Model",
@@ -663,6 +664,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "Tidak ada pilihan baris",
   "toast.context.noLineSelection.description": "Pilih rentang baris di tab berkas terlebih dahulu.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "Gagal menyalin URL ke papan klip",
   "toast.session.share.success.title": "Sesi dibagikan",

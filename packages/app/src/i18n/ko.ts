@@ -357,6 +357,7 @@ export const dict = {
   "context.export.session": "세션 내보내기",
 
   "context.stats.session": "세션",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "메시지",
   "context.stats.provider": "공급자",
   "context.stats.model": "모델",
@@ -412,6 +413,9 @@ export const dict = {
   "toast.file.listFailed.title": "파일 목록을 불러오지 못했습니다",
   "toast.context.noLineSelection.title": "줄 선택 없음",
   "toast.context.noLineSelection.description": "먼저 파일 탭에서 줄 범위를 선택하세요.",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URL 클립보드 복사 실패",
   "toast.session.share.success.title": "세션 공유됨",
   "toast.session.share.success.description": "공유 URL이 클립보드에 복사되었습니다!",

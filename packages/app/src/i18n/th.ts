@@ -584,6 +584,7 @@ export const dict = {
   "context.export.session": "ส่งออกเซสชัน",
 
   "context.stats.session": "เซสชัน",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "ข้อความ",
   "context.stats.provider": "ผู้ให้บริการ",
   "context.stats.model": "โมเดล",
@@ -649,6 +650,9 @@ export const dict = {
 
   "toast.context.noLineSelection.title": "ไม่มีการเลือกบรรทัด",
   "toast.context.noLineSelection.description": "เลือกช่วงบรรทัดในแท็บไฟล์ก่อน",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
 
   "toast.session.share.copyFailed.title": "ไม่สามารถคัดลอก URL ไปยังคลิปบอร์ด",
   "toast.session.share.success.title": "แชร์เซสชันแล้ว",

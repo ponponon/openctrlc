@@ -581,6 +581,7 @@ export const dict = {
   "context.export.session": "匯出工作階段",
 
   "context.stats.session": "工作階段",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "訊息數",
   "context.stats.provider": "提供者",
   "context.stats.model": "模型",
@@ -646,6 +647,9 @@ export const dict = {
   "toast.file.listFailed.title": "列出檔案失敗",
   "toast.context.noLineSelection.title": "未選取行",
   "toast.context.noLineSelection.description": "請先在檔案分頁中選取行範圍。",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "無法複製連結到剪貼簿",
   "toast.session.share.success.title": "工作階段已分享",
   "toast.session.share.success.description": "分享連結已複製到剪貼簿",

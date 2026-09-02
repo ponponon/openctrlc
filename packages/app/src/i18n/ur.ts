@@ -567,6 +567,7 @@ export const dict = {
   "context.export.session": "سیشن برآمد کریں",
 
   "context.stats.session": "سیشن",
+  "context.stats.sessionID": "Session ID",
   "context.stats.messages": "پیغامات",
   "context.stats.provider": "فراہم کنندہ",
   "context.stats.model": "ماڈل",
@@ -623,6 +624,9 @@ export const dict = {
   "toast.file.listFailed.title": "فائلوں کی فہرست بنانے میں ناکام",
   "toast.context.noLineSelection.title": "لائن کا کوئی انتخاب نہیں۔",
   "toast.context.noLineSelection.description": "پہلے فائل ٹیب میں لائن رینج منتخب کریں۔",
+  "context.sessionID.copy": "Copy session ID",
+  "context.sessionID.copied": "Session ID copied",
+  "context.sessionID.copyFailed": "Failed to copy session ID",
   "toast.session.share.copyFailed.title": "URL کو کلپ بورڈ پر کاپی کرنے میں ناکام",
   "toast.session.share.success.title": "سیشن کا اشتراک کیا گیا۔",
   "toast.session.share.success.description": "اشتراک کا URL کلپ بورڈ پر کاپی ہو گیا!",
