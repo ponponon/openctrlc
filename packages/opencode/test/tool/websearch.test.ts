@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { Effect } from "effect"
-import { parseResponse } from "../../src/tool/mcp-websearch"
+import { exaUrl, parseResponse } from "../../src/tool/mcp-websearch"
 import {
   parallelAuthHeaders,
   selectWebSearchProvider,
@@ -50,6 +50,18 @@ describe("websearch provider", () => {
     expect(webSearchEnabled(ProviderV2.ID.openai, { exa: false, parallel: true })).toBe(true)
   })
 
+  test("is enabled when a provider override selects Exa", () => {
+    const original = process.env.OPENCTRLC_WEBSEARCH_PROVIDER
+
+    try {
+      process.env.OPENCTRLC_WEBSEARCH_PROVIDER = "exa"
+      expect(webSearchEnabled(ProviderV2.ID.openai, { exa: false, parallel: false })).toBe(true)
+    } finally {
+      if (original === undefined) delete process.env.OPENCTRLC_WEBSEARCH_PROVIDER
+      else process.env.OPENCTRLC_WEBSEARCH_PROVIDER = original
+    }
+  })
+
   test("uses branded labels", () => {
     expect(webSearchProviderLabel("parallel")).toBe("Parallel Web Search")
     expect(webSearchProviderLabel("exa")).toBe("Exa Web Search")
@@ -71,7 +83,7 @@ describe("websearch provider", () => {
     const original = process.env.PARALLEL_API_KEY
     try {
       delete process.env.PARALLEL_API_KEY
-      expect(parallelAuthHeaders()).toEqual({ "User-Agent": expect.stringMatching(/^openctrlc\//) })
+      expect(parallelAuthHeaders()).toEqual({ "User-Agent": expect.stringMatching(/^opencode\//) })
     } finally {
       if (original === undefined) delete process.env.PARALLEL_API_KEY
       else process.env.PARALLEL_API_KEY = original
@@ -83,7 +95,7 @@ describe("websearch provider", () => {
     try {
       process.env.PARALLEL_API_KEY = "parallel-test-key"
       expect(parallelAuthHeaders()).toEqual({
-        "User-Agent": expect.stringMatching(/^openctrlc\//),
+        "User-Agent": expect.stringMatching(/^opencode\//),
         Authorization: "Bearer parallel-test-key",
       })
     } finally {
@@ -127,4 +139,18 @@ describe("websearch MCP response parser", () => {
       expect(result).toBe("search results")
     }),
   )
+})
+
+describe("websearch Exa URL", () => {
+  test("reads the Exa API key when the request URL is built", () => {
+    const original = process.env.EXA_API_KEY
+
+    try {
+      process.env.EXA_API_KEY = "exa test key"
+      expect(exaUrl()).toBe("https://mcp.exa.ai/mcp?exaApiKey=exa+test+key")
+    } finally {
+      if (original === undefined) delete process.env.EXA_API_KEY
+      else process.env.EXA_API_KEY = original
+    }
+  })
 })

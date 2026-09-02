@@ -84,7 +84,7 @@ function callProvider(
 
   return McpWebSearch.call(
     http,
-    McpWebSearch.EXA_URL,
+    McpWebSearch.exaUrl(),
     "web_search_exa",
     McpWebSearch.SearchArgs,
     {

@@ -56,11 +56,14 @@ import { PermissionV1 } from "@openctrlc/core/v1/permission"
 import { McpCatalog } from "@/mcp/catalog"
 
 export function webSearchEnabled(providerID: ProviderV2.ID, flags = { exa: false, parallel: false }) {
+  const override = process.env.OPENCTRLC_WEBSEARCH_PROVIDER
   return (
     providerID === ProviderV2.ID.opencode ||
     providerID === ProviderV2.ID.make("opencode-go") ||
     flags.exa ||
-    flags.parallel
+    flags.parallel ||
+    override === "exa" ||
+    override === "parallel"
   )
 }
 
