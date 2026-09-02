@@ -1,4 +1,5 @@
 import { type ComponentProps } from "solid-js"
+import mascot from "../assets/openctrlc-mascot.png"
 
 export const Mark = (props: { class?: string }) => {
   return (
@@ -9,8 +10,7 @@ export const Mark = (props: { class?: string }) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path data-slot="logo-logo-mark-shadow" d="M12 16H4V8H12V16Z" fill="var(--icon-weak-base)" />
-      <path data-slot="logo-logo-mark-o" d="M12 4H4V16H12V4ZM16 20H0V0H16V20Z" fill="var(--icon-strong-base)" />
+      <image href={mascot} width="16" height="20" preserveAspectRatio="xMidYMid slice" />
     </svg>
   )
 }
@@ -25,8 +25,7 @@ export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M60 80H20V40H60V80Z" fill="var(--icon-base)" />
-      <path d="M60 20H20V80H60V20ZM80 100H0V0H80V100Z" fill="var(--icon-strong-base)" />
+      <image href={mascot} width="80" height="100" preserveAspectRatio="xMidYMid slice" />
     </svg>
   )
 }
@@ -40,8 +39,7 @@ export const Logo = (props: { class?: string }) => {
       classList={{ [props.class ?? ""]: !!props.class }}
     >
       <g>
-        <path d="M18 30H6V18H18V30Z" fill="var(--icon-weak-base)" />
-        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--icon-base)" />
+        <image href={mascot} x="0" y="6" width="24" height="30" preserveAspectRatio="xMidYMid slice" />
         <path d="M48 30H36V18H48V30Z" fill="var(--icon-weak-base)" />
         <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--icon-base)" />
         <path d="M84 24V30H66V24H84Z" fill="var(--icon-weak-base)" />
