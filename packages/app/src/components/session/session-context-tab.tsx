@@ -21,6 +21,7 @@ import { useSessionLayout } from "@/pages/session/session-layout"
 import { getSessionContext } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
+import { copySessionID } from "./session-id-copy"
 
 const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
   system: "var(--syntax-info)",
@@ -249,6 +250,27 @@ export function SessionContextTab() {
     }
   }
 
+  const copySessionIDToClipboard = async () => {
+    const sessionID = params.id
+    if (!sessionID) return
+
+    try {
+      await copySessionID(sessionID)
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: language.t("context.sessionID.copied"),
+        description: sessionID,
+      })
+    } catch (err) {
+      showToast({
+        variant: "error",
+        title: language.t("context.sessionID.copyFailed"),
+        description: err instanceof Error ? err.message : language.t("common.requestFailed"),
+      })
+    }
+  }
+
   let scroll: HTMLDivElement | undefined
   let frame: number | undefined
   let pending: { x: number; y: number } | undefined
@@ -308,6 +330,26 @@ export function SessionContextTab() {
       onScroll={handleScroll}
     >
       <div class="px-6 pt-4 pb-10 flex flex-col gap-10">
+        <Show when={params.id}>
+          <div class="flex items-center justify-between gap-3 rounded-md border border-border-weak-base bg-surface-panel px-3 py-2">
+            <div class="min-w-0 flex flex-col gap-1">
+              <div class="text-12-regular text-text-weak">{language.t("context.stats.sessionID")}</div>
+              <div class="truncate text-12-medium text-text-strong" title={params.id}>
+                {params.id}
+              </div>
+            </div>
+            <Button
+              size="small"
+              variant="ghost"
+              class="shrink-0 px-2 text-text-weak hover:text-text-base"
+              onClick={copySessionIDToClipboard}
+              aria-label={language.t("context.sessionID.copy")}
+            >
+              <Icon name="copy" size="small" />
+            </Button>
+          </div>
+        </Show>
+
         <div class="grid grid-cols-1 @[32rem]:grid-cols-2 gap-4">
           <For each={stats}>
             {(stat) => <Stat label={language.t(stat.label as Parameters<typeof language.t>[0])} value={stat.value()} />}
