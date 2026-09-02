@@ -76,7 +76,12 @@ export const defaultConfigLayer = Layer.sync(ConfigService, () =>
       process.env.OPENCTRLC_WEBSEARCH_PROVIDER === "exa" || process.env.OPENCTRLC_WEBSEARCH_PROVIDER === "parallel"
         ? process.env.OPENCTRLC_WEBSEARCH_PROVIDER
         : undefined,
-    enableExa: truthy("OPENCTRLC_EXPERIMENTAL") || truthy("OPENCTRLC_ENABLE_EXA") || truthy("OPENCTRLC_EXPERIMENTAL_EXA"),
+    enableExa:
+      process.env.OPENCTRLC_ENABLE_EXA === undefined
+        ? true
+        : truthy("OPENCTRLC_EXPERIMENTAL") ||
+          truthy("OPENCTRLC_ENABLE_EXA") ||
+          truthy("OPENCTRLC_EXPERIMENTAL_EXA"),
     enableParallel: truthy("OPENCTRLC_ENABLE_PARALLEL") || truthy("OPENCTRLC_EXPERIMENTAL_PARALLEL"),
     exaApiKey: process.env.EXA_API_KEY,
     parallelApiKey: process.env.PARALLEL_API_KEY,

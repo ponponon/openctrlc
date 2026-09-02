@@ -63,7 +63,8 @@ export function webSearchEnabled(providerID: ProviderV2.ID, flags = { exa: false
     flags.exa ||
     flags.parallel ||
     override === "exa" ||
-    override === "parallel"
+    override === "parallel" ||
+    true // 默认启用 websearch
   )
 }
 

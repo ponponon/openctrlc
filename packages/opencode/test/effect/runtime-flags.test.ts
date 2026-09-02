@@ -113,13 +113,21 @@ describe("RuntimeFlags", () => {
       expect(flags.disableLspDownload).toBe(false)
       expect(flags.disableClaudeCodePrompt).toBe(false)
       expect(flags.disableClaudeCodeSkills).toBe(false)
-      expect(flags.enableExa).toBe(false)
+      expect(flags.enableExa).toBe(true)
       expect(flags.experimentalIconDiscovery).toBe(false)
       expect(flags.experimentalOxfmt).toBe(false)
       expect(flags.outputTokenMax).toBeUndefined()
       expect(flags.bashDefaultTimeoutMs).toBe(1_000)
       expect(flags.enableExperimentalModels).toBe(false)
       expect(flags.client).toBe("cli")
+    }),
+  )
+
+  it.effect("allows Exa to be disabled explicitly", () =>
+    Effect.gen(function* () {
+      const flags = yield* readFlags.pipe(Effect.provide(fromConfig({ OPENCTRLC_ENABLE_EXA: "false" })))
+
+      expect(flags.enableExa).toBe(false)
     }),
   )
 
@@ -339,7 +347,7 @@ describe("RuntimeFlags", () => {
       expect(flags.disableLspDownload).toBe(false)
       expect(flags.disableClaudeCodePrompt).toBe(false)
       expect(flags.disableClaudeCodeSkills).toBe(false)
-      expect(flags.enableExa).toBe(false)
+      expect(flags.enableExa).toBe(true)
       expect(flags.experimentalIconDiscovery).toBe(false)
       expect(flags.experimentalOxfmt).toBe(false)
       expect(flags.outputTokenMax).toBeUndefined()

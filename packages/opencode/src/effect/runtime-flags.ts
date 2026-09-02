@@ -30,7 +30,7 @@ export class Service extends ConfigService.Service<Service>()("@opencode/Runtime
   }).pipe(Config.map((flags) => flags.broad || flags.direct)),
   enableExa: Config.all({
     experimental,
-    enabled: bool("OPENCTRLC_ENABLE_EXA"),
+    enabled: Config.boolean("OPENCTRLC_ENABLE_EXA").pipe(Config.withDefault(true)),
     legacy: bool("OPENCTRLC_EXPERIMENTAL_EXA"),
   }).pipe(Config.map((flags) => flags.experimental || flags.enabled || flags.legacy)),
   enableParallel: Config.all({
