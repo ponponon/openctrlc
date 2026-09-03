@@ -48,6 +48,18 @@ export type OpenCodeSessionImport = {
   databasePath?: string
 }
 
+export type OpenCodeSessionInfo = {
+  sessionID: string
+  title: string
+  directory: string
+  messageCount: number
+}
+
+export type OpenCodeSessionLookup = {
+  sessionID: string
+  databasePath?: string
+}
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -115,6 +127,7 @@ export type ElectronAPI = {
   setTitlebar: (theme: TitlebarTheme) => Promise<void>
   runDesktopMenuAction: (action: DesktopMenuAction) => Promise<void>
   setBackgroundColor: (color: string) => Promise<void>
+  getOpenCodeSessionInfo: (input: OpenCodeSessionLookup) => Promise<OpenCodeSessionInfo | null>
   exportDebugLogs: () => Promise<string>
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   setForceFocus: (enabled: boolean) => Promise<void>

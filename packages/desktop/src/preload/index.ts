@@ -129,6 +129,7 @@ const api: ElectronAPI = {
   setTitlebar: (theme) => ipcRenderer.invoke("set-titlebar", theme),
   runDesktopMenuAction: (action) => ipcRenderer.invoke("run-desktop-menu-action", action),
   setBackgroundColor: (color: string) => ipcRenderer.invoke("set-background-color", color),
+  getOpenCodeSessionInfo: (input) => ipcRenderer.invoke("get-opencode-session-info", input),
   exportDebugLogs: () => ipcRenderer.invoke("export-debug-logs"),
   importOpenCodeSession: (input) => ipcRenderer.invoke("import-opencode-session", input),
   setForceFocus: (enabled) => ipcRenderer.invoke("set-force-focus", enabled),

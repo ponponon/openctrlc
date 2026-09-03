@@ -8,7 +8,7 @@ import type { UpdaterPlatform } from "../updater"
 import type { DraftStore } from "@/utils/draft-store"
 
 type PickerPaths = string | string[] | null
-type OpenDirectoryPickerOptions = { title?: string; multiple?: boolean }
+type OpenDirectoryPickerOptions = { title?: string; multiple?: boolean; defaultPath?: string }
 type OpenFilePickerOptions = { title?: string; defaultPath?: string; extensions?: string[] }
 type OpenAttachmentPickerOptions = {
   title?: string
@@ -66,7 +66,13 @@ type PlatformBase = {
   /** Open a native file picker and return the selected path (desktop only) */
   openFilePickerDialog?(opts?: OpenFilePickerOptions): Promise<string | null>
 
-  /** Import an OpenCode session into the current local project (desktop only) */
+  /** Read OpenCode session metadata without importing it (desktop only) */
+  getOpenCodeSessionInfo?(input: {
+    sessionID: string
+    databasePath?: string
+  }): Promise<{ sessionID: string; title: string; directory: string; messageCount: number } | null>
+
+  /** Import an OpenCode session into a local project (desktop only) */
   importOpenCodeSession?(input: {
     sessionID: string
     directory: string

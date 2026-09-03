@@ -6,7 +6,14 @@ import type { IpcMainEvent, IpcMainInvokeEvent } from "electron"
 import type { DesktopMenuAction } from "@openctrlc/app/desktop-menu"
 import { parseDesktopNativeBundle, type DesktopNativeBundle } from "@openctrlc/app/i18n/desktop-native"
 
-import type { FatalRendererError, OpenCodeSessionImport, ServerReadyData, TitlebarTheme } from "../preload/types"
+import type {
+  FatalRendererError,
+  OpenCodeSessionImport,
+  OpenCodeSessionInfo,
+  OpenCodeSessionLookup,
+  ServerReadyData,
+  TitlebarTheme,
+} from "../preload/types"
 import { runDesktopMenuAction } from "./desktop-menu-actions"
 import { setForceFocus } from "./debug"
 import { assertAttachmentBudget, createPickedFileAuthorizations } from "./attachment-picker"
@@ -50,6 +57,7 @@ type Deps = {
   showUpdater: () => Promise<void> | void
   setBackgroundColor: (color: string) => void
   exportDebugLogs: () => Promise<string>
+  getOpenCodeSessionInfo: (input: OpenCodeSessionLookup) => Promise<OpenCodeSessionInfo | null>
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void> | void
   setNativeTranslations: (bundle: DesktopNativeBundle) => void
@@ -96,6 +104,10 @@ export function registerIpcHandlers(deps: Deps) {
   ipcMain.handle("updater-check", () => deps.updater.check())
   ipcMain.handle("updater-install", () => deps.updater.install())
   ipcMain.handle("set-background-color", (_event: IpcMainInvokeEvent, color: string) => deps.setBackgroundColor(color))
+  ipcMain.handle("get-opencode-session-info", (_event: IpcMainInvokeEvent, input: OpenCodeSessionLookup) => {
+    if (!isOpenCodeSessionLookup(input)) throw new Error("Invalid OpenCode session lookup request")
+    return deps.getOpenCodeSessionInfo(input)
+  })
   ipcMain.handle("export-debug-logs", () => deps.exportDebugLogs())
   ipcMain.handle("import-opencode-session", (_event: IpcMainInvokeEvent, input: OpenCodeSessionImport) => {
     if (!isOpenCodeSessionImport(input)) throw new Error("Invalid OpenCode session import request")
@@ -309,6 +321,16 @@ function isOpenCodeSessionImport(value: unknown): value is OpenCodeSessionImport
   const input = value as Partial<OpenCodeSessionImport>
   if (typeof input.sessionID !== "string" || !/^ses_[a-zA-Z0-9]+$/.test(input.sessionID)) return false
   if (typeof input.directory !== "string" || !isAbsolute(input.directory)) return false
+  if (input.databasePath !== undefined && (typeof input.databasePath !== "string" || !isAbsolute(input.databasePath))) {
+    return false
+  }
+  return true
+}
+
+function isOpenCodeSessionLookup(value: unknown): value is OpenCodeSessionLookup {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const input = value as Partial<OpenCodeSessionLookup>
+  if (typeof input.sessionID !== "string" || !/^ses_[a-zA-Z0-9]+$/.test(input.sessionID)) return false
   if (input.databasePath !== undefined && (typeof input.databasePath !== "string" || !isAbsolute(input.databasePath))) {
     return false
   }

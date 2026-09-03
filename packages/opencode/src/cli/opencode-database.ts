@@ -52,6 +52,13 @@ type RawPartRow = {
   data: unknown
 }
 
+export type OpencodeSessionInfo = {
+  sessionID: string
+  title: string
+  directory: string
+  messageCount: number
+}
+
 export type OpencodeSessionData = {
   info: SDKSession
   messages: Array<{ info: Message; parts: Part[] }>
@@ -63,6 +70,35 @@ export function opencodeDatabasePath(input?: string) {
   if (!configured) return path.join(dataDirectory, "opencode.db")
   if (path.isAbsolute(configured)) return configured
   return path.join(dataDirectory, configured)
+}
+
+export function readOpencodeSessionInfo(databasePath: string, sessionID: string): OpencodeSessionInfo | undefined {
+  const database = new Database(databasePath, {
+    readonly: true,
+    readwrite: false,
+    create: false,
+  })
+
+  try {
+    const row = database.query("SELECT id, title, directory FROM session WHERE id = ?").get(sessionID) as Pick<
+      RawSessionRow,
+      "id" | "title" | "directory"
+    > | null
+    if (!row) return undefined
+
+    const count = database.query("SELECT COUNT(*) AS count FROM message WHERE session_id = ?").get(sessionID) as {
+      count: number
+    } | null
+
+    return {
+      sessionID: row.id,
+      title: row.title,
+      directory: row.directory,
+      messageCount: Number(count?.count ?? 0),
+    }
+  } finally {
+    database.close()
+  }
 }
 
 export function readOpencodeSession(databasePath: string, sessionID: string): OpencodeSessionData | undefined {

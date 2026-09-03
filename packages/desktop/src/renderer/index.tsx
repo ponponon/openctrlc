@@ -160,6 +160,7 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
       return window.api.openDirectoryPicker({
         multiple: opts?.multiple ?? false,
         title: opts?.title,
+        defaultPath: opts?.defaultPath,
       })
     },
 
@@ -175,6 +176,10 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
       } finally {
         await window.api.releasePickedFiles(result.token)
       }
+    },
+
+    getOpenCodeSessionInfo(input) {
+      return window.api.getOpenCodeSessionInfo(input)
     },
 
     importOpenCodeSession(input) {

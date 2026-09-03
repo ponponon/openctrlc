@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 import { app } from "electron"
 import { Brand } from "@openctrlc/identity"
-import type { OpenCodeSessionImport } from "../preload/types"
+import type { OpenCodeSessionImport, OpenCodeSessionInfo, OpenCodeSessionLookup } from "../preload/types"
 
 const execFileAsync = promisify(execFile)
 const root = dirname(fileURLToPath(import.meta.url))
@@ -65,6 +65,19 @@ export async function importOpenCodeSession(input: OpenCodeSessionImport, logger
   return { sessionID: input.sessionID }
 }
 
+export async function getOpenCodeSessionInfo(input: OpenCodeSessionLookup, logger: Logger) {
+  const command = await resolveImportCommand(logger)
+  const args = [...command.prefix, "import", input.sessionID, "--opencode-info"]
+  if (input.databasePath) args.push("--opencode-db", input.databasePath)
+  const output = await run(command.binary, args, logger, {
+    stateHome: process.env.XDG_STATE_HOME,
+  })
+  const parsed: unknown = JSON.parse(output)
+  if (parsed === null) return null
+  if (!isOpenCodeSessionInfo(parsed)) throw new Error("OpenCode session metadata was not valid JSON")
+  return parsed
+}
+
 async function resolveImportCommand(logger: Logger) {
   if (!app.isPackaged) {
     const entrypoint = join(root, "../../../opencode/src/index.ts")
@@ -75,7 +88,7 @@ async function resolveImportCommand(logger: Logger) {
 
   const binary = await resolveCliBinary(logger)
   const help = await run(binary, ["import", "--help"], logger, { includeStderr: true })
-  if (!help.includes("--opencode-db")) {
+  if (!help.includes("--opencode-db") || !help.includes("--opencode-info")) {
     throw new Error("当前 Desktop 内置 CLI 不支持 OpenCode 会话导入，请更新到最新版本")
   }
   return { binary, prefix: [] }
@@ -155,4 +168,15 @@ function endpoint(url: string | undefined) {
 
 function executableName() {
   return process.platform === "win32" ? "openctrlc.exe" : "openctrlc"
+}
+
+function isOpenCodeSessionInfo(value: unknown): value is OpenCodeSessionInfo {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const info = value as Partial<OpenCodeSessionInfo>
+  return (
+    typeof info.sessionID === "string" &&
+    typeof info.title === "string" &&
+    typeof info.directory === "string" &&
+    typeof info.messageCount === "number"
+  )
 }

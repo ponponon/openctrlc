@@ -10,7 +10,7 @@ import {
   transformShareData,
   type ShareData,
 } from "../../src/cli/cmd/import"
-import { opencodeDatabasePath, readOpencodeSession } from "../../src/cli/opencode-database"
+import { opencodeDatabasePath, readOpencodeSession, readOpencodeSessionInfo } from "../../src/cli/opencode-database"
 import { FSUtil } from "@openctrlc/core/fs-util"
 import { PlatformError } from "effect"
 
@@ -203,6 +203,13 @@ test("reads a session and its messages from an opencode database", async () => {
     expect(result?.messages).toHaveLength(1)
     expect(result?.messages[0]?.parts.map((part) => part.id)).toEqual(["prt_a", "prt_z"])
     expect(result?.messages[0]?.parts.map((part) => part.type)).toEqual(["text", "text"])
+    expect(readOpencodeSessionInfo(databasePath, "ses_import_test")).toEqual({
+      sessionID: "ses_import_test",
+      title: "Imported session",
+      directory: "/tmp/project",
+      messageCount: 1,
+    })
+    expect(readOpencodeSessionInfo(databasePath, "ses_missing")).toBeUndefined()
     expect(readOpencodeSession(databasePath, "ses_missing")).toBeUndefined()
   } finally {
     await rm(directory, { recursive: true, force: true })

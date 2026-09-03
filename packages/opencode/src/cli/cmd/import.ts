@@ -12,7 +12,7 @@ import path from "path"
 import { FSUtil } from "@openctrlc/core/fs-util"
 import { Effect, Schema } from "effect"
 import type { InstanceContext } from "@/project/instance-context"
-import { opencodeDatabasePath, readOpencodeSession } from "../opencode-database"
+import { opencodeDatabasePath, readOpencodeSession, readOpencodeSessionInfo } from "../opencode-database"
 import { SessionID } from "../../session/schema"
 
 const decodeMessageInfo = Schema.decodeUnknownSync(SessionV1.Info)
@@ -106,12 +106,37 @@ export const ImportCommand = effectCmd({
       .option("opencode-db", {
         describe: "path to the opencode database",
         type: "string",
+      })
+      .option("opencode-info", {
+        describe: "print opencode session metadata without importing",
+        type: "boolean",
+        default: false,
       }),
   handler: Effect.fn("Cli.import")(function* (args) {
+    if (args["opencode-info"]) return yield* inspectOpencodeSession(args.file, args.opencodeDb)
+
     const ctx = yield* InstanceRef
     if (!ctx) return yield* Effect.die("InstanceRef not provided")
     return yield* runImport(args.file, ctx, args.opencodeDb)
   }),
+  instance: (args) => !args["opencode-info"],
+})
+
+const inspectOpencodeSession = Effect.fn("Cli.import.inspect")(function* (file: string, opencodeDb?: string) {
+  if (!/^ses_[a-zA-Z0-9]+$/.test(file)) {
+    return yield* Effect.fail(new CliError({ message: "OpenCode metadata lookup requires a session ID" }))
+  }
+
+  const databasePath = opencodeDatabasePath(opencodeDb)
+  const info = yield* Effect.try({
+    try: () => readOpencodeSessionInfo(databasePath, SessionID.make(file)),
+    catch: (error) =>
+      new CliError({
+        message: `Failed to read opencode session from ${databasePath}: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+  })
+  process.stdout.write(JSON.stringify(info ?? null))
+  process.stdout.write(EOL)
 })
 
 const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: InstanceContext, opencodeDb?: string) {
