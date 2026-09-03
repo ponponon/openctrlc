@@ -6,6 +6,7 @@
 如果 User-Agent 包含 `openctrlc`，服务器会对免费用户施加更严格的限制，导致 "Free usage exceeded" 错误。
 
 **需要保持 `opencode` User-Agent 的文件**：
+
 - `packages/opencode/src/installation/index.ts` → `userAgent()` 函数
 - `packages/opencode/src/session/llm/request.ts` → `USER_AGENT` 常量
 - `packages/opencode/src/tool/websearch.ts` → `parallelAuthHeaders()` 函数
@@ -40,3 +41,7 @@ OpenCode 的 session 记录本身包含 `directory`（即会话工作目录）�
 ## 长内容 Dialog 必须由内容区域负责滚动
 
 旧版 Dialog 的 `dialog-body` 默认使用 `overflow: hidden`，表单内容如果只依赖外层 Dialog 的滚动，会在固定高度下被裁切且无法响应滚轮。内容可能超出窗口的表单必须设置 `min-h-0 flex-1 overflow-y-auto`，让表单成为实际滚动容器，同时保留 Dialog 标题和说明区域固定可见。
+
+## Dialog 内容区的横向内边距必须与头部对齐
+
+导入弹窗曾让表单使用 `px-2.5`，而通用 Dialog 的标题和说明区域实际使用约 20px 的左右内边距，导致标题、区块标题和卡片左右边界不在同一条线上。以后基于通用 Dialog 编写表单时，必须先核对 `dialog-header`、`dialog-description` 的实际 padding，内容区统一使用相同的视觉内边距，并检查长路径、错误状态和底部操作区的左右边界。

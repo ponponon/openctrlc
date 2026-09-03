@@ -193,7 +193,7 @@ export function DialogImportOpenCodeSession(props: DialogImportOpenCodeSessionPr
       class="w-full max-w-[520px]"
       transition
     >
-      <form onSubmit={submit} class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-2.5 pb-3">
+      <form onSubmit={submit} class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pb-4">
         <section class="flex flex-col gap-3" aria-labelledby="opencode-source-heading">
           <div class="flex items-center justify-between gap-3">
             <h2 id="opencode-source-heading" class="text-12-medium text-text-weak">
