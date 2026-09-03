@@ -46,6 +46,15 @@ test("bundles the CLI outside the dev app archive", async () => {
   })
 })
 
+test("skips non-macOS Electron resources during macOS signing", async () => {
+  const module = await import("./electron-builder.config.ts?mac-sign-ignore")
+  const config = module.default as Configuration
+  const signIgnore = config.mac?.signIgnore
+
+  expect(signIgnore).toContain("\\.pak$")
+  expect(signIgnore).toContain("(^|[-/])(linux|win32|freebsd|android|aix|sunos)([-/]|$)")
+})
+
 for (const channel of ["beta", "prod"] as const) {
   test(`does not bundle the CLI in ${channel} builds`, async () => {
     const previous = process.env.OPENCTRLC_CHANNEL

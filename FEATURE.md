@@ -97,6 +97,7 @@ bun run desktop:mac
 
 - 自动停止已运行的 OpenCtrlC，清理本机 macOS 构建目录并执行 Desktop `build`。
 - 通过 electron-builder 的 `dir` target 生成当前架构的 `.app`，避免本地安装流程依赖 DMG 挂载。
+- 跳过 Electron `locale.pak` 语言资源和其他平台可选二进制的单独签名，避免为非当前 macOS 产物重复请求时间戳服务；App、Framework、Helper 和 macOS 原生模块仍正常签名。
 - 默认将 APP 安装到 `/Applications/OpenCtrlC.app` 并启动；`--no-install` 用于只生成本地 APP，`--no-open` 用于只构建或安装。
 - 通过 `OPENCTRLC_CHANNEL` 统一 Desktop、sidecar 和内置 CLI 的通道，避免开发环境数据库不一致。
 
