@@ -44,7 +44,7 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 
 ### 功能目标
 
-在 Desktop 版本中通过文件菜单或命令面板按 sessionID 导入 OpenCode 会话，导入完成后自动刷新当前项目的会话列表并打开该会话。
+在 Desktop 版本中通过文件菜单、命令面板或首页项目菜单按 sessionID 导入 OpenCode 会话，导入完成后自动刷新当前项目的会话列表并打开该会话。
 
 ### 使用方式
 
@@ -53,6 +53,7 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 3. 输入 `ses_...` 格式的 sessionID，点击「查找会话」；界面会展示会话标题、消息数量和 OpenCode 工作目录。
 4. 默认使用会话记录中的工作目录作为导入目标；如果需要导入到其他项目，可以点击「选择文件夹」，也可以恢复为会话目录。
 5. 如果 OpenCode 数据库不在默认位置，可选择自定义 `.db` 文件，切换数据库后重新查找。
+6. 在首页项目列表中打开项目右侧的「更多」菜单，也可以直接进入导入弹窗；此时会使用该项目的工作目录作为默认导入目标。
 
 ### 实现范围
 
@@ -62,6 +63,7 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 - 打包版启动查询或导入前会检查内置 CLI 是否包含 `--opencode-db` 和 `--opencode-info`，旧版本会提示更新，不会静默执行错误的文件导入流程。
 - IPC 仅接受绝对路径和合法 sessionID；远程 HTTP/SSH/WSL 服务器不会显示为可导入目标。
 - 目标目录可由原生文件夹选择器修改；导入成功后按最终目标目录刷新项目会话、强制同步，再创建并选中对应的 session tab。
+- 首页项目菜单会把当前项目的服务器、工作目录传给同一导入弹窗，确保导入入口与点击的项目上下文一致。
 
 ### 代码位置
 
@@ -69,6 +71,7 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 - `packages/desktop/src/main/ipc.ts`、`packages/desktop/src/preload/*`：安全 IPC 和 preload 类型。
 - `packages/app/src/components/dialog-import-opencode-session.tsx`：导入对话框。
 - `packages/app/src/app.tsx`、`packages/app/src/desktop-menu.ts`：命令面板注册和 Desktop 文件菜单入口。
+- `packages/app/src/pages/home/home-projects-controller.tsx`、`packages/app/src/pages/home/home-projects-view.tsx`：首页项目菜单入口。
 
 ### 验证方式
 

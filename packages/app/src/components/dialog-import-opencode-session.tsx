@@ -5,9 +5,8 @@ import { Dialog } from "@openctrlc/ui/dialog"
 import { TextField } from "@openctrlc/ui/text-field"
 import { createMemo, createSignal, Show } from "solid-js"
 import type { useLanguage } from "@/context/language"
-import type { useLayout } from "@/context/layout"
 import type { usePlatform } from "@/context/platform"
-import type { useServer } from "@/context/server"
+import type { ServerConnection } from "@/context/server"
 import type { useServerSync } from "@/context/server-sync"
 import type { useTabs } from "@/context/tabs"
 import { isOpenCodeSessionID } from "@/utils/opencode-import"
@@ -19,19 +18,18 @@ export type DialogImportOpenCodeSessionProps = {
   directory: string
   dialog: ReturnType<typeof useDialog>
   language: ReturnType<typeof useLanguage>
-  layout: ReturnType<typeof useLayout>
+  openProject: (directory: string) => void
   platform: ReturnType<typeof usePlatform>
-  server: ReturnType<typeof useServer>
+  serverKey: ServerConnection.Key
   serverSync: ReturnType<typeof useServerSync>
   tabs: ReturnType<typeof useTabs>
+  touchProject: (directory: string) => void
 }
 
 export function DialogImportOpenCodeSession(props: DialogImportOpenCodeSessionProps) {
   const dialog = props.dialog
   const language = props.language
-  const layout = props.layout
   const platform = props.platform
-  const server = props.server
   const serverSync = props.serverSync
   const tabs = props.tabs
   const [sessionID, setSessionID] = createSignal("")
@@ -169,11 +167,11 @@ export function DialogImportOpenCodeSession(props: DialogImportOpenCodeSessionPr
         directory: targetDirectory(),
         databasePath: databasePath() || undefined,
       })
-      layout.projects.open(targetDirectory())
-      server.projects.touch(targetDirectory())
+      props.openProject(targetDirectory())
+      props.touchProject(targetDirectory())
       await serverSync().project.loadSessions(targetDirectory())
       await serverSync().ensureDirSyncContext(targetDirectory()).session.sync(result.sessionID, { force: true })
-      const tab = tabs.addSessionTab({ server: server.key, sessionId: result.sessionID })
+      const tab = tabs.addSessionTab({ server: props.serverKey, sessionId: result.sessionID })
       tabs.select(tab)
       dialog.close()
       showToast({

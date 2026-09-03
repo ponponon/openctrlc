@@ -31,6 +31,8 @@ export function HomeProjects(props: { projects: HomeProjectsController; scroll: 
       onOpenProjectNewSession={props.projects.project.openNewSession}
       onEditProject={props.projects.project.edit}
       onRevealProject={props.projects.project.reveal}
+      onImportOpenCodeSession={props.projects.project.importOpenCodeSession}
+      canImportOpenCodeSession={props.projects.project.canImportOpenCodeSession}
       onClearNotifications={props.projects.project.clearNotifications}
       onCloseProject={props.projects.project.close}
       onOpenSettings={props.projects.utility.settings}

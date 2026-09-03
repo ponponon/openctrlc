@@ -7,9 +7,11 @@ import { useLanguage } from "@/context/language"
 import { useNotification } from "@/context/notification"
 import { usePlatform } from "@/context/platform"
 import { ServerConnection } from "@/context/server"
+import { useTabs } from "@/context/tabs"
 import { closeHomeProject, errorMessage, homeProjectDirectories } from "@/pages/layout/helpers"
 import { Persist, persisted } from "@/utils/persist"
 import { showToast } from "@/utils/toast"
+import { showOpenCodeImportDialog } from "@/utils/opencode-import-dialog"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { createResource } from "solid-js"
 import { createStore } from "solid-js/store"
@@ -20,6 +22,7 @@ export function createHomeProjectsController(home: HomeController) {
   const pickDirectory = useDirectoryPicker()
   const dialog = useDialog()
   const language = useLanguage()
+  const tabs = useTabs()
   const notification = useNotification()
   const openSettings = useSettingsCommand()
   const serverManagement = useServerManagementController({ navigateOnAdd: false })
@@ -38,6 +41,10 @@ export function createHomeProjectsController(home: HomeController) {
 
   function canRevealProject(conn: ServerConnection.Any) {
     return platform.platform === "desktop" && !!platform.openPath && ServerConnection.local(conn)
+  }
+
+  function canImportOpenCodeSession(conn: ServerConnection.Any) {
+    return platform.platform === "desktop" && !!platform.importOpenCodeSession && ServerConnection.builtin(conn)
   }
 
   return {
@@ -108,6 +115,24 @@ export function createHomeProjectsController(home: HomeController) {
         home.server.context(conn).projects.move(worktree, index)
       },
       canReveal: canRevealProject,
+      canImportOpenCodeSession,
+      importOpenCodeSession: (conn: ServerConnection.Any, directory: string) => {
+        if (!canImportOpenCodeSession(conn)) {
+          showToast({ title: language.t("dialog.session.importOpencode.error.localOnly") })
+          return
+        }
+        showOpenCodeImportDialog({
+          directory,
+          dialog,
+          language,
+          openProject: (target) => home.server.context(conn).projects.open(target),
+          platform,
+          serverKey: ServerConnection.key(conn),
+          serverSync: () => home.server.context(conn).sync,
+          tabs,
+          touchProject: (target) => home.server.context(conn).projects.touch(target),
+        })
+      },
       reveal: (conn: ServerConnection.Any, project: LocalProject) => {
         if (!platform.openPath || !canRevealProject(conn)) return
         platform.openPath(project.worktree).catch((cause: unknown) =>

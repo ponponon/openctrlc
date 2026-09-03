@@ -65,6 +65,7 @@ import { useCheckServerHealth } from "./utils/server-health"
 import { legacySessionHref, legacySessionServer, requireServerKey, sessionHref } from "./utils/session-route"
 import { createSessionLineage } from "@/pages/session/session-lineage"
 import { showToast } from "@/utils/toast"
+import { showOpenCodeImportDialog } from "@/utils/opencode-import-dialog"
 
 import { SessionPage, SessionRouteErrorBoundary, TargetSessionRouteContent } from "@/pages/session"
 import { NewHome } from "@/pages/home"
@@ -406,19 +407,17 @@ function DesktopSessionCommands() {
           showToast({ title: language.t("dialog.session.importOpencode.error.project") })
           return
         }
-        const module = await import("@/components/dialog-import-opencode-session")
-        void dialog.show(() => (
-          <module.DialogImportOpenCodeSession
-            directory={directory}
-            dialog={dialog}
-            language={language}
-            layout={layout}
-            platform={platform}
-            server={server}
-            serverSync={serverSync}
-            tabs={tabs}
-          />
-        ))
+        showOpenCodeImportDialog({
+          directory,
+          dialog,
+          language,
+          openProject: layout.projects.open,
+          platform,
+          serverKey: server.key,
+          serverSync,
+          tabs,
+          touchProject: server.projects.touch,
+        })
       },
     },
   ])
