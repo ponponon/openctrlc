@@ -78,3 +78,36 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 - 执行 `bun typecheck`（`packages/app`、`packages/desktop`）。
 - 执行 app 单测，覆盖 sessionID 校验、菜单注册和多语言 key parity。
 - 使用当前源码构建 CLI 后执行 `openctrlc import --help`，确认包含 `--opencode-db` 和 `--opencode-info`；发布桌面包时使用同版本平台 CLI 包。
+
+## macOS Desktop 一键打包安装
+
+### 功能目标
+
+为本地 Desktop 开发提供单条命令完成构建、生成 `.app`、安装到 `/Applications` 并启动，减少反复执行构建和复制 APP 的操作成本。
+
+### 使用方式
+
+```bash
+bun run desktop:mac
+```
+
+默认使用 `dev` 通道；支持 `--channel=dev|beta|prod`、`--no-install` 和 `--no-open` 参数。正式分发的 DMG/ZIP 继续使用 `packages/desktop` 中的 `package:mac` 命令。
+
+### 实现范围
+
+- 自动停止已运行的 OpenCtrlC，清理本机 macOS 构建目录并执行 Desktop `build`。
+- 通过 electron-builder 的 `dir` target 生成当前架构的 `.app`，避免本地安装流程依赖 DMG 挂载。
+- 默认将 APP 安装到 `/Applications/OpenCtrlC.app` 并启动；`--no-install` 用于只生成本地 APP，`--no-open` 用于只构建或安装。
+- 通过 `OPENCTRLC_CHANNEL` 统一 Desktop、sidecar 和内置 CLI 的通道，避免开发环境数据库不一致。
+
+### 代码位置
+
+- `script/build-macos.ts`：macOS 构建、安装和启动脚本。
+- `script/build_and_run.sh`：统一 shell 入口。
+- `package.json`：`bun run desktop:mac` 命令。
+
+### 验证方式
+
+- 在 macOS 上执行 `bun run desktop:mac`，确认 `/Applications/OpenCtrlC.app` 存在且进程成功启动。
+- 执行 `bun run desktop:mac -- --no-install --no-open`，确认仅生成 `.app` 且不启动应用。
+- 正式分发前执行 `OPENCTRLC_CHANNEL=prod bun run --cwd packages/desktop package:mac`，检查 DMG/ZIP 产物和签名/公证配置。

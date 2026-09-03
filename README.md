@@ -116,6 +116,27 @@ OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | b
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
 ```
 
+#### Local macOS Desktop packaging
+
+From the project root, this command builds the Desktop app, creates a native `.app`, installs it to `/Applications/OpenCtrlC.app`, and launches it:
+
+```bash
+bun run desktop:mac
+```
+
+The default channel is `dev`. Build without installing, or select another channel:
+
+```bash
+bun run desktop:mac -- --no-install --no-open
+bun run desktop:mac -- --channel=prod --no-open
+```
+
+To create a DMG/ZIP for distribution, build first and then run the existing Desktop macOS packaging command:
+
+```bash
+OPENCTRLC_CHANNEL=prod bun run --cwd packages/desktop package:mac
+```
+
 ### Agents
 
 OpenCtrlC includes two built-in agents you can switch between with the `Tab` key.

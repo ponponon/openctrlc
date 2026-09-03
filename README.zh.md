@@ -98,6 +98,27 @@ OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | b
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
 ```
 
+#### macOS 本地开发打包安装
+
+在项目根目录执行下面的命令，会构建 Desktop、生成本机 `.app`、安装到 `/Applications/OpenCtrlC.app` 并启动：
+
+```bash
+bun run desktop:mac
+```
+
+默认构建 `dev` 通道。只构建不安装，或指定其他通道：
+
+```bash
+bun run desktop:mac -- --no-install --no-open
+bun run desktop:mac -- --channel=prod --no-open
+```
+
+如果需要生成正式分发用的 DMG/ZIP，先完成构建，再执行 Desktop macOS 打包命令：
+
+```bash
+OPENCTRLC_CHANNEL=prod bun run --cwd packages/desktop package:mac
+```
+
 ### Agents
 
 OpenCode 内置两种 Agent，可用 `Tab` 键快速切换：
