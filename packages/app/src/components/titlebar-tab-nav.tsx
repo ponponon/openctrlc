@@ -10,6 +10,7 @@ import { ServerConnection, serverName } from "@/context/server"
 import { displayName, projectForSession } from "@/pages/layout/helpers"
 import { SessionTabAvatar } from "@/pages/layout/session-tab-avatar"
 import type { Session } from "@openctrlc/sdk/v2"
+import { sessionTabTitle } from "@/utils/session-title"
 import { canOpenTabRename, forwardTabRef } from "./titlebar-tab-gesture"
 import { TabPreviewPopover } from "./titlebar-tab-popover"
 import "./titlebar-tab-nav.css"
@@ -55,12 +56,14 @@ export function TabNavItem(props: {
     if (!session) return
     return projectForSession(session, serverCtx()?.projects.list() ?? [])
   })
-  const title = createMemo(() => props.session()?.title ?? props.fallbackTitle)
-
   const projectName = createMemo(() => {
     const session = props.session()
     if (!session) return
     return displayName(project() ?? { worktree: session.directory })
+  })
+  const title = createMemo(() => {
+    const value = props.session()?.title ?? props.fallbackTitle
+    return sessionTabTitle(projectName(), value)
   })
   const previewPath = createMemo(() => {
     const session = props.session()

@@ -17,3 +17,8 @@ export function sessionTitle(title?: string) {
   const match = title.match(pattern)
   return match?.[1] ?? title
 }
+
+export function sessionTabTitle(projectName?: string, title?: string) {
+  if (!title || !projectName) return title
+  return `${projectName} / ${title}`
+}
