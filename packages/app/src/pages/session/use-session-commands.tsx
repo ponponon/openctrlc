@@ -12,7 +12,12 @@ import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
 import { showToast } from "@/utils/toast"
-import { downloadSessionExport, fetchSessionExport, sessionExportFilename } from "@/utils/session-export"
+import {
+  downloadSessionExport,
+  fetchSessionExport,
+  sessionExportActions,
+  sessionExportFilename,
+} from "@/utils/session-export"
 import { findLast } from "@openctrlc/core/util/array"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { extractPromptFromParts } from "@/utils/prompt"
@@ -20,6 +25,7 @@ import { Message, Part, UserMessage } from "@openctrlc/sdk/v2"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { createSessionOwnership } from "./session-ownership"
 import { useLocal } from "@/context/local"
+import { usePlatform } from "@/context/platform"
 
 export type SessionCommandContext = {
   navigateMessageByOffset: (offset: number) => void
@@ -42,6 +48,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const dialog = useDialog()
   const file = useFile()
   const language = useLanguage()
+  const platform = usePlatform()
   const permission = usePermission()
   const prompt = usePrompt()
   const sdk = useSDK()
@@ -250,6 +257,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
         icon: "circle-check",
         title: language.t("toast.session.export.success.title"),
         description: language.t("toast.session.export.success.description", { filename }),
+        actions: sessionExportActions(platform, language),
       })
     } catch (err) {
       showToast({

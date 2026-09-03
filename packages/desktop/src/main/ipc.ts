@@ -252,6 +252,11 @@ export function registerIpcHandlers(deps: Deps) {
     return true
   })
 
+  ipcMain.handle("open-downloads", async () => {
+    const error = await shell.openPath(app.getPath("downloads"))
+    if (error) throw new Error(error)
+  })
+
   ipcMain.handle("read-clipboard-image", () => {
     const image = clipboard.readImage()
     if (image.isEmpty()) return null

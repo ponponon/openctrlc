@@ -232,6 +232,9 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
     async revealPath(path: string) {
       return window.api.revealPath(path)
     },
+    async openDownloads() {
+      return window.api.openDownloads()
+    },
 
     storage,
     draftStore: createDraftStore({

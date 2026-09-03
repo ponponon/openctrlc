@@ -1,4 +1,8 @@
 import type { Message, Part, Session } from "@openctrlc/sdk/v2/client"
+import type { useLanguage } from "@/context/language"
+import type { Platform } from "@/context/platform"
+import { fileManagerApp } from "./file-manager"
+import { showToast } from "./toast"
 
 // Matches the exact `{ info, messages: [{ info, parts }] }` structure produced by `opencode export` CLI
 export type SessionExportData = {
@@ -10,6 +14,29 @@ export type SessionExportData = {
 }
 
 export type SessionExportFormat = "json" | "markdown"
+
+export function sessionExportActions(
+  platform: Pick<Platform, "platform" | "os" | "openDownloads">,
+  language: Pick<ReturnType<typeof useLanguage>, "t">,
+) {
+  if (platform.platform !== "desktop" || !platform.openDownloads) return undefined
+
+  const openDownloads = platform.openDownloads
+  return [
+    {
+      label: language.t(fileManagerApp(platform.os ?? "unknown").actionLabel),
+      onClick: () => {
+        void openDownloads().catch((err: unknown) =>
+          showToast({
+            variant: "error",
+            title: language.t("common.requestFailed"),
+            description: err instanceof Error ? err.message : String(err),
+          }),
+        )
+      },
+    },
+  ]
+}
 
 export type SessionExportClient = {
   session: {

@@ -45,6 +45,9 @@ type PlatformBase = {
   /** Reveal a local path in the system file manager; false when the path does not exist (desktop only) */
   revealPath?(path: string): Promise<boolean>
 
+  /** Open the system download directory in its default file manager (desktop only) */
+  openDownloads?(): Promise<void>
+
   /** Restart the app  */
   restart(): Promise<void>
 

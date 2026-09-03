@@ -17,10 +17,12 @@ import { showToast } from "@/utils/toast"
 import {
   downloadSessionExport,
   fetchSessionExport,
+  sessionExportActions,
   sessionExportFilename,
   type SessionExportFormat,
 } from "@/utils/session-export"
 import { useLanguage } from "@/context/language"
+import { usePlatform } from "@/context/platform"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
 import { useSessionLayout } from "@/pages/session/session-layout"
@@ -104,6 +106,7 @@ const emptyUserMessages: UserMessage[] = []
 export function SessionContextTab() {
   const sync = useSync()
   const language = useLanguage()
+  const platform = usePlatform()
   const sdk = useSDK()
   const providers = useProviders(() => sdk().directory)
   const { params, view } = useSessionLayout()
@@ -246,6 +249,7 @@ export function SessionContextTab() {
         icon: "circle-check",
         title: language.t("toast.session.export.success.title"),
         description: language.t("toast.session.export.success.description", { filename }),
+        actions: sessionExportActions(platform, language),
       })
     } catch (err) {
       showToast({

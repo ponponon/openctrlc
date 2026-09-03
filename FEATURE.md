@@ -1,3 +1,35 @@
+## 导出完成后打开系统文件管理器
+
+### 功能目标
+
+会话导出成功后，桌面端提示中提供打开下载目录的操作，帮助用户快速找到刚导出的 JSON 或 Markdown 文件。
+
+### 使用方式
+
+在桌面端导出会话成功后，点击提示中的「在 Finder 中显示」「在文件资源管理器中显示」或「打开所在文件夹」。macOS 使用 Finder，Windows 使用文件资源管理器，Linux 使用系统默认文件管理器。网页端保持原有下载行为，不显示本机文件管理器操作。
+
+### 实现范围
+
+- 通过 Desktop IPC 让主进程使用 Electron 默认文件打开能力打开系统下载目录，不在 Renderer 中硬编码各操作系统命令。
+- 导出成功提示的会话标题菜单、上下文页入口和命令面板入口统一提供该操作。
+- 复用现有文件管理器平台文案，并在打开失败时显示请求失败提示。
+- 由于浏览器下载路径由 Chromium 管理，操作打开的是下载目录，不承诺直接选中某一个文件。
+
+### 代码位置
+
+- `packages/app/src/utils/session-export.ts`：按平台生成导出成功提示操作。
+- `packages/app/src/context/platform.tsx`：声明打开系统下载目录的平台能力。
+- `packages/desktop/src/preload/*`、`packages/desktop/src/main/ipc.ts`：暴露并实现 Desktop IPC。
+- `packages/desktop/src/renderer/index.tsx`：将 Electron 能力接入 App 平台适配器。
+- `packages/app/src/utils/session-export.test.ts`：验证 Web 降级和各桌面平台文案。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 在 `packages/desktop` 执行 `bun run typecheck`。
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/utils/session-export.test.ts`。
+- 在 macOS、Windows、Linux Desktop 中分别点击导出成功提示，确认打开对应系统的下载目录。
+
 ## 会话多格式导出
 
 ### 功能目标

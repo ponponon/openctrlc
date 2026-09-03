@@ -56,6 +56,7 @@ import { showToast } from "@/utils/toast"
 import {
   downloadSessionExport,
   fetchSessionExport,
+  sessionExportActions,
   sessionExportFilename,
   type SessionExportFormat,
 } from "@/utils/session-export"
@@ -863,6 +864,7 @@ export function MessageTimeline(props: {
         icon: "circle-check",
         title: language.t("toast.session.export.success.title"),
         description: language.t("toast.session.export.success.description", { filename }),
+        actions: sessionExportActions(platform, language),
       })
     } catch (err) {
       showToast({

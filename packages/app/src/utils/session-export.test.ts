@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import { fetchSessionExport, sessionExportFilename, sessionExportMarkdown } from "./session-export"
+import {
+  fetchSessionExport,
+  sessionExportActions,
+  sessionExportFilename,
+  sessionExportMarkdown,
+} from "./session-export"
 import type { Message, Part, Session } from "@openctrlc/sdk/v2/client"
 
 describe("sessionExportFilename", () => {
@@ -19,6 +24,27 @@ describe("sessionExportFilename", () => {
 
   test("uses the selected format extension", () => {
     expect(sessionExportFilename({ id: "ses_123", title: "Readable session" }, "markdown")).toBe("readable-session.md")
+  })
+})
+
+describe("sessionExportActions", () => {
+  const language = { t: (key: string | number) => String(key) }
+  const openDownloads = async () => undefined
+
+  test("uses the native file manager label for each desktop platform", () => {
+    expect(sessionExportActions({ platform: "desktop", os: "macos", openDownloads }, language)?.[0]?.label).toBe(
+      "session.header.reveal.finder",
+    )
+    expect(sessionExportActions({ platform: "desktop", os: "windows", openDownloads }, language)?.[0]?.label).toBe(
+      "session.header.reveal.fileExplorer",
+    )
+    expect(sessionExportActions({ platform: "desktop", os: "linux", openDownloads }, language)?.[0]?.label).toBe(
+      "session.header.reveal.containingFolder",
+    )
+  })
+
+  test("does not expose native actions in the web app", () => {
+    expect(sessionExportActions({ platform: "web" }, language)).toBeUndefined()
   })
 })
 
