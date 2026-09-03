@@ -1,28 +1,39 @@
 import { Button } from "@openctrlc/ui/button"
 import { Icon } from "@openctrlc/ui/icon"
-import { useDialog } from "@openctrlc/ui/context/dialog"
+import type { useDialog } from "@openctrlc/ui/context/dialog"
 import { Dialog } from "@openctrlc/ui/dialog"
 import { TextField } from "@openctrlc/ui/text-field"
 import { createMemo, createSignal, Show } from "solid-js"
-import { useLanguage } from "@/context/language"
-import { useLayout } from "@/context/layout"
-import { usePlatform } from "@/context/platform"
-import { useServer } from "@/context/server"
-import { useServerSync } from "@/context/server-sync"
-import { useTabs } from "@/context/tabs"
+import type { useLanguage } from "@/context/language"
+import type { useLayout } from "@/context/layout"
+import type { usePlatform } from "@/context/platform"
+import type { useServer } from "@/context/server"
+import type { useServerSync } from "@/context/server-sync"
+import type { useTabs } from "@/context/tabs"
 import { isOpenCodeSessionID } from "@/utils/opencode-import"
 import { showToast } from "@/utils/toast"
 
 type LookupState = "idle" | "loading" | "found" | "not-found" | "error"
 
-export function DialogImportOpenCodeSession(props: { directory: string }) {
-  const dialog = useDialog()
-  const language = useLanguage()
-  const layout = useLayout()
-  const platform = usePlatform()
-  const server = useServer()
-  const serverSync = useServerSync()
-  const tabs = useTabs()
+export type DialogImportOpenCodeSessionProps = {
+  directory: string
+  dialog: ReturnType<typeof useDialog>
+  language: ReturnType<typeof useLanguage>
+  layout: ReturnType<typeof useLayout>
+  platform: ReturnType<typeof usePlatform>
+  server: ReturnType<typeof useServer>
+  serverSync: ReturnType<typeof useServerSync>
+  tabs: ReturnType<typeof useTabs>
+}
+
+export function DialogImportOpenCodeSession(props: DialogImportOpenCodeSessionProps) {
+  const dialog = props.dialog
+  const language = props.language
+  const layout = props.layout
+  const platform = props.platform
+  const server = props.server
+  const serverSync = props.serverSync
+  const tabs = props.tabs
   const [sessionID, setSessionID] = createSignal("")
   const [databasePath, setDatabasePath] = createSignal("")
   const [targetDirectory, setTargetDirectory] = createSignal(props.directory)

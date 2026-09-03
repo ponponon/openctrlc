@@ -370,6 +370,7 @@ function DesktopSessionCommands() {
   const platform = usePlatform()
   const server = useServer()
   const serverSync = useServerSync()
+  const tabs = useTabs()
 
   const targetDirectory = createMemo(() => {
     const route = layout.route()
@@ -406,7 +407,18 @@ function DesktopSessionCommands() {
           return
         }
         const module = await import("@/components/dialog-import-opencode-session")
-        void dialog.show(() => <module.DialogImportOpenCodeSession directory={directory} />)
+        void dialog.show(() => (
+          <module.DialogImportOpenCodeSession
+            directory={directory}
+            dialog={dialog}
+            language={language}
+            layout={layout}
+            platform={platform}
+            server={server}
+            serverSync={serverSync}
+            tabs={tabs}
+          />
+        ))
       },
     },
   ])
