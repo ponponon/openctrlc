@@ -62,6 +62,7 @@ import { shouldMarkBoundaryGesture, normalizeWheelDelta } from "@/pages/session/
 import { SessionContextUsage } from "@/components/session-context-usage"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { useLanguage } from "@/context/language"
+import { useGlobal } from "@/context/global"
 import { useSessionKey } from "@/pages/session/session-layout"
 import { useServerSDK } from "@/context/server-sdk"
 import { usePlatform } from "@/context/platform"
@@ -78,7 +79,8 @@ import { includeUserMessageRow } from "./user-message-row-index"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { notifySessionTabsRemoved } from "@/components/titlebar-session-events"
-import { sessionTitle } from "@/utils/session-title"
+import { sessionDisplayTitle, sessionTitle } from "@/utils/session-title"
+import { displayName, projectForSession } from "@/pages/layout/helpers"
 import { scheduleConnectedMeasure } from "./measure"
 import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
@@ -277,6 +279,7 @@ export function MessageTimeline(props: {
   let touchGesture: number | undefined
 
   const navigate = useNavigate()
+  const global = useGlobal()
   const serverSDK = useServerSDK()
   const sdk = useSDK()
   const sync = useSync()
@@ -316,6 +319,12 @@ export function MessageTimeline(props: {
   })
   const titleValue = createMemo(() => info()?.title)
   const titleLabel = createMemo(() => sessionTitle(titleValue()))
+  const projectName = createMemo(() => {
+    const session = info()
+    if (!session) return
+    const project = projectForSession(session, global.ensureServerCtx(serverSDK().server).projects.list())
+    return displayName(project ?? { worktree: session.directory })
+  })
   const shareUrl = createMemo(() => info()?.share?.url)
   const shareEnabled = createMemo(() => sync().data.config.share !== "disabled")
   const parentID = createMemo(() => info()?.parentID)
@@ -341,7 +350,7 @@ export function MessageTimeline(props: {
       .findLast((value): value is string => !!value)
   })
   const childTitle = createMemo(() => {
-    if (!parentID()) return titleLabel() ?? ""
+    if (!parentID()) return sessionDisplayTitle(projectName(), titleLabel()) ?? ""
     if (childTaskDescription()) return childTaskDescription()
     const value = titleLabel()?.replace(/\s+\(@[^)]+ subagent\)$/, "")
     if (value) return value

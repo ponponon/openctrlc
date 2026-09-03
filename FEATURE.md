@@ -22,7 +22,7 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 
 - 读取 OpenCode 的 `session`、`message`、`part` 数据。
 - Desktop 在真正导入前按 sessionID 只读读取会话标题、消息数量和 `session.directory`，把它作为默认导入目录。
-- Desktop 顶部会话标签显示为“项目名 / 会话标题”，方便区分不同项目中的同名会话；双击重命名时仍只修改会话标题。
+- Desktop 会话内容区顶部标题显示为“项目名 / 会话标题”，方便区分不同项目中的同名会话；重命名时仍只修改会话标题。
 - 源数据库以只读方式打开，不修改 OpenCode 原始数据。
 - 保留原始 sessionID、消息 ID 和 part ID，导入后绑定当前 OpenCtrlC 项目与目录。
 - 支持重复导入：session 使用冲突更新，已有消息和内容不会重复插入。

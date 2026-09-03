@@ -18,7 +18,7 @@ export function sessionTitle(title?: string) {
   return match?.[1] ?? title
 }
 
-export function sessionTabTitle(projectName?: string, title?: string) {
+export function sessionDisplayTitle(projectName?: string, title?: string) {
   if (!title || !projectName) return title
   return `${projectName} / ${title}`
 }
