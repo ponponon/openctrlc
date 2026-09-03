@@ -4,6 +4,7 @@ import {
   sessionExportActions,
   sessionExportFilename,
   sessionExportMarkdown,
+  sessionExportMarkdownDetailed,
 } from "./session-export"
 import type { Message, Part, Session } from "@openctrlc/sdk/v2/client"
 
@@ -24,6 +25,9 @@ describe("sessionExportFilename", () => {
 
   test("uses the selected format extension", () => {
     expect(sessionExportFilename({ id: "ses_123", title: "Readable session" }, "markdown")).toBe("readable-session.md")
+    expect(sessionExportFilename({ id: "ses_123", title: "Readable session" }, "markdown-detailed")).toBe(
+      "readable-session.md",
+    )
   })
 })
 
@@ -49,49 +53,59 @@ describe("sessionExportActions", () => {
 })
 
 describe("sessionExportMarkdown", () => {
-  test("renders a readable transcript with tool details", () => {
-    const result = sessionExportMarkdown({
-      info: {
-        id: "ses_1",
-        slug: "test-session",
-        title: "Test Session",
-        directory: "/tmp/project",
-        time: { created: 0, updated: 0 },
-      } as Session,
-      messages: [
-        {
-          info: { id: "msg_user", role: "user" } as Message,
-          parts: [{ id: "prt_user", type: "text", text: "hello" } as Part],
-        },
-        {
-          info: { id: "msg_assistant", role: "assistant" } as Message,
-          parts: [
-            { id: "prt_text", type: "text", text: "Hi there" } as Part,
-            {
-              id: "prt_tool",
-              sessionID: "ses_1",
-              messageID: "msg_assistant",
-              callID: "call_1",
-              type: "tool",
-              tool: "bash",
-              state: {
-                status: "completed",
-                input: { command: "pwd" },
-                output: "/tmp/project",
-                title: "Run command",
-                metadata: {},
-                time: { start: 0, end: 1 },
-              },
-            } as Part,
-          ],
-        },
-      ],
-    })
+  const data = {
+    info: {
+      id: "ses_1",
+      slug: "test-session",
+      title: "Test Session",
+      directory: "/tmp/project",
+      time: { created: 0, updated: 0 },
+    } as Session,
+    messages: [
+      {
+        info: { id: "msg_user", role: "user" } as Message,
+        parts: [{ id: "prt_user", type: "text", text: "hello" } as Part],
+      },
+      {
+        info: { id: "msg_assistant", role: "assistant" } as Message,
+        parts: [
+          { id: "prt_text", type: "text", text: "Hi there" } as Part,
+          {
+            id: "prt_tool",
+            sessionID: "ses_1",
+            messageID: "msg_assistant",
+            callID: "call_1",
+            type: "tool",
+            tool: "bash",
+            state: {
+              status: "completed",
+              input: { command: "pwd" },
+              output: "/tmp/project",
+              title: "Run command",
+              metadata: {},
+              time: { start: 0, end: 1 },
+            },
+          } as Part,
+        ],
+      },
+    ],
+  }
+
+  test("renders only conversation content by default", () => {
+    const result = sessionExportMarkdown(data)
 
     expect(result).toContain("# Test Session")
     expect(result).toContain("- **Session ID:** `ses_1`")
     expect(result).toContain("## User\n\nhello")
     expect(result).toContain("## Assistant\n\nHi there")
+    expect(result).not.toContain("### Tool: `bash`")
+    expect(result).not.toContain("#### Input")
+    expect(result).not.toContain("#### Output")
+  })
+
+  test("keeps tool details in the optional detailed export", () => {
+    const result = sessionExportMarkdownDetailed(data)
+
     expect(result).toContain("### Tool: `bash`")
     expect(result).toContain('```json\n{\n  "command": "pwd"\n}\n```')
     expect(result).toContain("```text\n/tmp/project\n```")

@@ -429,6 +429,9 @@ export function SessionContextTab() {
                   <DropdownMenu.Item onSelect={() => void exportSession("markdown")}>
                     <DropdownMenu.ItemLabel>Markdown</DropdownMenu.ItemLabel>
                   </DropdownMenu.Item>
+                  <DropdownMenu.Item onSelect={() => void exportSession("markdown-detailed")}>
+                    <DropdownMenu.ItemLabel>Markdown (full)</DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu>

@@ -1698,6 +1698,9 @@ export function MessageTimeline(props: {
                                       <DropdownMenu.Item onSelect={() => void exportSession(id, "markdown")}>
                                         <DropdownMenu.ItemLabel>Markdown</DropdownMenu.ItemLabel>
                                       </DropdownMenu.Item>
+                                      <DropdownMenu.Item onSelect={() => void exportSession(id, "markdown-detailed")}>
+                                        <DropdownMenu.ItemLabel>Markdown (full)</DropdownMenu.ItemLabel>
+                                      </DropdownMenu.Item>
                                     </DropdownMenu.SubContent>
                                   </DropdownMenu.Portal>
                                 </DropdownMenu.Sub>
@@ -1779,6 +1782,9 @@ export function MessageTimeline(props: {
                                     <MenuV2.Item onSelect={() => void exportSession(id, "json")}>JSON</MenuV2.Item>
                                     <MenuV2.Item onSelect={() => void exportSession(id, "markdown")}>
                                       Markdown
+                                    </MenuV2.Item>
+                                    <MenuV2.Item onSelect={() => void exportSession(id, "markdown-detailed")}>
+                                      Markdown (full)
                                     </MenuV2.Item>
                                   </MenuV2.SubContent>
                                 </MenuV2.Portal>

@@ -13,7 +13,7 @@ export type SessionExportData = {
   }[]
 }
 
-export type SessionExportFormat = "json" | "markdown"
+export type SessionExportFormat = "json" | "markdown" | "markdown-detailed"
 
 export function sessionExportActions(
   platform: Pick<Platform, "platform" | "os" | "openDownloads">,
@@ -76,11 +76,19 @@ export function sessionExportFilename(
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/gi, "-")
     .replace(/^-+|-+$/g, "")
-  const extension = format === "markdown" ? "md" : "json"
+  const extension = format === "json" ? "json" : "md"
   return `${clean || session.id}.${extension}`
 }
 
 export function sessionExportMarkdown(data: SessionExportData) {
+  return renderSessionMarkdown(data, markdownSimplePart)
+}
+
+export function sessionExportMarkdownDetailed(data: SessionExportData) {
+  return renderSessionMarkdown(data, markdownPart)
+}
+
+function renderSessionMarkdown(data: SessionExportData, renderPart: (part: Part) => string[]) {
   const title = data.info.title || data.info.slug || data.info.id
   const lines = [`# ${markdownHeading(title)}`, "", `- **Session ID:** \`${data.info.id}\``]
 
@@ -88,7 +96,7 @@ export function sessionExportMarkdown(data: SessionExportData) {
   if (data.info.time?.created) lines.push(`- **Created:** ${new Date(data.info.time.created).toISOString()}`)
 
   for (const entry of data.messages) {
-    const content = entry.parts.flatMap(markdownPart).join("\n\n").trim()
+    const content = entry.parts.flatMap(renderPart).join("\n\n").trim()
     if (!content) continue
     lines.push("", `## ${entry.info.role === "user" ? "User" : "Assistant"}`, "", content)
   }
@@ -98,12 +106,13 @@ export function sessionExportMarkdown(data: SessionExportData) {
 
 export function sessionExportContent(data: SessionExportData, format: SessionExportFormat) {
   if (format === "markdown") return sessionExportMarkdown(data)
+  if (format === "markdown-detailed") return sessionExportMarkdownDetailed(data)
   return JSON.stringify(data, null, 2)
 }
 
 export function downloadSessionExport(filename: string, data: SessionExportData, format: SessionExportFormat = "json") {
   const content = sessionExportContent(data, format)
-  const mime = format === "markdown" ? "text/markdown;charset=utf-8" : "application/json"
+  const mime = format === "json" ? "application/json" : "text/markdown;charset=utf-8"
   const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
@@ -113,6 +122,16 @@ export function downloadSessionExport(filename: string, data: SessionExportData,
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+function markdownSimplePart(part: Part): string[] {
+  if (part.type === "text") {
+    if (part.ignored || !part.text.trim()) return []
+    return [part.text]
+  }
+
+  if (part.type === "file") return markdownPart(part)
+  return []
 }
 
 function markdownPart(part: Part): string[] {
