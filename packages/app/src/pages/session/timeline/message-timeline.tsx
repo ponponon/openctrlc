@@ -53,7 +53,12 @@ import type {
   UserMessage,
 } from "@openctrlc/sdk/v2"
 import { showToast } from "@/utils/toast"
-import { downloadSessionExport, fetchSessionExport, sessionExportFilename } from "@/utils/session-export"
+import {
+  downloadSessionExport,
+  fetchSessionExport,
+  sessionExportFilename,
+  type SessionExportFormat,
+} from "@/utils/session-export"
 import { getDirectory, getFilename } from "@openctrlc/core/util/path"
 import { Popover as KobaltePopover } from "@kobalte/core/popover"
 import { normalize } from "@openctrlc/session-ui/session-diff"
@@ -845,14 +850,14 @@ export function MessageTimeline(props: {
     navigate(`/${params.dir}/session`)
   }
 
-  const exportSession = async (sessionID: string) => {
+  const exportSession = async (sessionID: string, format: SessionExportFormat = "json") => {
     try {
       const data = await fetchSessionExport({
         sessionID,
         client: sdk().client,
       })
-      const filename = sessionExportFilename(data.info)
-      downloadSessionExport(filename, data)
+      const filename = sessionExportFilename(data.info, format)
+      downloadSessionExport(filename, data, format)
       showToast({
         variant: "success",
         icon: "circle-check",
@@ -1679,9 +1684,21 @@ export function MessageTimeline(props: {
                                     </DropdownMenu.ItemLabel>
                                   </DropdownMenu.Item>
                                 </Show>
-                                <DropdownMenu.Item onSelect={() => exportSession(id)}>
-                                  <DropdownMenu.ItemLabel>{language.t("common.export")}</DropdownMenu.ItemLabel>
-                                </DropdownMenu.Item>
+                                <DropdownMenu.Sub gutter={0}>
+                                  <DropdownMenu.SubTrigger>
+                                    <DropdownMenu.ItemLabel>{language.t("common.export")}</DropdownMenu.ItemLabel>
+                                  </DropdownMenu.SubTrigger>
+                                  <DropdownMenu.Portal>
+                                    <DropdownMenu.SubContent>
+                                      <DropdownMenu.Item onSelect={() => void exportSession(id, "json")}>
+                                        <DropdownMenu.ItemLabel>JSON</DropdownMenu.ItemLabel>
+                                      </DropdownMenu.Item>
+                                      <DropdownMenu.Item onSelect={() => void exportSession(id, "markdown")}>
+                                        <DropdownMenu.ItemLabel>Markdown</DropdownMenu.ItemLabel>
+                                      </DropdownMenu.Item>
+                                    </DropdownMenu.SubContent>
+                                  </DropdownMenu.Portal>
+                                </DropdownMenu.Sub>
                                 <DropdownMenu.Item onSelect={() => void archiveSession(id)}>
                                   <DropdownMenu.ItemLabel>{language.t("common.archive")}</DropdownMenu.ItemLabel>
                                 </DropdownMenu.Item>
@@ -1753,9 +1770,17 @@ export function MessageTimeline(props: {
                                   {language.t("session.share.action.share")}...
                                 </MenuV2.Item>
                               </Show>
-                              <MenuV2.Item onSelect={() => exportSession(id)}>
-                                {language.t("common.export")}...
-                              </MenuV2.Item>
+                              <MenuV2.Sub gutter={0}>
+                                <MenuV2.SubTrigger>{language.t("common.export")}</MenuV2.SubTrigger>
+                                <MenuV2.Portal>
+                                  <MenuV2.SubContent>
+                                    <MenuV2.Item onSelect={() => void exportSession(id, "json")}>JSON</MenuV2.Item>
+                                    <MenuV2.Item onSelect={() => void exportSession(id, "markdown")}>
+                                      Markdown
+                                    </MenuV2.Item>
+                                  </MenuV2.SubContent>
+                                </MenuV2.Portal>
+                              </MenuV2.Sub>
                               <MenuV2.Item onSelect={() => void archiveSession(id)}>
                                 {language.t("common.archive")}
                               </MenuV2.Item>

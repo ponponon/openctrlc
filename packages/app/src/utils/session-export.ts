@@ -9,6 +9,8 @@ export type SessionExportData = {
   }[]
 }
 
+export type SessionExportFormat = "json" | "markdown"
+
 export type SessionExportClient = {
   session: {
     get: (input: { sessionID: string }) => Promise<{ data?: Session | null }>
@@ -38,18 +40,44 @@ export async function fetchSessionExport(input: {
   }
 }
 
-export function sessionExportFilename(session: { id: string; title?: string; slug?: string }) {
+export function sessionExportFilename(
+  session: { id: string; title?: string; slug?: string },
+  format: SessionExportFormat = "json",
+) {
   const name = session.title || session.slug || session.id
   const clean = name
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/gi, "-")
     .replace(/^-+|-+$/g, "")
-  return `${clean || session.id}.json`
+  const extension = format === "markdown" ? "md" : "json"
+  return `${clean || session.id}.${extension}`
 }
 
-export function downloadSessionExport(filename: string, data: unknown) {
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: "application/json" })
+export function sessionExportMarkdown(data: SessionExportData) {
+  const title = data.info.title || data.info.slug || data.info.id
+  const lines = [`# ${markdownHeading(title)}`, "", `- **Session ID:** \`${data.info.id}\``]
+
+  if (data.info.directory) lines.push(`- **Directory:** \`${data.info.directory}\``)
+  if (data.info.time?.created) lines.push(`- **Created:** ${new Date(data.info.time.created).toISOString()}`)
+
+  for (const entry of data.messages) {
+    const content = entry.parts.flatMap(markdownPart).join("\n\n").trim()
+    if (!content) continue
+    lines.push("", `## ${entry.info.role === "user" ? "User" : "Assistant"}`, "", content)
+  }
+
+  return `${lines.join("\n").trimEnd()}\n`
+}
+
+export function sessionExportContent(data: SessionExportData, format: SessionExportFormat) {
+  if (format === "markdown") return sessionExportMarkdown(data)
+  return JSON.stringify(data, null, 2)
+}
+
+export function downloadSessionExport(filename: string, data: SessionExportData, format: SessionExportFormat = "json") {
+  const content = sessionExportContent(data, format)
+  const mime = format === "markdown" ? "text/markdown;charset=utf-8" : "application/json"
+  const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url
@@ -58,4 +86,81 @@ export function downloadSessionExport(filename: string, data: unknown) {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+function markdownPart(part: Part): string[] {
+  if (part.type === "text") {
+    if (part.ignored || !part.text.trim()) return []
+    return [part.text]
+  }
+
+  if (part.type === "reasoning") {
+    if (!part.text.trim()) return []
+    return [`<details>\n<summary>Reasoning</summary>\n\n${part.text}\n\n</details>`]
+  }
+
+  if (part.type === "tool") {
+    const lines = [
+      `### Tool: \`${markdownInline(part.tool)}\``,
+      "",
+      `**Status:** ${part.state.status}`,
+      "",
+      "#### Input",
+      "",
+      markdownFence(JSON.stringify(part.state.input, null, 2) ?? String(part.state.input), "json"),
+    ]
+
+    if (part.state.status === "completed") {
+      lines.push("", "#### Output", "", markdownFence(part.state.output, "text"))
+    }
+    if (part.state.status === "error") {
+      lines.push("", "#### Error", "", part.state.error)
+    }
+
+    return [lines.join("\n")]
+  }
+
+  if (part.type === "subtask") {
+    return [
+      [
+        `### Subtask: ${markdownHeading(part.description)}`,
+        "",
+        `- **Agent:** \`${markdownInline(part.agent)}\``,
+        "",
+        "#### Prompt",
+        "",
+        part.prompt,
+      ].join("\n"),
+    ]
+  }
+
+  if (part.type === "file") {
+    const name =
+      part.filename ||
+      (part.source && part.source.type !== "resource" ? part.source.path : undefined) ||
+      "Attached file"
+    return [`> Attached file: \`${markdownInline(name)}\` (${part.mime})`]
+  }
+
+  if (part.type === "step-start") return ["> Step started"]
+  if (part.type === "step-finish") return [`> Step finished: ${markdownHeading(part.reason)}`]
+  if (part.type === "snapshot") return [`> Snapshot: \`${markdownInline(part.snapshot)}\``]
+  if (part.type === "patch") return [`> Patch: ${part.files.map((file) => `\`${markdownInline(file)}\``).join(", ")}`]
+  if (part.type === "agent") return [`> Agent: \`${markdownInline(part.name)}\``]
+  if (part.type === "retry") return [`> Retry ${part.attempt}: ${part.error.data.message}`]
+  return [`> ${part.auto ? "Automatic" : "Manual"} compaction`]
+}
+
+function markdownHeading(value: string) {
+  return value.replace(/\r?\n/g, " ").trim()
+}
+
+function markdownInline(value: string) {
+  return value.replaceAll("`", "\\`").replace(/\r?\n/g, " ")
+}
+
+function markdownFence(value: string, language: string) {
+  const longestFence = Math.max(2, ...Array.from(value.matchAll(/`+/g), (match) => match[0].length))
+  const fence = "`".repeat(longestFence + 1)
+  return `${fence}${language}\n${value}\n${fence}`
 }

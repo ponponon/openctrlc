@@ -6,6 +6,7 @@ import { findLast } from "@openctrlc/core/util/array"
 import { same } from "@/utils/same"
 import { Icon } from "@openctrlc/ui/icon"
 import { Button } from "@openctrlc/ui/button"
+import { DropdownMenu } from "@openctrlc/ui/dropdown-menu"
 import { Accordion } from "@openctrlc/ui/accordion"
 import { StickyAccordionHeader } from "@openctrlc/ui/sticky-accordion-header"
 import { File } from "@openctrlc/session-ui/file"
@@ -13,7 +14,12 @@ import { Markdown } from "@openctrlc/session-ui/markdown"
 import { ScrollView } from "@openctrlc/ui/scroll-view"
 import type { Message, Part, UserMessage } from "@openctrlc/sdk/v2/client"
 import { showToast } from "@/utils/toast"
-import { downloadSessionExport, fetchSessionExport, sessionExportFilename } from "@/utils/session-export"
+import {
+  downloadSessionExport,
+  fetchSessionExport,
+  sessionExportFilename,
+  type SessionExportFormat,
+} from "@/utils/session-export"
 import { useLanguage } from "@/context/language"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
@@ -225,7 +231,7 @@ export function SessionContextTab() {
     { label: "context.stats.lastActivity", value: () => formatter().time(ctx()?.message.time.created) },
   ] satisfies { label: string; value: () => JSX.Element }[]
 
-  const exportSession = async () => {
+  const exportSession = async (format: SessionExportFormat = "json") => {
     const sessionID = params.id
     if (!sessionID) return
     try {
@@ -233,8 +239,8 @@ export function SessionContextTab() {
         sessionID,
         client: sdk().client,
       })
-      const filename = sessionExportFilename(data.info)
-      downloadSessionExport(filename, data)
+      const filename = sessionExportFilename(data.info, format)
+      downloadSessionExport(filename, data, format)
       showToast({
         variant: "success",
         icon: "circle-check",
@@ -401,15 +407,27 @@ export function SessionContextTab() {
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <div class="text-12-regular text-text-weak">{language.t("context.rawMessages.title")}</div>
-            <Button
-              size="small"
-              variant="ghost"
-              class="gap-1.5 px-2 text-text-weak hover:text-text-base"
-              onClick={exportSession}
-            >
-              <Icon name="download" size="small" />
-              <span>{language.t("context.export.session")}</span>
-            </Button>
+            <DropdownMenu placement="bottom-end" gutter={4}>
+              <DropdownMenu.Trigger
+                as={Button}
+                size="small"
+                variant="ghost"
+                class="gap-1.5 px-2 text-text-weak hover:text-text-base"
+              >
+                <Icon name="download" size="small" />
+                <span>{language.t("context.export.session")}</span>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content>
+                  <DropdownMenu.Item onSelect={() => void exportSession("json")}>
+                    <DropdownMenu.ItemLabel>JSON</DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item onSelect={() => void exportSession("markdown")}>
+                    <DropdownMenu.ItemLabel>Markdown</DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu>
           </div>
           <Accordion multiple>
             <For each={messages()}>

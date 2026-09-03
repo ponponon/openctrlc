@@ -1,3 +1,34 @@
+## 会话多格式导出
+
+### 功能目标
+
+在保留 JSON 原始数据导出的基础上，支持将会话导出为 Markdown，方便阅读、分享和归档。
+
+### 使用方式
+
+在会话标题的更多菜单或上下文页的原始消息区域点击「导出」，选择 `JSON` 或 `Markdown`。JSON 文件继续使用 `.json` 扩展名，Markdown 文件使用 `.md` 扩展名。
+
+### 实现范围
+
+- 保留现有 JSON 导出结构和下载行为，避免影响会话重新导入。
+- Markdown 包含会话标题、会话 ID、工作目录、创建时间和按顺序排列的消息。
+- Markdown 保留文本、推理折叠块、工具调用输入/输出、子任务、文件引用、步骤、快照、补丁、重试和压缩等可读信息。
+- 导出逻辑集中在 `packages/app/src/utils/session-export.ts`，菜单入口复用同一套格式类型和文件命名规则。
+- 新旧两套会话标题菜单，以及上下文页的原始消息导出按钮，均支持格式选择。
+
+### 代码位置
+
+- `packages/app/src/utils/session-export.ts`：格式类型、Markdown 序列化、文件命名和下载。
+- `packages/app/src/utils/session-export.test.ts`：文件扩展名和 Markdown 内容测试。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：新旧会话标题菜单的格式子菜单。
+- `packages/app/src/components/session/session-context-tab.tsx`：上下文页导出按钮的格式菜单。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/utils/session-export.test.ts`。
+- 手动打开会话标题菜单和上下文页导出按钮，确认 JSON/Markdown 两个选项均可下载，文件扩展名和内容格式正确。
+
 ## OpenCode sessionID 导入
 
 ### 功能目标
