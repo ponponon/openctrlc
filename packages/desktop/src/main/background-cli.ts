@@ -7,6 +7,7 @@ import { promisify } from "node:util"
 import { app } from "electron"
 import { Brand } from "@openctrlc/identity"
 import type { OpenCodeSessionImport, OpenCodeSessionInfo, OpenCodeSessionLookup } from "../preload/types"
+import { CHANNEL } from "./constants"
 
 const execFileAsync = promisify(execFile)
 const root = dirname(fileURLToPath(import.meta.url))
@@ -130,7 +131,7 @@ async function run(
   options: { cwd?: string; includeStderr?: boolean; redact?: boolean; stateHome?: string } = {},
 ) {
   logger.log("v2 CLI command started", { binary, args })
-  const env = { ...process.env }
+  const env: NodeJS.ProcessEnv = { ...process.env, OPENCTRLC_CHANNEL: CHANNEL }
   if (options.stateHome === undefined) delete env.XDG_STATE_HOME
   else env.XDG_STATE_HOME = options.stateHome
   return execFileAsync(binary, args, { cwd: options.cwd, env, windowsHide: true }).then(

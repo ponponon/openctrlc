@@ -4,5 +4,11 @@ declare global {
 }
 
 export const InstallationVersion = typeof OPENCTRLC_VERSION === "string" ? OPENCTRLC_VERSION : "local"
-export const InstallationChannel = typeof OPENCTRLC_CHANNEL === "string" ? OPENCTRLC_CHANNEL : "local"
+
+export function resolveInstallationChannel() {
+  if (typeof OPENCTRLC_CHANNEL === "string") return OPENCTRLC_CHANNEL
+  return process.env.OPENCTRLC_CHANNEL ?? "local"
+}
+
+export const InstallationChannel = resolveInstallationChannel()
 export const InstallationLocal = InstallationChannel === "local"

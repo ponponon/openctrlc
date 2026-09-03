@@ -59,7 +59,7 @@ openctrlc import ses_xxxxxxxxx --opencode-db /path/to/opencode.db
 
 - Renderer 只负责表单、当前项目和导航，不直接读取 OpenCode SQLite。
 - Desktop 主进程通过 CLI 的 `--opencode-info` 只读查询会话元数据，避免前端猜测目录或直接访问数据库。
-- Desktop 开发版直接调用工作区当前的 CLI 源码，避免被 `resources/openctrlc` 中的旧二进制阻塞本地验证；打包版复用随应用发布的 `openctrlc import` CLI，并使用 Desktop 当前的本地状态目录，避免重复实现导入协议。
+- Desktop 开发版直接调用工作区当前的 CLI 源码，避免被 `resources/openctrlc` 中的旧二进制阻塞本地验证；工作区 CLI 会继承 Desktop 的发布通道，确保与当前 sidecar 使用同一份通道数据库；打包版复用随应用发布的 `openctrlc import` CLI，并使用 Desktop 当前的本地状态目录，避免重复实现导入协议。
 - 打包版启动查询或导入前会检查内置 CLI 是否包含 `--opencode-db` 和 `--opencode-info`，旧版本会提示更新，不会静默执行错误的文件导入流程。
 - IPC 仅接受绝对路径和合法 sessionID；远程 HTTP/SSH/WSL 服务器不会显示为可导入目标。
 - 目标目录可由原生文件夹选择器修改；导入成功后按最终目标目录刷新项目会话、强制同步，再创建并选中对应的 session tab。
