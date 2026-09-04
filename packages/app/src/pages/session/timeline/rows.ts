@@ -26,6 +26,10 @@ export type TimelineRowMap = {
     group: PartGroup
     previousAssistantPart: boolean
   }
+  AssistantSteps: {
+    userMessageID: string
+    groups: PartGroup[]
+  }
   Thinking: { userMessageID: string; reasoningHeading?: string }
   Retry: { userMessageID: string }
   DiffSummary: { userMessageID: string; diffs: SummaryDiff[] }
@@ -125,6 +129,14 @@ export namespace Timeline {
         .filter((part) => renderable(part, showReasoning))
         .map((part) => ({ messageID: message.id, messageIndex, part })),
     )
+    const assistantGroups = groupParts(assistantPartRefs)
+    const lastProcessGroupIndex = assistantGroups.findLastIndex(
+      (group) => !isAssistantResponseGroup(group, getMessageParts),
+    )
+    const processGroups =
+      !interrupted && lastProcessGroupIndex >= 0 && lastProcessGroupIndex < assistantGroups.length - 1
+        ? assistantGroups.slice(0, lastProcessGroupIndex + 1)
+        : []
     const assistantItems =
       interrupted && !compaction
         ? [
@@ -142,7 +154,12 @@ export namespace Timeline {
               }),
             ),
           ]
-        : groupParts(assistantPartRefs).map((group) => ({ type: "part" as const, group }))
+        : processGroups.length > 0
+          ? [
+              { type: "steps" as const, groups: processGroups },
+              ...assistantGroups.slice(processGroups.length).map((group) => ({ type: "part" as const, group })),
+            ]
+          : assistantGroups.map((group) => ({ type: "part" as const, group }))
     if (previousUserMessage) rows.push(new TimelineRow.TurnGap({ userMessageID: userMessage.id }))
 
     if (comments.length > 0 && !inlineComments)
@@ -177,6 +194,17 @@ export namespace Timeline {
             label: "interrupted",
           }),
         )
+        return
+      }
+
+      if (item.type === "steps") {
+        rows.push(
+          new TimelineRow.AssistantSteps({
+            userMessageID: userMessage.id,
+            groups: item.groups,
+          }),
+        )
+        assistantGroupIndex += item.groups.length
         return
       }
 
@@ -229,6 +257,11 @@ export namespace Timeline {
     }
 
     return rows
+  }
+
+  function isAssistantResponseGroup(group: PartGroup, getMessageParts: (messageID: string) => Part[]) {
+    if (group.type !== "part") return false
+    return getMessageParts(group.ref.messageID).find((part) => part.id === group.ref.partID)?.type === "text"
   }
 
   function reasoningHeading(text: string) {

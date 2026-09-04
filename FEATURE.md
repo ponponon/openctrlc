@@ -177,3 +177,28 @@ bun run desktop:mac
 - 在 macOS 上执行 `bun run desktop:mac`，确认 `/Applications/OpenCtrlC.app` 存在且进程成功启动。
 - 执行 `bun run desktop:mac -- --no-install --no-open`，确认仅生成 `.app` 且不启动应用。
 - 正式分发前执行 `OPENCTRLC_CHANNEL=prod bun run --cwd packages/desktop package:mac`，检查 DMG/ZIP 产物和签名/公证配置。
+
+## 会话回合中间步骤折叠
+
+### 功能目标
+
+让会话完成后默认收起最终回复之前的推理、工具调用和上下文探索过程，保留类似 Codex 的紧凑时间线；运行中的回合保持展开，用户也可以手动重新展开查看完整过程。
+
+### 实现范围
+
+- 时间线数据层将最终文本回复之前的可见 assistant parts 聚合为 `AssistantSteps` 行，最终回复继续作为独立行渲染，避免收起时隐藏用户真正要看的答案。
+- 折叠状态按 session 缓存在时间线缓存中；回合从运行态切换到完成态时自动收起，并在虚拟列表中触发尺寸重测，避免留下空白或遮挡后续内容。
+- 中断、错误和没有最终文本的回合保留原有逐段渲染路径，工具子折叠状态和搜索高亮逻辑继续复用现有实现。
+- 折叠触发器复用现有 UI `Collapsible`、步骤多语言文案和回合时长格式，不新增硬编码界面文案。
+
+### 代码位置
+
+- `packages/app/src/pages/session/timeline/rows.ts`、`timeline-row.ts`：步骤行建模和回合分组。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：折叠状态、触发器、自动收起和虚拟列表测量。
+- `packages/session-ui/src/components/session-turn.css`：步骤触发器和内容区样式。
+- `packages/app/src/pages/session/timeline/rows-current.test.ts`：中间步骤与最终回复分行的回归测试。
+
+### 验证方式
+
+- 在 `packages/app` 执行时间线 rows/projection 单测。
+- 执行 `bun typecheck`（`packages/app`、`packages/session-ui`）。

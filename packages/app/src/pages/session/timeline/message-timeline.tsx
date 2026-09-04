@@ -19,6 +19,7 @@ import { createVirtualizer, defaultRangeExtractor, elementScroll, type VirtualIt
 import { Accordion } from "@openctrlc/ui/accordion"
 import { Button } from "@openctrlc/ui/button"
 import { Card } from "@openctrlc/ui/card"
+import { Collapsible } from "@openctrlc/ui/collapsible"
 import {
   ContextToolGroup,
   Message,
@@ -110,7 +111,14 @@ type TimelineRowByTag<T extends TimelineRow.TimelineRow["_tag"]> = Extract<Timel
 type HistoryAnchor = { restore: (done: boolean) => void; cancel: () => void }
 
 const timelineFallbackItemSize = 60
-const timelineCache = new Map<string, { measurements: VirtualItem[]; toolOpen: Record<string, boolean | undefined> }>()
+const timelineCache = new Map<
+  string,
+  {
+    measurements: VirtualItem[]
+    toolOpen: Record<string, boolean | undefined>
+    stepsOpen: Record<string, boolean | undefined>
+  }
+>()
 
 const taskDescription = (part: PartType, sessionID: string) => {
   if (part.type !== "tool" || part.tool !== "task") return
@@ -449,6 +457,7 @@ export function MessageTimeline(props: {
   const clearPrependAnchor = () => anchorRegistry.cancelAll()
 
   const [toolOpen, setToolOpen] = createStore<Record<string, boolean | undefined>>(cached?.toolOpen ?? {})
+  const [stepsOpen, setStepsOpen] = createStore<Record<string, boolean | undefined>>(cached?.stepsOpen ?? {})
   const [renderOverscan, setRenderOverscan] = createSignal(initialMeasurements?.length || coldBottomMount ? 6 : 20)
   let resizePinnedIndexes: number[] = []
   let resizePinFrame: number | undefined
@@ -498,6 +507,16 @@ export function MessageTimeline(props: {
       )
     },
   })
+
+  let previousWorkingMessageID: string | undefined
+  createEffect(() => {
+    const currentWorkingMessageID = sessionStatus().type === "idle" ? undefined : activeMessageID()
+    if (previousWorkingMessageID && previousWorkingMessageID !== currentWorkingMessageID) {
+      setStepsOpen(previousWorkingMessageID, false)
+    }
+    previousWorkingMessageID = currentWorkingMessageID
+  })
+
   const resizeItem = virtualizer.resizeItem
   let resizeAnchorScheduled = false
   const anchorResizedBottom = () => {
@@ -585,7 +604,11 @@ export function MessageTimeline(props: {
   onCleanup(() => {
     anchorRegistry.cleanup()
     timelineCache.delete(ownerSessionKey)
-    timelineCache.set(ownerSessionKey, { measurements: virtualizer.takeSnapshot(), toolOpen: { ...toolOpen } })
+    timelineCache.set(ownerSessionKey, {
+      measurements: virtualizer.takeSnapshot(),
+      toolOpen: { ...toolOpen },
+      stepsOpen: { ...stepsOpen },
+    })
     while (timelineCache.size > 16) timelineCache.delete(timelineCache.keys().next().value!)
     if (resizePinFrame !== undefined) cancelAnimationFrame(resizePinFrame)
     if (overscanFrame !== undefined) cancelAnimationFrame(overscanFrame)
@@ -1046,6 +1069,19 @@ export function MessageTimeline(props: {
     return end - message.time.created
   }
 
+  const turnDurationLabel = (userMessageID: string) => {
+    const ms = turnDurationMs(userMessageID)
+    if (typeof ms !== "number" || ms < 0) return
+    const total = ms / 1000
+    const numfmt = new Intl.NumberFormat(language.intl())
+    if (total < 60) return language.t("ui.message.duration.seconds", { count: numfmt.format(total) })
+    const rounded = Math.round(total)
+    return language.t("ui.message.duration.minutesSeconds", {
+      minutes: numfmt.format(Math.floor(rounded / 60)),
+      seconds: numfmt.format(rounded % 60),
+    })
+  }
+
   const assistantCopyPartID = (userMessageID: string) => {
     if (workingTurn(userMessageID)) return null
     const messages = assistantMessagesByParent().get(userMessageID) ?? emptyAssistantMessages
@@ -1156,6 +1192,56 @@ export function MessageTimeline(props: {
           </Show>
         )}
       </Show>
+    )
+  }
+
+  const renderAssistantSteps = (row: Accessor<TimelineRowMap["AssistantSteps"]>, onSizeChange?: () => void) => {
+    const userMessageID = () => row().userMessageID
+    const open = createMemo(() => stepsOpen[userMessageID()] ?? workingTurn(userMessageID()))
+    const duration = createMemo(() => turnDurationLabel(userMessageID()))
+    const onOpenChange = (value: boolean) => {
+      setStepsOpen(userMessageID(), value)
+      onSizeChange?.()
+    }
+
+    return (
+      <Collapsible
+        open={open()}
+        onOpenChange={onOpenChange}
+        variant="ghost"
+        data-slot="session-turn-steps"
+      >
+        <Collapsible.Trigger>
+          <div data-slot="session-turn-steps-trigger">
+            <Show when={duration()}>
+              {(value) => <span data-slot="session-turn-steps-duration">{value()}</span>}
+            </Show>
+            <Show when={duration()}>·</Show>
+            <span data-slot="session-turn-steps-label">
+              {open() ? language.t("ui.sessionTurn.steps.hide") : language.t("ui.sessionTurn.steps.show")}
+            </span>
+            <Collapsible.Arrow />
+          </div>
+        </Collapsible.Trigger>
+        <Collapsible.Content>
+          <Show when={open()}>
+            <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
+              <For each={row().groups}>
+                {(group) =>
+                  renderAssistantPartGroup(
+                    () => ({
+                      userMessageID: userMessageID(),
+                      group,
+                      previousAssistantPart: false,
+                    }),
+                    onSizeChange,
+                  )
+                }
+              </For>
+            </div>
+          </Show>
+        </Collapsible.Content>
+      </Collapsible>
     )
   }
 
@@ -1321,6 +1407,16 @@ export function MessageTimeline(props: {
           </TimelineRowFrame>
         )
       }
+      case "AssistantSteps": {
+        const assistantStepsRow = row as Accessor<TimelineRowByTag<"AssistantSteps">>
+        return (
+          <TimelineRowFrame row={assistantStepsRow}>
+            <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
+              {renderAssistantSteps(assistantStepsRow, onSizeChange)}
+            </div>
+          </TimelineRowFrame>
+        )
+      }
       case "Thinking": {
         const thinkingRow = row as Accessor<TimelineRowByTag<"Thinking">>
         return (
@@ -1379,13 +1475,21 @@ export function MessageTimeline(props: {
     const initialRow = timelineRowByKey().get(props.rowKey)!
     const item = createMemo(() => virtualItemByKey().get(props.rowKey) ?? initialItem)
     const row = createMemo(() => timelineRowByKey().get(props.rowKey) ?? initialRow)
-    const tool = () => {
+    const asyncFile = () => {
       const value = row()
-      if (value._tag !== "AssistantPart" || value.group.type !== "part") return
-      const part = getMsgPart(value.group.ref.messageID, value.group.ref.partID)
-      if (part?.type === "tool") return part
+      const refs =
+        value._tag === "AssistantPart"
+          ? value.group.type === "part"
+            ? [value.group.ref]
+            : []
+          : value._tag === "AssistantSteps"
+            ? value.groups.flatMap((group) => (group.type === "part" ? [group.ref] : []))
+            : []
+      return refs.some((ref) => {
+        const part = getMsgPart(ref.messageID, ref.partID)
+        return part?.type === "tool" && ["edit", "write", "apply_patch"].includes(part.tool)
+      })
     }
-    const asyncFile = () => ["edit", "write", "apply_patch"].includes(tool()?.tool ?? "")
     const [ready, setReady] = createSignal(initialItem.size <= timelineFallbackItemSize || !asyncFile())
     let contentMeasureFrame: number | undefined
 

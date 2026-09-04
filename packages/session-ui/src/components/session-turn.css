@@ -88,6 +88,42 @@
     gap: 12px;
   }
 
+  [data-slot="session-turn-steps"] {
+    width: 100%;
+    min-width: 0;
+
+    [data-slot="session-turn-steps-trigger"] {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 0 4px;
+      color: var(--text-weak);
+      cursor: pointer;
+
+      &:hover {
+        color: var(--text-base);
+      }
+
+      [data-slot="collapsible-arrow"] {
+        opacity: 1;
+      }
+    }
+
+    [data-slot="session-turn-steps-duration"] {
+      color: var(--text-weaker);
+      font-variant-numeric: tabular-nums;
+    }
+
+    [data-slot="session-turn-steps-label"] {
+      color: var(--text-weak);
+    }
+
+    [data-slot="session-turn-steps-content"] {
+      padding-top: 4px;
+    }
+  }
+
   [data-slot="session-turn-diffs"] {
     width: 100%;
     min-width: 0;

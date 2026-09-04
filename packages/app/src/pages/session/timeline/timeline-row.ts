@@ -24,6 +24,10 @@ export namespace TimelineRow {
     group: PartGroup
     previousAssistantPart: boolean
   }> {}
+  export class AssistantSteps extends Data.TaggedClass("AssistantSteps")<{
+    userMessageID: string
+    groups: PartGroup[]
+  }> {}
   export class Thinking extends Data.TaggedClass("Thinking")<{
     userMessageID: string
     reasoningHeading?: string
@@ -46,6 +50,7 @@ export namespace TimelineRow {
     | UserMessage
     | TurnDivider
     | AssistantPart
+    | AssistantSteps
     | Thinking
     | DiffSummary
     | Error
@@ -63,6 +68,8 @@ export namespace TimelineRow {
         return `turn-divider:${row.userMessageID}:${row.label}`
       case "AssistantPart":
         return `assistant-part:${row.userMessageID}:${row.group.key}`
+      case "AssistantSteps":
+        return `assistant-steps:${row.userMessageID}`
       case "Thinking":
         return `thinking:${row.userMessageID}`
       case "DiffSummary":
