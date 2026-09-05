@@ -202,3 +202,4 @@ bun run desktop:mac
 
 - 在 `packages/app` 执行时间线 rows/projection 单测。
 - 执行 `bun typecheck`（`packages/app`、`packages/session-ui`）。
+- 执行 `bun run typecheck:e2e`，并通过 `session-timeline-collapse-state` 回归场景检查完成回合收起后没有虚拟列表空白间距。

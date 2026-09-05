@@ -1199,9 +1199,12 @@ export function MessageTimeline(props: {
     const userMessageID = () => row().userMessageID
     const open = createMemo(() => stepsOpen[userMessageID()] ?? workingTurn(userMessageID()))
     const duration = createMemo(() => turnDurationLabel(userMessageID()))
+    createEffect(() => {
+      open()
+      onSizeChange?.()
+    })
     const onOpenChange = (value: boolean) => {
       setStepsOpen(userMessageID(), value)
-      onSizeChange?.()
     }
 
     return (
@@ -1223,8 +1226,8 @@ export function MessageTimeline(props: {
             <Collapsible.Arrow />
           </div>
         </Collapsible.Trigger>
-        <Collapsible.Content>
-          <Show when={open()}>
+        <Show when={open()}>
+          <Collapsible.Content>
             <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
               <For each={row().groups}>
                 {(group) =>
@@ -1239,8 +1242,8 @@ export function MessageTimeline(props: {
                 }
               </For>
             </div>
-          </Show>
-        </Collapsible.Content>
+          </Collapsible.Content>
+        </Show>
       </Collapsible>
     )
   }

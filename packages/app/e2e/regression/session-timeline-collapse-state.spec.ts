@@ -136,6 +136,35 @@ test.describe("regression: session timeline local row state", () => {
     })
   })
 
+  test("collapses completed assistant steps without leaving a virtual height gap", async ({ page }) => {
+    const events: EventPayload[] = []
+    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, streamedTextPart] }])
+    await configurePage(page)
+
+    await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
+    await expectSessionTitle(page, title)
+
+    const steps = page.locator('[data-slot="session-turn-steps"]').first()
+    await expectAppVisible(steps)
+    await expect(steps.locator('[data-slot="collapsible-trigger"]')).toHaveAttribute("aria-expanded", "false")
+    await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
+
+    await expect
+      .poll(async () =>
+        page.evaluate((textPartID) => {
+          const stepsFrame = document
+            .querySelector<HTMLElement>('[data-slot="session-turn-steps"]')
+            ?.closest<HTMLElement>('[data-timeline-row]')
+          const responseFrame = document
+            .querySelector<HTMLElement>(`[data-timeline-part-id="${textPartID}"]`)
+            ?.closest<HTMLElement>('[data-timeline-row]')
+          if (!stepsFrame || !responseFrame) return Number.POSITIVE_INFINITY
+          return responseFrame.getBoundingClientRect().top - stepsFrame.getBoundingClientRect().bottom
+        }, textPartID),
+      )
+      .toBeLessThan(24)
+  })
+
   test("does not remount an edit diff when sibling parts or diff counts update", async ({ page }) => {
     const events: EventPayload[] = []
     await installDiffProbe(page)
