@@ -245,6 +245,7 @@ bun run desktop:mac
 
 - Desktop 主进程通过受控 IPC 调用 Electron 原生 `clipboard.writeText`。
 - App Platform 增加可选的 `writeClipboardText` 能力，会话上下文页在 Desktop 下优先使用原生通道。
+- Renderer 检测到旧 preload 未暴露该能力时，复制逻辑先尝试 `execCommand("copy")`，再回退浏览器 Clipboard，避免开发热更新造成 API 版本错位错误。
 - Web 端继续使用浏览器剪贴板 API，不改变浏览器权限模型。
 
 ### 代码位置

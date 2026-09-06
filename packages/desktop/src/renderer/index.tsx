@@ -97,6 +97,10 @@ function DesktopMemoryRouter(props: BaseRouterProps & { windowID: string }) {
 
 const createPlatform = (windowState: DesktopWindowState): Platform => {
   const attachmentPaths = new WeakMap<File, string>()
+  const writeClipboardText =
+    typeof window.api.writeClipboardText === "function"
+      ? (text: string) => window.api.writeClipboardText(text)
+      : undefined
   const os = (() => {
     const ua = navigator.userAgent
     if (ua.includes("Mac")) return "macos"
@@ -235,9 +239,7 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
     async openDownloads() {
       return window.api.openDownloads()
     },
-    async writeClipboardText(text: string) {
-      return window.api.writeClipboardText(text)
-    },
+    writeClipboardText,
 
     storage,
     draftStore: createDraftStore({

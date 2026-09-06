@@ -70,6 +70,8 @@ electron-builder 的 macOS 签名流程会遍历 App 内部文件。Electron Fra
 
 在 Desktop 开发模式中，Renderer 直接调用 `navigator.clipboard.writeText` 可能被 Electron 的 Clipboard 权限检查拒绝，即使点击动作来自用户，也会出现 `Write permission denied`。以后 Desktop 的关键文本复制入口应通过 preload 暴露受控 IPC，由主进程调用 Electron `clipboard.writeText`；Web 端再保留浏览器 API 作为降级路径。验证不能只看成功 Toast，还要实际粘贴并确认内容完整。
 
+Electron Vite 开发模式还可能出现 Renderer 已热更新而已有窗口仍持有旧 preload 的短暂错位，此时直接调用新增的 `window.api` 会变成 `is not a function`。以后新增 preload API 时，Renderer 必须用运行时 `typeof` 检查能力是否存在，并提供不会依赖该 IPC 的兼容复制路径；不能只依赖 TypeScript 类型声明或重新构建后的静态产物。
+
 ## 代理排查必须验证真正发请求的进程
 
 桌面端存在 GUI 主进程、Electron sidecar 和模型请求三层，不能因为主进程源码调用了代理初始化，就断定模型请求已经经过代理。排查网络问题时必须同时检查：sidecar 的启动环境是否包含 `HTTP_PROXY`/`HTTPS_PROXY`、sidecar 是否在导入服务前调用代理初始化、以及实际运行时通过同一网络栈访问目标接口的结果。任何 VPN/代理软件的本地监听或系统代理状态，都不会自动变成子进程环境变量；还必须区分 TUN 路由（由操作系统路由自动接管）、系统 HTTP/SOCKS/PAC 代理（需要应用读取系统代理配置）和环境变量代理。普通 Electron HTTPS 请求不能只依赖 `ALL_PROXY`，也不能把“支持环境变量代理”误称为“支持系统代理自动发现”。
