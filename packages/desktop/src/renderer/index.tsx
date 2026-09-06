@@ -235,6 +235,9 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
     async openDownloads() {
       return window.api.openDownloads()
     },
+    async writeClipboardText(text: string) {
+      return window.api.writeClipboardText(text)
+    },
 
     storage,
     draftStore: createDraftStore({

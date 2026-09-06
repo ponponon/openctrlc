@@ -234,3 +234,28 @@ bun run desktop:mac
 - 在 `packages/app` 执行时间线 rows/projection 单测。
 - 执行 `bun typecheck`（`packages/app`、`packages/session-ui`）。
 - 执行 `bun run typecheck:e2e`，并通过 `session-timeline-collapse-state` 回归场景检查完成回合收起后没有虚拟列表空白间距。
+
+## Desktop 会话 ID 原生剪贴板复制
+
+### 功能目标
+
+修复 Desktop 开发模式下点击会话 ID 复制按钮失败的问题，避免 Renderer 的 `navigator.clipboard.writeText` 被 Electron 权限检查拒绝。
+
+### 实现范围
+
+- Desktop 主进程通过受控 IPC 调用 Electron 原生 `clipboard.writeText`。
+- App Platform 增加可选的 `writeClipboardText` 能力，会话上下文页在 Desktop 下优先使用原生通道。
+- Web 端继续使用浏览器剪贴板 API，不改变浏览器权限模型。
+
+### 代码位置
+
+- `packages/desktop/src/main/ipc.ts`：注册原生剪贴板写入 IPC。
+- `packages/desktop/src/preload/index.ts`、`packages/desktop/src/preload/types.ts`：安全暴露 IPC 能力。
+- `packages/desktop/src/renderer/index.tsx`、`packages/app/src/context/platform.tsx`：接入 Platform 能力。
+- `packages/app/src/components/session/session-context-tab.tsx`：会话 ID 复制入口优先使用 Desktop 原生通道。
+
+### 验证方式
+
+- 在 `packages/app` 执行会话 ID 复制单测。
+- 分别执行 `bun run typecheck`（`packages/app`、`packages/desktop`）。
+- 使用 `bun run dev:desktop` 启动后，在「上下文」页点击会话 ID 复制按钮，确认系统剪贴板中出现完整 session ID。

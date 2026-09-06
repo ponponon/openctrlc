@@ -257,6 +257,10 @@ export function registerIpcHandlers(deps: Deps) {
     if (error) throw new Error(error)
   })
 
+  ipcMain.handle("write-clipboard-text", (_event: IpcMainInvokeEvent, text: string) => {
+    clipboard.writeText(text)
+  })
+
   ipcMain.handle("read-clipboard-image", () => {
     const image = clipboard.readImage()
     if (image.isEmpty()) return null

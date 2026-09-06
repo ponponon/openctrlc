@@ -265,7 +265,10 @@ export function SessionContextTab() {
     if (!sessionID) return
 
     try {
-      await copySessionID(sessionID)
+      await copySessionID(
+        sessionID,
+        platform.writeClipboardText ? { writeText: platform.writeClipboardText } : undefined,
+      )
       showToast({
         variant: "success",
         icon: "circle-check",
