@@ -1,3 +1,34 @@
+## Skill 加载透明度面板
+
+### 功能目标
+
+让用户在不访问文件系统的情况下，查看当前项目发现了哪些 Skill，并区分“项目可用”与“本次会话已经激活”，避免把配置存在误认为 Skill 已经生效。
+
+### 使用方式
+
+打开设置，在「服务器」分组进入「Skills」。页面按当前项目加载 Skill 列表，支持搜索；点击某个 Skill 可以展开查看来源路径和调用方式。若从会话中打开设置，还会额外显示该会话已经激活过的 Skill 及激活次数。
+
+### 实现范围
+
+- 复用已有按项目返回 Skill 的 `GET /skill` 接口和查询缓存，不修改公共协议或生成 SDK。
+- 可用列表展示名称、描述、来源类型、真实来源路径和可选的 Slash 调用方式。
+- 会话使用列表从现有 `session.skill.activated` 投影中实时聚合，按 Skill 去重并保留激活次数。
+- 覆盖无项目、加载中、加载失败、搜索无结果和空列表状态；新增设置文案同步到全部 App locale，保证 i18n parity。
+
+### 代码位置
+
+- `packages/app/src/components/settings-v2/skills.tsx`：Skill 透明度页面和会话激活聚合。
+- `packages/app/src/components/settings-v2/dialog-settings-v2.tsx`：设置页导航与页面挂载。
+- `packages/app/src/context/global-sync/bootstrap.ts`、`packages/app/src/context/server-sync.tsx`：项目范围 Skill 查询选项。
+- `packages/app/src/components/settings-v2/settings-v2.css`：Skill 列表、详情和状态样式。
+- `packages/app/src/context/global-sync/bootstrap.test.ts`：按目录请求 Skill 的查询测试。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/context/global-sync/bootstrap.test.ts ./src/i18n/parity.test.ts`。
+- 在有 Skill 的项目中打开「设置 → 服务器 → Skills」，确认项目可用列表、来源详情、搜索和会话已使用列表均可见。
+
 ## 导出完成后打开系统文件管理器
 
 ### 功能目标

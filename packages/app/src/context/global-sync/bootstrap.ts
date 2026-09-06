@@ -22,6 +22,8 @@ import type {
   ReferenceListInput,
   ReferenceListOutput,
   SessionApi,
+  SkillListInput,
+  SkillListOutput,
 } from "@opencode-ai/client/promise"
 import { showToast } from "@/utils/toast"
 import { getFilename } from "@openctrlc/core/util/path"
@@ -255,6 +257,10 @@ type ReferenceListApi = {
   readonly list: (input?: ReferenceListInput) => Promise<ReferenceListOutput>
 }
 
+type SkillListApi = {
+  readonly list: (input?: SkillListInput) => Promise<SkillListOutput>
+}
+
 export const loadAgentsQuery = (
   scope: ServerScope,
   directory: string,
@@ -324,6 +330,13 @@ export const loadReferencesQuery = (
         if ((await protocol) === "v1" && legacy) return (await legacy.v2.reference.list()).data?.data ?? []
         return api.list({ location: { directory } }).then((result) => result.data)
       }).catch(() => []),
+    placeholderData: [],
+  })
+
+export const loadSkillsQuery = (scope: ServerScope, directory: string, api: SkillListApi) =>
+  queryOptions({
+    queryKey: [scope, directory, "skills"] as const,
+    queryFn: () => retry(() => api.list({ location: { directory } }).then((result) => result.data)),
     placeholderData: [],
   })
 

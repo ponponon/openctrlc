@@ -13,6 +13,7 @@ import {
   loadProjectsQuery,
   loadProvidersQuery,
   loadReferencesQuery,
+  loadSkillsQuery,
 } from "./bootstrap"
 import type { State, VcsCache } from "./types"
 import { ServerScope } from "@/utils/server-scope"
@@ -326,5 +327,37 @@ describe("query keys", () => {
 
     expect(calls).toEqual([{ location: { directory: "/repo" } }])
     expect(result).toHaveLength(1)
+  })
+
+  test("loads skills from the current location-scoped endpoint", async () => {
+    const calls: unknown[] = []
+    const api = {
+      list: async (input: unknown) => {
+        calls.push(input)
+        return {
+          location: {},
+          data: [
+            {
+              id: "review",
+              name: "review",
+              content: "Review files",
+              location: "/repo/.agents/skills/review/SKILL.md",
+            },
+          ],
+        }
+      },
+    } as unknown as Parameters<typeof loadSkillsQuery>[2]
+
+    const result = await new QueryClient().fetchQuery(loadSkillsQuery(ServerScope.local, "/repo", api))
+
+    expect(calls).toEqual([{ location: { directory: "/repo" } }])
+    expect(result).toEqual([
+      {
+        id: "review",
+        name: "review",
+        content: "Review files",
+        location: "/repo/.agents/skills/review/SKILL.md",
+      },
+    ])
   })
 })
