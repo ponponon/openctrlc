@@ -74,6 +74,10 @@ electron-builder 的 macOS 签名流程会遍历 App 内部文件。Electron Fra
 
 GitHub Actions 的干净 Runner 默认没有 `user.name` 和 `user.email`。发布工作流如果直接执行 `git tag -a`，会在构建和签名前因 `empty ident name` 失败。以后 CI 创建 annotated tag 前必须设置固定的 `github-actions[bot]` 提交者身份。
 
+## macOS Desktop CI 构建必须显式设置 Node.js 堆上限
+
+macOS Runner 的 Node.js 默认堆上限可能只有约 2GB，`electron-vite build` 在处理 Desktop bundle 时会因 `JavaScript heap out of memory` 退出，即使 Runner 还有可用内存。以后 Desktop CI 构建应显式设置合适的 `NODE_OPTIONS` 堆上限；发布失败后的重试还要允许 draft Release 的 tag 跟随修复提交更新，但已发布 Release 不得被移动。
+
 ## Markdown 导出默认不应包含内部执行过程
 
 用户反馈普通 Markdown 导出中包含大量工具调用、工具输入输出和步骤信息，影响阅读和分享。以后面向用户阅读的导出格式应默认只保留用户输入、助手回答和必要的文件引用；调试或复盘场景再通过单独的完整模式显式导出内部过程，不能把执行日志默认混入正文。

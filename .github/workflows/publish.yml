@@ -78,11 +78,20 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git rev-parse --verify --quiet "refs/tags/${TAG}^{commit}" >/dev/null; then
             actual="$(git rev-parse "${TAG}^{commit}")"
-            if [ "$actual" != "$TARGET" ]; then
+            if [ "$actual" = "$TARGET" ]; then
+              echo "Verified ${TAG} at ${TARGET}"
+              exit 0
+            fi
+
+            draft="$(gh release view "$TAG" --repo "${{ github.repository }}" --json isDraft --jq .isDraft)"
+            if [ "$draft" != "true" ]; then
               echo "Tag ${TAG} points to ${actual}, expected ${TARGET}" >&2
               exit 1
             fi
-            echo "Verified ${TAG} at ${TARGET}"
+
+            echo "Updating draft ${TAG} from ${actual} to ${TARGET}"
+            git tag -a -f "$TAG" "$TARGET" -m "Release $TAG"
+            git push --force origin "refs/tags/$TAG"
             exit 0
           fi
 
@@ -168,6 +177,7 @@ jobs:
             echo "Missing APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, or APPLE_TEAM_ID" >&2
             exit 1
           fi
+          export NODE_OPTIONS="--max-old-space-size=6144"
           bun run --cwd packages/desktop build
           bun run --cwd packages/desktop package:mac
 

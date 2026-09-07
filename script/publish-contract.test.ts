@@ -54,6 +54,8 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   expect(ensureTagSource).toContain("TARGET")
   expect(ensureTagSource).toContain("git config user.name")
   expect(ensureTagSource).toContain("github-actions[bot]")
+  expect(ensureTagSource).toContain("gh release view")
+  expect(ensureTagSource).toContain("git push --force origin")
 
   const publish = workflow.jobs?.publish
   const publishSource = JSON.stringify(publish?.steps ?? [])
@@ -65,6 +67,9 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   const versionSource = JSON.stringify(workflow.jobs?.version?.steps ?? [])
   expect(versionSource).toContain("Make source CLI available")
   expect(versionSource).toContain("OPENCTRLC_CHANGELOG_MODE")
+
+  const desktopSource = JSON.stringify(workflow.jobs?.["build-desktop-macos"]?.steps ?? [])
+  expect(desktopSource).toContain("NODE_OPTIONS")
 })
 
 test("stable versioning reuses an existing GitHub release", async () => {
