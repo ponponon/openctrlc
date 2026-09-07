@@ -8,7 +8,9 @@ import { createQuery } from "@tanstack/solid-query"
 import { type Accessor, type Component, For, Show, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
+import { useServerProtocol } from "@/context/server-sdk"
 import { useServerSync } from "@/context/server-sync"
+import { SkillRuntimeInfo } from "@/components/skill-runtime-info"
 import { pathKey } from "@/utils/path-key"
 import { groupSkills, type AvailableSkill, type SkillGroup } from "@/utils/skill-groups"
 import { summarizeSessionSkills } from "@/utils/session-skills"
@@ -20,6 +22,7 @@ export const SettingsSkillsV2: Component<{
   sessionID?: string
 }> = (props) => {
   const language = useLanguage()
+  const protocol = useServerProtocol()
   const serverSync = useServerSync()
   const [store, setStore] = createStore({
     expanded: {} as Record<string, boolean>,
@@ -51,13 +54,17 @@ export const SettingsSkillsV2: Component<{
     sortBy: (a, b) => a.name.localeCompare(b.name),
   })
   const groups = createMemo(() => groupSkills(list.flat()))
+  const sourceGroups = createMemo(() => groupSkills(available()))
 
   const isUsed = (skill: AvailableSkill) => used().some((item) => item.id === skill.name || item.name === skill.name)
   const toggleExpanded = (name: string) => setStore("expanded", name, !store.expanded[name])
-  const sourceLabel = (location: string) =>
-    location === "<built-in>"
-      ? language.t("settings.skills.source.builtin")
-      : language.t("settings.skills.source.project")
+  const sourceLabel = (location: string) => {
+    if (location === "<built-in>") return language.t("settings.skills.source.builtin")
+    if (location.includes("/.agents/skills")) return language.t("settings.skills.source.agents")
+    if (location.includes("/.claude/skills")) return language.t("settings.skills.source.claude")
+    if (location.includes("/.openctrlc/")) return language.t("settings.skills.source.config")
+    return language.t("settings.skills.source.project")
+  }
   const isGroupExpanded = (group: SkillGroup) =>
     store.groupExpanded[group.id] ?? (!!list.filter() || group.skills.length <= 4)
   const toggleGroupExpanded = (group: SkillGroup) => setStore("groupExpanded", group.id, !isGroupExpanded(group))
@@ -101,6 +108,7 @@ export const SettingsSkillsV2: Component<{
       </div>
 
       <div class="settings-v2-tab-body settings-v2-skills">
+        <SkillRuntimeInfo protocol={protocol()} groups={sourceGroups} />
         <Show when={props.sessionID}>
           <div class="settings-v2-section">
             <div class="settings-v2-skill-section-header">
@@ -191,7 +199,7 @@ export const SettingsSkillsV2: Component<{
                               <span class="settings-v2-skill-group-copy">
                                 <span class="settings-v2-skill-group-name">{group.name}</span>
                                 <span class="settings-v2-skill-group-source">
-                                  {sourceLabel(group.skills[0].location)}
+                                  {sourceLabel(group.location)}
                                 </span>
                                 <code class="settings-v2-skill-group-location">{group.location}</code>
                               </span>

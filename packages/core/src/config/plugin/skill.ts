@@ -1,13 +1,14 @@
 export * as ConfigSkillPlugin from "./skill"
 
-import { define } from "../../plugin/internal"
 import path from "path"
 import { Effect } from "effect"
 import { Config } from "../../config"
-import { AbsolutePath } from "../../schema"
-import { SkillV2 } from "../../skill"
+import { truthy } from "../../flag/flag"
 import { Global } from "../../global"
 import { Location } from "../../location"
+import { define } from "../../plugin/internal"
+import { AbsolutePath } from "../../schema"
+import { SkillV2 } from "../../skill"
 
 export const Plugin = define({
   id: "config-skill",
@@ -17,6 +18,28 @@ export const Plugin = define({
     const location = yield* Location.Service
     yield* ctx.skill.transform(
       Effect.fn(function* (draft) {
+        if (!truthy("OPENCTRLC_DISABLE_EXTERNAL_SKILLS")) {
+          const externalDirectories = [
+            ...(truthy("OPENCTRLC_DISABLE_CLAUDE_CODE") || truthy("OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS")
+              ? []
+              : [".claude"]),
+            ".agents",
+          ]
+          for (const directory of [
+            ...externalDirectories.map((directory) => path.join(global.home, directory)),
+            ...ancestors(location.directory, location.project.directory).flatMap((root) =>
+              externalDirectories.map((directory) => path.join(root, directory)),
+            ),
+          ]) {
+            draft.source(
+              SkillV2.DirectorySource.make({
+                type: "directory",
+                path: AbsolutePath.make(path.join(directory, "skills")),
+              }),
+            )
+          }
+        }
+
         const entries = yield* config.entries()
         const directories = entries.flatMap((entry) => (entry.type === "directory" ? [entry.path] : []))
         const items = entries.flatMap((entry) => (entry.type === "document" ? (entry.info.skills ?? []) : []))
@@ -48,3 +71,13 @@ export const Plugin = define({
     )
   }),
 })
+
+function ancestors(start: string, stop: string): string[] {
+  const current = path.resolve(start)
+  const boundary = path.resolve(stop)
+  if (current === boundary) return [current]
+  const withinBoundary =
+    boundary === path.parse(boundary).root ? current.startsWith(boundary) : current.startsWith(`${boundary}${path.sep}`)
+  if (!withinBoundary) return [boundary]
+  return [current, ...ancestors(path.dirname(current), boundary)]
+}

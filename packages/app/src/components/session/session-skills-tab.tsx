@@ -6,8 +6,10 @@ import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { createQuery } from "@tanstack/solid-query"
 import { For, Show, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
+import { SkillRuntimeInfo } from "@/components/skill-runtime-info"
 import { useLanguage } from "@/context/language"
 import { useSDK } from "@/context/sdk"
+import { useServerProtocol } from "@/context/server-sdk"
 import { useServerSync } from "@/context/server-sync"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { pathKey } from "@/utils/path-key"
@@ -18,6 +20,7 @@ import "./session-skills-tab.css"
 export function SessionSkillsTab() {
   const language = useLanguage()
   const sdk = useSDK()
+  const protocol = useServerProtocol()
   const serverSync = useServerSync()
   const { params } = useSessionLayout()
   const [store, setStore] = createStore({
@@ -53,12 +56,16 @@ export function SessionSkillsTab() {
     sortBy: (a, b) => a.name.localeCompare(b.name),
   })
   const groups = createMemo(() => groupSkills(list.flat()))
+  const sourceGroups = createMemo(() => groupSkills(available()))
 
   const isUsed = (skill: AvailableSkill) => used().some((item) => item.id === skill.name || item.name === skill.name)
-  const sourceLabel = (location: string) =>
-    location === "<built-in>"
-      ? language.t("settings.skills.source.builtin")
-      : language.t("settings.skills.source.project")
+  const sourceLabel = (location: string) => {
+    if (location === "<built-in>") return language.t("settings.skills.source.builtin")
+    if (location.includes("/.agents/skills")) return language.t("settings.skills.source.agents")
+    if (location.includes("/.claude/skills")) return language.t("settings.skills.source.claude")
+    if (location.includes("/.openctrlc/")) return language.t("settings.skills.source.config")
+    return language.t("settings.skills.source.project")
+  }
   const toggleExpanded = (name: string) => setStore("expanded", name, !store.expanded[name])
   const isGroupExpanded = (group: SkillGroup) =>
     store.groupExpanded[group.id] ?? (!!list.filter() || group.skills.length <= 4)
@@ -96,6 +103,7 @@ export function SessionSkillsTab() {
       </div>
 
       <div class="session-skills-scroll">
+        <SkillRuntimeInfo protocol={protocol()} groups={sourceGroups} />
         <Show when={params.id}>
           <section class="session-skills-section">
             <div class="session-skills-section-heading">
@@ -183,7 +191,7 @@ export function SessionSkillsTab() {
                             >
                               <span class="session-skills-group-copy">
                                 <span class="session-skills-group-name">{group.name}</span>
-                                <span class="session-skills-group-source">{sourceLabel(group.skills[0].location)}</span>
+                                <span class="session-skills-group-source">{sourceLabel(group.location)}</span>
                                 <code class="session-skills-group-location">{group.location}</code>
                               </span>
                               <span class="session-skills-group-actions">

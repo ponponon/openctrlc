@@ -429,3 +429,30 @@ bun run desktop:mac
 - 在 `packages/app` 执行会话 ID 复制单测。
 - 分别执行 `bun run typecheck`（`packages/app`、`packages/desktop`）。
 - 使用 `bun run dev:desktop` 启动后，在「上下文」页点击会话 ID 复制按钮，确认系统剪贴板中出现完整 session ID。
+
+## 统一 V1/V2 Skill 发现与运行时来源展示
+
+### 功能目标
+
+让 V2 Skill 发现规则继承 V1 的全局和项目级外部 Skill 目录，避免 `~/.agents/skills`、`~/.claude/skills` 中的技能因协议切换消失；同时在 Skills 面板中明确显示当前服务协议和已经发现的 Skill 来源路径。
+
+### 实现范围
+
+- V2 配置 Skill 插件默认注册用户目录下的 `.agents/skills`、`.claude/skills`，以及当前项目到项目根之间各级目录下的对应外部 Skill 目录。
+- 保留 `OPENCTRLC_DISABLE_EXTERNAL_SKILLS`、`OPENCTRLC_DISABLE_CLAUDE_CODE` 和 `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` 的关闭行为，与 V1 扫描规则保持一致。
+- Skills 设置面板和会话 Skills 面板显示当前检测到的 V1/V2 服务协议，并按实际发现结果列出来源目录与其中的 Skill 数量。
+- 继续保留单个 Skill 的实际 `SKILL.md` 路径和来源组展示，便于从来源目录追溯到具体文件。
+
+### 代码位置
+
+- `packages/core/src/config/plugin/skill.ts`：V2 外部 Skill 来源注册和 V1 兼容环境开关。
+- `packages/app/src/components/skill-runtime-info.tsx`、`skill-runtime-info.css`：服务协议和来源目录信息条。
+- `packages/app/src/components/settings-v2/skills.tsx`、`components/session/session-skills-tab.tsx`：设置页和会话页接入运行时信息。
+- `packages/core/test/config/skill.test.ts`：全局、项目祖先目录和配置来源注册测试。
+
+### 验证方式
+
+- 在 `packages/core` 执行 `bun test test/config/skill.test.ts test/skill.test.ts`。
+- 在 `packages/core`、`packages/app` 分别执行 `bun typecheck`。
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts src/utils/skill-groups.test.ts`。
+- 使用 `bun run dev:desktop` 打开 Skills 面板，确认看到服务协议、`.agents/skills` 来源和 `kimi-webbridge`。

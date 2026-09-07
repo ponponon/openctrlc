@@ -1,0 +1,63 @@
+.skill-runtime-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 0.5px solid var(--v2-border-border-muted);
+  border-radius: 8px;
+  background: var(--v2-background-bg-layer-01);
+}
+
+.skill-runtime-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.skill-runtime-info-row--sources {
+  align-items: flex-start;
+}
+
+.skill-runtime-info-label {
+  flex: 0 0 64px;
+  color: var(--v2-text-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.skill-runtime-info-sources {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skill-runtime-info-source {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: var(--v2-background-bg-base);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-weak);
+}
+
+.skill-runtime-info-source code {
+  overflow: hidden;
+  color: var(--v2-text-text-base);
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-runtime-info-empty {
+  color: var(--v2-text-text-faint);
+  font-size: 12px;
+  line-height: 18px;
+}

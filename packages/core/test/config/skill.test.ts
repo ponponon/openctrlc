@@ -18,6 +18,7 @@ describe("ConfigSkillPlugin.Plugin", () => {
   it.effect("registers configured skill directories and URLs", () =>
     Effect.gen(function* () {
       const directory = AbsolutePath.make("/repo/packages/app")
+      const projectDirectory = AbsolutePath.make("/repo")
       const sources: SkillV2.Source[] = []
       const transform = Effect.fnUntraced(function* (update: (draft: SkillV2.Draft) => void | Effect.Effect<void>) {
         const result = update({
@@ -40,7 +41,7 @@ describe("ConfigSkillPlugin.Plugin", () => {
         }),
       ).pipe(
         Effect.provideService(Global.Service, Global.Service.of({ ...Global.make(), home: "/home/test" })),
-        Effect.provideService(Location.Service, Location.Service.of(location({ directory }))),
+        Effect.provideService(Location.Service, Location.Service.of(location({ directory }, { projectDirectory }))),
         Effect.provideService(
           Config.Service,
           Config.Service.of({
@@ -59,6 +60,38 @@ describe("ConfigSkillPlugin.Plugin", () => {
       )
 
       expect(sources).toEqual([
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/home/test/.claude/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/home/test/.agents/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/repo/packages/app/.claude/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/repo/packages/app/.agents/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/repo/packages/.claude/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/repo/packages/.agents/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/repo/.claude/skills"),
+        }),
+        SkillV2.DirectorySource.make({
+          type: "directory",
+          path: AbsolutePath.make("/repo/.agents/skills"),
+        }),
         SkillV2.DirectorySource.make({
           type: "directory",
           path: AbsolutePath.make(path.join("/repo/.openctrlc", "skill")),
