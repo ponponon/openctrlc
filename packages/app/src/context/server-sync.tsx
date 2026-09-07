@@ -182,6 +182,7 @@ function makeQueryOptionsApi(
   serverSDK: () => OpencodeClient,
   serverAPI: ServerApi,
   sdkFor: (dir: PathKey) => OpencodeClient,
+  legacySkills: ServerSDK["legacySkills"],
   protocol: Promise<"v1" | "v2">,
 ) {
   return {
@@ -194,7 +195,7 @@ function makeQueryOptionsApi(
     agents: (directory: PathKey) => loadAgentsQuery(scope, directory, serverAPI.agent, sdkFor(directory), protocol),
     references: (directory: PathKey) =>
       loadReferencesQuery(scope, directory, serverAPI.reference, sdkFor(directory), protocol),
-    skills: (directory: PathKey) => loadSkillsQuery(scope, directory, serverAPI.skill),
+    skills: (directory: PathKey) => loadSkillsQuery(scope, directory, serverAPI.skill, legacySkills),
     mcp: (directory: PathKey) => loadMcpQuery(scope, directory, serverAPI.mcp, sdkFor(directory), protocol),
     mcpResources: (directory: PathKey) =>
       loadMcpResourcesQuery(scope, directory, serverAPI.mcp, sdkFor(directory), protocol),
@@ -234,6 +235,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     () => serverSDK.client,
     serverSDK.api,
     sdkFor,
+    serverSDK.legacySkills,
     serverSDK.protocol,
   )
 

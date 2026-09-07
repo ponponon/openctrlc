@@ -98,6 +98,10 @@ electron-builder 在检测到 CI 环境时可能自动执行 GitHub 发布。如
 
 Electron Vite 开发模式还可能出现 Renderer 已热更新而已有窗口仍持有旧 preload 的短暂错位，此时直接调用新增的 `window.api` 会变成 `is not a function`。以后新增 preload API 时，Renderer 必须用运行时 `typeof` 检查能力是否存在，并提供不会依赖该 IPC 的兼容复制路径；不能只依赖 TypeScript 类型声明或重新构建后的静态产物。
 
+## Skill 面板不能只读取单一投影
+
+用户指出 Skills 面板显示“本次会话已使用 0”，但同一会话实际已经加载过 `brainstorming`。排查发现，新面板只读取 `session_message` 中的 `type: "skill"`，而旧会话的 Skill 调用持久化在 `part` 表的 `tool=skill` 记录中；同时项目可用列表只请求了 V2 `/api/skill`，旧版运行时实际从 `/skill` 发现的插件 Skill 没有进入面板。因此以后做运行透明度 UI 时，不能把某个客户端投影当成完整事实来源，必须梳理新旧协议、历史持久化数据和运行时实际读取路径；对跨版本数据应采用明确的事件优先、持久化 Part 回退策略，并对可用列表做新旧接口合并去重。
+
 ## 代理排查必须验证真正发请求的进程
 
 桌面端存在 GUI 主进程、Electron sidecar 和模型请求三层，不能因为主进程源码调用了代理初始化，就断定模型请求已经经过代理。排查网络问题时必须同时检查：sidecar 的启动环境是否包含 `HTTP_PROXY`/`HTTPS_PROXY`、sidecar 是否在导入服务前调用代理初始化、以及实际运行时通过同一网络栈访问目标接口的结果。任何 VPN/代理软件的本地监听或系统代理状态，都不会自动变成子进程环境变量；还必须区分 TUN 路由（由操作系统路由自动接管）、系统 HTTP/SOCKS/PAC 代理（需要应用读取系统代理配置）和环境变量代理。普通 Electron HTTPS 请求不能只依赖 `ALL_PROXY`，也不能把“支持环境变量代理”误称为“支持系统代理自动发现”。

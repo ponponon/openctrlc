@@ -4,7 +4,7 @@ import { Tag } from "@openctrlc/ui/v2/badge-v2"
 import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
 import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { createQuery } from "@tanstack/solid-query"
-import type { SessionMessageInfo, SkillListOutput } from "@opencode-ai/client/promise"
+import type { SkillListOutput } from "@opencode-ai/client/promise"
 import { For, Show, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
@@ -12,16 +12,10 @@ import { useSDK } from "@/context/sdk"
 import { useServerSync } from "@/context/server-sync"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { pathKey } from "@/utils/path-key"
+import { summarizeSessionSkills } from "@/utils/session-skills"
 import "./session-skills-tab.css"
 
 type AvailableSkill = SkillListOutput["data"][number]
-type ActivatedSkill = Extract<SessionMessageInfo, { type: "skill" }>
-
-type ActivatedSkillSummary = {
-  id: string
-  name: string
-  count: number
-}
 
 export function SessionSkillsTab() {
   const language = useLanguage()
@@ -41,24 +35,14 @@ export function SessionSkillsTab() {
   })
 
   const available = createMemo(() => skillsQuery.data ?? [])
-  const used = createMemo<ActivatedSkillSummary[]>(() => {
+  const used = createMemo(() => {
     const sessionID = params.id
     if (!sessionID) return []
     const messages = serverSync().session.data.session_message[sessionID] ?? []
-    return Array.from(
-      messages
-        .filter((message): message is ActivatedSkill => message.type === "skill")
-        .reduce((result, message) => {
-          const current = result.get(message.skill)
-          result.set(message.skill, {
-            id: message.skill,
-            name: message.name,
-            count: (current?.count ?? 0) + 1,
-          })
-          return result
-        }, new Map<string, ActivatedSkillSummary>())
-        .values(),
-    ).sort((a, b) => a.name.localeCompare(b.name))
+    const parts = Object.values(serverSync().session.data.part)
+      .flat()
+      .filter((part) => part.sessionID === sessionID)
+    return summarizeSessionSkills({ messages, parts })
   })
 
   const list = useFilteredList<AvailableSkill>({

@@ -261,6 +261,8 @@ type SkillListApi = {
   readonly list: (input?: SkillListInput) => Promise<SkillListOutput>
 }
 
+type LegacySkillList = (directory: string) => Promise<SkillListOutput["data"]>
+
 export const loadAgentsQuery = (
   scope: ServerScope,
   directory: string,
@@ -333,10 +335,21 @@ export const loadReferencesQuery = (
     placeholderData: [],
   })
 
-export const loadSkillsQuery = (scope: ServerScope, directory: string, api: SkillListApi) =>
+export const loadSkillsQuery = (scope: ServerScope, directory: string, api: SkillListApi, legacy?: LegacySkillList) =>
   queryOptions({
     queryKey: [scope, directory, "skills"] as const,
-    queryFn: () => retry(() => api.list({ location: { directory } }).then((result) => result.data)),
+    queryFn: () =>
+      retry(async () => {
+        const current = await api.list({ location: { directory } }).then((result) => result.data)
+        if (!legacy) return current
+
+        const supplemental = await legacy(directory).catch(() => [])
+        const skills = new Map(current.map((skill) => [skill.name, skill]))
+        for (const skill of supplemental) {
+          skills.set(skill.name, { ...skills.get(skill.name), ...skill })
+        }
+        return [...skills.values()]
+      }),
     placeholderData: [],
   })
 

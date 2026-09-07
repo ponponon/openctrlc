@@ -1,10 +1,10 @@
-import type { OpenCodeEvent } from "@opencode-ai/client/promise"
+import type { OpenCodeEvent, SkillInfo } from "@opencode-ai/client/promise"
 import type { Event } from "@openctrlc/sdk/v2/client"
 import { createSimpleContext } from "@openctrlc/ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { type Accessor, batch, createMemo, createResource, onCleanup, onMount } from "solid-js"
-import { createApiForServer, createSdkForServer, type ServerApi } from "@/utils/server"
+import { authTokenFromCredentials, createApiForServer, createSdkForServer, type ServerApi } from "@/utils/server"
 import { useLanguage } from "./language"
 import { usePlatform } from "./platform"
 import { ServerConnection, useServer } from "./server"
@@ -174,6 +174,7 @@ type ServerSDKBase = {
   client: ReturnType<typeof createSdkForServer>
   api: CompatibleApi
   currentApi: ServerApi
+  legacySkills: (directory: string) => Promise<SkillInfo[]>
   event: {
     on: ServerEventEmitter["on"]
     listen: ServerEventEmitter["listen"]
@@ -339,6 +340,24 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
     throwOnError: true,
   })
   const currentApi: ServerApi = createApiForServer({ server: server.http, fetch: platform.fetch })
+  const legacySkills = async (directory: string) => {
+    const url = new URL("/skill", server.http.url)
+    url.searchParams.set("directory", directory)
+    const response = await (platform.fetch ?? globalThis.fetch)(url, {
+      headers: server.http.password
+        ? {
+            Authorization: `Basic ${authTokenFromCredentials({
+              username: server.http.username,
+              password: server.http.password,
+            })}`,
+          }
+        : undefined,
+    })
+    if (!response.ok) throw new Error(`Legacy skill endpoint returned ${response.status}`)
+    const data: unknown = await response.json()
+    if (!Array.isArray(data)) return []
+    return data.filter(isSkillInfo).map((skill) => ({ ...skill, id: skill.name }))
+  }
   const legacy = (directory?: string) =>
     createSdkForServer({
       server: server.http,
@@ -357,6 +376,7 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
     client: sdk,
     api,
     currentApi,
+    legacySkills,
     event: {
       on: emitter.on.bind(emitter),
       listen: emitter.listen.bind(emitter),
@@ -370,6 +390,18 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
       })
     },
   }
+}
+
+function isSkillInfo(value: unknown): value is Omit<SkillInfo, "id"> {
+  if (!value || typeof value !== "object") return false
+  return (
+    "name" in value &&
+    typeof value.name === "string" &&
+    "location" in value &&
+    typeof value.location === "string" &&
+    "content" in value &&
+    typeof value.content === "string"
+  )
 }
 
 export type ServerSDK = ServerSDKBase & {

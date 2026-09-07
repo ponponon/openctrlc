@@ -49,6 +49,32 @@
 - 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/context/global-sync/bootstrap.test.ts ./src/i18n/parity.test.ts`。
 - 在有 Skill 的项目中打开「设置 → 服务器 → Skills」，确认项目可用列表、来源详情、搜索和会话已使用列表均可见。
 
+## Skill 列表与会话使用记录兼容
+
+### 功能目标
+
+让 Skills 面板展示与实际运行时一致：兼容新旧 Skill 接口，并能识别旧会话中已经持久化的 Skill 工具调用，避免“模型实际加载过 Skill，但面板显示 0”。
+
+### 实现范围
+
+- 项目可用 Skill 合并 `/api/skill` 和旧实例 `/skill` 接口，按名称去重；旧接口不可用时保留新接口结果，兼容不同版本服务端。
+- 旧实例接口返回的 Skill 自动补齐列表所需的 `id`，并保留旧运行时的真实来源路径。
+- 会话已使用 Skill 优先读取 `session.skill.activated` 投影；旧会话没有该投影时，从完成态 `tool=skill` Part 的输入或元数据中回退识别。
+- 新旧数据同时存在时不重复计数，面板的数量表示实际激活次数，而不是仅表示当前已加载的 Skill 数量。
+
+### 代码位置
+
+- `packages/app/src/utils/session-skills.ts`：统一聚合会话 Skill 激活记录。
+- `packages/app/src/context/global-sync/bootstrap.ts`：合并新旧项目 Skill 列表。
+- `packages/app/src/context/server-sdk.tsx`：访问兼容的旧实例 Skill 接口并做响应校验。
+- `packages/app/src/components/session/session-skills-tab.tsx`、`packages/app/src/components/settings-v2/skills.tsx`：复用统一的会话 Skill 聚合结果。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/utils/session-skills.test.ts ./src/context/global-sync/bootstrap.test.ts`。
+- 打开包含旧版插件 Skill 的项目，确认可用列表不再只显示内置 `customize-opencode`；打开历史会话，确认已完成的 Skill 工具调用出现在“本次会话已使用”。
+
 ## 会话内 Skills 侧栏入口
 
 ### 功能目标

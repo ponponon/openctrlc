@@ -7,21 +7,15 @@ import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { createQuery } from "@tanstack/solid-query"
 import { type Accessor, type Component, For, Show, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
-import type { SessionMessageInfo, SkillListOutput } from "@opencode-ai/client/promise"
+import type { SkillListOutput } from "@opencode-ai/client/promise"
 import { useLanguage } from "@/context/language"
 import { useServerSync } from "@/context/server-sync"
 import { pathKey } from "@/utils/path-key"
+import { summarizeSessionSkills } from "@/utils/session-skills"
 import { SettingsListV2 } from "./parts/list"
 import "./settings-v2.css"
 
 type AvailableSkill = SkillListOutput["data"][number]
-type ActivatedSkill = Extract<SessionMessageInfo, { type: "skill" }>
-
-type ActivatedSkillSummary = {
-  id: string
-  name: string
-  count: number
-}
 
 export const SettingsSkillsV2: Component<{
   directory: Accessor<string | undefined>
@@ -40,23 +34,13 @@ export const SettingsSkillsV2: Component<{
   })
 
   const available = createMemo(() => skillsQuery.data ?? [])
-  const used = createMemo<ActivatedSkillSummary[]>(() => {
+  const used = createMemo(() => {
     if (!props.sessionID) return []
     const messages = serverSync().session.data.session_message[props.sessionID] ?? []
-    return Array.from(
-      messages
-        .filter((message): message is ActivatedSkill => message.type === "skill")
-        .reduce((result, message) => {
-          const current = result.get(message.skill)
-          result.set(message.skill, {
-            id: message.skill,
-            name: message.name,
-            count: (current?.count ?? 0) + 1,
-          })
-          return result
-        }, new Map<string, ActivatedSkillSummary>())
-        .values(),
-    ).sort((a, b) => a.name.localeCompare(b.name))
+    const parts = Object.values(serverSync().session.data.part)
+      .flat()
+      .filter((part) => part.sessionID === props.sessionID)
+    return summarizeSessionSkills({ messages, parts })
   })
 
   const list = useFilteredList<AvailableSkill>({

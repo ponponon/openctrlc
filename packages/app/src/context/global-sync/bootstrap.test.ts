@@ -360,4 +360,55 @@ describe("query keys", () => {
       },
     ])
   })
+
+  test("merges legacy instance skills into the location-scoped list", async () => {
+    const api = {
+      list: async () => ({
+        location: {},
+        data: [
+          {
+            id: "customize-opencode",
+            name: "customize-opencode",
+            content: "current",
+            location: "/builtin/customize-opencode.md",
+          },
+        ],
+      }),
+    } as unknown as Parameters<typeof loadSkillsQuery>[2]
+
+    const result = await new QueryClient().fetchQuery(
+      loadSkillsQuery(ServerScope.local, "/repo", api, async (directory) => {
+        expect(directory).toBe("/repo")
+        return [
+          {
+            id: "customize-opencode",
+            name: "customize-opencode",
+            content: "legacy",
+            location: "<built-in>",
+          },
+          {
+            id: "brainstorming",
+            name: "brainstorming",
+            content: "Brainstorm",
+            location: "/cache/superpowers/skills/brainstorming/SKILL.md",
+          },
+        ]
+      }),
+    )
+
+    expect(result).toEqual([
+      {
+        id: "customize-opencode",
+        name: "customize-opencode",
+        content: "legacy",
+        location: "<built-in>",
+      },
+      {
+        id: "brainstorming",
+        name: "brainstorming",
+        content: "Brainstorm",
+        location: "/cache/superpowers/skills/brainstorming/SKILL.md",
+      },
+    ])
+  })
 })
