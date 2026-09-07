@@ -609,6 +609,8 @@ export const dict = {
   "context.breakdown.tool": "Извиквания на инструменти",
   "context.breakdown.other": "други",
   "context.systemPrompt.title": "Системен ред",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Сурови съобщения",
   "context.export.session": "Експортиране на сесия",
   "context.stats.session": "Сесия",

@@ -404,6 +404,8 @@ export const dict = {
   "context.breakdown.tool": "도구 호출",
   "context.breakdown.other": "기타",
   "context.systemPrompt.title": "시스템 프롬프트",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "원시 메시지",
   "context.export.session": "세션 내보내기",
 

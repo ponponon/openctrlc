@@ -604,6 +604,8 @@ export const dict = {
   "context.breakdown.tool": "ხელსაწყოს გამოძახებები",
   "context.breakdown.other": "სხვა",
   "context.systemPrompt.title": "სისტემის მოთხოვნა",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "დაუმუშავებელი შეტყობინებები",
   "context.export.session": "ექსპორტის სესია",
   "context.stats.session": "სესია",

@@ -610,6 +610,8 @@ export const dict = {
   "context.breakdown.tool": "Pozivi alata",
   "context.breakdown.other": "ostalo",
   "context.systemPrompt.title": "Sustavski upit",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Sirove poruke",
   "context.export.session": "Izvezi sesiju",
   "context.stats.session": "Sesija",

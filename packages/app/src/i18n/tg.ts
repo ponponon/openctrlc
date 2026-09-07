@@ -607,6 +607,8 @@ export const dict = {
   "context.breakdown.tool": "Зангҳои асбоб",
   "context.breakdown.other": "Дигар",
   "context.systemPrompt.title": "Промпти система",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Паёмҳои хом",
   "context.export.session": "Сеанси содирот",
   "context.stats.session": "Сессия",

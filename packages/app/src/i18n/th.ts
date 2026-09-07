@@ -631,6 +631,8 @@ export const dict = {
   "context.breakdown.other": "อื่น ๆ",
 
   "context.systemPrompt.title": "พรอมต์ระบบ",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "ข้อความดิบ",
 
   "context.export.session": "ส่งออกเซสชัน",

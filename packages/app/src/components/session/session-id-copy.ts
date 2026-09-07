@@ -1,14 +1,11 @@
-export function copySessionID(
-  sessionID: string | undefined,
-  clipboard?: Pick<Clipboard, "writeText">,
-) {
-  if (!sessionID) return Promise.resolve(false)
+export function copyText(text: string | undefined, clipboard?: Pick<Clipboard, "writeText">) {
+  if (!text) return Promise.resolve(false)
 
   const fallback = () => {
     const body = typeof document === "undefined" ? undefined : document.body
     if (body && typeof document.execCommand === "function") {
       const textarea = document.createElement("textarea")
-      textarea.value = sessionID
+      textarea.value = text
       textarea.setAttribute("readonly", "")
       textarea.style.position = "fixed"
       textarea.style.opacity = "0"
@@ -20,12 +17,16 @@ export function copySessionID(
       if (copied) return Promise.resolve(true)
     }
 
-    return navigator.clipboard.writeText(sessionID).then(() => true)
+    return navigator.clipboard.writeText(text).then(() => true)
   }
 
   if (!clipboard) return fallback()
-  return clipboard.writeText(sessionID).then(
+  return clipboard.writeText(text).then(
     () => true,
     () => fallback(),
   )
+}
+
+export function copySessionID(sessionID: string | undefined, clipboard?: Pick<Clipboard, "writeText">) {
+  return copyText(sessionID, clipboard)
 }

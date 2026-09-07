@@ -606,6 +606,8 @@ export const dict = {
   "context.breakdown.tool": "Thirrjet e mjeteve",
   "context.breakdown.other": "Të tjera",
   "context.systemPrompt.title": "Prompt i sistemit",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Mesazhe të papërpunuara",
   "context.export.session": "Sesioni i eksportit",
   "context.stats.session": "Sesioni",

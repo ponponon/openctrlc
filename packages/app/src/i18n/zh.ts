@@ -625,6 +625,8 @@ export const dict = {
   "context.breakdown.tool": "工具调用",
   "context.breakdown.other": "其他",
   "context.systemPrompt.title": "系统提示词",
+  "context.systemPrompt.copy": "复制系统提示词",
+  "context.systemPrompt.copyFailed": "复制系统提示词失败",
   "context.rawMessages.title": "原始消息",
   "context.export.session": "导出会话",
 

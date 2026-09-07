@@ -608,6 +608,8 @@ export const dict = {
   "context.breakdown.tool": "Trucades d'eines",
   "context.breakdown.other": "Altres",
   "context.systemPrompt.title": "Indicació del sistema",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Missatges crus",
   "context.export.session": "Sessió d'exportació",
   "context.stats.session": "Sessió",

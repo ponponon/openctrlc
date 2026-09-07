@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { copySessionID } from "./session-id-copy"
+import { copySessionID, copyText } from "./session-id-copy"
 
 describe("copySessionID", () => {
   test("copies the complete session ID", async () => {
@@ -20,7 +20,8 @@ describe("copySessionID", () => {
     const originalExecCommand = document.execCommand
     Object.defineProperty(document, "execCommand", {
       configurable: true,
-      value: (command: string) => command === "copy" && document.querySelector("textarea")?.value === "ses_01JSESSIONID",
+      value: (command: string) =>
+        command === "copy" && document.querySelector("textarea")?.value === "ses_01JSESSIONID",
     })
 
     try {
@@ -51,5 +52,21 @@ describe("copySessionID", () => {
     ).resolves.toBe(false)
 
     expect(calls).toBe(0)
+  })
+})
+
+describe("copyText", () => {
+  test("copies arbitrary text through the provided clipboard", async () => {
+    const copied: string[] = []
+
+    await expect(
+      copyText("effective system prompt", {
+        writeText: async (value) => {
+          copied.push(value)
+        },
+      }),
+    ).resolves.toBe(true)
+
+    expect(copied).toEqual(["effective system prompt"])
   })
 })

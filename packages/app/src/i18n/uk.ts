@@ -649,6 +649,8 @@ export const dict = {
   "context.breakdown.other": "Інше",
 
   "context.systemPrompt.title": "Системний запит",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Необроблені повідомлення",
 
   "context.export.session": "Експортувати сесію",

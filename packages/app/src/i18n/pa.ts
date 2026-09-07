@@ -613,6 +613,8 @@ export const dict = {
   "context.breakdown.tool": "ٹول کالز",
   "context.breakdown.other": "ہور",
   "context.systemPrompt.title": "سسٹم پرامپٹ",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "خام سنیہے",
   "context.export.session": "سیشن برآمد کرو",
 

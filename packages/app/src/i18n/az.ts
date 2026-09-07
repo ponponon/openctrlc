@@ -610,6 +610,8 @@ export const dict = {
   "context.breakdown.tool": "Alət çağırışları",
   "context.breakdown.other": "Digər",
   "context.systemPrompt.title": "Sistem promptu",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Xam mesajlar",
   "context.export.session": "Sessiyanı ixrac et",
 

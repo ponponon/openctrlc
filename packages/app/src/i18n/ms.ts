@@ -604,6 +604,8 @@ export const dict = {
   "context.breakdown.tool": "Panggilan Alat",
   "context.breakdown.other": "Lain-lain",
   "context.systemPrompt.title": "Arahan Sistem",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Mesej mentah",
   "context.export.session": "Eksport sesi",
   "context.stats.session": "Sesi",

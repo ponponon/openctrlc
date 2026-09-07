@@ -603,6 +603,8 @@ export const dict = {
   "context.breakdown.tool": "Volania nástrojov",
   "context.breakdown.other": "Iné",
   "context.systemPrompt.title": "Systémová výzva",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Surové správy",
   "context.export.session": "Exportovať reláciu",
   "context.stats.session": "Relácia",

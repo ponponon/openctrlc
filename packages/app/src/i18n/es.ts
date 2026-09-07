@@ -638,6 +638,8 @@ export const dict = {
   "context.breakdown.other": "Otro",
 
   "context.systemPrompt.title": "Prompt del sistema",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Mensajes en bruto",
 
   "context.export.session": "Exportar sesión",

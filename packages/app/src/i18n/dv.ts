@@ -612,6 +612,8 @@ export const dict = {
   "context.breakdown.tool": "ޓޫލް ކޯލްސް",
   "context.breakdown.other": "އެހެން",
   "context.systemPrompt.title": "ސިސްޓަމް ޕްރޮމްޕްޓް",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "ރޯ މެސެޖުތަކެވެ",
   "context.export.session": "އެކްސްޕޯޓް ސެޝަން",
   "context.stats.session": "ސެޝަން",

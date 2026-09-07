@@ -600,6 +600,8 @@ export const dict = {
   "context.breakdown.tool": "استدعاءات الأدوات",
   "context.breakdown.other": "أخرى",
   "context.systemPrompt.title": "موجّه النظام",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "الرسائل الخام",
   "context.export.session": "تصدير الجلسة",
 

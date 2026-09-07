@@ -601,6 +601,8 @@ export const dict = {
   "context.breakdown.tool": "ໂທເຄື່ອງມື",
   "context.breakdown.other": "ອື່ນໆ",
   "context.systemPrompt.title": "System prompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "ຂໍ້ຄວາມດິບ",
   "context.export.session": "ເຊດຊັນສົ່ງອອກ",
   "context.stats.session": "ເຊດຊັນ",

@@ -603,6 +603,8 @@ export const dict = {
   "context.breakdown.tool": "ការហៅឧបករណ៍",
   "context.breakdown.other": "ផ្សេងទៀត។",
   "context.systemPrompt.title": "ប្រអប់បញ្ចូលប្រព័ន្ធ",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "សារឆៅ",
   "context.export.session": "សម័យនាំចេញ",
   "context.stats.session": "សម័យ",

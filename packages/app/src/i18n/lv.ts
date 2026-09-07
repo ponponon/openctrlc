@@ -604,6 +604,8 @@ export const dict = {
   "context.breakdown.tool": "Rīku izsaukumi",
   "context.breakdown.other": "Citi",
   "context.systemPrompt.title": "Sistēmas uzvedne",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Neapstrādātas ziņas",
   "context.export.session": "Eksportēt sesiju",
   "context.stats.session": "Sesija",

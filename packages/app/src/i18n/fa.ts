@@ -604,6 +604,8 @@ export const dict = {
   "context.breakdown.tool": "تماس های ابزار",
   "context.breakdown.other": "دیگر",
   "context.systemPrompt.title": "پرامپت سیستم",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "پیام های خام",
   "context.export.session": "جلسه صادرات",
   "context.stats.session": "جلسه",

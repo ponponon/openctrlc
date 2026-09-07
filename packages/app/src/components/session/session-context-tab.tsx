@@ -30,7 +30,7 @@ import { getSessionContext } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
-import { copySessionID } from "./session-id-copy"
+import { copySessionID, copyText } from "./session-id-copy"
 
 const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
   system: "var(--syntax-info)",
@@ -290,6 +290,38 @@ export function SessionContextTab() {
     }
   }
 
+  const copySystemPromptToClipboard = async () => {
+    const prompt = systemPrompt()
+    if (!prompt) return
+
+    try {
+      const copied = await copyText(
+        prompt,
+        platform.writeClipboardText ? { writeText: platform.writeClipboardText } : undefined,
+      )
+      if (!copied) {
+        showToast({
+          variant: "error",
+          title: language.t("context.systemPrompt.copyFailed"),
+          description: language.t("common.requestFailed"),
+        })
+        return
+      }
+
+      showToast({
+        variant: "success",
+        icon: "circle-check",
+        title: language.t("session.share.copy.copied"),
+      })
+    } catch (err) {
+      showToast({
+        variant: "error",
+        title: language.t("context.systemPrompt.copyFailed"),
+        description: err instanceof Error ? err.message : language.t("common.requestFailed"),
+      })
+    }
+  }
+
   let scroll: HTMLDivElement | undefined
   let frame: number | undefined
   let pending: { x: number; y: number } | undefined
@@ -411,24 +443,36 @@ export function SessionContextTab() {
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between gap-2">
                 <div class="text-12-regular text-text-weak">{language.t("context.systemPrompt.title")}</div>
-                <Show when={systemPromptNeedsExpansion()}>
+                <div class="flex items-center gap-1">
                   <Button
                     size="small"
                     variant="ghost"
-                    class="shrink-0 gap-1 px-2 text-text-weak hover:text-text-base"
-                    onClick={toggleSystemPrompt}
-                    aria-expanded={systemPromptState.expanded}
+                    class="shrink-0 px-2 text-text-weak hover:text-text-base"
+                    onClick={() => void copySystemPromptToClipboard()}
+                    aria-label={language.t("context.systemPrompt.copy")}
+                    title={language.t("context.systemPrompt.copy")}
                   >
-                    <span>
-                      {language.t(systemPromptState.expanded ? "session.todo.collapse" : "session.todo.expand")}
-                    </span>
-                    <Icon
-                      name="chevron-down"
-                      size="small"
-                      style={{ transform: `rotate(${systemPromptState.expanded ? 180 : 0}deg)` }}
-                    />
+                    <Icon name="copy" size="small" />
                   </Button>
-                </Show>
+                  <Show when={systemPromptNeedsExpansion()}>
+                    <Button
+                      size="small"
+                      variant="ghost"
+                      class="shrink-0 gap-1 px-2 text-text-weak hover:text-text-base"
+                      onClick={toggleSystemPrompt}
+                      aria-expanded={systemPromptState.expanded}
+                    >
+                      <span>
+                        {language.t(systemPromptState.expanded ? "session.todo.collapse" : "session.todo.expand")}
+                      </span>
+                      <Icon
+                        name="chevron-down"
+                        size="small"
+                        style={{ transform: `rotate(${systemPromptState.expanded ? 180 : 0}deg)` }}
+                      />
+                    </Button>
+                  </Show>
+                </div>
               </div>
               <div class="relative border border-border-base rounded-md bg-surface-base px-3 py-2">
                 <div

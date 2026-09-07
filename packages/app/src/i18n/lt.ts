@@ -610,6 +610,8 @@ export const dict = {
   "context.breakdown.tool": "Įrankio skambučiai",
   "context.breakdown.other": "Kita",
   "context.systemPrompt.title": "Sistemos raginimas",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Neapdoroti pranešimai",
   "context.export.session": "Eksportuoti seansą",
   "context.stats.session": "Seansas",

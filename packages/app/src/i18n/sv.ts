@@ -608,6 +608,8 @@ export const dict = {
   "context.breakdown.tool": "Verktygsanrop",
   "context.breakdown.other": "Övrigt",
   "context.systemPrompt.title": "Systemprompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Råmeddelanden",
   "context.export.session": "Exportera session",
 

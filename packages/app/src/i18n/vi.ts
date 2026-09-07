@@ -613,6 +613,8 @@ export const dict = {
   "context.breakdown.tool": "Lệnh gọi công cụ",
   "context.breakdown.other": "Khác",
   "context.systemPrompt.title": "Lời nhắc hệ thống",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Tin nhắn thô",
   "context.export.session": "Xuất phiên",
 

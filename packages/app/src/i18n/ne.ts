@@ -605,6 +605,8 @@ export const dict: Record<string, string> = {
   "context.breakdown.tool": "उपकरण कलहरू",
   "context.breakdown.other": "अन्य",
   "context.systemPrompt.title": "प्रणाली प्रम्प्ट",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "कच्चा सन्देशहरू",
   "context.export.session": "निर्यात सत्र",
   "context.stats.session": "सत्र",

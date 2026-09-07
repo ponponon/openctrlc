@@ -609,6 +609,8 @@ export const dict = {
   "context.breakdown.tool": "Szerszámhívások",
   "context.breakdown.other": "Más",
   "context.systemPrompt.title": "Rendszer prompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Nyers üzenetek",
   "context.export.session": "Exportálási munkamenet",
   "context.stats.session": "Munkamenet",

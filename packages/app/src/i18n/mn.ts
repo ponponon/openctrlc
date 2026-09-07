@@ -608,6 +608,8 @@ export const dict = {
   "context.breakdown.tool": "Хэрэгслийн дуудлага",
   "context.breakdown.other": "Бусад",
   "context.systemPrompt.title": "Системийн промпт",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Түүхий мессежүүд",
   "context.export.session": "Экспортын сесс",
   "context.stats.session": "Сесс",

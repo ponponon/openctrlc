@@ -608,6 +608,8 @@ export const dict = {
   "context.breakdown.tool": "Κλήσεις εργαλείου",
   "context.breakdown.other": "Άλλο",
   "context.systemPrompt.title": "Προτροπή συστήματος",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Ακατέργαστα μηνύματα",
   "context.export.session": "Εξαγωγή συνεδρίας",
   "context.stats.session": "Συνεδρία",

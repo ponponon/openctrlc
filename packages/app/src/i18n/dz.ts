@@ -613,6 +613,8 @@ export const dict: Record<string, string> = {
   "context.breakdown.tool": "ལག་ཆས་འབོད་བརྡ་ཚུ།",
   "context.breakdown.other": "གཞན",
   "context.systemPrompt.title": "རིམ་ལུགས་བརྡ་སྟོན།",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "འཕྲིན་དོན་སྔོ་མོ།",
   "context.export.session": "ལཱ་ཡུན་ཕྱིར་འདྲེན་འབད་ནི།",
   "context.stats.session": "ལཱ་ཡུན།",

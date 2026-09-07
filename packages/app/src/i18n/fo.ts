@@ -604,6 +604,8 @@ export const dict = {
   "context.breakdown.tool": "Tólkall",
   "context.breakdown.other": "Annað",
   "context.systemPrompt.title": "Skipanarboð",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Rá boð",
   "context.export.session": "Útflutningsløta",
   "context.stats.session": "Seta",

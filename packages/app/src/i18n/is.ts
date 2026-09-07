@@ -608,6 +608,8 @@ export const dict = {
   "context.breakdown.tool": "Verkfærasímtöl",
   "context.breakdown.other": "Annað",
   "context.systemPrompt.title": "Kerfisboð",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Hrá skilaboð",
   "context.export.session": "Flytja út setu",
   "context.stats.session": "Lota",

@@ -516,6 +516,8 @@ export const dict = {
   "context.breakdown.tool": "Chiamate agli strumenti",
   "context.breakdown.other": "Altro",
   "context.systemPrompt.title": "Prompt di sistema",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Messaggi non elaborati",
   "context.export.session": "Esporta sessione",
 

@@ -639,6 +639,8 @@ export const dict = {
   "context.breakdown.other": "Diğer",
 
   "context.systemPrompt.title": "Sistem İstemi",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Ham mesajlar",
 
   "context.export.session": "Oturumu dışa aktar",

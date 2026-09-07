@@ -603,6 +603,8 @@ export const dict: Record<string, string> = {
   "context.breakdown.tool": "මෙවලම් ඇමතුම්",
   "context.breakdown.other": "වෙනත්",
   "context.systemPrompt.title": "පද්ධති ප්‍රොම්ප්ට්",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "අමු පණිවිඩ",
   "context.export.session": "අපනයන සැසිය",
   "context.stats.session": "සැසිය",

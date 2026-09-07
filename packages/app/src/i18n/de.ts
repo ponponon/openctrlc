@@ -494,6 +494,8 @@ export const dict = {
   "context.breakdown.tool": "Werkzeugaufrufe",
   "context.breakdown.other": "Andere",
   "context.systemPrompt.title": "System-Prompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Rohdaten der Nachrichten",
   "context.export.session": "Sitzung exportieren",
 

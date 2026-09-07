@@ -636,6 +636,8 @@ export const dict = {
   "context.breakdown.other": "Ostalo",
 
   "context.systemPrompt.title": "Sistemski prompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Sirove poruke",
 
   "context.export.session": "Izvezi sesiju",

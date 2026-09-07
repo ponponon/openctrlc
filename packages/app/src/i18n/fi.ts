@@ -498,6 +498,8 @@ export const dict = {
   "context.breakdown.tool": "Työkalukutsut",
   "context.breakdown.other": "Muut",
   "context.systemPrompt.title": "Järjestelmäkehote",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Raakaviestit",
   "context.export.session": "Vie istunto",
 

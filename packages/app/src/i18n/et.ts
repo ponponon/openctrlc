@@ -601,6 +601,8 @@ export const dict = {
   "context.breakdown.tool": "Tööriistakõned",
   "context.breakdown.other": "muud",
   "context.systemPrompt.title": "Süsteemi viip",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Toores sõnumid",
   "context.export.session": "Ekspordiseanss",
   "context.stats.session": "Seanss",

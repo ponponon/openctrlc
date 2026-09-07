@@ -609,6 +609,8 @@ export const dict = {
   "context.breakdown.tool": "Toolaanroepen",
   "context.breakdown.other": "Overig",
   "context.systemPrompt.title": "Systeemprompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Ruwe berichten",
   "context.export.session": "Sessie exporteren",
 

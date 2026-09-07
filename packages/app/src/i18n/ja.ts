@@ -602,6 +602,8 @@ export const dict = {
   "context.breakdown.tool": "ツール呼び出し",
   "context.breakdown.other": "その他",
   "context.systemPrompt.title": "システムプロンプト",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "生のメッセージ",
   "context.export.session": "セッションをエクスポート",
 

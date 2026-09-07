@@ -605,6 +605,8 @@ export const dict = {
   "context.breakdown.tool": "Позиви алатки",
   "context.breakdown.other": "Друго",
   "context.systemPrompt.title": "Системски упит",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "необрађене поруке",
   "context.export.session": "Извоз сесија",
   "context.stats.session": "Сесија",

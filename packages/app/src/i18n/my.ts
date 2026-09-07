@@ -610,6 +610,8 @@ export const dict = {
   "context.breakdown.tool": "တူးလ်ခေါ်ဆိုမှုများ",
   "context.breakdown.other": "အခြား",
   "context.systemPrompt.title": "System prompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "အကြမ်း မက်ဆေ့ချ်များ",
   "context.export.session": "စက်ရှင်ကို ထုတ်ယူရန်",
   "context.stats.session": "အပိုင်း",

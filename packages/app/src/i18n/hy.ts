@@ -608,6 +608,8 @@ export const dict = {
   "context.breakdown.tool": "Գործիքների զանգեր",
   "context.breakdown.other": "Այլ",
   "context.systemPrompt.title": "Համակարգի հուշում",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Հում հաղորդագրություններ",
   "context.export.session": "Արտահանման նիստ",
   "context.stats.session": "Նիստ",

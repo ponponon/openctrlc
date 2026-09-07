@@ -605,6 +605,8 @@ export const dict = {
   "context.breakdown.tool": "Volání nástroje",
   "context.breakdown.other": "Jiné",
   "context.systemPrompt.title": "Systémový prompt",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Syrové zprávy",
   "context.export.session": "Export relace",
   "context.stats.session": "Relace",

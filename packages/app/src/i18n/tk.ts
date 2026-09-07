@@ -605,6 +605,8 @@ export const dict = {
   "context.breakdown.tool": "Gural jaňlary",
   "context.breakdown.other": "Beýlekiler",
   "context.systemPrompt.title": "Ulgam prompt-y",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Çig habarlar",
   "context.export.session": "Eksport sessiýasy",
   "context.stats.session": "Sessiýa",

@@ -646,6 +646,8 @@ export const dict = {
   "context.breakdown.other": "Lainnya",
 
   "context.systemPrompt.title": "Prompt Sistem",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Pesan mentah",
 
   "context.export.session": "Ekspor sesi",

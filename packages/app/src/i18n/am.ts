@@ -596,6 +596,8 @@ export const dict = {
   "context.breakdown.tool": "የመሳሪያ ጥሪዎች",
   "context.breakdown.other": "ሌላ",
   "context.systemPrompt.title": "የስርዓት ፕሮምፕት",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "ጥሬ መልዕክቶች",
   "context.export.session": "ክፍለ ጊዜን ወደ ውጭ ላክ",
   "context.stats.session": "ክፍለ ጊዜ",

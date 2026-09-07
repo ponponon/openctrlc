@@ -612,6 +612,8 @@ export const dict = {
   "context.breakdown.tool": "टूल कॉल",
   "context.breakdown.other": "अन्य",
   "context.systemPrompt.title": "सिस्टम प्रॉम्प्ट",
+  "context.systemPrompt.copy": "Copy system prompt",
+  "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "मूल संदेश",
   "context.export.session": "सेशन निर्यात करें",
 
