@@ -33,14 +33,18 @@ export function SessionTimelineNavigator(props: {
     }, 100)
   }
 
-  const navigateToBoundary = (boundary: "start" | "end") => {
-    const entries = props.entries()
-    const entry = boundary === "start" ? entries[0] : entries.at(-1)
+  const navigateToEntry = (entry: SessionTimelineNavigatorEntry | undefined) => {
     if (!entry) return
 
     clearHideTimer()
     setHoveredID(undefined)
     props.onNavigate(entry.id)
+  }
+
+  const navigateToBoundary = (boundary: "start" | "end") => {
+    const entries = props.entries()
+    const entry = boundary === "start" ? entries[0] : entries.at(-1)
+    navigateToEntry(entry)
   }
 
   createEffect(
@@ -67,17 +71,45 @@ export function SessionTimelineNavigator(props: {
     return entries.reduce((current, entry) => (entry.offset <= target ? entry.id : current), entries[0].id)
   })
 
+  const currentIndex = createMemo(() => props.entries().findIndex((entry) => entry.id === currentID()))
+  const isAtStart = createMemo(() => scrollTop() <= 1)
+  const isAtEnd = createMemo(() => {
+    const viewport = props.viewport()
+    if (!viewport) return currentIndex() === props.entries().length - 1
+    return scrollTop() + viewport.clientHeight >= viewport.scrollHeight - 1
+  })
+  const canNavigatePrevious = createMemo(() => currentIndex() > 0 && !isAtStart())
+  const canNavigateNext = createMemo(() => {
+    const index = currentIndex()
+    return index >= 0 && index < props.entries().length - 1 && !isAtEnd()
+  })
+
+  const navigateToAdjacent = (offset: -1 | 1) => {
+    navigateToEntry(props.entries()[currentIndex() + offset])
+  }
+
   return (
     <Show when={props.entries().length > 1}>
       <nav class="session-timeline-navigator" aria-label={language.t("session.tab.session")}>
         <button
           type="button"
           class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--start"
+          disabled={isAtStart()}
           aria-label={props.entries()[0]?.prompt || language.t("session.tab.session")}
           title={props.entries()[0]?.prompt || language.t("session.tab.session")}
           onClick={() => navigateToBoundary("start")}
         >
           <Icon name="arrow-up" size="small" />
+        </button>
+        <button
+          type="button"
+          class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--previous"
+          disabled={!canNavigatePrevious()}
+          aria-label={language.t("command.message.previous")}
+          title={language.t("command.message.previous")}
+          onClick={() => navigateToAdjacent(-1)}
+        >
+          <Icon name="chevron-down" size="small" />
         </button>
         <For each={props.entries()}>
           {(entry) => {
@@ -131,7 +163,18 @@ export function SessionTimelineNavigator(props: {
         </For>
         <button
           type="button"
+          class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--next"
+          disabled={!canNavigateNext()}
+          aria-label={language.t("command.message.next")}
+          title={language.t("command.message.next")}
+          onClick={() => navigateToAdjacent(1)}
+        >
+          <Icon name="chevron-down" size="small" />
+        </button>
+        <button
+          type="button"
           class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--end"
+          disabled={isAtEnd()}
           aria-label={language.t("session.messages.jumpToLatest")}
           title={language.t("session.messages.jumpToLatest")}
           onClick={() => navigateToBoundary("end")}

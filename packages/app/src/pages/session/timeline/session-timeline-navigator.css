@@ -112,20 +112,37 @@
 }
 
 .session-timeline-navigator__edge-button--start {
-  top: -36px;
+  top: -64px;
+}
+
+.session-timeline-navigator__edge-button--previous {
+  top: -32px;
+}
+
+.session-timeline-navigator__edge-button--next {
+  bottom: -32px;
 }
 
 .session-timeline-navigator__edge-button--end {
-  bottom: -36px;
+  bottom: -64px;
 }
 
-.session-timeline-navigator__edge-button:hover {
+.session-timeline-navigator__edge-button:not(:disabled):hover {
   background: var(--v2-overlay-simple-overlay-hover);
   color: var(--text-strong, var(--v2-text-text-base));
 }
 
-.session-timeline-navigator__edge-button:active {
+.session-timeline-navigator__edge-button:not(:disabled):active {
   transform: scale(0.92);
+}
+
+.session-timeline-navigator__edge-button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.session-timeline-navigator__edge-button--previous [data-slot="icon-svg"] {
+  transform: rotate(180deg);
 }
 
 .session-timeline-navigator__edge-button:focus-visible {
