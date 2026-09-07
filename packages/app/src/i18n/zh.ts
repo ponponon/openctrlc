@@ -491,7 +491,7 @@ export const dict = {
   "dialog.session.importOpencode.error.localOnly": "OpenCode 导入仅支持 Desktop 本地服务器。",
   "dialog.session.importOpencode.error.project": "请先打开一个项目，再导入 OpenCode 会话。",
   "dialog.session.importOpencode.success.title": "会话导入成功",
-  "dialog.session.importOpencode.success.description": "已从 OpenCode 导入 {{id}}。",
+  "dialog.session.importOpencode.success.description": "已从 OpenCode 导入 {{id}}",
 
   "dialog.server.title": "服务器",
   "dialog.server.description": "切换此应用连接的 OpenCtrlC 服务器。",
