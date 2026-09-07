@@ -9,6 +9,7 @@ import {
   createSessionTabs,
   focusTerminalById,
   getTabReorderIndex,
+  sessionPanelTabOnOpen,
   shouldShowFileTree,
 } from "./helpers"
 
@@ -16,6 +17,18 @@ describe("shouldShowFileTree", () => {
   test("does not reserve space for a disabled file tree", () => {
     expect(shouldShowFileTree({ visible: false, opened: true })).toBe(false)
     expect(shouldShowFileTree({ visible: true, opened: true })).toBe(true)
+  })
+})
+
+describe("sessionPanelTabOnOpen", () => {
+  test("prefers Skills when reopening the side panel", () => {
+    expect(sessionPanelTabOnOpen({ active: "review", all: [SESSION_SKILLS_TAB, "file://README.md"] })).toBe(
+      SESSION_SKILLS_TAB,
+    )
+  })
+
+  test("preserves the current tab when Skills is not open", () => {
+    expect(sessionPanelTabOnOpen({ active: "review", all: ["file://README.md"] })).toBe("review")
   })
 })
 

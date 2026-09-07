@@ -28,6 +28,11 @@ export function shouldShowFileTree(input: { visible: boolean; opened: boolean })
   return input.opened && input.visible
 }
 
+export function sessionPanelTabOnOpen(input: { active?: string; all: readonly string[] }) {
+  if (input.all.includes(SESSION_SKILLS_TAB)) return SESSION_SKILLS_TAB
+  return input.active
+}
+
 export const createSessionTabs = (input: TabsInput) => {
   const review = input.review ?? (() => false)
   const hasReview = input.hasReview ?? (() => false)

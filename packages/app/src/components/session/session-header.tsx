@@ -20,7 +20,7 @@ import { useServer } from "@/context/server"
 import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
-import { SESSION_SKILLS_TAB, focusTerminalById } from "@/pages/session/helpers"
+import { SESSION_SKILLS_TAB, focusTerminalById, sessionPanelTabOnOpen } from "@/pages/session/helpers"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { messageAgentColor } from "@/utils/agent"
 import { decode64 } from "@/utils/base64"
@@ -232,6 +232,18 @@ export function SessionHeader() {
     if (!view().reviewPanel.opened()) view().reviewPanel.open()
   }
 
+  const toggleReviewPanel = () => {
+    const panel = view().reviewPanel
+    if (panel.opened()) {
+      panel.close()
+      return
+    }
+
+    const tab = sessionPanelTabOnOpen({ active: tabs().active(), all: tabs().all() })
+    if (tab) tabs().setActive(tab)
+    panel.open()
+  }
+
   const canOpen = createMemo(() => platform.platform === "desktop" && !!platform.openPath && server.isLocal())
   const current = createMemo(
     () =>
@@ -253,7 +265,7 @@ export function SessionHeader() {
     skillsOpened: tabs().active() === SESSION_SKILLS_TAB,
     onSkillsToggle: toggleSkills,
     reviewOpened: view().reviewPanel.opened(),
-    onReviewToggle: () => view().reviewPanel.toggle(),
+    onReviewToggle: toggleReviewPanel,
   }))
 
   const selectApp = (app: OpenApp) => {
