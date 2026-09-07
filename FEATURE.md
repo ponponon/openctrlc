@@ -209,6 +209,37 @@ bun run desktop:mac
 - 执行 `bun run desktop:mac -- --no-install --no-open`，确认仅生成 `.app` 且不启动应用。
 - 正式分发前执行 `OPENCTRLC_CHANNEL=prod bun run --cwd packages/desktop package:mac`，检查 DMG/ZIP 产物和签名/公证配置。
 
+## GitHub Actions 自动发布 macOS Desktop
+
+### 功能目标
+
+在手动触发正式版本发布时，自动构建、签名、公证并把 macOS Desktop 安装包上传到 GitHub Release，减少本机重复打包和手工上传操作。
+
+### 使用方式
+
+1. 在仓库 Actions Secrets 中配置 Developer ID `.p12`（base64）、`.p12` 密码、Apple ID、App 专用密码和 Team ID。
+2. 在 Actions 页面运行 `publish`，填写具体版本或选择版本 bump。
+3. 工作流完成后，GitHub Release 中会自动出现 macOS arm64 的 DMG/ZIP，并从 draft 发布为正式 Release。
+
+### 实现范围
+
+- 复用现有 `publish` 工作流的版本、tag 和 Release 创建逻辑。
+- 在 macOS GitHub Runner 中导入临时 Developer ID 证书到临时钥匙串。
+- 使用 Apple ID、App 专用密码和 Team ID 执行 notarization；本机钥匙串 profile 不会被复制到 CI。
+- 上传 `packages/desktop/dist/*.dmg` 和 `packages/desktop/dist/*.zip`，CLI 资产继续由原有 job 上传。
+- 桌面构建失败时不会执行最终的 Release 发布，避免产生没有完整安装包的正式版本。
+
+### 代码位置
+
+- `.github/workflows/publish.yml`：macOS Desktop 构建、公证和 Release 资产上传。
+- `docs/release.md`：GitHub Secrets 配置和发布步骤。
+
+### 验证方式
+
+- 本机验证 `xcrun notarytool store-credentials` 和正式 `package:mac` 流程。
+- GitHub Actions 手动运行 `publish`，确认日志出现 `notarization successful`。
+- 从 Release 下载 DMG，在未安装开发环境的 macOS 上安装并启动，确认 Gatekeeper 不再提示无法验证开发者。
+
 ## 会话回合中间步骤折叠
 
 ### 功能目标

@@ -105,10 +105,71 @@ jobs:
             packages/opencode/dist/*.zip
             packages/opencode/dist/*.tar.gz
 
+  build-desktop-macos:
+    needs:
+      - version
+      - ensure-tag
+    if: github.repository == 'ponponon/openctrlc'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Import Developer ID certificate
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_DEVELOPER_ID_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MACOS_CERTIFICATE_BASE64" ] || [ -z "$MACOS_CERTIFICATE_PASSWORD" ]; then
+            echo "Missing MACOS_DEVELOPER_ID_P12_BASE64 or MACOS_DEVELOPER_ID_P12_PASSWORD" >&2
+            exit 1
+          fi
+
+          keychain_path="$RUNNER_TEMP/openctrlc-build.keychain-db"
+          certificate_path="$RUNNER_TEMP/openctrlc-developer-id.p12"
+          keychain_password="$(openssl rand -hex 24)"
+
+          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 -D > "$certificate_path"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -k "$keychain_path" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -s "$keychain_path"
+
+      - name: Build and notarize macOS Desktop
+        env:
+          OPENCTRLC_CHANNEL: prod
+          OPENCTRLC_VERSION: ${{ needs.version.outputs.version }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "Missing APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, or APPLE_TEAM_ID" >&2
+            exit 1
+          fi
+          bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop package:mac
+
+      - name: Upload macOS Desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          GH_REPO: ${{ needs.version.outputs.repo }}
+        run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.dmg packages/desktop/dist/*.zip --clobber --repo "$GH_REPO"
+
   publish:
     needs:
       - version
       - build-cli
+      - build-desktop-macos
     if: github.repository == 'ponponon/openctrlc'
     runs-on: ubuntu-24.04
     steps:
@@ -121,3 +182,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${{ needs.version.outputs.tag }}" packages/opencode/dist/*.zip packages/opencode/dist/*.tar.gz --clobber --repo "${{ needs.version.outputs.repo }}"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ needs.version.outputs.tag }}" --draft=false --repo "${{ needs.version.outputs.repo }}"

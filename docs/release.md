@@ -2,12 +2,36 @@
 
 ## Current GitHub Actions release
 
-当前 GitHub Actions 发布流程是手动触发的 CLI 发布流程，不会因为向 `dev` 推送普通 commit 自动发布。
+当前 GitHub Actions 发布流程是手动触发的正式发布流程，不会因为向 `dev` 推送普通 commit 自动发布。
 在 Actions 页面手动运行 `publish`，填写 `version` 或选择 `bump`。
 
-流程会先创建 draft GitHub Release，然后显式确认对应 tag 指向本次工作流 commit；如果 tag 缺失，会创建并推送它。之后构建并上传 CLI 压缩包。
+流程会先创建 draft GitHub Release，然后确认对应 tag 指向本次工作流 commit；之后并行构建 CLI 和 macOS Desktop。Desktop 使用
+Developer ID 证书签名并提交 Apple notarization，成功后把 DMG/ZIP 和 CLI 压缩包上传到 Release，最后自动将 Release 从 draft 发布。
 
-当前流程不会调用根目录的 `script/publish.ts`，因此不会发布 npm 包、桌面端安装包或执行版本同步 commit。
+当前流程不会调用根目录的 `script/publish.ts`，因此不会发布 npm 包或执行版本同步 commit。macOS Desktop 当前构建 Apple Silicon（arm64）产物。
+
+### GitHub Actions 必需 Secrets
+
+本机的 `openctrlc-notary` 是 macOS 钥匙串配置，只能在本机使用，GitHub Runner 无法读取。需要在仓库的
+`Settings → Secrets and variables → Actions` 中配置以下 Secrets：
+
+```text
+MACOS_DEVELOPER_ID_P12_BASE64   # 包含 Developer ID Application 私钥的 .p12，经 base64 编码
+MACOS_DEVELOPER_ID_P12_PASSWORD # 导出 .p12 时设置的密码
+APPLE_ID                        # 有权访问该 Developer Team 的 Apple 账户邮箱
+APPLE_APP_SPECIFIC_PASSWORD     # Apple 账户页面生成的 App 专用密码
+APPLE_TEAM_ID                   # J6RWCMMG83
+```
+
+在本机导出包含私钥的 Developer ID `.p12` 后，可使用下面的命令复制成 Secret 内容：
+
+```bash
+base64 -i /path/to/OpenCtrlC-Developer-ID.p12 | pbcopy
+```
+
+复制到 GitHub Secret `MACOS_DEVELOPER_ID_P12_BASE64` 后，不要把 `.p12` 或密码提交到仓库。
+
+完成 Secrets 配置后，在 Actions 页面运行 `publish`；成功日志应包含 `notarization successful`，Release 会自动发布。
 
 ## Full package publishing
 
