@@ -1,0 +1,241 @@
+import { useFilteredList } from "@openctrlc/ui/hooks"
+import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
+import { Tag } from "@openctrlc/ui/v2/badge-v2"
+import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
+import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
+import { createQuery } from "@tanstack/solid-query"
+import type { SessionMessageInfo, SkillListOutput } from "@opencode-ai/client/promise"
+import { For, Show, createMemo } from "solid-js"
+import { createStore } from "solid-js/store"
+import { useLanguage } from "@/context/language"
+import { useSDK } from "@/context/sdk"
+import { useServerSync } from "@/context/server-sync"
+import { useSessionLayout } from "@/pages/session/session-layout"
+import { pathKey } from "@/utils/path-key"
+import "./session-skills-tab.css"
+
+type AvailableSkill = SkillListOutput["data"][number]
+type ActivatedSkill = Extract<SessionMessageInfo, { type: "skill" }>
+
+type ActivatedSkillSummary = {
+  id: string
+  name: string
+  count: number
+}
+
+export function SessionSkillsTab() {
+  const language = useLanguage()
+  const sdk = useSDK()
+  const serverSync = useServerSync()
+  const { params } = useSessionLayout()
+  const [store, setStore] = createStore({ expanded: {} as Record<string, boolean> })
+
+  const directory = createMemo(() => sdk().directory)
+  const skillsQuery = createQuery(() => {
+    const value = directory()
+    if (value) return serverSync().queryOptions.skills(pathKey(value))
+    return {
+      ...serverSync().queryOptions.skills(pathKey("")),
+      enabled: false,
+    }
+  })
+
+  const available = createMemo(() => skillsQuery.data ?? [])
+  const used = createMemo<ActivatedSkillSummary[]>(() => {
+    const sessionID = params.id
+    if (!sessionID) return []
+    const messages = serverSync().session.data.session_message[sessionID] ?? []
+    return Array.from(
+      messages
+        .filter((message): message is ActivatedSkill => message.type === "skill")
+        .reduce((result, message) => {
+          const current = result.get(message.skill)
+          result.set(message.skill, {
+            id: message.skill,
+            name: message.name,
+            count: (current?.count ?? 0) + 1,
+          })
+          return result
+        }, new Map<string, ActivatedSkillSummary>())
+        .values(),
+    ).sort((a, b) => a.name.localeCompare(b.name))
+  })
+
+  const list = useFilteredList<AvailableSkill>({
+    items: available,
+    key: (skill) => skill.name,
+    filterKeys: ["name", "description", "location"],
+    sortBy: (a, b) => a.name.localeCompare(b.name),
+  })
+
+  const isUsed = (skill: AvailableSkill) => used().some((item) => item.id === skill.name || item.name === skill.name)
+  const sourceLabel = (location: string) =>
+    location === "<built-in>"
+      ? language.t("settings.skills.source.builtin")
+      : language.t("settings.skills.source.project")
+  const toggleExpanded = (name: string) => setStore("expanded", name, !store.expanded[name])
+
+  return (
+    <div class="session-skills-tab">
+      <div class="session-skills-header">
+        <div class="session-skills-heading-row">
+          <div>
+            <h2 class="session-skills-title">{language.t("settings.skills.title")}</h2>
+            <p class="session-skills-description">{language.t("settings.skills.description")}</p>
+          </div>
+          <Show when={directory() && !skillsQuery.isLoading}>
+            <Tag variant="accent">{available().length}</Tag>
+          </Show>
+        </div>
+        <TextInputV2
+          type="search"
+          appearance="base"
+          class="session-skills-search-input"
+          value={list.filter()}
+          onInput={(event) => list.onInput(event.currentTarget.value)}
+          placeholder={language.t("settings.skills.search.placeholder")}
+          leadingIcon={<IconV2 name="magnifying-glass" size="small" />}
+          showClearButton={!!list.filter()}
+          clearLabel={language.t("settings.skills.search.placeholder")}
+          onClearClick={() => list.clear()}
+          spellcheck={false}
+          autocorrect="off"
+          autocomplete="off"
+          autocapitalize="off"
+          aria-label={language.t("settings.skills.search.placeholder")}
+        />
+      </div>
+
+      <div class="session-skills-scroll">
+        <Show when={params.id}>
+          <section class="session-skills-section">
+            <div class="session-skills-section-heading">
+              <h3>{language.t("settings.skills.section.session")}</h3>
+              <Tag>{used().length}</Tag>
+            </div>
+            <Show
+              when={used().length > 0}
+              fallback={<div class="session-skills-empty">{language.t("settings.skills.session.empty")}</div>}
+            >
+              <div class="session-skills-list">
+                <For each={used()}>
+                  {(skill) => (
+                    <div class="session-skills-used-row">
+                      <div class="session-skills-copy">
+                        <span class="session-skills-name">{skill.name}</span>
+                        <span class="session-skills-muted">{language.t("settings.skills.session.used")}</span>
+                      </div>
+                      <Tag variant="accent">{skill.count}</Tag>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </Show>
+          </section>
+        </Show>
+
+        <section class="session-skills-section">
+          <div class="session-skills-section-heading session-skills-section-heading--description">
+            <div>
+              <h3>{language.t("settings.skills.section.available")}</h3>
+              <p>{language.t("settings.skills.section.available.description")}</p>
+            </div>
+          </div>
+          <Show
+            when={directory()}
+            fallback={<div class="session-skills-empty">{language.t("settings.skills.noProject")}</div>}
+          >
+            <Show
+              when={!skillsQuery.isLoading}
+              fallback={
+                <div class="session-skills-status">
+                  {language.t("common.loading")}
+                  {language.t("common.loading.ellipsis")}
+                </div>
+              }
+            >
+              <Show
+                when={!skillsQuery.isError}
+                fallback={
+                  <div class="session-skills-status">
+                    <span>{language.t("settings.skills.load.error")}</span>
+                    <ButtonV2 variant="ghost" size="small" onClick={() => void skillsQuery.refetch()}>
+                      {language.t("settings.skills.action.retry")}
+                    </ButtonV2>
+                  </div>
+                }
+              >
+                <Show
+                  when={list.flat().length > 0}
+                  fallback={
+                    <div class="session-skills-empty">
+                      <span>
+                        {list.filter()
+                          ? language.t("settings.skills.empty.filter")
+                          : language.t("settings.skills.empty.available")}
+                      </span>
+                      <Show when={list.filter()}>
+                        <span class="session-skills-filter">&quot;{list.filter()}&quot;</span>
+                      </Show>
+                    </div>
+                  }
+                >
+                  <div class="session-skills-list">
+                    <For each={list.flat()}>
+                      {(skill) => {
+                        const expanded = () => store.expanded[skill.name]
+                        return (
+                          <div class="session-skills-row" data-expanded={expanded() ? "" : undefined}>
+                            <div class="session-skills-copy session-skills-main">
+                              <div class="session-skills-title-row">
+                                <span class="session-skills-name">{skill.name}</span>
+                                <Show when={isUsed(skill)}>
+                                  <Tag variant="accent">{language.t("settings.skills.tag.used")}</Tag>
+                                </Show>
+                              </div>
+                              <span class="session-skills-muted">
+                                {skill.description || language.t("settings.skills.description.missing")}
+                              </span>
+                            </div>
+                            <div class="session-skills-actions">
+                              <Tag>{sourceLabel(skill.location)}</Tag>
+                              <button
+                                type="button"
+                                class="session-skills-expand"
+                                aria-expanded={expanded()}
+                                aria-label={language.t(
+                                  expanded() ? "settings.skills.action.collapse" : "settings.skills.action.expand",
+                                )}
+                                onClick={() => toggleExpanded(skill.name)}
+                              >
+                                <IconV2 name="chevron-down" size="small" />
+                              </button>
+                            </div>
+                            <Show when={expanded()}>
+                              <div class="session-skills-detail">
+                                <div>
+                                  <span>{language.t("settings.skills.detail.location")}</span>
+                                  <code>{skill.location || language.t("settings.skills.detail.unknownLocation")}</code>
+                                </div>
+                                <Show when={skill.slash}>
+                                  <div>
+                                    <span>{language.t("settings.skills.detail.slash")}</span>
+                                    <code>/{skill.name}</code>
+                                  </div>
+                                </Show>
+                              </div>
+                            </Show>
+                          </div>
+                        )
+                      }}
+                    </For>
+                  </div>
+                </Show>
+              </Show>
+            </Show>
+          </Show>
+        </section>
+      </div>
+    </div>
+  )
+}

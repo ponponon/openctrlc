@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import {
   SESSION_OPEN_FILE_TAB,
+  SESSION_SKILLS_TAB,
   closeSessionTab,
   openSessionTab,
   previewSessionTab,
@@ -66,6 +67,21 @@ describe("openSessionTab", () => {
   test("replaces a restored Open File placeholder with a direct open", () => {
     expect(openSessionTab(state(["file://a.ts", SESSION_OPEN_FILE_TAB], SESSION_OPEN_FILE_TAB), "file://b.ts")).toEqual(
       state(["file://a.ts", "file://b.ts"], "file://b.ts"),
+    )
+  })
+
+  test("keeps Skills fixed while opening over a preview tab", () => {
+    expect(
+      openSessionTab(
+        state(["context", SESSION_OPEN_FILE_TAB, "file://b.ts"], SESSION_OPEN_FILE_TAB, SESSION_OPEN_FILE_TAB),
+        SESSION_SKILLS_TAB,
+      ),
+    ).toEqual(
+      state(
+        [SESSION_SKILLS_TAB, "context", SESSION_OPEN_FILE_TAB, "file://b.ts"],
+        SESSION_SKILLS_TAB,
+        SESSION_OPEN_FILE_TAB,
+      ),
     )
   })
 })

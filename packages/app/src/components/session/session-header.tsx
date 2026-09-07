@@ -20,7 +20,7 @@ import { useServer } from "@/context/server"
 import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
-import { focusTerminalById } from "@/pages/session/helpers"
+import { SESSION_SKILLS_TAB, focusTerminalById } from "@/pages/session/helpers"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { messageAgentColor } from "@/utils/agent"
 import { decode64 } from "@/utils/base64"
@@ -146,7 +146,7 @@ export function SessionHeader() {
   const settings = useSettings()
   const sync = useSync()
   const terminal = useTerminal()
-  const { params, view } = useSessionLayout()
+  const { params, tabs, view } = useSessionLayout()
 
   const projectDirectory = createMemo(() => decode64(params.dir) ?? "")
   const project = createMemo(() => {
@@ -223,6 +223,15 @@ export function SessionHeader() {
     app: undefined as OpenApp | undefined,
   })
 
+  const toggleSkills = () => {
+    if (tabs().active() === SESSION_SKILLS_TAB) {
+      tabs().close(SESSION_SKILLS_TAB)
+      return
+    }
+    void tabs().open(SESSION_SKILLS_TAB)
+    if (!view().reviewPanel.opened()) view().reviewPanel.open()
+  }
+
   const canOpen = createMemo(() => platform.platform === "desktop" && !!platform.openPath && server.isLocal())
   const current = createMemo(
     () =>
@@ -237,9 +246,12 @@ export function SessionHeader() {
   const v2ActionsState = createMemo<SessionHeaderV2ActionsState>(() => ({
     statusVisible: status(),
     statusLabel: language.t("status.popover.trigger"),
+    skillsLabel: language.t("settings.skills.title"),
     reviewLabel: language.t("command.review.toggle"),
     reviewKeybind: reviewTooltipKeybind(command),
     reviewVisible: isDesktop(),
+    skillsOpened: tabs().active() === SESSION_SKILLS_TAB,
+    onSkillsToggle: toggleSkills,
     reviewOpened: view().reviewPanel.opened(),
     onReviewToggle: () => view().reviewPanel.toggle(),
   }))
@@ -462,6 +474,18 @@ export function SessionHeader() {
                     </TooltipKeybind>
 
                     <div class="hidden md:flex items-center gap-1 shrink-0">
+                      <Tooltip placement="bottom" value={language.t("settings.skills.title")}>
+                        <Button
+                          variant="ghost"
+                          class="titlebar-icon w-8 h-6 p-0 box-border"
+                          onClick={toggleSkills}
+                          aria-label={language.t("settings.skills.title")}
+                          aria-expanded={tabs().active() === SESSION_SKILLS_TAB}
+                          aria-controls="review-panel"
+                        >
+                          <Icon size="small" name="code-lines" />
+                        </Button>
+                      </Tooltip>
                       <TooltipKeybind
                         title={language.t("command.review.toggle")}
                         keybind={command.keybind("review.toggle")}
@@ -519,9 +543,12 @@ export function SessionHeader() {
 type SessionHeaderV2ActionsState = {
   statusVisible: boolean
   statusLabel: string
+  skillsLabel: string
   reviewLabel: string
   reviewKeybind: string[]
   reviewVisible: boolean
+  skillsOpened: boolean
+  onSkillsToggle: () => void
   reviewOpened: boolean
   onReviewToggle: () => void
 }
@@ -537,6 +564,20 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
         </Tooltip>
       </Show>
       <Show when={props.state.reviewVisible}>
+        <TooltipV2 class="shrink-0" placement="bottom" value={props.state.skillsLabel}>
+          <IconButtonV2
+            type="button"
+            variant="ghost-muted"
+            size="large"
+            class="!w-9 shrink-0"
+            state={props.state.skillsOpened ? "pressed" : undefined}
+            onClick={props.state.onSkillsToggle}
+            aria-label={props.state.skillsLabel}
+            aria-expanded={props.state.skillsOpened}
+            aria-controls="review-panel"
+            icon={<Icon name="code-lines" size="small" />}
+          />
+        </TooltipV2>
         <TooltipV2
           class="shrink-0"
           placement="bottom"

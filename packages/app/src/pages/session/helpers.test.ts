@@ -3,6 +3,7 @@ import { createMemo, createRoot } from "solid-js"
 import { createStore } from "solid-js/store"
 import {
   SESSION_OPEN_FILE_TAB,
+  SESSION_SKILLS_TAB,
   createOpenReviewFile,
   createOpenSessionFileTab,
   createSessionTabs,
@@ -208,6 +209,27 @@ describe("createSessionTabs", () => {
       expect(result.openFileOpen()).toBe(false)
       expect(result.panelTabs()).toEqual(["file://src/a.ts"])
       expect(result.activeTab()).toBe("file://src/a.ts")
+      dispose()
+    })
+  })
+
+  test("keeps Skills in the side-panel tabs instead of the file tabs", () => {
+    createRoot((dispose) => {
+      const [state] = createStore({
+        active: SESSION_SKILLS_TAB as string | undefined,
+        all: ["file://src/a.ts", SESSION_SKILLS_TAB],
+      })
+      const tabs = createMemo(() => ({ active: () => state.active, all: () => state.all }))
+      const result = createSessionTabs({
+        tabs,
+        pathFromTab: (tab) => (tab.startsWith("file://") ? tab.slice("file://".length) : undefined),
+        normalizeTab: (tab) => tab,
+      })
+
+      expect(result.skillsOpen()).toBe(true)
+      expect(result.panelTabs()).toEqual(["file://src/a.ts"])
+      expect(result.activeTab()).toBe(SESSION_SKILLS_TAB)
+      expect(result.activeFileTab()).toBeUndefined()
       dispose()
     })
   })

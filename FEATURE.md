@@ -49,6 +49,37 @@
 - 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/context/global-sync/bootstrap.test.ts ./src/i18n/parity.test.ts`。
 - 在有 Skill 的项目中打开「设置 → 服务器 → Skills」，确认项目可用列表、来源详情、搜索和会话已使用列表均可见。
 
+## 会话内 Skills 侧栏入口
+
+### 功能目标
+
+将 Skill 从深层设置入口提升为当前会话里的即时信息面板，让用户像查看上下文、Review 一样，随时确认本项目有哪些 Skill，以及本次会话实际激活过哪些 Skill。
+
+### 使用方式
+
+在会话顶部点击 Skills 图标，右侧面板会打开并选中 Skills Tab。面板支持搜索、查看 Skill 来源和 Slash 调用方式；Skill Tab 可以像其他侧栏 Tab 一样关闭或切换。设置页仍保留，作为完整的服务器 Skill 管理入口。
+
+### 实现范围
+
+- 将 Skills 注册为会话侧栏固定 Tab，不再混入文件 Tab 列表或要求用户先进入设置。
+- 顶部会话工具栏和旧版标题栏都提供 Skills 快捷入口，入口状态会随当前 Tab 更新。
+- 复用项目 Skill 查询和会话 Skill 激活记录，侧栏展示“本次会话已使用”和“当前项目可用”两段内容。
+- 覆盖 Skill 搜索、来源详情、激活次数、加载中、加载失败和空列表状态。
+
+### 代码位置
+
+- `packages/app/src/components/session/session-skills-tab.tsx`：会话内 Skills 面板。
+- `packages/app/src/components/session/session-skills-tab.css`：侧栏面板样式。
+- `packages/app/src/components/session/session-header.tsx`：会话顶部 Skills 快捷入口。
+- `packages/app/src/pages/session/session-side-panel.tsx`、`packages/app/src/pages/session/helpers.ts`：侧栏 Tab 注册与渲染。
+- `packages/app/src/pages/session/helpers.test.ts`：Skills 不混入文件 Tab 的回归测试。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/pages/session/helpers.test.ts`。
+- 在桌面宽度的会话中点击顶部 Skills 图标，确认右侧面板直接打开并展示 Skills Tab；点击关闭按钮后应回到上一个侧栏 Tab。
+
 ## 导出完成后打开系统文件管理器
 
 ### 功能目标

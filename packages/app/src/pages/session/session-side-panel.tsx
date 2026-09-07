@@ -34,8 +34,10 @@ import { SessionContextUsage } from "@/components/session-context-usage"
 
 const reviewTabID = "session-side-panel-review-tab"
 const reviewTabPanelID = "session-side-panel-review-tabpanel"
+const skillsTabID = "session-side-panel-skills-tab"
+const skillsTabPanelID = "session-side-panel-skills-tabpanel"
 const fileBrowserTabPanelID = "session-side-panel-file-browser-tabpanel"
-import { SessionContextTab, SortableTab, SortableTabV2, FileVisual } from "@/components/session"
+import { SessionContextTab, SessionSkillsTab, SortableTab, SortableTabV2, FileVisual } from "@/components/session"
 import { OpenInAppV2 } from "@/components/session/open-in-app-v2"
 import { useCommand } from "@/context/command"
 import { useFile, type SelectedLineRange } from "@/context/file"
@@ -47,6 +49,7 @@ import { createFileTabListSync } from "@/pages/session/file-tab-scroll"
 import { FileTabContent } from "@/pages/session/file-tabs"
 import {
   SESSION_OPEN_FILE_TAB,
+  SESSION_SKILLS_TAB,
   createOpenSessionFileTab,
   createSessionTabs,
   getTabReorderIndex,
@@ -95,7 +98,9 @@ export function SessionSidePanel(props: {
   const isDesktop = createMediaQuery("(min-width: 768px)")
   const shown = settings.visibility.fileTree
 
-  const reviewOpen = createMemo(() => isDesktop() && view().reviewPanel.opened())
+  const reviewOpen = createMemo(
+    () => isDesktop() && (view().reviewPanel.opened() || tabs().active() === SESSION_SKILLS_TAB),
+  )
   const fileOpen = createMemo(
     () =>
       isDesktop() &&
@@ -182,6 +187,7 @@ export function SessionSidePanel(props: {
     fileBrowser: () => !!props.fileBrowserState,
   })
   const contextOpen = tabState.contextOpen
+  const skillsOpen = tabState.skillsOpen
   const openFileOpen = tabState.openFileOpen
   const panelTabs = tabState.panelTabs
   const openedTabs = tabState.openedTabs
@@ -238,7 +244,7 @@ export function SessionSidePanel(props: {
   })
   const fileBrowserVisible = createMemo(() => {
     const active = activeTab()
-    return active !== "review" && active !== "context" && active !== "empty"
+    return active !== "review" && active !== "context" && active !== SESSION_SKILLS_TAB && active !== "empty"
   })
   const openFileKeybind = createMemo(() => command.keybindParts("file.open"))
   const closeTabKeybind = createMemo(() => command.keybindParts("tab.close"))
@@ -391,6 +397,36 @@ export function SessionSidePanel(props: {
                                   </div>
                                 </Tabs.Trigger>
                               </Show>
+                              <Show when={skillsOpen()}>
+                                <Tabs.Trigger
+                                  value={SESSION_SKILLS_TAB}
+                                  id={skillsTabID}
+                                  aria-controls={activeTab() === SESSION_SKILLS_TAB ? skillsTabPanelID : undefined}
+                                  closeButton={
+                                    <TooltipKeybind
+                                      title={language.t("common.closeTab")}
+                                      keybind={command.keybind("tab.close")}
+                                      placement="bottom"
+                                      gutter={10}
+                                    >
+                                      <IconButton
+                                        icon="close-small"
+                                        variant="ghost"
+                                        class="h-5 w-5"
+                                        onClick={() => tabs().close(SESSION_SKILLS_TAB)}
+                                        aria-label={language.t("common.closeTab")}
+                                      />
+                                    </TooltipKeybind>
+                                  }
+                                  hideCloseButton
+                                  onMiddleClick={() => tabs().close(SESSION_SKILLS_TAB)}
+                                >
+                                  <div class="flex items-center gap-1.5">
+                                    <Icon name="code-lines" size="small" />
+                                    <div>{language.t("settings.skills.title")}</div>
+                                  </div>
+                                </Tabs.Trigger>
+                              </Show>
                               <SortableProvider ids={openedTabs()}>
                                 <For each={panelTabs()}>
                                   {(tab) => (
@@ -498,6 +534,18 @@ export function SessionSidePanel(props: {
                             </Tabs.Content>
                           </Show>
 
+                          <Show when={activeTab() === SESSION_SKILLS_TAB}>
+                            <Tabs.Content
+                              value={SESSION_SKILLS_TAB}
+                              id={skillsTabPanelID}
+                              role="tabpanel"
+                              aria-labelledby={skillsTabID}
+                              class="flex flex-col h-full overflow-hidden contain-strict"
+                            >
+                              <SessionSkillsTab />
+                            </Tabs.Content>
+                          </Show>
+
                           <Show when={activeFileTab()} keyed>
                             {(tab) => <FileTabContent tab={tab} />}
                           </Show>
@@ -602,6 +650,42 @@ export function SessionSidePanel(props: {
                                 <div class="flex items-center gap-2">
                                   <SessionContextUsage variant="indicator" />
                                   <div>{language.t("session.tab.context")}</div>
+                                </div>
+                              </Tabs.Trigger>
+                            </Show>
+                            <Show when={skillsOpen()}>
+                              <Tabs.Trigger
+                                value={SESSION_SKILLS_TAB}
+                                id={skillsTabID}
+                                aria-controls={activeTab() === SESSION_SKILLS_TAB ? skillsTabPanelID : undefined}
+                                closeButton={
+                                  <TooltipV2
+                                    value={
+                                      <>
+                                        {language.t("common.closeTab")}
+                                        <Show when={closeTabKeybind().length > 0}>
+                                          <KeybindV2 keys={closeTabKeybind()} variant="neutral" />
+                                        </Show>
+                                      </>
+                                    }
+                                    placement="bottom"
+                                    gutter={10}
+                                  >
+                                    <IconButton
+                                      icon="close-small"
+                                      variant="ghost"
+                                      class="h-5 w-5"
+                                      onClick={() => tabs().close(SESSION_SKILLS_TAB)}
+                                      aria-label={language.t("common.closeTab")}
+                                    />
+                                  </TooltipV2>
+                                }
+                                hideCloseButton
+                                onMiddleClick={() => tabs().close(SESSION_SKILLS_TAB)}
+                              >
+                                <div class="flex items-center gap-1.5">
+                                  <Icon name="code-lines" size="small" />
+                                  <div>{language.t("settings.skills.title")}</div>
                                 </div>
                               </Tabs.Trigger>
                             </Show>
@@ -723,6 +807,18 @@ export function SessionSidePanel(props: {
                             <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
                               <SessionContextTab />
                             </div>
+                          </Tabs.Content>
+                        </Show>
+
+                        <Show when={activeTab() === SESSION_SKILLS_TAB}>
+                          <Tabs.Content
+                            value={SESSION_SKILLS_TAB}
+                            id={skillsTabPanelID}
+                            role="tabpanel"
+                            aria-labelledby={skillsTabID}
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
+                            <SessionSkillsTab />
                           </Tabs.Content>
                         </Show>
 
