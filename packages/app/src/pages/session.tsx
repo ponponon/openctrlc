@@ -2322,6 +2322,7 @@ export default function Page() {
                     onUserScroll={markUserScroll}
                     onHistoryScroll={onHistoryScroll}
                     onAutoScrollInteraction={autoScroll.handleInteraction}
+                    onNavigateMessage={scrollToMessage}
                     shouldAnchorBottom={() =>
                       searchMatches().length === 0 &&
                       !location.hash &&

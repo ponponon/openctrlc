@@ -404,6 +404,36 @@ bun run desktop:mac
 - 执行 `bun typecheck`（`packages/app`、`packages/session-ui`）。
 - 执行 `bun run typecheck:e2e`，并通过 `session-timeline-collapse-state` 回归场景检查完成回合收起后没有虚拟列表空白间距。
 
+## 会话回合导航轨道
+
+### 功能目标
+
+当一个会话包含很多轮对话时，在正文左侧提供类似 Codex 的紧凑导航轨道，让用户能看见回合分布、快速定位历史回合，并在不离开当前上下文的情况下预览回合内容。
+
+### 使用方式
+
+桌面端打开包含两轮以上消息的会话后，正文左侧会显示每个用户回合对应的小横线。滚动时当前视口附近的回合会加粗；鼠标悬停横线可以预览用户请求和该回合最后一段助手回复，点击横线即可跳转到对应回合。
+
+### 实现范围
+
+- 基于现有 Timeline 虚拟列表的测量结果计算回合在完整会话中的相对位置，不额外渲染一份消息正文。
+- 复用现有 `scrollToMessage` 定位链路，保留虚拟列表、历史锚点、URL hash 和自动跟随状态的既有行为。
+- 预览内容从真实的 user/assistant text part 中提取，长文本通过 CSS 截断；没有新的固定文案依赖，不破坏现有多语言 parity。
+- 导航轨道只在桌面宽度显示，并提供 hover、active、pressed、focus-visible、减少动画和无预览内容等状态。
+
+### 代码位置
+
+- `packages/app/src/pages/session/timeline/session-timeline-navigator-view.tsx`：导航轨道交互和预览浮层。
+- `packages/app/src/pages/session/timeline/session-timeline-navigator-model.ts`：虚拟列表测量到导航标记位置的纯函数。
+- `packages/app/src/pages/session/timeline/session-timeline-navigator.css`：轨道、标记和预览浮层样式。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：将 Timeline 回合、测量值和现有跳转逻辑接入导航轨道。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/pages/session/timeline/session-timeline-navigator.test.ts`。
+- 在 `packages/app` 执行 `bun typecheck`。
+- 在桌面端打开长会话，检查标记数量、悬停预览、点击定位、继续生成时的自动跟随和移动端隐藏行为。
+
 ## Desktop 会话 ID 原生剪贴板复制
 
 ### 功能目标

@@ -93,6 +93,8 @@ import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
+import { createSessionTimelineNavigatorEntries } from "./session-timeline-navigator-model"
+import { SessionTimelineNavigator } from "./session-timeline-navigator-view"
 import {
   createHistoryAnchorRegistry,
   markPointerScrollGesture,
@@ -277,6 +279,7 @@ export function MessageTimeline(props: {
   onUserScroll: () => void
   onHistoryScroll: () => void
   onAutoScrollInteraction: (event: MouseEvent) => void
+  onNavigateMessage: (message: UserMessage) => void
   shouldAnchorBottom: () => boolean
   centered: boolean
   setContentRef: (el: HTMLDivElement) => void
@@ -560,6 +563,20 @@ export function MessageTimeline(props: {
     () => new Map(virtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
   )
   const virtualRowKeys = createMemo(() => virtualizer.getVirtualItems().map((item) => item.key as string))
+  const navigatorEntries = createMemo(() =>
+    createSessionTimelineNavigatorEntries({
+      messages: props.userMessages,
+      rowIndex: userMessageRowIndex(),
+      measurements: virtualizer.measurementsCache,
+      totalSize: virtualizer.getTotalSize(),
+      getPrompt: (id) => timelineText(getMsgParts(id)),
+      getResponse: (id) => {
+        const assistant = assistantMessagesByParent().get(id)?.at(-1)
+        if (!assistant) return undefined
+        return timelineText(getMsgParts(assistant.id)) || undefined
+      },
+    }),
+  )
   createEffect(() => {
     props.setRevealMessage?.((id) => {
       const index = userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
@@ -1472,6 +1489,14 @@ export function MessageTimeline(props: {
     return renderTimelineRow(() => props.row, props.onSizeChange)
   }
 
+  function timelineText(parts: PartType[]) {
+    return parts
+      .filter((part): part is Extract<PartType, { type: "text" }> => part.type === "text")
+      .filter((part) => !part.synthetic && !part.ignored && !!part.text.trim())
+      .reduce((longest, part) => (part.text.length > longest.length ? part.text : longest), "")
+      .trim()
+  }
+
   function VirtualTimelineRow(props: { rowKey: string }) {
     let element: HTMLDivElement
     const initialItem = virtualItemByKey().get(props.rowKey)!
@@ -1548,6 +1573,14 @@ export function MessageTimeline(props: {
 
   return (
     <div class="relative w-full h-full min-w-0">
+      <SessionTimelineNavigator
+        entries={navigatorEntries}
+        viewport={listRoot}
+        onNavigate={(id) => {
+          const message = props.userMessages.find((item) => item.id === id)
+          if (message) props.onNavigateMessage(message)
+        }}
+      />
       <div
         class="absolute left-1/2 -translate-x-1/2 z-[60] pointer-events-none transition-all duration-200 ease-out"
         classList={{
