@@ -2,8 +2,9 @@ name: compliance-close
 
 on:
   schedule:
-    # Run every 30 minutes to check for expired compliance windows
-    - cron: "*/30 * * * *"
+    # GitHub cron uses UTC; run every 30 minutes from 09:30 to 21:30 Beijing time.
+    - cron: "30 1 * * *"
+    - cron: "0,30 2-13 * * *"
   workflow_dispatch:
 
 permissions:

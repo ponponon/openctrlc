@@ -2,7 +2,7 @@ name: docs-update
 
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 12 * * *" # Daily at 20:00 Beijing time
   workflow_dispatch:
 
 env:
