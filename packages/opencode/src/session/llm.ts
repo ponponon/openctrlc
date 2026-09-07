@@ -45,6 +45,7 @@ export type StreamInput = {
   tools: Record<string, Tool>
   retries?: number
   toolChoice?: "auto" | "required" | "none"
+  onSystem?: (system: readonly string[]) => Effect.Effect<void>
 }
 
 export type StreamRequest = StreamInput & {
@@ -111,6 +112,7 @@ const live: Layer.Layer<
         flags,
         isWorkflow,
       })
+      if (input.onSystem) yield* input.onSystem(prepared.system)
 
       // Wire up toolExecutor for DWS workflow models so that tool calls
       // from the workflow service are executed via opencode's tool system

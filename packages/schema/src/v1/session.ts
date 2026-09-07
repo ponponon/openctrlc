@@ -349,6 +349,9 @@ export const User = Schema.Struct({
     modelID: Model.ID,
     variant: Schema.optional(Schema.String),
   }),
+  // The effective prompt assembled for the provider is captured after request preparation.
+  // Keep it separate from `system`, which is the user-supplied prompt override.
+  systemPrompt: Schema.optional(Schema.String),
   system: Schema.optional(Schema.String),
   tools: Schema.optional(Schema.Record(Schema.String, Schema.Boolean)),
 }).annotate({ identifier: "UserMessage" })

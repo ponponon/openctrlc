@@ -255,6 +255,7 @@ export type UserMessage = {
     modelID: string
     variant?: string
   }
+  systemPrompt?: string
   system?: string
   tools?: {
     [key: string]: boolean

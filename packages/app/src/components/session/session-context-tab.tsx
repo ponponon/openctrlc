@@ -2,7 +2,6 @@ import { createMemo, createEffect, on, onCleanup, For, Show } from "solid-js"
 import type { JSX } from "solid-js"
 import { useSync } from "@/context/sync"
 import { checksum } from "@openctrlc/core/util/encode"
-import { findLast } from "@openctrlc/core/util/array"
 import { same } from "@/utils/same"
 import { Icon } from "@openctrlc/ui/icon"
 import { Button } from "@openctrlc/ui/button"
@@ -29,6 +28,7 @@ import { useSessionLayout } from "@/pages/session/session-layout"
 import { getSessionContext } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
+import { getSessionSystemPrompt } from "./session-context-system-prompt"
 import { copySessionID } from "./session-id-copy"
 
 const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
@@ -166,14 +166,7 @@ export function SessionContextTab() {
     }
   })
 
-  const systemPrompt = createMemo(() => {
-    const msg = findLast(visibleUserMessages(), (m) => !!m.system)
-    const system = msg?.system
-    if (!system) return
-    const trimmed = system.trim()
-    if (!trimmed) return
-    return trimmed
-  })
+  const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages()))
 
   const providerLabel = createMemo(() => {
     const c = ctx()

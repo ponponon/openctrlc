@@ -678,7 +678,13 @@ const layer = Layer.effect(
             yield* status.set(ctx.sessionID, { type: "busy" })
             ctx.assistantMessage.time.requestStarted ??= Date.now()
             yield* session.updateMessage(ctx.assistantMessage)
-            const stream = llm.stream(streamInput)
+            const stream = llm.stream({
+              ...streamInput,
+              onSystem: (system) => {
+                const systemPrompt = system.join("\n")
+                return session.updateMessage({ ...streamInput.user, systemPrompt }).pipe(Effect.asVoid)
+              },
+            })
 
             yield* stream.pipe(
               Stream.tap((event) => handleEvent(event)),

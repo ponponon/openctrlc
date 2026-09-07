@@ -18,6 +18,32 @@
 - 检查 `.github/workflows` 下所有 `schedule` 的 cron 表达式，确认没有配置在北京时间 22:00 至 09:30 之间的自动触发。
 - 在 GitHub Actions 页面确认手动运行入口仍然存在。
 
+## 会话上下文显示有效 System Prompt
+
+### 功能目标
+
+让「上下文」面板展示本次回合实际发送给模型的有效 System Prompt，而不只是统计图中的“系统”占比。有效提示词包含模型基础提示、项目指令、Skills、MCP 指令、环境信息以及用户配置的系统提示覆盖内容。
+
+### 实现范围
+
+- 后端在完成系统提示词组装和插件变换后，将最终文本写入当前用户消息的 `systemPrompt` 字段。
+- 保留原有 `system` 字段作为用户输入的系统提示覆盖，避免下一轮请求重复拼接已组装的完整提示词。
+- 上下文面板优先展示 `systemPrompt`，旧会话缺少该字段时回退展示原有 `system` 内容。
+- 系统提示词仍参与上下文细分的 System 统计，保证可读内容与 token 估算使用同一份数据。
+
+### 代码位置
+
+- `packages/schema/src/v1/session.ts`：用户消息的有效 System Prompt 字段。
+- `packages/opencode/src/session/llm.ts`、`packages/opencode/src/session/processor.ts`：捕获并持久化完成请求准备后的提示词。
+- `packages/app/src/components/session/session-context-tab.tsx`、`session-context-system-prompt.ts`：上下文面板展示和旧会话兼容回退。
+
+### 验证方式
+
+- 运行上下文细分和上下文指标单元测试。
+- 运行 System Prompt 选择逻辑单元测试，确认新字段优先、旧字段回退。
+- 在新会话发送一条消息，打开「上下文」，确认可看到完整 System Prompt；旧会话仍可正常打开。
+- 执行 `bun run typecheck`，确认 Server API 和 App 使用的生成类型同步。
+
 ## Skill 加载透明度面板
 
 ### 功能目标
