@@ -70,6 +70,7 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
 
   const desktopSource = JSON.stringify(workflow.jobs?.["build-desktop-macos"]?.steps ?? [])
   expect(desktopSource).toContain("NODE_OPTIONS")
+  expect(desktopSource).toContain("--publish never")
 })
 
 test("stable versioning reuses an existing GitHub release", async () => {

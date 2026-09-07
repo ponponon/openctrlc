@@ -179,7 +179,7 @@ jobs:
           fi
           export NODE_OPTIONS="--max-old-space-size=6144"
           bun run --cwd packages/desktop build
-          bun run --cwd packages/desktop package:mac
+          bun run --cwd packages/desktop package:mac -- --publish never
 
       - name: Upload macOS Desktop assets
         env:
