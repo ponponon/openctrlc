@@ -10,8 +10,8 @@
 .session-skills-header {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px 14px;
+  gap: 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--v2-border-border-weak);
 }
 
@@ -28,6 +28,15 @@
 .session-skills-section-heading {
   justify-content: space-between;
   gap: 12px;
+}
+
+.session-skills-heading-row {
+  align-items: flex-start;
+}
+
+.session-skills-heading-row > div,
+.session-skills-section-heading > div {
+  min-width: 0;
 }
 
 .session-skills-title,
@@ -51,7 +60,7 @@
 
 .session-skills-description,
 .session-skills-section-heading p {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
 }
 
 .session-skills-search-input {
@@ -59,14 +68,19 @@
 }
 
 .session-skills-scroll {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 24px;
   min-height: 0;
   overflow-y: auto;
   padding: 16px 20px 32px;
 }
 
-.session-skills-section + .session-skills-section {
-  margin-top: 24px;
+.session-skills-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .session-skills-section-heading--description {
@@ -74,8 +88,11 @@
 }
 
 .session-skills-list {
-  margin-top: 10px;
-  border-top: 1px solid var(--v2-border-border-weak);
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--v2-background-bg-layer-01);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+  padding-inline: 12px;
 }
 
 .session-skills-group {
@@ -92,7 +109,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 0 9px;
+  padding: 13px 0;
   border: 0;
   background: transparent;
   color: var(--v2-text-text-base);
@@ -158,7 +175,9 @@
 }
 
 .session-skills-group-list {
-  padding-left: 10px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--v2-background-bg-base);
 }
 
 .session-skills-row,
@@ -166,7 +185,7 @@
   position: relative;
   gap: 12px;
   min-height: 54px;
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--v2-border-border-weak);
 }
 
@@ -240,8 +259,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 2px;
-  padding: 9px 10px;
+  margin-top: 4px;
+  padding: 12px;
   border-radius: 6px;
   background: var(--v2-background-bg-weak);
   color: var(--v2-text-text-muted);
@@ -269,10 +288,15 @@
 .session-skills-empty,
 .session-skills-status {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  min-height: 82px;
-  padding: 12px 8px;
+  gap: 4px 6px;
+  min-height: 96px;
+  padding: 24px 16px;
+  border-radius: 8px;
+  background: var(--v2-background-bg-layer-01);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
   text-align: center;
 }
 
@@ -281,6 +305,24 @@
 }
 
 .session-skills-filter {
-  margin-left: 4px;
   color: var(--v2-text-text-base);
+}
+
+@media (max-width: 480px) {
+  .session-skills-header {
+    padding-inline: 16px;
+  }
+
+  .session-skills-scroll {
+    gap: 20px;
+    padding-inline: 16px;
+  }
+
+  .session-skills-list {
+    padding-inline: 10px;
+  }
+
+  .session-skills-group-list {
+    padding-inline: 8px;
+  }
 }

@@ -21,11 +21,13 @@ export const SkillRuntimeInfo: Component<{
     <div class="skill-runtime-info">
       <div class="skill-runtime-info-row">
         <span class="skill-runtime-info-label">{language.t("settings.skills.runtime.service")}</span>
-        <Tag variant="accent">{protocolLabel()}</Tag>
+        <div class="skill-runtime-info-value">
+          <Tag variant="accent">{protocolLabel()}</Tag>
+        </div>
       </div>
       <div class="skill-runtime-info-row skill-runtime-info-row--sources">
         <span class="skill-runtime-info-label">{language.t("settings.skills.runtime.sources")}</span>
-        <div class="skill-runtime-info-sources">
+        <div class="skill-runtime-info-value skill-runtime-info-sources">
           <Show
             when={props.groups().length > 0}
             fallback={<span class="skill-runtime-info-empty">{language.t("settings.skills.runtime.sources.empty")}</span>}
