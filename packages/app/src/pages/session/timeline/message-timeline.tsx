@@ -1572,7 +1572,10 @@ export function MessageTimeline(props: {
   }
 
   return (
-    <div class="relative w-full h-full min-w-0">
+    <div
+      class="session-timeline relative w-full h-full min-w-0"
+      classList={{ "session-timeline--navigable": navigatorEntries().length > 1 }}
+    >
       <SessionTimelineNavigator
         entries={navigatorEntries}
         viewport={listRoot}

@@ -11,6 +11,13 @@ test("shows turn previews and navigates to an earlier session turn", async ({ pa
   await expect(navigator).toBeVisible()
   await expect.poll(() => markers.count()).toBeGreaterThan(1)
 
+  const markerBox = await markers.first().boundingBox()
+  const messageBox = await page.locator('[data-slot="session-turn-message-container"]').first().boundingBox()
+  expect(markerBox).not.toBeNull()
+  expect(messageBox).not.toBeNull()
+  if (!markerBox || !messageBox) throw new Error("Timeline navigator layout is not measurable")
+  expect(markerBox.x + markerBox.width).toBeLessThanOrEqual(messageBox.x)
+
   const initialScrollTop = await scroller.evaluate((element) => element.scrollTop)
   await markers.first().hover()
   await expect(page.locator('[role="tooltip"]')).toBeVisible()

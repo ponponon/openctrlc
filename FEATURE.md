@@ -417,6 +417,7 @@ bun run desktop:mac
 ### 实现范围
 
 - 基于现有 Timeline 虚拟列表的测量结果计算回合在完整会话中的相对位置，不额外渲染一份消息正文。
+- 桌面端通过独立左侧网格列预留导航安全区，正文 ScrollView 不与标记共享横向空间；单回合和移动端不保留空白列。
 - 复用现有 `scrollToMessage` 定位链路，保留虚拟列表、历史锚点、URL hash 和自动跟随状态的既有行为。
 - 预览内容从真实的 user/assistant text part 中提取，长文本通过 CSS 截断；没有新的固定文案依赖，不破坏现有多语言 parity。
 - 导航轨道只在桌面宽度显示，并提供 hover、active、pressed、focus-visible、减少动画和无预览内容等状态。
