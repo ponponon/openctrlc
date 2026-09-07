@@ -1,4 +1,5 @@
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show, type Accessor } from "solid-js"
+import { Icon } from "@openctrlc/ui/icon"
 import { useLanguage } from "@/context/language"
 import type { SessionTimelineNavigatorEntry } from "./session-timeline-navigator-model"
 import "./session-timeline-navigator.css"
@@ -32,6 +33,16 @@ export function SessionTimelineNavigator(props: {
     }, 100)
   }
 
+  const navigateToBoundary = (boundary: "start" | "end") => {
+    const entries = props.entries()
+    const entry = boundary === "start" ? entries[0] : entries.at(-1)
+    if (!entry) return
+
+    clearHideTimer()
+    setHoveredID(undefined)
+    props.onNavigate(entry.id)
+  }
+
   createEffect(
     on(props.viewport, (viewport) => {
       if (!viewport) return
@@ -59,6 +70,15 @@ export function SessionTimelineNavigator(props: {
   return (
     <Show when={props.entries().length > 1}>
       <nav class="session-timeline-navigator" aria-label={language.t("session.tab.session")}>
+        <button
+          type="button"
+          class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--start"
+          aria-label={props.entries()[0]?.prompt || language.t("session.tab.session")}
+          title={props.entries()[0]?.prompt || language.t("session.tab.session")}
+          onClick={() => navigateToBoundary("start")}
+        >
+          <Icon name="arrow-up" size="small" />
+        </button>
         <For each={props.entries()}>
           {(entry) => {
             const previewID = `session-timeline-preview-${entry.id}`
@@ -109,6 +129,15 @@ export function SessionTimelineNavigator(props: {
             )
           }}
         </For>
+        <button
+          type="button"
+          class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--end"
+          aria-label={language.t("session.messages.jumpToLatest")}
+          title={language.t("session.messages.jumpToLatest")}
+          onClick={() => navigateToBoundary("end")}
+        >
+          <Icon name="arrow-down-to-line" size="small" />
+        </button>
       </nav>
     </Show>
   )

@@ -41,40 +41,96 @@
 }
 
 .session-timeline-navigator__marker {
-  width: 12px;
-  height: 2px;
-  margin-inline-start: 10px;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  margin-inline-start: 0;
   padding: 0;
   border: 0;
-  border-radius: 2px;
-  background: var(--text-weaker, var(--v2-text-text-faint));
+  border-radius: 6px;
+  background: transparent;
   cursor: pointer;
   pointer-events: auto;
-  transition:
-    width 150ms ease,
-    background-color 150ms ease,
-    transform 150ms ease;
+  transition: transform 150ms ease;
 }
 
-.session-timeline-navigator__marker:hover,
-.session-timeline-navigator__marker--hovered {
+.session-timeline-navigator__marker::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text-weaker, var(--v2-text-text-faint));
+  transform: translateY(-50%);
+  transition:
+    width 150ms ease,
+    background-color 150ms ease;
+}
+
+.session-timeline-navigator__marker:hover::before,
+.session-timeline-navigator__marker--hovered::before {
   width: 28px;
   background: var(--text-weak, var(--v2-text-text-muted));
 }
 
-.session-timeline-navigator__marker--current {
+.session-timeline-navigator__marker--current::before {
   width: 34px;
   height: 3px;
   background: var(--text-strong, var(--v2-text-text-base));
 }
 
 .session-timeline-navigator__marker:active {
-  transform: scaleY(1.4);
+  transform: scale(0.96);
 }
 
 .session-timeline-navigator__marker:focus-visible {
   outline: 2px solid var(--border-selected, var(--v2-border-border-focus));
-  outline-offset: 4px;
+  outline-offset: 2px;
+}
+
+.session-timeline-navigator__edge-button {
+  position: absolute;
+  left: 0;
+  width: 42px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-weaker, var(--v2-text-text-faint));
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.session-timeline-navigator__edge-button--start {
+  top: -36px;
+}
+
+.session-timeline-navigator__edge-button--end {
+  bottom: -36px;
+}
+
+.session-timeline-navigator__edge-button:hover {
+  background: var(--v2-overlay-simple-overlay-hover);
+  color: var(--text-strong, var(--v2-text-text-base));
+}
+
+.session-timeline-navigator__edge-button:active {
+  transform: scale(0.92);
+}
+
+.session-timeline-navigator__edge-button:focus-visible {
+  outline: 2px solid var(--border-selected, var(--v2-border-border-focus));
+  outline-offset: 2px;
 }
 
 .session-timeline-navigator__preview {
@@ -147,7 +203,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .session-timeline-navigator__marker {
+  .session-timeline-navigator__marker,
+  .session-timeline-navigator__marker::before,
+  .session-timeline-navigator__edge-button {
     transition: none;
   }
 
