@@ -4,7 +4,6 @@ import { Tag } from "@openctrlc/ui/v2/badge-v2"
 import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
 import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { createQuery } from "@tanstack/solid-query"
-import type { SkillListOutput } from "@opencode-ai/client/promise"
 import { For, Show, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
@@ -12,17 +11,19 @@ import { useSDK } from "@/context/sdk"
 import { useServerSync } from "@/context/server-sync"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { pathKey } from "@/utils/path-key"
+import { groupSkills, type AvailableSkill, type SkillGroup } from "@/utils/skill-groups"
 import { summarizeSessionSkills } from "@/utils/session-skills"
 import "./session-skills-tab.css"
-
-type AvailableSkill = SkillListOutput["data"][number]
 
 export function SessionSkillsTab() {
   const language = useLanguage()
   const sdk = useSDK()
   const serverSync = useServerSync()
   const { params } = useSessionLayout()
-  const [store, setStore] = createStore({ expanded: {} as Record<string, boolean> })
+  const [store, setStore] = createStore({
+    expanded: {} as Record<string, boolean>,
+    groupExpanded: {} as Record<string, boolean>,
+  })
 
   const directory = createMemo(() => sdk().directory)
   const skillsQuery = createQuery(() => {
@@ -51,6 +52,7 @@ export function SessionSkillsTab() {
     filterKeys: ["name", "description", "location"],
     sortBy: (a, b) => a.name.localeCompare(b.name),
   })
+  const groups = createMemo(() => groupSkills(list.flat()))
 
   const isUsed = (skill: AvailableSkill) => used().some((item) => item.id === skill.name || item.name === skill.name)
   const sourceLabel = (location: string) =>
@@ -58,6 +60,9 @@ export function SessionSkillsTab() {
       ? language.t("settings.skills.source.builtin")
       : language.t("settings.skills.source.project")
   const toggleExpanded = (name: string) => setStore("expanded", name, !store.expanded[name])
+  const isGroupExpanded = (group: SkillGroup) =>
+    store.groupExpanded[group.id] ?? (!!list.filter() || group.skills.length <= 4)
+  const toggleGroupExpanded = (group: SkillGroup) => setStore("groupExpanded", group.id, !isGroupExpanded(group))
 
   return (
     <div class="session-skills-tab">
@@ -150,7 +155,7 @@ export function SessionSkillsTab() {
                 }
               >
                 <Show
-                  when={list.flat().length > 0}
+                  when={groups().length > 0}
                   fallback={
                     <div class="session-skills-empty">
                       <span>
@@ -165,48 +170,79 @@ export function SessionSkillsTab() {
                   }
                 >
                   <div class="session-skills-list">
-                    <For each={list.flat()}>
-                      {(skill) => {
-                        const expanded = () => store.expanded[skill.name]
+                    <For each={groups()}>
+                      {(group) => {
+                        const groupExpanded = () => isGroupExpanded(group)
                         return (
-                          <div class="session-skills-row" data-expanded={expanded() ? "" : undefined}>
-                            <div class="session-skills-copy session-skills-main">
-                              <div class="session-skills-title-row">
-                                <span class="session-skills-name">{skill.name}</span>
-                                <Show when={isUsed(skill)}>
-                                  <Tag variant="accent">{language.t("settings.skills.tag.used")}</Tag>
-                                </Show>
-                              </div>
-                              <span class="session-skills-muted">
-                                {skill.description || language.t("settings.skills.description.missing")}
+                          <div class="session-skills-group" data-expanded={groupExpanded() ? "" : undefined}>
+                            <button
+                              type="button"
+                              class="session-skills-group-header"
+                              aria-expanded={groupExpanded()}
+                              onClick={() => toggleGroupExpanded(group)}
+                            >
+                              <span class="session-skills-group-copy">
+                                <span class="session-skills-group-name">{group.name}</span>
+                                <span class="session-skills-group-source">{sourceLabel(group.skills[0].location)}</span>
                               </span>
-                            </div>
-                            <div class="session-skills-actions">
-                              <Tag>{sourceLabel(skill.location)}</Tag>
-                              <button
-                                type="button"
-                                class="session-skills-expand"
-                                aria-expanded={expanded()}
-                                aria-label={language.t(
-                                  expanded() ? "settings.skills.action.collapse" : "settings.skills.action.expand",
-                                )}
-                                onClick={() => toggleExpanded(skill.name)}
-                              >
+                              <span class="session-skills-group-actions">
+                                <Tag>{group.skills.length}</Tag>
                                 <IconV2 name="chevron-down" size="small" />
-                              </button>
-                            </div>
-                            <Show when={expanded()}>
-                              <div class="session-skills-detail">
-                                <div>
-                                  <span>{language.t("settings.skills.detail.location")}</span>
-                                  <code>{skill.location || language.t("settings.skills.detail.unknownLocation")}</code>
-                                </div>
-                                <Show when={skill.slash}>
-                                  <div>
-                                    <span>{language.t("settings.skills.detail.slash")}</span>
-                                    <code>/{skill.name}</code>
-                                  </div>
-                                </Show>
+                              </span>
+                            </button>
+                            <Show when={groupExpanded()}>
+                              <div class="session-skills-group-list">
+                                <For each={group.skills}>
+                                  {(skill) => {
+                                    const expanded = () => store.expanded[skill.name]
+                                    return (
+                                      <div class="session-skills-row" data-expanded={expanded() ? "" : undefined}>
+                                        <div class="session-skills-copy session-skills-main">
+                                          <div class="session-skills-title-row">
+                                            <span class="session-skills-name">{skill.name}</span>
+                                            <Show when={isUsed(skill)}>
+                                              <Tag variant="accent">{language.t("settings.skills.tag.used")}</Tag>
+                                            </Show>
+                                          </div>
+                                          <span class="session-skills-muted">
+                                            {skill.description || language.t("settings.skills.description.missing")}
+                                          </span>
+                                        </div>
+                                        <div class="session-skills-actions">
+                                          <button
+                                            type="button"
+                                            class="session-skills-expand"
+                                            aria-expanded={expanded()}
+                                            aria-label={language.t(
+                                              expanded()
+                                                ? "settings.skills.action.collapse"
+                                                : "settings.skills.action.expand",
+                                            )}
+                                            onClick={() => toggleExpanded(skill.name)}
+                                          >
+                                            <IconV2 name="chevron-down" size="small" />
+                                          </button>
+                                        </div>
+                                        <Show when={expanded()}>
+                                          <div class="session-skills-detail">
+                                            <div>
+                                              <span>{language.t("settings.skills.detail.location")}</span>
+                                              <code>
+                                                {skill.location || language.t("settings.skills.detail.unknownLocation")}
+                                              </code>
+                                            </div>
+                                            <Show when={skill.slash}>
+                                              <div>
+                                                <span>{language.t("settings.skills.detail.slash")}</span>
+                                                <code>/{skill.name}</code>
+                                              </div>
+                                            </Show>
+                                          </div>
+                                        </Show>
+                                      </div>
+                                    )
+                                  }}
+                                </For>
                               </div>
                             </Show>
                           </div>

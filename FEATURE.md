@@ -132,6 +132,35 @@
 - 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/pages/session/helpers.test.ts`。
 - 在桌面宽度的会话中点击顶部 Skills 图标，确认右侧面板直接打开并展示 Skills Tab；点击关闭按钮后应回到上一个侧栏 Tab。
 
+## Skill 来源分组展示
+
+### 功能目标
+
+当一个 Skill 包包含多个 Skill 时，避免把所有 Skill 平铺成无法理解的长列表；用户可以先看到 Skill 来自哪个组，再展开查看组内的每个 Skill。
+
+### 使用方式
+
+设置页和会话内 Skills 侧栏都会按来源显示可展开的分组。像 `superpowers` 这样的目录会聚合显示并标注组内数量；搜索 Skill 时会自动展开包含匹配项的分组。组内仍保留每个 Skill 的描述、来源路径、Slash 调用方式和单项展开详情，“本次会话已使用”继续按具体 Skill 单独统计。
+
+### 实现范围
+
+- 客户端根据 Skill 来源路径推断分组：内置 Skill、`node_modules` 包、`superpowers` 一类的来源目录，以及 `.agents/skills`、`.claude/skills` 等外部 Skill 根目录分别聚合。
+- 分组只影响展示，不修改 Skill 的发现、加载、权限或服务端协议；服务端未来提供显式组元数据时，可以替换客户端推断逻辑。
+- 分组默认在 Skill 数量较少时展开，Skill 较多时收起，用户可以点击组标题切换；搜索结果会保持可见。
+
+### 代码位置
+
+- `packages/app/src/utils/skill-groups.ts`：来源路径分组与组名推断。
+- `packages/app/src/utils/skill-groups.test.ts`：内置、外部目录、普通包和 scoped 包分组测试。
+- `packages/app/src/components/session/session-skills-tab.tsx`、`session-skills-tab.css`：会话内分组列表。
+- `packages/app/src/components/settings-v2/skills.tsx`、`settings-v2.css`：设置页分组列表。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/utils/skill-groups.test.ts ./src/utils/session-skills.test.ts ./src/context/global-sync/bootstrap.test.ts ./src/pages/session/helpers.test.ts ./src/i18n/parity.test.ts`。
+- 在包含多个同源 Skill 的项目中打开 Skills 面板，确认先显示来源组和数量，展开后能查看每个 Skill；搜索具体 Skill 时确认对应组自动展开。
+
 ## 导出完成后打开系统文件管理器
 
 ### 功能目标

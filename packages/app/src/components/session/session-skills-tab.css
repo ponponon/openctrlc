@@ -78,6 +78,79 @@
   border-top: 1px solid var(--v2-border-border-weak);
 }
 
+.session-skills-group {
+  border-bottom: 1px solid var(--v2-border-border-weak);
+}
+
+.session-skills-group:last-child {
+  border-bottom: 0;
+}
+
+.session-skills-group-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0 9px;
+  border: 0;
+  background: transparent;
+  color: var(--v2-text-text-base);
+  text-align: start;
+  cursor: pointer;
+}
+
+.session-skills-group-header:hover {
+  color: var(--v2-text-text-base);
+}
+
+.session-skills-group-header:focus-visible {
+  outline: 2px solid var(--v2-border-border-focus);
+  outline-offset: 2px;
+}
+
+.session-skills-group-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-skills-group-name {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-skills-group-source {
+  color: var(--v2-text-text-muted);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.session-skills-group-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  color: var(--v2-icon-icon-muted);
+}
+
+.session-skills-group-actions [data-slot="icon-svg"] {
+  transition: transform 150ms ease;
+}
+
+.session-skills-group[data-expanded] .session-skills-group-actions [data-slot="icon-svg"] {
+  transform: rotate(180deg);
+}
+
+.session-skills-group-list {
+  padding-left: 10px;
+}
+
 .session-skills-row,
 .session-skills-used-row {
   position: relative;

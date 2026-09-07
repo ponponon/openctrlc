@@ -530,6 +530,81 @@
   padding-inline: 16px;
 }
 
+.settings-v2-skill-group {
+  border-bottom: 0.5px solid var(--v2-border-border-base);
+}
+
+.settings-v2-skill-group:last-child {
+  border-bottom: none;
+}
+
+.settings-v2-skill-group-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--v2-text-text-base);
+  text-align: start;
+  cursor: pointer;
+}
+
+.settings-v2-skill-group-header:hover {
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-skill-group-header:focus-visible {
+  outline: 2px solid var(--v2-border-border-focus);
+  outline-offset: 2px;
+}
+
+.settings-v2-skill-group-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-v2-skill-group-name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-skill-group-source {
+  color: var(--v2-text-text-muted);
+  font-size: 11px;
+  font-weight: 440;
+  line-height: 15px;
+}
+
+.settings-v2-skill-group-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--v2-icon-icon-muted);
+}
+
+.settings-v2-skill-group-actions [data-slot="icon-svg"] {
+  transition: transform 150ms ease;
+}
+
+.settings-v2-skill-group[data-expanded] .settings-v2-skill-group-actions [data-slot="icon-svg"] {
+  transform: rotate(180deg);
+}
+
+.settings-v2-skill-group-list {
+  padding-left: 12px;
+}
+
 .settings-v2-skill-row,
 .settings-v2-skill-used-row {
   display: flex;
@@ -616,11 +691,11 @@
   outline-offset: 2px;
 }
 
-.settings-v2-skill-toggle [data-component="icon"] {
+.settings-v2-skill-toggle [data-slot="icon-svg"] {
   transition: transform 150ms ease;
 }
 
-.settings-v2-skill-row[data-expanded] .settings-v2-skill-toggle [data-component="icon"] {
+.settings-v2-skill-row[data-expanded] .settings-v2-skill-toggle [data-slot="icon-svg"] {
   transform: rotate(180deg);
 }
 
