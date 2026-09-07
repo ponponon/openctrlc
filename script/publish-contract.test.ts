@@ -52,6 +52,8 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   expect(ensureTagSource).toContain("git tag -a")
   expect(ensureTagSource).toContain("git push origin")
   expect(ensureTagSource).toContain("TARGET")
+  expect(ensureTagSource).toContain("git config user.name")
+  expect(ensureTagSource).toContain("github-actions[bot]")
 
   const publish = workflow.jobs?.publish
   const publishSource = JSON.stringify(publish?.steps ?? [])

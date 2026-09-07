@@ -246,6 +246,7 @@ bun run desktop:mac
 - 复用现有 `publish` 工作流的版本、tag 和 Release 创建逻辑。
 - 在版本计算阶段注册当前提交的源码 CLI 启动器，确保 changelog 生成不依赖 Runner 上预装的旧版 `openctrlc`。
 - CI 版本说明使用 `raw-changelog.ts` 基于 Git 提交确定性生成，不要求 GitHub Runner 配置模型 API 凭证；本机版本说明仍可使用 AI 生成脚本。
+- 创建 Release tag 前为 CI Runner 配置固定的 GitHub Actions 提交者身份，保证 annotated tag 可以正常写入并推送。
 - 在 macOS GitHub Runner 中导入临时 Developer ID 证书到临时钥匙串。
 - 使用 Apple ID、App 专用密码和 Team ID 执行 notarization；本机钥匙串 profile 不会被复制到 CI。
 - 上传 `packages/desktop/dist/*.dmg` 和 `packages/desktop/dist/*.zip`，CLI 资产继续由原有 job 上传。

@@ -74,6 +74,8 @@ jobs:
           TARGET: ${{ github.sha }}
         run: |
           git fetch origin --tags --force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git rev-parse --verify --quiet "refs/tags/${TAG}^{commit}" >/dev/null; then
             actual="$(git rev-parse "${TAG}^{commit}")"
             if [ "$actual" != "$TARGET" ]; then
