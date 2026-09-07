@@ -1,4 +1,5 @@
 import { createMemo, createEffect, on, onCleanup, For, Show } from "solid-js"
+import { createStore } from "solid-js/store"
 import type { JSX } from "solid-js"
 import { useSync } from "@/context/sync"
 import { checksum } from "@openctrlc/core/util/encode"
@@ -167,6 +168,18 @@ export function SessionContextTab() {
   })
 
   const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages()))
+  const [systemPromptState, setSystemPromptState] = createStore({ expanded: false })
+
+  const systemPromptNeedsExpansion = createMemo(() => (systemPrompt()?.length ?? 0) > 800)
+  const toggleSystemPrompt = () => setSystemPromptState("expanded", (value) => !value)
+
+  createEffect(
+    on(
+      () => [params.id, systemPrompt()],
+      () => setSystemPromptState("expanded", false),
+      { defer: true },
+    ),
+  )
 
   const providerLabel = createMemo(() => {
     const c = ctx()
@@ -396,9 +409,42 @@ export function SessionContextTab() {
         <Show when={systemPrompt()}>
           {(prompt) => (
             <div class="flex flex-col gap-2">
-              <div class="text-12-regular text-text-weak">{language.t("context.systemPrompt.title")}</div>
-              <div class="border border-border-base rounded-md bg-surface-base px-3 py-2">
-                <Markdown text={prompt()} class="text-12-regular" />
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-12-regular text-text-weak">{language.t("context.systemPrompt.title")}</div>
+                <Show when={systemPromptNeedsExpansion()}>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    class="shrink-0 gap-1 px-2 text-text-weak hover:text-text-base"
+                    onClick={toggleSystemPrompt}
+                    aria-expanded={systemPromptState.expanded}
+                  >
+                    <span>
+                      {language.t(systemPromptState.expanded ? "session.todo.collapse" : "session.todo.expand")}
+                    </span>
+                    <Icon
+                      name="chevron-down"
+                      size="small"
+                      style={{ transform: `rotate(${systemPromptState.expanded ? 180 : 0}deg)` }}
+                    />
+                  </Button>
+                </Show>
+              </div>
+              <div class="relative border border-border-base rounded-md bg-surface-base px-3 py-2">
+                <div
+                  classList={{
+                    "max-h-48 overflow-hidden": systemPromptNeedsExpansion() && !systemPromptState.expanded,
+                    "max-h-[60vh] overflow-y-auto": systemPromptState.expanded,
+                  }}
+                >
+                  <Markdown text={prompt()} class="text-12-regular" />
+                </div>
+                <Show when={systemPromptNeedsExpansion() && !systemPromptState.expanded}>
+                  <div
+                    class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-surface-base to-transparent"
+                    aria-hidden="true"
+                  />
+                </Show>
               </div>
             </div>
           )}
