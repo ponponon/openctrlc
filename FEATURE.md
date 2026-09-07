@@ -224,6 +224,7 @@ bun run desktop:mac
 ### 实现范围
 
 - 复用现有 `publish` 工作流的版本、tag 和 Release 创建逻辑。
+- 在版本计算阶段注册当前提交的源码 CLI 启动器，确保 changelog 生成不依赖 Runner 上预装的旧版 `openctrlc`。
 - 在 macOS GitHub Runner 中导入临时 Developer ID 证书到临时钥匙串。
 - 使用 Apple ID、App 专用密码和 Team ID 执行 notarization；本机钥匙串 profile 不会被复制到 CI。
 - 上传 `packages/desktop/dist/*.dmg` 和 `packages/desktop/dist/*.zip`，CLI 资产继续由原有 job 上传。

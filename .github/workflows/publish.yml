@@ -33,6 +33,16 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
+      - name: Make source CLI available
+        run: |
+          cat > "$RUNNER_TEMP/openctrlc" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec bun run --cwd packages/opencode --conditions=browser src/index.ts "$@"
+          EOF
+          chmod +x "$RUNNER_TEMP/openctrlc"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
       - id: version
         run: ./script/version.ts
         env:

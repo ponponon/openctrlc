@@ -62,6 +62,10 @@ electron-builder 的 macOS 签名流程会遍历 App 内部文件。Electron Fra
 
 本机执行 `xcrun notarytool store-credentials openctrlc-notary` 后，凭据保存在当前 Mac 的钥匙串中；GitHub Actions 使用全新的临时 Runner，既没有这个 profile，也没有本机的 Developer ID 私钥。以后接入 CI 发布时，必须分别把包含私钥的 Developer ID `.p12` 以加密 Secret 提供给 Runner，并提供 Apple ID、App 专用密码和 Team ID；不能只配置 `APPLE_KEYCHAIN_PROFILE` 就认为 CI 已具备签名和公证能力。
 
+## 发布版本计算必须显式提供源码 CLI
+
+发布工作流的版本脚本会调用 `script/changelog.ts`，而 changelog 生成依赖 `openctrlc run`。仅执行依赖安装不会把仓库内的 `openctrlc` 命令放进 GitHub Runner 的 PATH，导致版本任务在签名、公证和构建之前直接失败。以后发布流程必须在版本计算前注册当前提交的源码 CLI 启动器，避免依赖不存在或版本不匹配的全局 CLI。
+
 ## Markdown 导出默认不应包含内部执行过程
 
 用户反馈普通 Markdown 导出中包含大量工具调用、工具输入输出和步骤信息，影响阅读和分享。以后面向用户阅读的导出格式应默认只保留用户输入、助手回答和必要的文件引用；调试或复盘场景再通过单独的完整模式显式导出内部过程，不能把执行日志默认混入正文。
