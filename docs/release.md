@@ -5,7 +5,7 @@
 当前 GitHub Actions 发布流程是手动触发的正式发布流程，不会因为向 `dev` 推送普通 commit 自动发布。
 在 Actions 页面手动运行 `publish`，填写 `version` 或选择 `bump`。
 
-流程会先创建 draft GitHub Release，然后确认对应 tag 指向本次工作流 commit；之后并行构建 CLI 和 macOS Desktop。Desktop 使用
+流程会先创建 draft GitHub Release，然后确认对应 tag 指向本次工作流 commit；之后并行构建 CLI 和 macOS Desktop。版本说明在 CI 中使用 Git 提交生成，避免依赖模型凭证。Desktop 使用
 Developer ID 证书签名并提交 Apple notarization，成功后把 DMG/ZIP 和 CLI 压缩包上传到 Release，最后自动将 Release 从 draft 发布。
 
 当前流程不会调用根目录的 `script/publish.ts`，因此不会发布 npm 包或执行版本同步 commit。macOS Desktop 当前构建 Apple Silicon（arm64）产物。

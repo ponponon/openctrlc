@@ -66,6 +66,10 @@ electron-builder 的 macOS 签名流程会遍历 App 内部文件。Electron Fra
 
 发布工作流的版本脚本会调用 `script/changelog.ts`，而 changelog 生成依赖 `openctrlc run`。仅执行依赖安装不会把仓库内的 `openctrlc` 命令放进 GitHub Runner 的 PATH，导致版本任务在签名、公证和构建之前直接失败。以后发布流程必须在版本计算前注册当前提交的源码 CLI 启动器，避免依赖不存在或版本不匹配的全局 CLI。
 
+## CI 发布变更说明不能依赖模型凭证
+
+即使 CI 已经能启动源码 CLI，`script/changelog.ts` 仍会调用模型生成说明；Runner 没有本机配置的 provider 凭证时，版本任务会在创建 Release 前失败。以后正式发布的 CI 应使用 `script/raw-changelog.ts` 根据 Git 提交确定性生成基础说明，把模型生成保留为本机或有明确凭证的可选流程。
+
 ## Markdown 导出默认不应包含内部执行过程
 
 用户反馈普通 Markdown 导出中包含大量工具调用、工具输入输出和步骤信息，影响阅读和分享。以后面向用户阅读的导出格式应默认只保留用户输入、助手回答和必要的文件引用；调试或复盘场景再通过单独的完整模式显式导出内部过程，不能把执行日志默认混入正文。

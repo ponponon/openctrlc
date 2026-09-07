@@ -11,8 +11,13 @@ const tag = Script.channel === "beta" ? "beta" : `v${Script.version}`
 if (!Script.preview) {
   const existing = await $`gh release view ${tag} --json tagName,databaseId --repo ${repo}`.nothrow()
   if (existing.exitCode !== 0) {
-    await $`bun script/changelog.ts --to ${sha}`.cwd(process.cwd())
     const file = `${process.cwd()}/UPCOMING_CHANGELOG.md`
+    if (process.env.OPENCTRLC_CHANGELOG_MODE === "raw") {
+      const notes = await $`bun script/raw-changelog.ts --to ${sha}`.cwd(process.cwd()).text()
+      await Bun.write(file, notes)
+    } else {
+      await $`bun script/changelog.ts --to ${sha}`.cwd(process.cwd())
+    }
     const body = await Bun.file(file)
       .text()
       .catch(() => "No notable changes")

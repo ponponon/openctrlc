@@ -51,6 +51,7 @@ jobs:
           OPENCTRLC_VERSION: ${{ inputs.version }}
           GH_REPO: ${{ github.repository }}
           OPENCTRLC_CHANNEL: prod
+          OPENCTRLC_CHANGELOG_MODE: raw
     outputs:
       version: ${{ steps.version.outputs.version }}
       release: ${{ steps.version.outputs.release }}

@@ -4,7 +4,7 @@ import { parse } from "yaml"
 const root = import.meta.dirname.replace(/\/script$/, "")
 const read = (relative: string) => Bun.file(`${root}/${relative}`).text()
 
-test("GitHub release workflow is manual and CLI-only", async () => {
+test("GitHub release workflow is manual and publishes CLI plus Desktop", async () => {
   const source = await read(".github/workflows/publish.yml")
   const workflow = parse(source) as {
     on?: { push?: unknown; workflow_dispatch?: unknown }
@@ -13,11 +13,12 @@ test("GitHub release workflow is manual and CLI-only", async () => {
 
   expect(workflow.on?.push).toBeUndefined()
   expect(workflow.on?.workflow_dispatch).toBeDefined()
-  expect(Object.keys(workflow.jobs ?? {})).toEqual(["version", "ensure-tag", "build-cli", "publish"])
+  expect(Object.keys(workflow.jobs ?? {})).toEqual(["version", "ensure-tag", "build-cli", "build-desktop-macos", "publish"])
 
-  for (const job of Object.values(workflow.jobs ?? {})) {
-    expect(job["runs-on"]).toBe("ubuntu-24.04")
+  for (const name of ["version", "ensure-tag", "build-cli", "publish"]) {
+    expect(workflow.jobs?.[name]?.["runs-on"]).toBe("ubuntu-24.04")
   }
+  expect(workflow.jobs?.["build-desktop-macos"]?.["runs-on"]).toBe("macos-14")
 
   const lower = source.toLowerCase()
   for (const forbidden of [
@@ -58,6 +59,10 @@ test("GitHub release workflow is manual and CLI-only", async () => {
   expect(publishSource).toContain("gh release upload")
   expect(publishSource).toContain("needs.version.outputs.tag")
   expect(publishSource).toContain("needs.version.outputs.repo")
+
+  const versionSource = JSON.stringify(workflow.jobs?.version?.steps ?? [])
+  expect(versionSource).toContain("Make source CLI available")
+  expect(versionSource).toContain("OPENCTRLC_CHANGELOG_MODE")
 })
 
 test("stable versioning reuses an existing GitHub release", async () => {
