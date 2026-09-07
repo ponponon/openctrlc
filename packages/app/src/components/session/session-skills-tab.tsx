@@ -184,6 +184,7 @@ export function SessionSkillsTab() {
                               <span class="session-skills-group-copy">
                                 <span class="session-skills-group-name">{group.name}</span>
                                 <span class="session-skills-group-source">{sourceLabel(group.skills[0].location)}</span>
+                                <code class="session-skills-group-location">{group.location}</code>
                               </span>
                               <span class="session-skills-group-actions">
                                 <Tag>{group.skills.length}</Tag>

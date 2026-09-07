@@ -585,6 +585,17 @@
   line-height: 15px;
 }
 
+.settings-v2-skill-group-location {
+  overflow: hidden;
+  color: var(--v2-text-text-faint);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  font-weight: 440;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .settings-v2-skill-group-actions {
   display: flex;
   flex-shrink: 0;

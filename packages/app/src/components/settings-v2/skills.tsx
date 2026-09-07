@@ -193,6 +193,7 @@ export const SettingsSkillsV2: Component<{
                                 <span class="settings-v2-skill-group-source">
                                   {sourceLabel(group.skills[0].location)}
                                 </span>
+                                <code class="settings-v2-skill-group-location">{group.location}</code>
                               </span>
                               <span class="settings-v2-skill-group-actions">
                                 <Tag>{group.skills.length}</Tag>

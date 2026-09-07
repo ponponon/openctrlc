@@ -131,6 +131,16 @@
   line-height: 15px;
 }
 
+.session-skills-group-location {
+  overflow: hidden;
+  color: var(--v2-text-text-faint);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .session-skills-group-actions {
   display: flex;
   flex-shrink: 0;

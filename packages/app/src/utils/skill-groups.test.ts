@@ -18,11 +18,13 @@ describe("groupSkills", () => {
     ).toEqual([
       {
         id: "builtin",
+        location: "<built-in>",
         name: "Built-in",
         skills: [skill("customize-opencode", "<built-in>")],
       },
       {
-        id: "source:superpowers",
+        id: "source:/cache/superpowers/skills",
+        location: "/cache/superpowers/skills",
         name: "superpowers",
         skills: [
           skill("brainstorming", "/cache/superpowers/skills/brainstorming/SKILL.md"),
@@ -49,7 +51,8 @@ describe("groupSkills", () => {
       ]),
     ).toEqual([
       {
-        id: "package:@acme/tool",
+        id: "package:/project/node_modules/@acme/tool",
+        location: "/project/node_modules/@acme/tool",
         name: "@acme/tool",
         skills: [
           skill("one", "/project/node_modules/@acme/tool/skills/one/SKILL.md"),
