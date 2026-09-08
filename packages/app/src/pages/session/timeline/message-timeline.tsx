@@ -1221,6 +1221,7 @@ export function MessageTimeline(props: {
               <MessagePart
                 part={part()}
                 message={message()}
+                actions={props.actions}
                 showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
                 turnDurationMs={turnDurationMs(row().userMessageID)}
                 useV2Actions={settings.general.newLayoutDesigns()}

@@ -199,6 +199,7 @@ export type UserMessageComment = {
 export interface MessagePartProps {
   part: PartType
   message: MessageType
+  actions?: UserActions
   hideDetails?: boolean
   defaultOpen?: boolean
   toolOpen?: boolean
@@ -215,12 +216,16 @@ export interface MessagePartProps {
 
 function MessageActionButton(
   props: Pick<ComponentProps<"button">, "disabled" | "onMouseDown" | "onClick" | "aria-label"> & {
-    icon: "check" | "copy" | "reset"
+    icon: "check" | "copy" | "fork" | "reset"
     label: JSX.Element
     useV2?: boolean
   },
 ) {
-  const icon = () => (props.icon === "copy" ? "outline-copy" : props.icon)
+  const icon = () => {
+    if (props.icon === "copy") return "outline-copy"
+    if (props.icon === "fork") return "branch"
+    return props.icon
+  }
   return (
     <Show
       when={props.useV2}
@@ -731,6 +736,7 @@ export { partDefaultOpen } from "./part-default-open"
 
 export function AssistantParts(props: {
   messages: AssistantMessage[]
+  actions?: UserActions
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   useV2Actions?: boolean
@@ -816,6 +822,7 @@ export function AssistantParts(props: {
                       <Part
                         part={item()!}
                         message={message()!}
+                        actions={props.actions}
                         showAssistantCopyPartID={props.showAssistantCopyPartID}
                         turnDurationMs={props.turnDurationMs}
                         useV2Actions={props.useV2Actions}
@@ -961,6 +968,7 @@ export function Message(props: MessageProps) {
           <AssistantMessageDisplay
             message={assistantMessage() as AssistantMessage}
             parts={props.parts}
+            actions={props.actions}
             showAssistantCopyPartID={props.showAssistantCopyPartID}
             showReasoningSummaries={props.showReasoningSummaries}
             useV2Actions={props.useV2Actions}
@@ -974,6 +982,7 @@ export function Message(props: MessageProps) {
 export function AssistantMessageDisplay(props: {
   message: AssistantMessage
   parts: PartType[]
+  actions?: UserActions
   showAssistantCopyPartID?: string | null
   showReasoningSummaries?: boolean
   useV2Actions?: boolean
@@ -1035,6 +1044,7 @@ export function AssistantMessageDisplay(props: {
                     <Part
                       part={item()!}
                       message={props.message}
+                      actions={props.actions}
                       showAssistantCopyPartID={props.showAssistantCopyPartID}
                       useV2Actions={props.useV2Actions}
                     />
@@ -1481,6 +1491,7 @@ export function Part(props: MessagePartProps) {
         component={component()}
         part={props.part}
         message={props.message}
+        actions={props.actions}
         hideDetails={props.hideDetails}
         defaultOpen={props.defaultOpen}
         toolOpen={props.toolOpen}
@@ -1819,6 +1830,21 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
               onClick={handleCopy}
               aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
             />
+            <Show when={props.actions?.fork && props.message.role === "assistant" && props.message.parentID}>
+              <MessageActionButton
+                icon="fork"
+                label={i18n.t("ui.message.forkMessage")}
+                useV2={props.useV2Actions}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  const parentID = (props.message as AssistantMessage).parentID
+                  if (!parentID) return
+                  void props.actions?.fork?.({ sessionID: props.message.sessionID, messageID: parentID })
+                }}
+                aria-label={i18n.t("ui.message.forkMessage")}
+              />
+            </Show>
             <Show when={meta()}>
               <span data-slot="text-part-meta" class="text-12-regular text-text-weak cursor-default">
                 {meta()}

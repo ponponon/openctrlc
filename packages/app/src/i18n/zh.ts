@@ -456,6 +456,13 @@ export const dict = {
   "mcp.status.disabled": "已禁用",
 
   "dialog.fork.empty": "没有可用于创建新会话的消息",
+  "dialog.fork.location.title": "从这里创建聊天分支",
+  "dialog.fork.location.workspace.title": "在此工作空间中创建分支",
+  "dialog.fork.location.workspace.description": "在当前工作空间中从此消息创建分支",
+  "dialog.fork.location.worktree.title": "在新工作树中创建分支",
+  "dialog.fork.location.worktree.description": "在新工作树中从此消息创建分支",
+  "dialog.fork.back": "返回消息列表",
+  "dialog.fork.loading": "正在创建聊天分支…",
 
   "dialog.directory.search.placeholder": "搜索文件夹",
   "dialog.directory.empty": "未找到文件夹",

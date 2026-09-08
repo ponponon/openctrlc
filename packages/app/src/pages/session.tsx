@@ -72,6 +72,7 @@ import {
 } from "@/pages/session/composer"
 import { createOpenReviewFile, createSessionTabs, createSizing, shouldShowFileTree } from "@/pages/session/helpers"
 import { MessageTimeline } from "@/pages/session/timeline/message-timeline"
+import type { SessionAction } from "@openctrlc/session-ui/message-part"
 import { createTimelineModel } from "@/pages/session/timeline/model"
 import { type DiffStyle, SessionReviewTab, type SessionReviewTabProps } from "@/pages/session/review-tab"
 import { useSessionLayout } from "@/pages/session/session-layout"
@@ -2130,7 +2131,16 @@ export default function Page() {
     download()
   }
 
-  const actions = { revert, openAttachment }
+  const fork: SessionAction = (input) => {
+    const owner = sessionOwnership.capture()
+    void import("@/components/dialog-fork").then((module) => {
+      owner.run(() => {
+        dialog.show(() => <module.DialogFork sessionID={input.sessionID} messageID={input.messageID} />)
+      })
+    })
+  }
+
+  const actions = { revert, fork, openAttachment }
 
   createEffect(() => {
     const sessionID = params.id

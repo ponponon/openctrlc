@@ -340,6 +340,13 @@ export const dict = {
   "mcp.auth.clickToAuthenticate": "Click to authenticate",
 
   "dialog.fork.empty": "No messages to fork from",
+  "dialog.fork.location.title": "Create chat branch from here",
+  "dialog.fork.location.workspace.title": "Fork in this workspace",
+  "dialog.fork.location.workspace.description": "Create a fork from this message in the current workspace",
+  "dialog.fork.location.worktree.title": "Fork in a new worktree",
+  "dialog.fork.location.worktree.description": "Create a fork from this message in a new worktree",
+  "dialog.fork.back": "Back to messages",
+  "dialog.fork.loading": "Creating chat branch…",
 
   "dialog.directory.search.placeholder": "Search folders",
   "dialog.directory.empty": "No folders found",

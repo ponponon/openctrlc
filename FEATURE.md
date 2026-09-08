@@ -640,3 +640,47 @@ bun run desktop:mac
 - 在 `packages/web` 目录执行 `bun run build`，确认 Astro/Cloudflare Pages 产物生成。
 - 检查构建产物中的 canonical URL 和站点标题均指向 `openctrlc.pages.dev` / `OpenCtrlC`。
 - 发布后访问 `https://openctrlc.pages.dev/` 和 `https://openctrlc.pages.dev/docs/`，确认首页和文档页均返回 HTTP 200。
+## OpenCtrlC 官网品牌与功能说明收敛
+
+### 功能目标
+
+让官网只展示 OpenCtrlC 自己已经提供的品牌、安装方式和功能，避免用户看到上游 OpenCode 的 Logo、截图、Zen/Go 托管服务或失效的上游链接。
+
+### 实现范围
+
+- 替换官网 Logo、分享页图标和语言选择器的品牌残留。
+- 移除当前产品没有提供的 Zen、Go 文案、入口和中英文页面。
+- 删除带有上游品牌的官网截图，收紧安装、提供商和企业版说明。
+- 将分享卡片改为 Cloudflare Pages 本地静态图片，避免继续请求上游社交卡片服务。
+
+### 验证方式
+
+- 构建 `packages/web`，确认 Astro/MDX 构建成功。
+- 检查生成页面不再出现 OpenCode Logo、Zen 入口和上游分享卡片 URL。
+- 部署后访问 `/`、`/docs/`、`/docs/zh-cn/`，确认状态码为 200。
+
+## Desktop 会话分叉
+
+### 功能目标
+
+在桌面版复用 OpenCode 已有的 `session.fork` 服务能力，让用户可以从任意已完成的助手回复创建独立聊天分支，并选择当前工作空间或新的 Git 工作树作为分支位置。
+
+### 实现范围
+
+- 在共享会话消息的助手回复操作区增加“从此消息创建新会话”入口，分叉边界自动绑定到对应的用户消息。
+- 扩展现有分叉对话框为“选择消息 → 选择位置”的两步流程，保留命令面板入口和搜索历史消息能力。
+- Git 项目提供当前工作空间和新工作树两种位置；新工作树创建成功后，分叉会话通过目标目录的 SDK 客户端创建并自动跳转。
+- 分叉完成后恢复原用户输入和附件上下文；进行中禁用重复操作，失败显示本地化错误并保留对话框。
+
+### 代码位置
+
+- `packages/session-ui/src/components/message-part.tsx`：助手回复分叉按钮及操作透传。
+- `packages/app/src/pages/session.tsx`：捕获当前会话上下文并打开分叉对话框。
+- `packages/app/src/components/dialog-fork.tsx`：消息选择、工作空间/工作树选择、分叉和导航流程。
+- `packages/opencode/src/session/session.ts`：已有会话消息前缀克隆实现，无需新增服务端协议。
+
+### 验证方式
+
+- 在 `packages/app` 和 `packages/session-ui` 分别执行 `bun typecheck`。
+- 执行时间线模型单测，确认分叉入口的消息渲染改动不影响时间线状态模型。
+- 在 Git 项目中验证助手回复操作区可打开分叉对话框，并分别验证当前工作空间和新工作树导航。

@@ -410,6 +410,7 @@ export function SessionTurn(
                 <div data-slot="session-turn-assistant-content" aria-hidden={working()}>
                   <AssistantParts
                     messages={assistantMessages()}
+                    actions={props.actions}
                     showAssistantCopyPartID={assistantCopyPartID()}
                     turnDurationMs={turnDurationMs()}
                     working={working()}
