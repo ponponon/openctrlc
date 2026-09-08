@@ -22,7 +22,7 @@ type Diff = {
   message: string
 }
 
-const repo = process.env.GH_REPO ?? "anomalyco/opencode"
+const repo = process.env.GH_REPO ?? "ponponon/openctrlc"
 const bot = ["actions-user", "github-actions[bot]", "opencode", "opencode-agent[bot]"]
 const team = [
   ...(await Bun.file(new URL("../.github/TEAM_MEMBERS", import.meta.url))
@@ -82,8 +82,8 @@ function section(areas: Set<string>) {
 }
 
 function type(message: string) {
-  if (message.match(/fix/i)) return "Bugfixes"
-  return "Improvements"
+  if (message.match(/fix/i)) return "Bug Fixes"
+  return "Features"
 }
 
 function reverted(commits: Commit[]) {
@@ -195,14 +195,14 @@ async function thanks(from: string, to: string, reuse: boolean) {
   return lines
 }
 
-function format(from: string, to: string, list: Commit[], thanks: string[]) {
+function format(from: string, to: string, version: string | undefined, list: Commit[], thanks: string[]) {
   const grouped = new Map<string, Map<string, string[]>>()
   for (const title of order) {
     grouped.set(
       title,
       new Map([
-        ["Improvements", []],
-        ["Bugfixes", []],
+        ["Features", []],
+        ["Bug Fixes", []],
       ]),
     )
   }
@@ -212,41 +212,49 @@ function format(from: string, to: string, list: Commit[], thanks: string[]) {
     grouped.get(section(commit.areas))!.get(type(commit.message))!.push(`- \`${commit.hash}\` ${commit.message}${attr}`)
   }
 
-  const lines = [`Last release: ${ref(from)}`, `Target ref: ${to}`, ""]
+  const lines: string[] = []
+  append("Features")
+  append("Bug Fixes")
 
-  if (list.length === 0) {
-    lines.push("No notable changes.")
+  if (list.length === 0) lines.push("## Features", "", "No notable changes.", "")
+
+  const tag = version ? `v${version.replace(/^v/, "")}` : undefined
+  const releaseRef = tag ?? ref(to)
+  const asset = (name: string) => `https://github.com/${repo}/releases/download/${releaseRef}/${name}`
+
+  if (tag) {
+    lines.push("## Downloads", "", "### CLI", "")
+    lines.push(
+      `- macOS: [Apple Silicon ZIP](${asset("openctrlc-darwin-arm64.zip")}) | [Intel ZIP](${asset("openctrlc-darwin-x64.zip")})`,
+      `- Linux: [x64 tar.gz](${asset("openctrlc-linux-x64.tar.gz")}) | [ARM64 tar.gz](${asset("openctrlc-linux-arm64.tar.gz")})`,
+      `- Windows: [x64 ZIP](${asset("openctrlc-windows-x64.zip")}) | [ARM64 ZIP](${asset("openctrlc-windows-arm64.zip")})`,
+      "",
+      "### Desktop",
+      "",
+      `- macOS Apple Silicon: [DMG](${asset("openctrlc-mac-arm64.dmg")}) | [ZIP](${asset("openctrlc-mac-arm64.zip")})`,
+      "",
+      "> Windows and Linux Desktop installers are not currently published by the automated release workflow. The CLI archives above are available for those platforms.",
+      "",
+    )
   }
 
-  for (const title of order) {
-    const groups = grouped.get(title)
-    if (!groups || [...groups.values()].every((entries) => entries.length === 0)) continue
-    lines.push(`## ${title}`)
-    const improvements = groups.get("Improvements")!
-    const bugfixes = groups.get("Bugfixes")!
-    if (bugfixes.length === 0) {
-      lines.push(...improvements)
-      lines.push("")
-      continue
-    }
+  if (thanks.length > 0) lines.push("## Contributors", "", ...thanks, "")
 
-    for (const [subtitle, entries] of groups) {
-      if (entries.length === 0) continue
-      lines.push(`### ${subtitle}`)
-      lines.push(...entries)
-      lines.push("")
-    }
-  }
-
-  if (thanks.length > 0) {
-    if (lines.at(-1) !== "") lines.push("")
-    lines.push("## Community Contributors Input")
-    lines.push("")
-    lines.push(...thanks)
-  }
-
-  if (lines.at(-1) === "") lines.pop()
+  lines.push(`**Full Changelog**: https://github.com/${repo}/compare/${ref(from)}...${releaseRef}`)
   return lines.join("\n")
+
+  function append(title: "Features" | "Bug Fixes") {
+    const entriesByArea = order.flatMap((area) => {
+      const entries = grouped.get(area)?.get(title) ?? []
+      return entries.length === 0 ? [] : [[area, entries] as const]
+    })
+    if (entriesByArea.length === 0) return
+
+    lines.push(`## ${title}`, "")
+    for (const [area, entries] of entriesByArea) {
+      lines.push(`### ${area}`, "", ...entries, "")
+    }
+  }
 }
 
 if (import.meta.main) {
@@ -255,6 +263,7 @@ if (import.meta.main) {
     options: {
       from: { type: "string", short: "f" },
       to: { type: "string", short: "t", default: "HEAD" },
+      version: { type: "string", short: "v" },
       help: { type: "boolean", short: "h", default: false },
     },
   })
@@ -266,6 +275,7 @@ Usage: bun script/raw-changelog.ts [options]
 Options:
   -f, --from <version>   Starting version (default: latest non-draft GitHub release)
   -t, --to <ref>         Ending ref (default: HEAD)
+  -v, --version <version> Release version used for download links
   -h, --help             Show this help message
 
 Examples:
@@ -279,5 +289,5 @@ Examples:
   const to = values.to!
   const from = values.from ?? (await latest())
   const list = await commits(from, to)
-  console.log(format(from, to, list, await thanks(from, to, !values.from)))
+  console.log(format(from, to, values.version, list, await thanks(from, to, !values.from)))
 }

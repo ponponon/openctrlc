@@ -35,7 +35,7 @@ nix run github:ponponon/openctrlc
 ```
 
 > [!TIP]
-> The latest stable CLI release is `v0.1.2`. Development builds may include
+> The latest stable CLI release is `v0.1.3`. Development builds may include
 > features that have not been published in a stable release yet.
 
 ## What you can do today
@@ -94,8 +94,8 @@ predictable for everyday use and for workflows that run unattended:
 
 ## CLI release
 
-OpenCtrlC `v0.1.2` is available from the
-[GitHub Release](https://github.com/ponponon/openctrlc/releases/tag/v0.1.2).
+OpenCtrlC `v0.1.3` is available from the
+[GitHub Release](https://github.com/ponponon/openctrlc/releases/tag/v0.1.3).
 The release contains platform-specific CLI/TUI archives for macOS, Linux, and
 Windows. Each archive contains one `openctrlc` executable for its target platform.
 

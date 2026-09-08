@@ -566,3 +566,28 @@ bun run desktop:mac
 - 在 `packages/core` 执行 `bun test test/skill.test.ts` 和 `bun typecheck`。
 - 在 `packages/server`、`packages/opencode`、`packages/app` 分别执行 `bun typecheck`。
 - 启动本地服务后分别请求 `/api/skill`、`/skill`，确认返回列表包含 `kimi-webbridge` 及其 `/Users/ponponon/.agents/skills/kimi-webbridge/SKILL.md` 路径。
+
+## GitHub Release 说明统一格式
+
+### 功能目标
+
+让 OpenCtrlC 的 GitHub Release 说明与 AIVPlayer 保持一致，优先展示用户可理解的功能、可靠性、修复和下载入口，避免把完整提交历史直接铺满发布页。
+
+### 实现范围
+
+- 确定性变更说明统一使用 `Features`、`Bug Fixes` 和 `Downloads` 分组，并按 Core、TUI、Desktop、SDK、Extensions 展示提交证据。
+- 正式版本生成说明时自动补充 CLI 与 macOS Desktop 的实际 Release 资产链接；Windows/Linux Desktop 当前未发布安装包时明确说明，不生成虚假下载入口。
+- 末尾统一提供上一稳定版本到当前版本的 `Full Changelog` 对比链接。
+- 已将 v0.1.3 的历史 Release 正文整理为同一格式，保留真实资产和 v0.1.1 到 v0.1.3 的变更范围。
+
+### 代码位置
+
+- `script/raw-changelog.ts`：确定性 Release 正文和下载链接生成。
+- `script/version.ts`：创建 Release 时传递当前版本号。
+- `.github/workflows/publish.yml`：正式发布使用确定性说明模式。
+
+### 验证方式
+
+- 执行 `bun run script/raw-changelog.ts --help`，确认支持 `--version` 参数。
+- 使用已发布版本检查 Release 页面包含 Features、Performance and Reliability、Bug Fixes、Downloads 和 Full Changelog。
+- 检查 Downloads 链接只指向实际上传的 GitHub Release 资产。

@@ -13,7 +13,9 @@ if (!Script.preview) {
   if (existing.exitCode !== 0) {
     const file = `${process.cwd()}/UPCOMING_CHANGELOG.md`
     if (process.env.OPENCTRLC_CHANGELOG_MODE === "raw") {
-      const notes = await $`bun script/raw-changelog.ts --to ${sha}`.cwd(process.cwd()).text()
+      const notes = await $`bun script/raw-changelog.ts --to ${sha} --version ${Script.version}`
+        .cwd(process.cwd())
+        .text()
       await Bun.write(file, notes)
     } else {
       await $`bun script/changelog.ts --to ${sha}`.cwd(process.cwd())
@@ -36,10 +38,9 @@ if (!Script.preview) {
   } else {
     await $`gh release create ${tag} -d --target ${sha} --title "Beta ${Script.version}" --repo ${repo}`
   }
-   const release =
-     await $`gh release view ${tag} --json tagName,databaseId --repo ${repo}`.json()
+  const release = await $`gh release view ${tag} --json tagName,databaseId --repo ${repo}`.json()
   output.push(`release=${release.databaseId}`)
-   output.push(`tag=${release.tagName}`)
+  output.push(`tag=${release.tagName}`)
 }
 
 output.push(`repo=${repo}`)
