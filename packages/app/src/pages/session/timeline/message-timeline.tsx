@@ -22,10 +22,12 @@ import { Card } from "@openctrlc/ui/card"
 import { Collapsible } from "@openctrlc/ui/collapsible"
 import {
   ContextToolGroup,
+  getToolInfo,
   Message,
   MessageDivider,
   Part as MessagePart,
   partDefaultOpen,
+  type PartGroup,
   type UserActions,
 } from "@openctrlc/session-ui/message-part"
 import { DiffChanges } from "@openctrlc/ui/diff-changes"
@@ -111,6 +113,9 @@ const idle = { type: "idle" as const }
 type FramedTimelineRow = Exclude<TimelineRow.TimelineRow, { _tag: "TurnGap" }>
 type TimelineRowByTag<T extends TimelineRow.TimelineRow["_tag"]> = Extract<TimelineRow.TimelineRow, { _tag: T }>
 type HistoryAnchor = { restore: (done: boolean) => void; cancel: () => void }
+type AssistantStepGroup =
+  | { type: "activity"; key: string; groups: PartGroup[] }
+  | { type: "context"; key: string; group: PartGroup }
 
 const timelineFallbackItemSize = 60
 const timelineCache = new Map<
@@ -119,8 +124,27 @@ const timelineCache = new Map<
     measurements: VirtualItem[]
     toolOpen: Record<string, boolean | undefined>
     stepsOpen: Record<string, boolean | undefined>
+    stepGroupsOpen: Record<string, boolean | undefined>
   }
 >()
+
+function assistantStepGroups(groups: PartGroup[]): AssistantStepGroup[] {
+  return groups.reduce<AssistantStepGroup[]>((result, group) => {
+    if (group.type === "context") {
+      result.push({ type: "context", key: group.key, group })
+      return result
+    }
+
+    const previous = result.at(-1)
+    if (previous?.type === "activity") {
+      previous.groups.push(group)
+      return result
+    }
+
+    result.push({ type: "activity", key: `activity:${group.key}`, groups: [group] })
+    return result
+  }, [])
+}
 
 const taskDescription = (part: PartType, sessionID: string) => {
   if (part.type !== "tool" || part.tool !== "task") return
@@ -461,6 +485,9 @@ export function MessageTimeline(props: {
 
   const [toolOpen, setToolOpen] = createStore<Record<string, boolean | undefined>>(cached?.toolOpen ?? {})
   const [stepsOpen, setStepsOpen] = createStore<Record<string, boolean | undefined>>(cached?.stepsOpen ?? {})
+  const [stepGroupsOpen, setStepGroupsOpen] = createStore<Record<string, boolean | undefined>>(
+    cached?.stepGroupsOpen ?? {},
+  )
   const [renderOverscan, setRenderOverscan] = createSignal(initialMeasurements?.length || coldBottomMount ? 6 : 20)
   let resizePinnedIndexes: number[] = []
   let resizePinFrame: number | undefined
@@ -625,6 +652,7 @@ export function MessageTimeline(props: {
       measurements: virtualizer.takeSnapshot(),
       toolOpen: { ...toolOpen },
       stepsOpen: { ...stepsOpen },
+      stepGroupsOpen: { ...stepGroupsOpen },
     })
     while (timelineCache.size > 16) timelineCache.delete(timelineCache.keys().next().value!)
     if (resizePinFrame !== undefined) cancelAnimationFrame(resizePinFrame)
@@ -1212,10 +1240,87 @@ export function MessageTimeline(props: {
     )
   }
 
+  const renderAssistantStepGroup = (
+    group: AssistantStepGroup,
+    userMessageID: () => string,
+    onSizeChange?: () => void,
+  ) => {
+    if (group.type === "context") {
+      return renderAssistantPartGroup(
+        () => ({
+          userMessageID: userMessageID(),
+          group: group.group,
+          previousAssistantPart: false,
+        }),
+        onSizeChange,
+      )
+    }
+
+    const open = createMemo(() => stepGroupsOpen[group.key] ?? true)
+    const title = createMemo(() => {
+      const names = group.groups
+        .flatMap((item) => {
+          if (item.type !== "part") return []
+          const part = getMsgPart(item.ref.messageID, item.ref.partID)
+          if (part?.type !== "tool") return []
+          return [
+            getToolInfo(
+              part.tool,
+              part.state.input ?? {},
+              "metadata" in part.state ? part.state.metadata : undefined,
+            ).title,
+          ]
+        })
+        .filter((name, index, names) => names.indexOf(name) === index)
+
+      return names.length > 0 ? names.join(" · ") : language.t("ui.sessionTurn.status.thinking")
+    })
+    createEffect(() => {
+      open()
+      onSizeChange?.()
+    })
+
+    return (
+      <Collapsible
+        open={open()}
+        onOpenChange={(value) => setStepGroupsOpen(group.key, value)}
+        variant="ghost"
+        data-slot="session-turn-step-group"
+      >
+        <Collapsible.Trigger>
+          <div data-slot="session-turn-step-group-trigger">
+            <span data-slot="session-turn-step-group-title">{title()}</span>
+            <span data-slot="session-turn-step-group-count">{group.groups.length}</span>
+            <Collapsible.Arrow />
+          </div>
+        </Collapsible.Trigger>
+        <Show when={open()}>
+          <Collapsible.Content>
+            <div data-slot="session-turn-step-group-content" class="flex flex-col gap-3">
+              <For each={group.groups}>
+                {(item) =>
+                  renderAssistantPartGroup(
+                    () => ({
+                      userMessageID: userMessageID(),
+                      group: item,
+                      previousAssistantPart: false,
+                    }),
+                    onSizeChange,
+                  )
+                }
+              </For>
+            </div>
+          </Collapsible.Content>
+        </Show>
+      </Collapsible>
+    )
+  }
+
   const renderAssistantSteps = (row: Accessor<TimelineRowMap["AssistantSteps"]>, onSizeChange?: () => void) => {
     const userMessageID = () => row().userMessageID
     const open = createMemo(() => stepsOpen[userMessageID()] ?? workingTurn(userMessageID()))
     const duration = createMemo(() => turnDurationLabel(userMessageID()))
+    const groups = createMemo(() => assistantStepGroups(row().groups))
     createEffect(() => {
       open()
       onSizeChange?.()
@@ -1246,17 +1351,8 @@ export function MessageTimeline(props: {
         <Show when={open()}>
           <Collapsible.Content>
             <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
-              <For each={row().groups}>
-                {(group) =>
-                  renderAssistantPartGroup(
-                    () => ({
-                      userMessageID: userMessageID(),
-                      group,
-                      previousAssistantPart: false,
-                    }),
-                    onSizeChange,
-                  )
-                }
+              <For each={groups()}>
+                {(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}
               </For>
             </div>
           </Collapsible.Content>

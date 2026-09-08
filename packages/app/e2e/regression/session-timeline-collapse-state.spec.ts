@@ -136,7 +136,7 @@ test.describe("regression: session timeline local row state", () => {
     })
   })
 
-  test("collapses completed assistant steps without leaving a virtual height gap", async ({ page }) => {
+  test("supports two-level assistant step collapse without leaving a virtual height gap", async ({ page }) => {
     const events: EventPayload[] = []
     await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, streamedTextPart] }])
     await configurePage(page)
@@ -148,6 +148,13 @@ test.describe("regression: session timeline local row state", () => {
     await expectAppVisible(steps)
     await expect(steps.locator('[data-slot="collapsible-trigger"]')).toHaveAttribute("aria-expanded", "false")
     await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
+
+    await steps.locator('[data-slot="collapsible-trigger"]').first().click()
+    const activity = steps.locator('[data-slot="session-turn-step-group"]').first()
+    await expect(activity.locator('[data-slot="collapsible-trigger"]')).toHaveAttribute("aria-expanded", "true")
+    await activity.locator('[data-slot="collapsible-trigger"]').click()
+    await expect(activity.locator('[data-slot="collapsible-trigger"]')).toHaveAttribute("aria-expanded", "false")
+    await expect(activity.locator('[data-slot="session-turn-step-group-content"]')).toHaveCount(0)
 
     await expect
       .poll(async () =>

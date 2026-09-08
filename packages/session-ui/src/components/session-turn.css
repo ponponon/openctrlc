@@ -122,6 +122,47 @@
     [data-slot="session-turn-steps-content"] {
       padding-top: 4px;
     }
+
+    [data-slot="session-turn-step-group"] {
+      width: 100%;
+      min-width: 0;
+
+      [data-slot="session-turn-step-group-trigger"] {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 28px;
+        padding: 0 4px;
+        color: var(--text-weak);
+        cursor: pointer;
+
+        &:hover {
+          color: var(--text-base);
+        }
+
+        [data-slot="collapsible-arrow"] {
+          opacity: 1;
+        }
+      }
+
+      [data-slot="session-turn-step-group-title"] {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--text-weak);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      [data-slot="session-turn-step-group-count"] {
+        flex: none;
+        color: var(--text-weaker);
+        font-variant-numeric: tabular-nums;
+      }
+
+      [data-slot="session-turn-step-group-content"] {
+        padding-left: 12px;
+      }
+    }
   }
 
   [data-slot="session-turn-diffs"] {

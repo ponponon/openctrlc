@@ -30,6 +30,8 @@
 - 保留原有 `system` 字段作为用户输入的系统提示覆盖，避免下一轮请求重复拼接已组装的完整提示词。
 - 上下文面板优先展示 `systemPrompt`，旧会话缺少该字段时回退展示原有 `system` 内容。
 - 系统提示词仍参与上下文细分的 System 统计，保证可读内容与 token 估算使用同一份数据。
+- 长系统提示词默认只显示固定高度预览并提供渐变截断提示，用户点击“展开”后在面板内部滚动查看完整内容，也可以再次收起。
+- 系统提示词标题栏提供复制原始有效提示词的操作，复制失败使用 Toast 反馈；复制内容不受当前预览折叠状态影响。
 
 ### 代码位置
 
@@ -41,7 +43,8 @@
 
 - 运行上下文细分和上下文指标单元测试。
 - 运行 System Prompt 选择逻辑单元测试，确认新字段优先、旧字段回退。
-- 在新会话发送一条消息，打开「上下文」，确认可看到完整 System Prompt；旧会话仍可正常打开。
+- 在新会话发送一条消息，打开「上下文」，确认长 System Prompt 默认只显示预览，点击“展开”后可查看完整内容；旧会话仍可正常打开。
+- 点击复制按钮后，将完整有效 System Prompt 粘贴到文本编辑器，确认复制的是原始文本而非截断预览。
 - 执行 `bun run typecheck`，确认 Server API 和 App 使用的生成类型同步。
 
 ## Skill 加载透明度面板
@@ -382,12 +385,14 @@ bun run desktop:mac
 
 ### 功能目标
 
-让会话完成后默认收起最终回复之前的推理、工具调用和上下文探索过程，保留类似 Codex 的紧凑时间线；运行中的回合保持展开，用户也可以手动重新展开查看完整过程。
+让会话完成后默认收起最终回复之前的推理、工具调用和上下文探索过程，保留类似 Codex 的两级紧凑时间线；运行中的回合保持展开，用户也可以手动重新展开查看完整过程。
 
 ### 实现范围
 
 - 时间线数据层将最终文本回复之前的可见 assistant parts 聚合为 `AssistantSteps` 行，最终回复继续作为独立行渲染，避免收起时隐藏用户真正要看的答案。
+- `AssistantSteps` 展开后，连续的普通工具/思考步骤会再聚合成活动明细组；上下文探索继续复用已有的上下文组，用户可以独立收起第二级明细。
 - 折叠状态按 session 缓存在时间线缓存中；回合从运行态切换到完成态时自动收起，并在虚拟列表中触发尺寸重测，避免留下空白或遮挡后续内容。
+- 第一级回合折叠和第二级活动组折叠分别保存；完成回合默认只显示第一级摘要，用户重新展开回合时第二级默认可见，手动收起的活动组保持原状态。
 - 中断、错误和没有最终文本的回合保留原有逐段渲染路径，工具子折叠状态和搜索高亮逻辑继续复用现有实现。
 - 折叠触发器复用现有 UI `Collapsible`、步骤多语言文案和回合时长格式，不新增硬编码界面文案。
 
@@ -397,6 +402,7 @@ bun run desktop:mac
 - `packages/app/src/pages/session/timeline/message-timeline.tsx`：折叠状态、触发器、自动收起和虚拟列表测量。
 - `packages/session-ui/src/components/session-turn.css`：步骤触发器和内容区样式。
 - `packages/app/src/pages/session/timeline/rows-current.test.ts`：中间步骤与最终回复分行的回归测试。
+- `packages/app/e2e/regression/session-timeline-collapse-state.spec.ts`：两级折叠、默认状态和虚拟列表间距回归测试。
 
 ### 验证方式
 
@@ -490,3 +496,73 @@ bun run desktop:mac
 - 在 `packages/core`、`packages/app` 分别执行 `bun typecheck`。
 - 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts src/utils/skill-groups.test.ts`。
 - 使用 `bun run dev:desktop` 打开 Skills 面板，确认看到服务协议、`.agents/skills` 来源和 `kimi-webbridge`。
+
+## Skills 侧栏入口默认聚焦
+
+### 功能目标
+
+从右上角打开会话侧栏时，如果 Skills Tab 已经打开，直接展示 Skills 内容，避免用户先打开侧栏、再额外点击一次 Skills Tab。
+
+### 实现范围
+
+- 右上角侧栏按钮打开面板时优先激活已存在的 Skills Tab。
+- 未打开 Skills Tab 时保留原有 Review/当前文件 Tab 行为。
+- 关闭侧栏仍只关闭面板，再次打开时继续遵循上述默认聚焦规则。
+
+### 代码位置
+
+- `packages/app/src/pages/session/helpers.ts`：侧栏打开时的 Tab 优先级。
+- `packages/app/src/components/session/session-header.tsx`：右上角侧栏按钮行为。
+- `packages/app/src/pages/session/helpers.test.ts`：Skills 已打开和未打开两种回归场景。
+
+## Skills 页面间距重梳理
+
+### 功能目标
+
+统一设置页和会话侧栏 Skills 面板的垂直节奏，避免运行时信息、分区标题、列表和空状态在视觉上黏连，提升长列表和窄侧栏下的可读性。
+
+### 实现范围
+
+- 会话 Skills 滚动区域使用明确的容器间距和分区间距，不再只依赖相邻分区选择器。
+- 运行时信息卡、Skill 列表和加载/空状态统一使用卡片边界、内边距和层级背景。
+- 分组头、分组内 Skill 行和详情区域补齐上下留白，并为窄侧栏增加响应式内边距。
+- 服务版本 Tag 使用独立 value 包裹层，避免 flex 通用规则拉伸 Tag。
+
+### 代码位置
+
+- `packages/app/src/components/session/session-skills-tab.css`：会话侧栏 Skills 布局和间距。
+- `packages/app/src/components/settings-v2/settings-v2.css`：设置页 Skills 布局和间距。
+- `packages/app/src/components/skill-runtime-info.tsx`、`skill-runtime-info.css`：运行时信息卡结构和间距。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun typecheck`。
+- 在 `packages/app` 执行 Skills 相关单元测试。
+- 执行 `bun run build`，确认设置页和会话侧栏样式正常编译。
+- 在设置页和会话侧栏分别检查运行时信息、分区、展开组、空状态和窄窗口布局。
+
+## Skill 列表刷新与 Kimi WebBridge 可见性
+
+### 功能目标
+
+修复 Skill 文件在服务启动后新增或更新时，Skills 面板仍显示旧缓存、导致 `kimi-webbridge` 不可见的问题。每次请求 Skill 列表时刷新目录发现缓存，保证 V1/V2 接口和面板看到同一份最新结果。
+
+### 实现范围
+
+- V2 Skill 服务提供轻量 `refresh` 操作，只清理已注册目录的内容缓存，不改变来源注册和 Skill 分组规则。
+- V2 `/api/skill` 列表接口请求前刷新缓存，V1 `/skill` 兼容接口同时使当前实例的发现结果失效并重新扫描。
+- 保留现有 `~/.agents/skills`、`~/.claude/skills`、项目目录和配置目录的发现范围；刷新后由前端继续按来源组展示具体 Skill。
+- 增加新增目录 Skill 的回归测试，覆盖 `kimi-webbridge` 这类服务启动后出现的 Skill。
+
+### 代码位置
+
+- `packages/core/src/skill.ts`：V2 Skill 内容缓存刷新。
+- `packages/server/src/handlers/skill.ts`：V2 列表接口刷新后读取。
+- `packages/opencode/src/skill/index.ts`、`server/routes/instance/httpapi/handlers/instance.ts`：V1 实例发现缓存刷新和兼容接口接入。
+- `packages/core/test/skill.test.ts`：新增 Skill 后刷新列表的回归测试。
+
+### 验证方式
+
+- 在 `packages/core` 执行 `bun test test/skill.test.ts` 和 `bun typecheck`。
+- 在 `packages/server`、`packages/opencode`、`packages/app` 分别执行 `bun typecheck`。
+- 启动本地服务后分别请求 `/api/skill`、`/skill`，确认返回列表包含 `kimi-webbridge` 及其 `/Users/ponponon/.agents/skills/kimi-webbridge/SKILL.md` 路径。
