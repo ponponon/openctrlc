@@ -592,3 +592,23 @@ bun run desktop:mac
 - 执行 `bun run script/raw-changelog.ts --help`，确认支持 `--version` 参数。
 - 使用已发布版本检查 Release 页面包含 Features、Performance and Reliability、Bug Fixes、Downloads 和 Full Changelog。
 - 检查 Downloads 链接只指向实际上传的 GitHub Release 资产。
+
+## OpenCtrlC Release 资产同步到 Cloudflare R2
+
+### 功能目标
+
+按照 AIVPlayer 的发布资产管理方式，将 GitHub Release 中的 OpenCtrlC 桌面安装包同步到 Cloudflare R2，并通过 `openctrlc-releases.quniv.cn` 提供稳定的公开下载地址。
+
+### 实现范围
+
+- 新增 `script/publish-release-downloads.mjs`，读取已发布 Release 的安装包资产，计算 SHA-256 后上传到 `openctrlc-releases` 存储桶。
+- R2 对象路径统一为 `openctrlc/releases/{version}/{asset}`，并在 `openctrlc/releases/download-manifest.json` 保存最近若干版本的资产清单。
+- 新增 `.github/workflows/sync-downloads.yml`，支持在 GitHub Actions 中按 Release tag 手动同步和恢复下载资产。
+- 通过 `CLOUDFLARE_API_TOKEN` Secret 与 `CLOUDFLARE_ACCOUNT_ID` Repository Variable 连接 R2；当前官网接口保留 GitHub Release 作为下载来源，待 Secret 配置和首次同步完成后再切换公开下载入口。
+- 单文件超过 Cloudflare R2 REST API 300 MB 限制时，在清单中保留 GitHub 资产地址作为兜底，不会伪造不完整的 R2 文件。
+
+### 验证方式
+
+- 执行 `node --check script/publish-release-downloads.mjs`。
+- 在 GitHub Actions 的 `Sync OpenCtrlC Downloads` 中传入已经发布的 tag，确认 R2 出现版本目录和 `download-manifest.json`。
+- 访问 `https://openctrlc-releases.quniv.cn/openctrlc/releases/download-manifest.json`，确认返回 JSON 清单；访问具体资产 URL，确认文件下载和 SHA-256 一致。

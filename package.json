@@ -16,6 +16,7 @@
     "lint": "oxlint",
     "typecheck": "bun turbo typecheck",
     "verify:runtime": "bun script/verify-openctrlc-runtime.ts",
+    "release:publish-downloads": "node script/publish-release-downloads.mjs",
     "upgrade-opentui": "bun run script/upgrade-opentui.ts",
     "postinstall": "bun run --cwd packages/core fix-node-pty",
     "prepare": "husky",
