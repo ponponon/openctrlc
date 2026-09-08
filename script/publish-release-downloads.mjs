@@ -22,6 +22,7 @@ function trimTrailingSlash(value) {
 
 function normalizeVersion(tag) {
   const version = String(tag ?? "").replace(/^v/, "")
+  if (version === "beta") return version
   if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) {
     throw new Error(`Invalid release tag: ${tag}`)
   }
