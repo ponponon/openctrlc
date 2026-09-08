@@ -622,7 +622,7 @@ bun run desktop:mac
 
 ### 实现范围
 
-- 复用 `packages/web` 现有 Astro 文档站作为 Pages 发布内容。
+- 复用 `packages/web` 现有 Astro 文档站作为 Pages 发布内容，并在构建完成时把文档首页复制为根路径入口。
 - 将生产站点的 canonical URL、站点标题和 GitHub 链接切换到 OpenCtrlC 与 `openctrlc.pages.dev`。
 - 安装脚本链接改为 GitHub 仓库 `dev` 分支中的可验证原始脚本地址，避免 Pages 暂未提供 `/install` 路由时产生失效命令。
 - Pages 项目名称固定为 `openctrlc`，后续可继续绑定自有域名而不改变构建产物。

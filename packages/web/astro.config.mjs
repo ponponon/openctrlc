@@ -7,6 +7,7 @@ import theme from "toolbeam-docs-theme"
 import config from "./config.mjs"
 import { rehypeHeadingIds } from "@astrojs/markdown-remark"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
+import { copyFile } from "node:fs/promises"
 import { spawnSync } from "child_process"
 
 // https://astro.build/config
@@ -318,6 +319,7 @@ function configSchema() {
       "astro:build:done": async () => {
         console.log("generating config schema")
         spawnSync("../opencode/script/schema.ts", ["./dist/config.json", "./dist/tui.json"])
+        await copyFile("./dist/docs/index.html", "./dist/index.html")
       },
     },
   }
