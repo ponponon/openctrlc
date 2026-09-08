@@ -111,8 +111,23 @@
     transform 150ms ease;
 }
 
+.session-timeline-navigator__edge-button--start::before,
+.session-timeline-navigator__edge-button--end::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  width: 16px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
 .session-timeline-navigator__edge-button--start {
   top: -64px;
+}
+
+.session-timeline-navigator__edge-button--start::before {
+  top: 4px;
 }
 
 .session-timeline-navigator__edge-button--previous {
@@ -125,6 +140,10 @@
 
 .session-timeline-navigator__edge-button--end {
   bottom: -64px;
+}
+
+.session-timeline-navigator__edge-button--end::before {
+  bottom: 4px;
 }
 
 .session-timeline-navigator__edge-button:not(:disabled):hover {
@@ -141,7 +160,7 @@
   opacity: 0.35;
 }
 
-.session-timeline-navigator__edge-button--previous [data-slot="icon-svg"] {
+.session-timeline-navigator__direction-icon--down {
   transform: rotate(180deg);
 }
 

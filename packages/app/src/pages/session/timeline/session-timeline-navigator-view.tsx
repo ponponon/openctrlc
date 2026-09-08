@@ -109,7 +109,7 @@ export function SessionTimelineNavigator(props: {
           title={language.t("command.message.previous")}
           onClick={() => navigateToAdjacent(-1)}
         >
-          <Icon name="chevron-down" size="small" />
+          <Icon name="arrow-up" size="small" />
         </button>
         <For each={props.entries()}>
           {(entry) => {
@@ -169,7 +169,7 @@ export function SessionTimelineNavigator(props: {
           title={language.t("command.message.next")}
           onClick={() => navigateToAdjacent(1)}
         >
-          <Icon name="chevron-down" size="small" />
+          <Icon name="arrow-up" size="small" class="session-timeline-navigator__direction-icon--down" />
         </button>
         <button
           type="button"
@@ -179,7 +179,7 @@ export function SessionTimelineNavigator(props: {
           title={language.t("session.messages.jumpToLatest")}
           onClick={() => navigateToBoundary("end")}
         >
-          <Icon name="arrow-down-to-line" size="small" />
+          <Icon name="arrow-up" size="small" class="session-timeline-navigator__direction-icon--down" />
         </button>
       </nav>
     </Show>
