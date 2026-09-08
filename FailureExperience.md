@@ -154,3 +154,6 @@ Electron Vite 开发模式还可能出现 Renderer 已热更新而已有窗口�
 ## Skill 列表不能依赖服务启动时的目录缓存
 
 用户反馈 `kimi-webbridge` 文件明明存在，但 Skills 面板仍看不到。排查时必须同时对照磁盘文件、V1 `/skill`、V2 `/api/skill` 和前端分组结果；不能只看到来源组数量就断定具体 Skill 已经可见。Skill 服务为了避免重复读文件会缓存目录发现结果，如果服务启动后新增 Skill 而列表接口不刷新，V1/V2 都可能继续返回旧列表。以后列表接口应在请求边界刷新内容缓存或使用可验证的文件变更指纹，并用“新增 Skill 后再次请求列表”的回归测试覆盖；UI 还要保留真实文件路径，方便确认是扫描、解析、合并还是折叠展示的问题。
+## GitHub Actions Secret 与 Variable 必须和 Workflow 引用保持一致
+
+GitHub Actions 的 `secrets.NAME` 和 `vars.NAME` 是两套独立配置。以后配置外部服务凭证时，必须先确认用户实际添加在 Repository secrets、Repository variables 还是 Organization 级别，再让 Workflow 使用对应的上下文；不能因为账号 ID 不敏感就默认它一定会被配置为 Variable。若用户已经添加为 Secret，应直接使用 `secrets.NAME`，避免要求用户重复进入 GUI 配置。
