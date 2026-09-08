@@ -613,3 +613,30 @@ bun run desktop:mac
 - 在 GitHub Actions 的 `Sync OpenCtrlC Downloads` 中传入已经发布的 tag，确认 R2 出现版本目录和 `download-manifest.json`。
 - 访问 `https://openctrlc-releases.quniv.cn/openctrlc/releases/download-manifest.json`，确认返回 JSON 清单；访问具体资产 URL，确认文件下载和 SHA-256 一致。
 - 已验证 `v0.1.3` 清单返回 HTTP 200，`openctrlc-mac-arm64.dmg` 与 `openctrlc-windows-x64.zip` 返回 HTTP 200，且响应大小与清单一致。
+
+## Cloudflare Pages 官网临时地址
+
+### 功能目标
+
+在购买独立根域名之前，先使用 Cloudflare Pages 提供的 `openctrlc.pages.dev` 发布 OpenCtrlC 官网和文档，降低早期运营成本。
+
+### 实现范围
+
+- 复用 `packages/web` 现有 Astro 文档站作为 Pages 发布内容。
+- 将生产站点的 canonical URL、站点标题和 GitHub 链接切换到 OpenCtrlC 与 `openctrlc.pages.dev`。
+- 安装脚本链接改为 GitHub 仓库 `dev` 分支中的可验证原始脚本地址，避免 Pages 暂未提供 `/install` 路由时产生失效命令。
+- Pages 项目名称固定为 `openctrlc`，后续可继续绑定自有域名而不改变构建产物。
+
+### 代码位置
+
+- `packages/web/config.mjs`：生产站点地址、GitHub 地址和社区入口。
+- `packages/web/astro.config.mjs`：文档站标题。
+- `packages/web/src/components/Lander.astro`：官网安装命令和页脚品牌。
+- `packages/web/src/components/Footer.astro`：文档页脚品牌。
+- `packages/web/src/content/docs/index.mdx`：文档首页安装和配置说明。
+
+### 验证方式
+
+- 在 `packages/web` 目录执行 `bun run build`，确认 Astro/Cloudflare Pages 产物生成。
+- 检查构建产物中的 canonical URL 和站点标题均指向 `openctrlc.pages.dev` / `OpenCtrlC`。
+- 发布后访问 `https://openctrlc.pages.dev/` 和 `https://openctrlc.pages.dev/docs/`，确认首页和文档页均返回 HTTP 200。
