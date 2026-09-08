@@ -122,4 +122,32 @@ describe("SkillV2", () => {
       ),
     ),
   )
+
+  it.live("refreshes directory sources when a new skill is added", () =>
+    Effect.acquireRelease(
+      Effect.promise(() => tmpdir()),
+      (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
+    ).pipe(
+      Effect.flatMap((tmp) =>
+        Effect.gen(function* () {
+          const directory = path.join(tmp.path, "skills")
+          yield* Effect.promise(() => fs.mkdir(directory, { recursive: true }))
+          yield* Effect.promise(() => fs.mkdir(path.join(directory, "existing"), { recursive: true }))
+          yield* Effect.promise(() => write(directory, "existing", "Existing"))
+
+          const skill = yield* SkillV2.Service
+          yield* skill.transform((editor) => editor.source({ type: "directory", path: AbsolutePath.make(directory) }))
+          expect((yield* skill.list()).map((item) => item.name)).toEqual(["existing"])
+
+          yield* Effect.promise(async () => {
+            await fs.mkdir(path.join(directory, "kimi-webbridge"), { recursive: true })
+            await write(directory, "kimi-webbridge", "Kimi Browser Extension")
+          })
+          yield* skill.refresh()
+
+          expect((yield* skill.list()).map((item) => item.name)).toEqual(["existing", "kimi-webbridge"])
+        }),
+      ),
+    ),
+  )
 })

@@ -49,6 +49,7 @@ export type Draft = {
 export interface Interface extends State.Transformable<Draft> {
   readonly sources: () => Effect.Effect<Source[]>
   readonly list: () => Effect.Effect<Info[]>
+  readonly refresh: () => Effect.Effect<void>
 }
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/v2/Skill") {}
@@ -107,6 +108,9 @@ const layer = Layer.effect(
     // QUESTION(Dax): Should local skill sources invalidate on filesystem watch
     // events, following the reload policy chosen for other context sources?
     const cache = new Map<string, Info[]>()
+    const refresh = Effect.fn("SkillV2.refresh")(function* () {
+      yield* Effect.sync(() => cache.clear())
+    })
     const list = Effect.fn("SkillV2.list")(function* () {
       const skills = new Map<string, Info>()
       for (const source of state.get().sources) {
@@ -124,6 +128,7 @@ const layer = Layer.effect(
       sources: Effect.fn("SkillV2.sources")(function* () {
         return state.get().sources
       }),
+      refresh,
       list,
     })
   }),
