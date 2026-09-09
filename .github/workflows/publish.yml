@@ -222,6 +222,9 @@ jobs:
           ref: ${{ github.sha }}
 
       - uses: ./.github/actions/setup-bun
+        with:
+          # Windows Bun patch installs can leave an ENOTEMPTY cache entry behind.
+          install-flags: --force --no-cache
 
       - name: Build and package Windows Desktop
         env:
