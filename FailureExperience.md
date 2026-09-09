@@ -192,3 +192,5 @@ Electron Builder 在 Linux 上会把同一 x64 架构分别写成 `amd64`（DEB�
 ## Desktop 跨架构包必须由 CI 实际构建
 
 用户要求 Windows 和 Linux Desktop 同时提供 x64 与 ARM64，不能只在 Release 正文或官网里补充 ARM64 链接。以后必须让 GitHub Actions 为 Windows/Linux 分别执行 x64、ARM64 矩阵任务，传入对应的 electron-builder 架构参数，并对每个任务生成的安装包做存在性校验；Linux 还要把 electron-builder 的 `amd64`、`x86_64`、`aarch64` 等内部命名归一化为官网和 Release 使用的 `x64`/`arm64`。工作流、下载路由、R2 清单和发布说明必须共享同一套公开文件名，避免出现“页面有链接但资产不存在”的假发布。
+
+这次重跑还暴露出文件名归一化必须幂等：Linux ARM64 的 DEB 已经可能直接生成公开目标名，脚本不能对同一路径再次 `mv`。以后做多发行版资产归一化时，先比较源路径和目标路径，只有不同才移动，并为“已是目标名”和“需要改名”两种情况保留校验。

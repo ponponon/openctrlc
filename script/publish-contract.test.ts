@@ -92,9 +92,12 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   expect(windowsSource).toContain("--${{ matrix.arch }}")
   expect(windowsSource).toContain("openctrlc-win-${{ matrix.arch }}.exe")
 
-  const linuxSource = JSON.stringify(workflow.jobs?.["build-desktop-linux"]?.steps ?? [])
+  const linuxSource = (workflow.jobs?.["build-desktop-linux"]?.steps ?? [])
+    .map((step) => (typeof step.run === "string" ? step.run : ""))
+    .join("\n")
   expect(linuxSource).toContain("--${{ matrix.arch }}")
   expect(linuxSource).toContain("openctrlc-linux-${{ matrix.arch }}")
+  expect(linuxSource).toContain('[ "$source" != "$target" ]')
 })
 
 test("stable versioning reuses an existing GitHub release", async () => {

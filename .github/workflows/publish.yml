@@ -290,7 +290,10 @@ jobs:
               echo "Missing Linux ${extension} artifact for ${{ matrix.arch }}" >&2
               exit 1
             fi
-            mv "$source" "packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.${extension}"
+            target="packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.${extension}"
+            if [ "$source" != "$target" ]; then
+              mv "$source" "$target"
+            fi
           done
 
       - name: Upload Linux Desktop assets
