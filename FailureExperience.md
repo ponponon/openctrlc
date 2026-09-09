@@ -180,3 +180,7 @@ GitHub Actions 的 `secrets.NAME` 和 `vars.NAME` 是两套独立配置。以后
 ## Linux 桌面资产名必须与官网下载路由统一
 
 Electron Builder 在 Linux 上会把同一 x64 架构分别写成 `amd64`（DEB）和 `x86_64`（AppImage/RPM），而官网路由和 Release 文档使用统一的 `x64` 名称。以后发布 Linux Desktop 时，打包后必须显式归一化这三个公开文件名，再上传到 Release；验收要同时对照实际 Release 资产、Release 正文链接和官网下载接口，不能只看构建 job 成功。
+
+## GitHub Release 正文不能直接暴露内部提交日志
+
+用户反馈正式 Release 中逐条列出 commit ID、提交作者和按内部模块拆分的长列表，阅读体验明显偏离面向用户的版本说明。以后 Release 正文应参考 AIVPlayer 的格式，只保留面向用户的 `Features`、`Performance and Reliability`、`Bug Fixes`、`Downloads` 和 `Full Changelog`；提交 ID 和内部作者信息不进入正文。`Contributors` 仅在存在第三方贡献者时展示，仓库所有者自己的提交不列出。自动生成器也必须遵守同一规则，避免下一次发布恢复成开发日志格式。

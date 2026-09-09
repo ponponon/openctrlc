@@ -9,10 +9,7 @@ type Release = {
 }
 
 type Commit = {
-  hash: string
-  author: string | null
   message: string
-  areas: Set<string>
 }
 
 type User = Map<string, Set<string>>
@@ -23,26 +20,16 @@ type Diff = {
 }
 
 const repo = process.env.GH_REPO ?? "ponponon/openctrlc"
+const owner = repo.split("/")[0] ?? ""
 const bot = ["actions-user", "github-actions[bot]", "opencode", "opencode-agent[bot]"]
 const team = [
+  owner,
   ...(await Bun.file(new URL("../.github/TEAM_MEMBERS", import.meta.url))
     .text()
     .then((x) => x.split(/\r?\n/).map((x) => x.trim()))
     .then((x) => x.filter((x) => x && !x.startsWith("#")))),
   ...bot,
 ]
-const order = ["Core", "TUI", "Desktop", "SDK", "Extensions"] as const
-const sections = {
-  core: "Core",
-  tui: "TUI",
-  app: "Desktop",
-  tauri: "Desktop",
-  sdk: "SDK",
-  plugin: "SDK",
-  "extensions/vscode": "Extensions",
-  github: "Extensions",
-} as const
-
 function ref(input: string) {
   if (input === "HEAD") return input
   if (input.startsWith("v")) return input
@@ -73,17 +60,14 @@ async function diff(base: string, head: string) {
   return list
 }
 
-function section(areas: Set<string>) {
-  const priority = ["core", "tui", "app", "tauri", "sdk", "plugin", "extensions/vscode", "github"]
-  for (const area of priority) {
-    if (areas.has(area)) return sections[area as keyof typeof sections]
-  }
-  return "Core"
-}
-
 function type(message: string) {
   if (message.match(/fix/i)) return "Bug Fixes"
   return "Features"
+}
+
+function message(message: string) {
+  const match = message.match(/^(?:feat|fix|perf|refactor|docs|style|build|chore|test|ci|release)(?:\([^)]*\))?\s*!?\s*:\s*(.+)$/i)
+  return match?.[1]?.trim() ?? message
 }
 
 function reverted(commits: Commit[]) {
@@ -114,9 +98,9 @@ async function commits(from: string, to: string) {
   const base = ref(from)
   const head = ref(to)
 
-  const data = new Map<string, { login: string | null; message: string }>()
+  const data = new Map<string, { message: string }>()
   for (const item of await diff(base, head)) {
-    data.set(item.sha, { login: item.login, message: item.message.split("\n")[0] ?? "" })
+    data.set(item.sha, { message: item.message.split("\n")[0] ?? "" })
   }
 
   const log =
@@ -126,7 +110,7 @@ async function commits(from: string, to: string) {
   for (const hash of log.split("\n").filter(Boolean)) {
     const item = data.get(hash)
     if (!item) continue
-    if (item.message.match(/^(ignore:|test:|chore:|ci:|release:)/i)) continue
+    if (item.message.match(/^(?:ignore|test|chore|ci|release|style|build)(?:\([^)]*\))?\s*!?\s*:/i)) continue
 
     const diff = await $`git diff-tree --no-commit-id --name-only -r ${hash}`.text()
     const areas = new Set<string>()
@@ -143,10 +127,7 @@ async function commits(from: string, to: string) {
     if (areas.size === 0) continue
 
     list.push({
-      hash: hash.slice(0, 7),
-      author: item.login,
       message: item.message,
-      areas,
     })
   }
 
@@ -196,20 +177,13 @@ async function thanks(from: string, to: string, reuse: boolean) {
 }
 
 function format(from: string, to: string, version: string | undefined, list: Commit[], thanks: string[]) {
-  const grouped = new Map<string, Map<string, string[]>>()
-  for (const title of order) {
-    grouped.set(
-      title,
-      new Map([
-        ["Features", []],
-        ["Bug Fixes", []],
-      ]),
-    )
-  }
+  const grouped = new Map<"Features" | "Bug Fixes", string[]>([
+    ["Features", []],
+    ["Bug Fixes", []],
+  ])
 
   for (const commit of list) {
-    const attr = commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
-    grouped.get(section(commit.areas))!.get(type(commit.message))!.push(`- \`${commit.hash}\` ${commit.message}${attr}`)
+    grouped.get(type(commit.message))!.push(`- ${message(commit.message)}`)
   }
 
   const lines: string[] = []
@@ -244,16 +218,10 @@ function format(from: string, to: string, version: string | undefined, list: Com
   return lines.join("\n")
 
   function append(title: "Features" | "Bug Fixes") {
-    const entriesByArea = order.flatMap((area) => {
-      const entries = grouped.get(area)?.get(title) ?? []
-      return entries.length === 0 ? [] : [[area, entries] as const]
-    })
-    if (entriesByArea.length === 0) return
+    const entries = grouped.get(title) ?? []
+    if (entries.length === 0) return
 
-    lines.push(`## ${title}`, "")
-    for (const [area, entries] of entriesByArea) {
-      lines.push(`### ${area}`, "", ...entries, "")
-    }
+    lines.push(`## ${title}`, "", ...entries, "")
   }
 }
 

@@ -710,3 +710,26 @@ bun run desktop:mac
 - 在 `packages/desktop` 执行 `bun run check:icons`，确认 dev、beta、prod 三套图标均通过。
 - 使用 `--channel prod --resources` 检查生产构建实际复制到 `resources/icons` 的图标。
 - GitHub Actions 成功后检查 Release 至少包含 `openctrlc-win-x64.exe`、`openctrlc-linux-x64.deb`、`openctrlc-linux-x64.AppImage` 和 `openctrlc-linux-x64.rpm`，以及现有 macOS 资产。
+
+## 面向用户的 GitHub Release 说明
+
+### 功能目标
+
+让正式版本说明保持简洁、可读，并与 AIVPlayer 的发布格式一致，避免把内部提交日志直接展示给用户。
+
+### 实现范围
+
+- 自动生成的正文按 `Features`、`Bug Fixes`、`Downloads` 和 `Full Changelog` 组织，去掉 conventional commit 前缀和测试、构建噪音，不展示 commit ID、内部模块分组或提交作者标记。
+- 仓库所有者自动视为内部贡献者；只有存在第三方贡献者时才生成 `Contributors` 区块。
+- CLI 和 Desktop 资产仍按真实平台、架构和文件格式列出，不因精简正文而隐藏可下载内容。
+
+### 代码位置
+
+- `script/raw-changelog.ts`：生成简洁的 Release 正文和第三方贡献者感谢。
+- `script/version.ts`：优先读取指定版本的手工 Release 正文。
+- `docs/releases/v0.2.0.md`：保存 `v0.2.0` 的面向用户发布说明。
+
+### 验证方式
+
+- 生成版本说明后检查正文不含 commit ID 和仓库所有者 Contributors。
+- 对照 GitHub Release 资产，确认 Downloads 中的链接和文件名完全一致。

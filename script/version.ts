@@ -12,7 +12,12 @@ if (!Script.preview) {
   const existing = await $`gh release view ${tag} --json tagName,databaseId --repo ${repo}`.nothrow()
   if (existing.exitCode !== 0) {
     const file = `${process.cwd()}/UPCOMING_CHANGELOG.md`
-    if (process.env.OPENCTRLC_CHANGELOG_MODE === "raw") {
+    const manualNotes = await Bun.file(`${process.cwd()}/docs/releases/v${Script.version}.md`)
+      .text()
+      .catch(() => "")
+    if (manualNotes.trim()) {
+      await Bun.write(file, manualNotes)
+    } else if (process.env.OPENCTRLC_CHANGELOG_MODE === "raw") {
       const notes = await $`bun script/raw-changelog.ts --to ${sha} --version ${Script.version}`
         .cwd(process.cwd())
         .text()
