@@ -176,3 +176,7 @@ GitHub Actions 的 `secrets.NAME` 和 `vars.NAME` 是两套独立配置。以后
 ## 应用图标必须按容器和显示场景分别验收
 
 应用图标不是一个 PNG 文件就算完成：macOS `.icns` 需要覆盖系统使用的多级 Retina 图层，Windows `.ico` 需要包含 16/24/32/48/64/256px 层，Linux 需要保留可被桌面环境读取的透明 PNG；macOS Dock 使用的 inset 图标还不能直接拿满画布图标替代。以后要同时检查实际像素尺寸、四角透明圆角、边缘是否被错误裁切，以及 Dock PNG 与 ICNS 对应图层是否一致；发布前应执行自动门禁，避免在安装包中出现方角、过度留白或图标被放大的问题。
+
+## Linux 桌面资产名必须与官网下载路由统一
+
+Electron Builder 在 Linux 上会把同一 x64 架构分别写成 `amd64`（DEB）和 `x86_64`（AppImage/RPM），而官网路由和 Release 文档使用统一的 `x64` 名称。以后发布 Linux Desktop 时，打包后必须显式归一化这三个公开文件名，再上传到 Release；验收要同时对照实际 Release 资产、Release 正文链接和官网下载接口，不能只看构建 job 成功。

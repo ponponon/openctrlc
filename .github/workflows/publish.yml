@@ -268,6 +268,11 @@ jobs:
           bun run --cwd packages/desktop build
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:linux -- --publish never
+          # electron-builder emits distro-specific architecture spellings on Linux;
+          # normalize the public asset names used by the download routes and notes.
+          mv packages/desktop/dist/openctrlc-linux-amd64.deb packages/desktop/dist/openctrlc-linux-x64.deb
+          mv packages/desktop/dist/openctrlc-linux-x86_64.AppImage packages/desktop/dist/openctrlc-linux-x64.AppImage
+          mv packages/desktop/dist/openctrlc-linux-x86_64.rpm packages/desktop/dist/openctrlc-linux-x64.rpm
 
       - name: Upload Linux Desktop assets
         env:
