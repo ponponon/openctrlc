@@ -689,14 +689,14 @@ bun run desktop:mac
 
 ### 功能目标
 
-让正式版 GitHub Release 同时提供 macOS Apple Silicon、Windows x64 和 Linux x64 桌面安装包，并在发布前阻止图标尺寸、透明圆角或 macOS Dock inset 配置回归。
+让正式版 GitHub Release 同时提供 macOS Apple Silicon、Windows x64/ARM64 和 Linux x64/ARM64 桌面安装包，并在发布前阻止图标尺寸、透明圆角或 macOS Dock inset 配置回归。
 
 ### 实现范围
 
-- `publish` 工作流新增 Windows x64 NSIS 和 Linux x64 AppImage/DEB/RPM 构建任务，均使用 `OPENCTRLC_VERSION` 和生产通道，并在构建任务完成后上传真实资产到 draft Release。
-- Release 说明的 Desktop 下载区同步列出 macOS DMG/ZIP、Windows 安装程序和 Linux DEB/AppImage/RPM，链接只使用工作流实际上传的文件名。
+- `publish` 工作流将 Windows 和 Linux Desktop 构建拆成 x64/ARM64 矩阵，分别生成 Windows NSIS 和 Linux AppImage/DEB/RPM，并在构建任务完成后上传真实资产到 draft Release。
+- Release 说明和官网下载路由同步列出 macOS DMG/ZIP、Windows x64/ARM64 安装程序和 Linux x64/ARM64 DEB/AppImage/RPM，链接只使用工作流实际上传的文件名。
 - 新增 `packages/desktop/scripts/check-icons.ts` 和 `check:icons` 脚本，解析 PNG、ICO 和 ICNS 的真实像素数据，检查平台所需尺寸层级、四角透明度、边缘填充，并确认 `dock.png` 与 ICNS 的 256px Retina 图层逐像素一致。
-- macOS、Windows、Linux 构建前后都执行图标门禁；生产发布版本为 `0.2.0` 时由同一套门禁保护三平台资产。
+- macOS、Windows、Linux 构建前后都执行图标门禁；`0.2.1` 起 Windows/Linux 的每个架构矩阵任务都必须通过同一套门禁。
 
 ### 代码位置
 
@@ -709,7 +709,7 @@ bun run desktop:mac
 
 - 在 `packages/desktop` 执行 `bun run check:icons`，确认 dev、beta、prod 三套图标均通过。
 - 使用 `--channel prod --resources` 检查生产构建实际复制到 `resources/icons` 的图标。
-- GitHub Actions 成功后检查 Release 至少包含 `openctrlc-win-x64.exe`、`openctrlc-linux-x64.deb`、`openctrlc-linux-x64.AppImage` 和 `openctrlc-linux-x64.rpm`，以及现有 macOS 资产。
+- GitHub Actions 成功后检查 Release 同时包含 `openctrlc-win-x64.exe`、`openctrlc-win-arm64.exe`、`openctrlc-linux-x64.*`、`openctrlc-linux-arm64.*`，以及现有 macOS 资产。
 
 ## 面向用户的 GitHub Release 说明
 
@@ -732,4 +732,4 @@ bun run desktop:mac
 ### 验证方式
 
 - 生成版本说明后检查正文不含 commit ID 和仓库所有者 Contributors。
-- 对照 GitHub Release 资产，确认 Downloads 中的链接和文件名完全一致。
+- 对照 GitHub Release 资产，确认 Downloads 中的链接和文件名完全一致，并确认 Windows/Linux 两种架构均有可用路由。

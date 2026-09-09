@@ -14,6 +14,12 @@ test("maps Linux architectures to distinct OpenCtrlC download routes", () => {
   expect(getDownloadHref("linux-arm64-deb", "beta")).toBe("/download/beta/linux-arm64-deb")
 })
 
+test("maps Windows architectures to distinct OpenCtrlC download routes", () => {
+  expect(getDownloadPlatform("Windows", "x64")).toBe("windows-x64-nsis")
+  expect(getDownloadPlatform("Windows", "arm64")).toBe("windows-arm64-nsis")
+  expect(getDownloadHref("windows-arm64-nsis", "stable")).toBe("/download/stable/windows-arm64-nsis")
+})
+
 test("defaults architecture detection to x64 outside an ARM browser", () => {
   expect(detectArch()).toBe("x64")
 })

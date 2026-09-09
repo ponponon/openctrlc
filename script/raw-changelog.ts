@@ -218,10 +218,11 @@ function format(from: string, to: string, version: string | undefined, list: Com
       "#### Linux",
       "",
       `- [x64 DEB](${asset("openctrlc-linux-x64.deb")}) | [x64 AppImage](${asset("openctrlc-linux-x64.AppImage")}) | [x64 RPM](${asset("openctrlc-linux-x64.rpm")})`,
+      `- [ARM64 DEB](${asset("openctrlc-linux-arm64.deb")}) | [ARM64 AppImage](${asset("openctrlc-linux-arm64.AppImage")}) | [ARM64 RPM](${asset("openctrlc-linux-arm64.rpm")})`,
       "",
       "#### Windows",
       "",
-      `- [x64 Installer](${asset("openctrlc-win-x64.exe")})`,
+      `- [x64 Installer](${asset("openctrlc-win-x64.exe")}) | [ARM64 Installer](${asset("openctrlc-win-arm64.exe")})`,
       "",
     )
   }

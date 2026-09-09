@@ -188,3 +188,7 @@ Electron Builder 在 Linux 上会把同一 x64 架构分别写成 `amd64`（DEB�
 ## Downloads 必须先按产品类型再按平台分组
 
 用户反馈下载区直接按 Windows、macOS、Linux 展开后，CLI 和 Desktop 资产混在同一平台下，阅读和选择成本较高。以后 Release 正文应使用 `Downloads → CLI/Desktop → macOS/Linux/Windows` 的层级，先让用户选择产品类型，再选择目标平台和架构；自动生成器和手工版本说明必须保持同一层级。
+
+## Desktop 跨架构包必须由 CI 实际构建
+
+用户要求 Windows 和 Linux Desktop 同时提供 x64 与 ARM64，不能只在 Release 正文或官网里补充 ARM64 链接。以后必须让 GitHub Actions 为 Windows/Linux 分别执行 x64、ARM64 矩阵任务，传入对应的 electron-builder 架构参数，并对每个任务生成的安装包做存在性校验；Linux 还要把 electron-builder 的 `amd64`、`x86_64`、`aarch64` 等内部命名归一化为官网和 Release 使用的 `x64`/`arm64`。工作流、下载路由、R2 清单和发布说明必须共享同一套公开文件名，避免出现“页面有链接但资产不存在”的假发布。

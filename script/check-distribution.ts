@@ -39,7 +39,7 @@ const required: Array<[string, string[]]> = [
     ["name: openctrlc-cli", "packages/opencode/dist/*.zip", "packages/opencode/dist/*.tar.gz"],
   ],
   ["install", ["APP=openctrlc", "OPENCTRLC_INSTALL_DIR", "ponponon/openctrlc", "openctrlc_path", "openctrlc"]],
-  ["packages/console/app/src/routes/download/[channel]/[platform].ts", ["ponponon/openctrlc", "openctrlc-linux-x64.deb", "openctrlc-linux-arm64.deb", "OpenCtrlC"]],
+  ["packages/console/app/src/routes/download/[channel]/[platform].ts", ["ponponon/openctrlc", "openctrlc-linux-x64.deb", "openctrlc-linux-arm64.deb", "openctrlc-win-arm64.exe", "OpenCtrlC"]],
   ["packages/desktop/electron-builder.config.ts", ["owner: \"ponponon\"", "repo: \"openctrlc\"", "artifactName: \"openctrlc-"]],
   ["packages/opencode/script/publish.ts", ["ghcr.io/ponponon/openctrlc", "github.com/ponponon/openctrlc", "ponponon/homebrew-tap"]],
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],

@@ -8,17 +8,33 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   const source = await read(".github/workflows/publish.yml")
   const workflow = parse(source) as {
     on?: { push?: unknown; workflow_dispatch?: unknown }
-    jobs?: Record<string, { "runs-on"?: unknown; needs?: unknown; steps?: Array<Record<string, unknown>> }>
+    jobs?: Record<string, { "runs-on"?: unknown; needs?: unknown; strategy?: unknown; steps?: Array<Record<string, unknown>> }>
   }
 
   expect(workflow.on?.push).toBeUndefined()
   expect(workflow.on?.workflow_dispatch).toBeDefined()
-  expect(Object.keys(workflow.jobs ?? {})).toEqual(["version", "ensure-tag", "build-cli", "build-desktop-macos", "publish"])
+  expect(Object.keys(workflow.jobs ?? {})).toEqual([
+    "version",
+    "ensure-tag",
+    "build-cli",
+    "check-desktop-icons",
+    "build-desktop-macos",
+    "build-desktop-windows",
+    "build-desktop-linux",
+    "publish",
+  ])
 
   for (const name of ["version", "ensure-tag", "build-cli", "publish"]) {
     expect(workflow.jobs?.[name]?.["runs-on"]).toBe("ubuntu-24.04")
   }
   expect(workflow.jobs?.["build-desktop-macos"]?.["runs-on"]).toBe("macos-14")
+
+  for (const name of ["build-desktop-windows", "build-desktop-linux"]) {
+    expect(workflow.jobs?.[name]?.strategy).toEqual({
+      "fail-fast": false,
+      matrix: { arch: ["x64", "arm64"] },
+    })
+  }
 
   const lower = source.toLowerCase()
   for (const forbidden of [
@@ -71,6 +87,14 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   const desktopSource = JSON.stringify(workflow.jobs?.["build-desktop-macos"]?.steps ?? [])
   expect(desktopSource).toContain("NODE_OPTIONS")
   expect(desktopSource).toContain("--publish never")
+
+  const windowsSource = JSON.stringify(workflow.jobs?.["build-desktop-windows"]?.steps ?? [])
+  expect(windowsSource).toContain("--${{ matrix.arch }}")
+  expect(windowsSource).toContain("openctrlc-win-${{ matrix.arch }}.exe")
+
+  const linuxSource = JSON.stringify(workflow.jobs?.["build-desktop-linux"]?.steps ?? [])
+  expect(linuxSource).toContain("--${{ matrix.arch }}")
+  expect(linuxSource).toContain("openctrlc-linux-${{ matrix.arch }}")
 })
 
 test("stable versioning reuses an existing GitHub release", async () => {

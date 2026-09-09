@@ -25,7 +25,7 @@ export function getDownloadPlatform(os: OS, arch: Arch): DownloadPlatform {
     case "macOS":
       return arch === "arm64" ? "darwin-aarch64-dmg" : "darwin-x64-dmg"
     case "Windows":
-      return "windows-x64-nsis"
+      return `windows-${arch}-nsis`
     case "Linux":
       return `linux-${arch}-deb`
     default:

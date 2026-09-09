@@ -207,12 +207,19 @@ jobs:
         run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.dmg packages/desktop/dist/*.zip --clobber --repo "$GH_REPO"
 
   build-desktop-windows:
+    name: Windows Desktop (${{ matrix.arch }})
     needs:
       - version
       - ensure-tag
       - check-desktop-icons
     if: github.repository == 'ponponon/openctrlc'
     runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x64
+          - arm64
     defaults:
       run:
         shell: bash
@@ -235,22 +242,29 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=6144"
           bun run --cwd packages/desktop build
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
-          bun run --cwd packages/desktop package:win -- --publish never
+          bun run --cwd packages/desktop package:win -- --publish never --${{ matrix.arch }}
 
       - name: Upload Windows Desktop assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
           GH_REPO: ${{ needs.version.outputs.repo }}
-        run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.exe --clobber --repo "$GH_REPO"
+        run: gh release upload "$RELEASE_TAG" "packages/desktop/dist/openctrlc-win-${{ matrix.arch }}.exe" --clobber --repo "$GH_REPO"
 
   build-desktop-linux:
+    name: Linux Desktop (${{ matrix.arch }})
     needs:
       - version
       - ensure-tag
       - check-desktop-icons
     if: github.repository == 'ponponon/openctrlc'
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x64
+          - arm64
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
@@ -267,19 +281,29 @@ jobs:
           export NODE_OPTIONS="--max-old-space-size=6144"
           bun run --cwd packages/desktop build
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
-          bun run --cwd packages/desktop package:linux -- --publish never
+          bun run --cwd packages/desktop package:linux -- --publish never --${{ matrix.arch }}
           # electron-builder emits distro-specific architecture spellings on Linux;
           # normalize the public asset names used by the download routes and notes.
-          mv packages/desktop/dist/openctrlc-linux-amd64.deb packages/desktop/dist/openctrlc-linux-x64.deb
-          mv packages/desktop/dist/openctrlc-linux-x86_64.AppImage packages/desktop/dist/openctrlc-linux-x64.AppImage
-          mv packages/desktop/dist/openctrlc-linux-x86_64.rpm packages/desktop/dist/openctrlc-linux-x64.rpm
+          for extension in deb AppImage rpm; do
+            source="$(find packages/desktop/dist -maxdepth 1 -type f -iname "*.${extension}" -print -quit)"
+            if [ -z "$source" ]; then
+              echo "Missing Linux ${extension} artifact for ${{ matrix.arch }}" >&2
+              exit 1
+            fi
+            mv "$source" "packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.${extension}"
+          done
 
       - name: Upload Linux Desktop assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
           GH_REPO: ${{ needs.version.outputs.repo }}
-        run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.AppImage packages/desktop/dist/*.deb packages/desktop/dist/*.rpm --clobber --repo "$GH_REPO"
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            "packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.AppImage" \
+            "packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.deb" \
+            "packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.rpm" \
+            --clobber --repo "$GH_REPO"
 
   publish:
     needs:

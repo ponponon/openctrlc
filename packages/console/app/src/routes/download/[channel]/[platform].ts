@@ -11,6 +11,7 @@ const prodAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
   "darwin-x64-dmg": "openctrlc-mac-x64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
+  "windows-arm64-nsis": "openctrlc-win-arm64.exe",
   "linux-x64-deb": "openctrlc-linux-x64.deb",
   "linux-x64-appimage": "openctrlc-linux-x64.AppImage",
   "linux-x64-rpm": "openctrlc-linux-x64.rpm",
@@ -23,6 +24,7 @@ const betaAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
   "darwin-x64-dmg": "openctrlc-mac-x64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
+  "windows-arm64-nsis": "openctrlc-win-arm64.exe",
   "linux-x64-deb": "openctrlc-linux-x64.deb",
   "linux-x64-appimage": "openctrlc-linux-x64.AppImage",
   "linux-x64-rpm": "openctrlc-linux-x64.rpm",
@@ -36,6 +38,7 @@ const downloadNames: Record<string, string> = {
   "darwin-aarch64-dmg": "OpenCtrlC.dmg",
   "darwin-x64-dmg": "OpenCtrlC.dmg",
   "windows-x64-nsis": "OpenCtrlC Installer.exe",
+  "windows-arm64-nsis": "OpenCtrlC Installer ARM64.exe",
 } satisfies { [K in DownloadPlatform]?: string }
 
 export async function GET({ params: { platform, channel } }: APIEvent) {
