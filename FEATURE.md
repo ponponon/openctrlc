@@ -684,3 +684,29 @@ bun run desktop:mac
 - 在 `packages/app` 和 `packages/session-ui` 分别执行 `bun typecheck`。
 - 执行时间线模型单测，确认分叉入口的消息渲染改动不影响时间线状态模型。
 - 在 Git 项目中验证助手回复操作区可打开分叉对话框，并分别验证当前工作空间和新工作树导航。
+
+## Desktop 跨平台正式发布与图标适配门禁
+
+### 功能目标
+
+让正式版 GitHub Release 同时提供 macOS Apple Silicon、Windows x64 和 Linux x64 桌面安装包，并在发布前阻止图标尺寸、透明圆角或 macOS Dock inset 配置回归。
+
+### 实现范围
+
+- `publish` 工作流新增 Windows x64 NSIS 和 Linux x64 AppImage/DEB/RPM 构建任务，均使用 `OPENCTRLC_VERSION` 和生产通道，并在构建任务完成后上传真实资产到 draft Release。
+- Release 说明的 Desktop 下载区同步列出 macOS DMG/ZIP、Windows 安装程序和 Linux DEB/AppImage/RPM，链接只使用工作流实际上传的文件名。
+- 新增 `packages/desktop/scripts/check-icons.ts` 和 `check:icons` 脚本，解析 PNG、ICO 和 ICNS 的真实像素数据，检查平台所需尺寸层级、四角透明度、边缘填充，并确认 `dock.png` 与 ICNS 的 256px Retina 图层逐像素一致。
+- macOS、Windows、Linux 构建前后都执行图标门禁；生产发布版本为 `0.2.0` 时由同一套门禁保护三平台资产。
+
+### 代码位置
+
+- `.github/workflows/publish.yml`：三平台 Desktop 构建、图标门禁和 Release 上传。
+- `packages/desktop/scripts/check-icons.ts`：跨平台图标容器及像素校验。
+- `packages/desktop/electron-builder.config.ts`：macOS、Windows、Linux 图标和安装包目标配置。
+- `script/raw-changelog.ts`：跨平台 Desktop 下载链接生成。
+
+### 验证方式
+
+- 在 `packages/desktop` 执行 `bun run check:icons`，确认 dev、beta、prod 三套图标均通过。
+- 使用 `--channel prod --resources` 检查生产构建实际复制到 `resources/icons` 的图标。
+- GitHub Actions 成功后检查 Release 至少包含 `openctrlc-win-x64.exe`、`openctrlc-linux-x64.deb`、`openctrlc-linux-x64.AppImage` 和 `openctrlc-linux-x64.rpm`，以及现有 macOS 资产。

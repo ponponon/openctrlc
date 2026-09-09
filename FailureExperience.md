@@ -168,3 +168,11 @@ GitHub Actions 的 `secrets.NAME` 和 `vars.NAME` 是两套独立配置。以后
 ## 全局 Dialog Portal 不能直接读取目录级 Context
 
 全局 Dialog Provider 挂载弹窗时，弹窗组件不一定位于当前会话的 `ServerSyncProvider`、`SDKProvider` 或 `PromptProvider` 子树内。以后从会话页面打开目录相关弹窗时，必须在页面作用域捕获这些 accessor 并通过 props 传入；不能在弹窗组件内部重新调用 `useSync` 等目录级 Hook，否则组件会在用户点击后才因脱离 Provider 崩溃。回归验证必须覆盖按钮入口和命令面板入口，并检查实际弹窗已渲染而不是只通过类型检查。
+
+## Desktop 正式发布不能只构建 macOS
+
+桌面版发布工作流曾只运行 macOS 构建，虽然 Electron Builder 已经声明了 Windows NSIS 和 Linux DEB 目标，用户在 Release 页面仍然只能看到 macOS 安装包。以后不能把本地打包配置存在就当成跨平台发布完成；必须逐平台检查 CI runner、构建命令、实际上传资产、Release 下载说明和官网下载路由是否闭环，并在 Release 发布前确认目标文件真实存在。
+
+## 应用图标必须按容器和显示场景分别验收
+
+应用图标不是一个 PNG 文件就算完成：macOS `.icns` 需要覆盖系统使用的多级 Retina 图层，Windows `.ico` 需要包含 16/24/32/48/64/256px 层，Linux 需要保留可被桌面环境读取的透明 PNG；macOS Dock 使用的 inset 图标还不能直接拿满画布图标替代。以后要同时检查实际像素尺寸、四角透明圆角、边缘是否被错误裁切，以及 Dock PNG 与 ICNS 对应图层是否一致；发布前应执行自动门禁，避免在安装包中出现方角、过度留白或图标被放大的问题。

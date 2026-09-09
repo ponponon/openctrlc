@@ -232,8 +232,8 @@ function format(from: string, to: string, version: string | undefined, list: Com
       "### Desktop",
       "",
       `- macOS Apple Silicon: [DMG](${asset("openctrlc-mac-arm64.dmg")}) | [ZIP](${asset("openctrlc-mac-arm64.zip")})`,
-      "",
-      "> Windows and Linux Desktop installers are not currently published by the automated release workflow. The CLI archives above are available for those platforms.",
+      `- Linux x64: [DEB](${asset("openctrlc-linux-x64.deb")}) | [AppImage](${asset("openctrlc-linux-x64.AppImage")}) | [RPM](${asset("openctrlc-linux-x64.rpm")})`,
+      `- Windows x64: [Installer](${asset("openctrlc-win-x64.exe")})`,
       "",
     )
   }

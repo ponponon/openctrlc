@@ -127,10 +127,27 @@ jobs:
             packages/opencode/dist/*.zip
             packages/opencode/dist/*.tar.gz
 
+  check-desktop-icons:
+    needs:
+      - version
+      - ensure-tag
+    runs-on: ubuntu-24.04
+    if: github.repository == 'ponponon/openctrlc'
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Validate all desktop icon sizes and corner insets
+        run: bun run --cwd packages/desktop check:icons
+
   build-desktop-macos:
     needs:
       - version
       - ensure-tag
+      - check-desktop-icons
     if: github.repository == 'ponponon/openctrlc'
     runs-on: macos-14
     steps:
@@ -179,6 +196,7 @@ jobs:
           fi
           export NODE_OPTIONS="--max-old-space-size=6144"
           bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:mac -- --publish never
 
       - name: Upload macOS Desktop assets
@@ -188,11 +206,80 @@ jobs:
           GH_REPO: ${{ needs.version.outputs.repo }}
         run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.dmg packages/desktop/dist/*.zip --clobber --repo "$GH_REPO"
 
+  build-desktop-windows:
+    needs:
+      - version
+      - ensure-tag
+      - check-desktop-icons
+    if: github.repository == 'ponponon/openctrlc'
+    runs-on: blacksmith-4vcpu-windows-2025
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build and package Windows Desktop
+        env:
+          OPENCTRLC_CHANNEL: prod
+          OPENCTRLC_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          export NODE_OPTIONS="--max-old-space-size=6144"
+          bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop check:icons -- --channel prod --resources
+          bun run --cwd packages/desktop package:win -- --publish never
+
+      - name: Upload Windows Desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          GH_REPO: ${{ needs.version.outputs.repo }}
+        run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.exe --clobber --repo "$GH_REPO"
+
+  build-desktop-linux:
+    needs:
+      - version
+      - ensure-tag
+      - check-desktop-icons
+    if: github.repository == 'ponponon/openctrlc'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build and package Linux Desktop
+        env:
+          OPENCTRLC_CHANNEL: prod
+          OPENCTRLC_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          export NODE_OPTIONS="--max-old-space-size=6144"
+          bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop check:icons -- --channel prod --resources
+          bun run --cwd packages/desktop package:linux -- --publish never
+
+      - name: Upload Linux Desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          GH_REPO: ${{ needs.version.outputs.repo }}
+        run: gh release upload "$RELEASE_TAG" packages/desktop/dist/*.AppImage packages/desktop/dist/*.deb packages/desktop/dist/*.rpm --clobber --repo "$GH_REPO"
+
   publish:
     needs:
       - version
       - build-cli
       - build-desktop-macos
+      - build-desktop-windows
+      - build-desktop-linux
     if: github.repository == 'ponponon/openctrlc'
     runs-on: ubuntu-24.04
     steps:
