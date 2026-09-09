@@ -1,11 +1,10 @@
 import { Component, createMemo, Show } from "solid-js"
 import { createStore } from "solid-js/store"
-import { useNavigate, useParams } from "@solidjs/router"
-import { useSync } from "@/context/sync"
-import { useServerSync } from "@/context/server-sync"
-import { useSDK } from "@/context/sdk"
-import { usePrompt } from "@/context/prompt"
-import { useDialog } from "@openctrlc/ui/context/dialog"
+import type { useSync } from "@/context/sync"
+import type { useServerSync } from "@/context/server-sync"
+import type { useSDK } from "@/context/sdk"
+import type { usePrompt } from "@/context/prompt"
+import type { useDialog } from "@openctrlc/ui/context/dialog"
 import { Dialog } from "@openctrlc/ui/dialog"
 import { List } from "@openctrlc/ui/list"
 import { Button } from "@openctrlc/ui/button"
@@ -17,7 +16,7 @@ import { errorMessage } from "@/pages/layout/helpers"
 import { Worktree as WorktreeState } from "@/utils/worktree"
 import type { TextPart as SDKTextPart } from "@openctrlc/sdk/v2/client"
 import { base64Encode } from "@openctrlc/core/util/encode"
-import { useLanguage } from "@/context/language"
+import type { useLanguage } from "@/context/language"
 
 interface ForkableMessage {
   id: string
@@ -38,6 +37,13 @@ interface ForkLocationOption {
 interface DialogForkProps {
   sessionID?: string
   messageID?: string
+  sync: ReturnType<typeof useSync>
+  serverSync: ReturnType<typeof useServerSync>
+  sdk: ReturnType<typeof useSDK>
+  prompt: Pick<ReturnType<typeof usePrompt>, "set">
+  dialog: ReturnType<typeof useDialog>
+  language: ReturnType<typeof useLanguage>
+  navigate: (path: string) => void
 }
 
 function formatTime(date: Date): string {
@@ -45,35 +51,27 @@ function formatTime(date: Date): string {
 }
 
 export const DialogFork: Component<DialogForkProps> = (props) => {
-  const params = useParams()
-  const navigate = useNavigate()
-  const sync = useSync()
-  const serverSync = useServerSync()
-  const sdk = useSDK()
-  const prompt = usePrompt()
-  const dialog = useDialog()
-  const language = useLanguage()
   const [state, setState] = createStore({
     step: (props.messageID ? "locations" : "messages") as ForkStep,
     selectedMessageID: props.messageID,
     pending: false,
   })
 
-  const sessionID = createMemo(() => props.sessionID ?? params.id)
-  const projectRoot = createMemo(() => sync().project?.worktree ?? sdk().directory)
-  const canCreateWorktree = createMemo(() => sync().project?.vcs === "git")
+  const sessionID = createMemo(() => props.sessionID)
+  const projectRoot = createMemo(() => props.sync().project?.worktree ?? props.sdk().directory)
+  const canCreateWorktree = createMemo(() => props.sync().project?.vcs === "git")
 
   const messages = createMemo((): ForkableMessage[] => {
     const id = sessionID()
     if (!id) return []
 
-    const msgs = sync().data.message[id] ?? []
+    const msgs = props.sync().data.message[id] ?? []
     const result: ForkableMessage[] = []
 
     for (const message of msgs) {
       if (message.role !== "user") continue
 
-      const parts = sync().data.part[message.id] ?? []
+      const parts = props.sync().data.part[message.id] ?? []
       const textPart = parts.find((x): x is SDKTextPart => x.type === "text" && !x.synthetic && !x.ignored)
       if (!textPart) continue
 
@@ -91,8 +89,8 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
     const result: ForkLocationOption[] = [
       {
         id: "workspace",
-        title: language.t("dialog.fork.location.workspace.title"),
-        description: language.t("dialog.fork.location.workspace.description"),
+        title: props.language.t("dialog.fork.location.workspace.title"),
+        description: props.language.t("dialog.fork.location.workspace.description"),
         icon: "branch",
       },
     ]
@@ -100,8 +98,8 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
     if (canCreateWorktree()) {
       result.push({
         id: "worktree",
-        title: language.t("dialog.fork.location.worktree.title"),
-        description: language.t("dialog.fork.location.worktree.description"),
+        title: props.language.t("dialog.fork.location.worktree.title"),
+        description: props.language.t("dialog.fork.location.worktree.description"),
         icon: "fork",
       })
     }
@@ -121,60 +119,62 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
     if (!sourceSessionID) return
 
     setState("pending", true)
-    const sourceDirectory = sdk().directory
-    const parts = state.selectedMessageID ? (sync().data.part[state.selectedMessageID] ?? []) : []
+    const sourceDirectory = props.sdk().directory
+    const parts = state.selectedMessageID ? (props.sync().data.part[state.selectedMessageID] ?? []) : []
     const restored = state.selectedMessageID
       ? extractPromptFromParts(parts, {
           directory: sourceDirectory,
-          attachmentName: language.t("common.attachment"),
+          attachmentName: props.language.t("common.attachment"),
         })
       : undefined
     let createdDirectory: string | undefined
 
     try {
       if (location === "worktree") {
-        const created = await sdk()
+        const created = await props.sdk()
           .client.worktree.create({ directory: projectRoot() })
           .then((result) => result.data)
-        if (!created?.directory) throw new Error(language.t("common.requestFailed"))
+        if (!created?.directory) throw new Error(props.language.t("common.requestFailed"))
 
         createdDirectory = created.directory
-        WorktreeState.pending(sdk().scope, created.directory)
-        serverSync().child(created.directory)
+        WorktreeState.pending(props.sdk().scope, created.directory)
+        props.serverSync().child(created.directory)
       }
 
       const directory = createdDirectory ?? sourceDirectory
       const forked =
         directory === sourceDirectory
-          ? await sdk().api.session.fork({ sessionID: sourceSessionID, messageID: state.selectedMessageID })
-          : await sdk()
+          ? await props.sdk().api.session.fork({ sessionID: sourceSessionID, messageID: state.selectedMessageID })
+          : await props.sdk()
               .createClient({ directory, throwOnError: true })
               .session.fork({ sessionID: sourceSessionID, messageID: state.selectedMessageID })
               .then((result) => result.data)
-      if (!forked?.id) throw new Error(language.t("common.requestFailed"))
+      if (!forked?.id) throw new Error(props.language.t("common.requestFailed"))
 
       const forkDirectory = "directory" in forked && typeof forked.directory === "string" ? forked.directory : directory
       const dir = base64Encode(forkDirectory)
-      dialog.close()
-      if (restored) prompt.set(restored, undefined, { dir, id: forked.id })
-      navigate(`/${dir}/session/${forked.id}`)
+      props.dialog.close()
+      if (restored) props.prompt.set(restored, undefined, { dir, id: forked.id })
+      props.navigate(`/${dir}/session/${forked.id}`)
     } catch (err) {
       if (createdDirectory) {
-        await sdk()
+        await props.sdk()
           .client.worktree.remove({ directory: projectRoot(), worktreeRemoveInput: { directory: createdDirectory } })
           .catch(() => undefined)
       }
       setState("pending", false)
       showToast({
-        title: language.t("common.requestFailed"),
-        description: errorMessage(err, language.t("common.requestFailed")),
+        title: props.language.t("common.requestFailed"),
+        description: errorMessage(err, props.language.t("common.requestFailed")),
       })
     }
   }
 
   return (
     <Dialog
-      title={state.step === "locations" ? language.t("dialog.fork.location.title") : language.t("command.session.fork")}
+      title={
+        state.step === "locations" ? props.language.t("dialog.fork.location.title") : props.language.t("command.session.fork")
+      }
     >
       <Show when={state.step === "locations"}>
         <Show when={!props.messageID}>
@@ -187,14 +187,14 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
             onClick={() => setState("step", "messages")}
             disabled={state.pending}
           >
-            {language.t("dialog.fork.back")}
+            {props.language.t("dialog.fork.back")}
           </Button>
         </Show>
         <Show
           when={!state.pending}
           fallback={
             <div class="flex flex-1 items-center justify-center px-6">
-              <TextShimmer text={language.t("dialog.fork.loading")} />
+              <TextShimmer text={props.language.t("dialog.fork.loading")} />
             </div>
           }
         >
@@ -225,8 +225,8 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
       <Show when={state.step === "messages"}>
         <List
           class="flex-1 px-3 min-h-0 [&_[data-slot=list-scroll]]:flex-1 [&_[data-slot=list-scroll]]:min-h-0"
-          search={{ placeholder: language.t("common.search.placeholder"), autofocus: true }}
-          emptyMessage={language.t("dialog.fork.empty")}
+          search={{ placeholder: props.language.t("common.search.placeholder"), autofocus: true }}
+          emptyMessage={props.language.t("dialog.fork.empty")}
           key={(item) => item.id}
           items={messages}
           filterKeys={["text"]}

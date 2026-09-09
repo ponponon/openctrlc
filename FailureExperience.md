@@ -157,3 +157,6 @@ Electron Vite 开发模式还可能出现 Renderer 已热更新而已有窗口�
 ## GitHub Actions Secret 与 Variable 必须和 Workflow 引用保持一致
 
 GitHub Actions 的 `secrets.NAME` 和 `vars.NAME` 是两套独立配置。以后配置外部服务凭证时，必须先确认用户实际添加在 Repository secrets、Repository variables 还是 Organization 级别，再让 Workflow 使用对应的上下文；不能因为账号 ID 不敏感就默认它一定会被配置为 Variable。若用户已经添加为 Secret，应直接使用 `secrets.NAME`，避免要求用户重复进入 GUI 配置。
+## 全局 Dialog Portal 不能直接读取目录级 Context
+
+全局 Dialog Provider 挂载弹窗时，弹窗组件不一定位于当前会话的 `ServerSyncProvider`、`SDKProvider` 或 `PromptProvider` 子树内。以后从会话页面打开目录相关弹窗时，必须在页面作用域捕获这些 accessor 并通过 props 传入；不能在弹窗组件内部重新调用 `useSync` 等目录级 Hook，否则组件会在用户点击后才因脱离 Provider 崩溃。回归验证必须覆盖按钮入口和命令面板入口，并检查实际弹窗已渲染而不是只通过类型检查。

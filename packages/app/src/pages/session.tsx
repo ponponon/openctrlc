@@ -2135,7 +2135,21 @@ export default function Page() {
     const owner = sessionOwnership.capture()
     void import("@/components/dialog-fork").then((module) => {
       owner.run(() => {
-        dialog.show(() => <module.DialogFork sessionID={input.sessionID} messageID={input.messageID} />)
+        // Dialogs render in the global portal, so pass directory-scoped accessors
+        // captured from this page instead of resolving their contexts in the dialog.
+        void dialog.show(() => (
+          <module.DialogFork
+            sessionID={input.sessionID}
+            messageID={input.messageID}
+            sync={sync}
+            serverSync={serverSync}
+            sdk={sdk}
+            prompt={prompt}
+            dialog={dialog}
+            language={language}
+            navigate={navigate}
+          />
+        ))
       })
     })
   }

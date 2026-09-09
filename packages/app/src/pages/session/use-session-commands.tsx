@@ -9,6 +9,7 @@ import { usePermission } from "@/context/permission"
 import { usePrompt } from "@/context/prompt"
 import { useSDK } from "@/context/sdk"
 import { useSettings } from "@/context/settings"
+import { useServerSync } from "@/context/server-sync"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
 import { showToast } from "@/utils/toast"
@@ -52,6 +53,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const permission = usePermission()
   const prompt = usePrompt()
   const sdk = useSDK()
+  const serverSync = useServerSync()
   const settings = useSettings()
   const sync = useSync()
   const terminal = useTerminal()
@@ -425,7 +427,19 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const fork = () => {
     void openDialog(
       () => import("@/components/dialog-fork"),
-      (x) => dialog.show(() => <x.DialogFork />),
+      (x) =>
+        dialog.show(() => (
+          <x.DialogFork
+            sessionID={params.id}
+            sync={sync}
+            serverSync={serverSync}
+            sdk={sdk}
+            prompt={prompt}
+            dialog={dialog}
+            language={language}
+            navigate={navigate}
+          />
+        )),
     )
   }
 
