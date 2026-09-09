@@ -3,13 +3,10 @@ title: Intro
 description: Get started with OpenCtrlC.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../config.mjs"
 export const console = config.console
 
-[**OpenCtrlC**](/) is an open source AI coding agent. It's available as a terminal-based interface, desktop app, or IDE extension.
-
-![OpenCtrlC TUI with the openctrlc theme](../../assets/lander/screenshot.png)
+[**OpenCtrlC**](/) is an open source AI coding agent focused on terminal workflows and local development.
 
 Let's get started.
 
@@ -37,106 +34,15 @@ The easiest way to install OpenCtrlC is through the install script.
   curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-You can also install it with the following commands:
-
-- **Using Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-      pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-      yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **Using Homebrew on macOS and Linux**
-
-  ```bash
-    brew install ponponon/tap/openctrlc
-  ```
-
-  > OpenCtrlC releases are published through the OpenCtrlC tap.
-
-- **Installing on Arch Linux**
-
-  ```bash
-    sudo pacman -S openctrlc           # Arch Linux (Stable)
-    paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[Recommended: Use WSL]
-For the best experience on Windows, we recommend using [Windows Subsystem for Linux (WSL)](/docs/windows-wsl). It provides better performance and full compatibility with OpenCtrlC's features.
-:::
-
-- **Using Chocolatey**
-
-  ```bash
-    choco install openctrlc
-  ```
-
-- **Using Scoop**
-
-  ```bash
-    scoop install openctrlc
-  ```
-
-- **Using NPM**
-
-  ```bash
-    npm install -g openctrlc-ai
-  ```
-
-- **Using Mise**
-
-  ```bash
-    mise use -g github:ponponon/openctrlc
-  ```
-
-- **Using Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-Support for installing OpenCtrlC on Windows using Bun is currently in progress.
-
-You can also grab the binary from the [Releases](https://github.com/ponponon/openctrlc/releases).
+For platform-specific packages, download the latest binary from the [Releases](https://github.com/ponponon/openctrlc/releases) page.
 
 ---
 
 ## Configure
 
-With OpenCtrlC you can use any LLM provider by configuring their API keys.
-
-If you are new to using LLM providers, we recommend using [OpenCtrlC Zen](/docs/zen).
-It's a curated list of models that have been tested and verified by the OpenCtrlC
-team.
+With OpenCtrlC you can use any supported LLM provider by configuring its API key.
+OpenCtrlC does not bundle a hosted model service, so you choose the provider and
+billing arrangement that fits your workflow.
 
 1. Run the `/connect` command in the TUI, select an LLM provider, and follow the setup guide in [Providers](/docs/providers).
 
@@ -144,7 +50,7 @@ team.
    /connect
    ```
 
-2. Sign in with the selected provider, add your billing details if required, and copy your API key.
+2. Follow the selected provider's setup guide and copy its API key.
 
 3. Paste your API key.
 
@@ -155,7 +61,7 @@ team.
    └ enter
    ```
 
-Alternatively, you can select one of the other providers. [Learn more](/docs/providers#directory).
+You can select another provider at any time. [See the provider directory](/docs/providers#directory).
 
 ---
 
@@ -349,7 +255,7 @@ This will create a link to the current conversation and copy it to your clipboar
 Conversations are not shared by default.
 :::
 
-Here's an [example conversation](https://opencode.ai/s/4XP1fce5) with OpenCtrlC.
+You can share a conversation with your team using the `/share` command.
 
 ---
 

@@ -1,3 +1,7 @@
+## Cloudflare Pages 的 Wrangler 上传必须显式使用代理
+
+本机通过 `curl` 访问 Cloudflare API 正常，不代表 Wrangler 的 Node 网络库会自动读取代理环境变量。未显式设置代理时，Pages API 的元数据请求可能成功，但批量 `POST /pages/assets/upload` 会在上传数 MB 后因直连链路被关闭而失败。以后在中国大陆环境发布 Pages，必须先运行代理连通性检查，并同时设置 `HTTPS_PROXY`、`HTTP_PROXY` 和 `ALL_PROXY` 后再执行 Wrangler；验收要检查完整上传、部署记录、正式域名 HTTP 状态和页面内容。
+
 ## ⚠️ 重要：User-Agent 必须保持为 opencode
 
 **禁止**将发送给 opencode.ai zen 服务器的 User-Agent 改为 `openctrlc`。
@@ -157,6 +161,10 @@ Electron Vite 开发模式还可能出现 Renderer 已热更新而已有窗口�
 ## GitHub Actions Secret 与 Variable 必须和 Workflow 引用保持一致
 
 GitHub Actions 的 `secrets.NAME` 和 `vars.NAME` 是两套独立配置。以后配置外部服务凭证时，必须先确认用户实际添加在 Repository secrets、Repository variables 还是 Organization 级别，再让 Workflow 使用对应的上下文；不能因为账号 ID 不敏感就默认它一定会被配置为 Variable。若用户已经添加为 Secret，应直接使用 `secrets.NAME`，避免要求用户重复进入 GUI 配置。
+## 官网不能直接继承上游产品宣传内容
+
+官网从上游项目复制过来时，Logo、截图、Zen/Go 托管服务、社交卡片服务和企业版联系方式可能仍然指向上游。即使核心程序是 fork，也不能把这些并不存在于当前产品中的能力继续展示给用户。以后发布官网前要同时检查可见文本、图片、侧栏入口、Meta/OG 图片和外链；真正用于兼容协议或导入旧会话的内部 `opencode` 名称可以保留，但不能出现在 OpenCtrlC 的产品宣传层。
+
 ## 全局 Dialog Portal 不能直接读取目录级 Context
 
 全局 Dialog Provider 挂载弹窗时，弹窗组件不一定位于当前会话的 `ServerSyncProvider`、`SDKProvider` 或 `PromptProvider` 子树内。以后从会话页面打开目录相关弹窗时，必须在页面作用域捕获这些 accessor 并通过 props 传入；不能在弹窗组件内部重新调用 `useSync` 等目录级 Hook，否则组件会在用户点击后才因脱离 Provider 崩溃。回归验证必须覆盖按钮入口和命令面板入口，并检查实际弹窗已渲染而不是只通过类型检查。

@@ -3,9 +3,6 @@ title: Providers
 description: Using any LLM provider in OpenCtrlC.
 ---
 
-import config from "../../../config.mjs"
-export const console = config.console
-
 OpenCtrlC uses the [AI SDK](https://ai-sdk.dev/) and [Models.dev](https://models.dev) to support **75+ LLM providers** and it supports running local models.
 
 To add a provider you need to:
@@ -81,74 +78,6 @@ Both options take an array of model IDs — the same IDs shown in the `/models` 
 - `blacklist` removes the listed models from the picker.
 - `whitelist` keeps only the listed models and hides the rest.
 - You can combine them: `whitelist` narrows the set, then `blacklist` removes entries from it.
-
----
-
-## OpenCtrlC Zen
-
-OpenCtrlC Zen is a list of models provided by the OpenCtrlC team that have been
-tested and verified to work well with OpenCtrlC. [Learn more](/docs/zen).
-
-:::tip
-If you are new, we recommend starting with OpenCtrlC Zen.
-:::
-
-1. Run the `/connect` command in the TUI, select `OpenCtrlC Zen`, and head to [opencode.ai/zen](https://opencode.ai/zen).
-
-   ```txt
-   /connect
-   ```
-
-2. Sign in, add your billing details, and copy your API key.
-
-3. Paste your API key.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-4. Run `/models` in the TUI to see the list of models we recommend.
-
-   ```txt
-   /models
-   ```
-
-It works like any other provider in OpenCtrlC and is completely optional to use.
-
----
-
-## OpenCtrlC Go
-
-OpenCtrlC Go is a low cost subscription plan that provides reliable access to popular open coding models provided by the OpenCtrlC team that have been
-tested and verified to work well with OpenCtrlC.
-
-1. Run the `/connect` command in the TUI, select `OpenCtrlC Go`, and head to [opencode.ai/zen](https://opencode.ai/zen).
-
-   ```txt
-   /connect
-   ```
-
-2. Sign in, add your billing details, and copy your API key.
-
-3. Paste your API key.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-4. Run `/models` in the TUI to see the list of models we recommend.
-
-   ```txt
-   /models
-   ```
-
-It works like any other provider in OpenCtrlC and is completely optional to use.
 
 ---
 
@@ -1725,35 +1654,6 @@ For ChatGPT OAuth, OpenCtrlC automatically applies a regional inference residenc
 ##### Using API keys
 
 If you already have an API key, you can select **Manually enter API Key** and paste it in your terminal.
-
----
-
-### OpenCtrlC Zen
-
-OpenCtrlC Zen is a list of tested and verified models provided by the OpenCtrlC team. [Learn more](/docs/zen).
-
-1. Sign in to **<a href={console}>OpenCtrlC Zen</a>** and click **Create API Key**.
-
-2. Run the `/connect` command and search for **OpenCtrlC Zen**.
-
-   ```txt
-   /connect
-   ```
-
-3. Enter your OpenCtrlC API key.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-4. Run the `/models` command to select a model like _Qwen 3 Coder 480B_.
-
-   ```txt
-   /models
-   ```
 
 ---
 

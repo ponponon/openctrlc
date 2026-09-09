@@ -5,7 +5,6 @@ export default {
   url,
   console: url,
   email: "help@anoma.ly",
-  socialCard: "https://social-cards.sst.dev",
   github: "https://github.com/ponponon/openctrlc",
   discord: "https://github.com/ponponon/openctrlc/discussions",
   headerLinks: [

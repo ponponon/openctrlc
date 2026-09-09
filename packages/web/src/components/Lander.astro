@@ -5,9 +5,6 @@ import config from "virtual:starlight/user-config";
 
 import CopyIcon from "../assets/lander/copy.svg";
 import CheckIcon from "../assets/lander/check.svg";
-import TuiScreenshot from "../assets/lander/screenshot-splash.png";
-import VscodeScreenshot from "../assets/lander/screenshot-vscode.png";
-import GithubScreenshot from "../assets/lander/screenshot-github.png";
 
 const { data } = Astro.locals.starlightRoute.entry;
 const { title = data.title, tagline, image, actions = [] } = data.hero || {};
@@ -24,9 +21,6 @@ const discord = (config.social || []).filter(s => s.icon === 'discord')[0];
 const locale = Astro.currentLocale || 'root';
 const t = Astro.locals.t as (key: string) => string;
 const docsHref = getRelativeLocaleUrl(locale, "")
-const docsCliHref = getRelativeLocaleUrl(locale, "cli")
-const docsIdeHref = getRelativeLocaleUrl(locale, "ide")
-const docsGithubHref = getRelativeLocaleUrl(locale, "github")
 
 const command = "curl -fsSL"
 const protocol = "https://"
@@ -85,102 +79,10 @@ if (image) {
         <li><b>{t('app.lander.features.lsp_enabled.title')}</b>: {t('app.lander.features.lsp_enabled.description')}</li>
         <li><b>{t('app.lander.features.multi_session.title')}</b>: {t('app.lander.features.multi_session.description')}</li>
         <li><b>{t('app.lander.features.shareable_links.title')}</b>: {t('app.lander.features.shareable_links.description')}</li>
-        <li><b>GitHub Copilot</b>: {t('app.lander.features.github_copilot.description')}</li>
-        <li><b>ChatGPT Plus/Pro</b>: {t('app.lander.features.chatgpt_plus_pro.description')}</li>
-        <li><b>{t('app.lander.features.use_any_model.title')}</b>: {t('app.lander.features.use_any_model.prefix')} <a href="https://models.dev">Models.dev</a>, {t('app.lander.features.use_any_model.suffix')}</li>
+        <li><b>Provider-neutral</b>: Configure the LLM provider and API key you already use.</li>
+        <li><b>MCP and plugins</b>: Extend the agent with tools and workflows for your projects.</li>
+        <li><b>Project context</b>: Keep repository instructions and conventions close to the code.</li>
       </ul>
-    </section>
-
-    <section class="alternatives">
-      <div class="col1">
-        <h3>npm</h3>
-        <button class="command" data-command="npm install -g openctrlc-ai">
-          <code>
-            <span>npm install -g</span> <span class="highlight">openctrlc-ai</span>
-          </code>
-          <span class="copy">
-            <CopyIcon />
-            <CheckIcon />
-          </span>
-        </button>
-      </div>
-      <div class="col2">
-        <h3>Bun</h3>
-        <button class="command" data-command="bun install -g openctrlc-ai">
-          <code>
-            <span>bun install -g</span> <span class="highlight">openctrlc-ai</span>
-          </code>
-          <span class="copy">
-            <CopyIcon />
-            <CheckIcon />
-          </span>
-        </button>
-      </div>
-      <div class="col3">
-        <h3>Homebrew</h3>
-         <button class="command" data-command="brew install openctrlc">
-          <code>
-             <span>brew install</span> <span class="highlight">openctrlc</span>
-          </code>
-          <span class="copy">
-            <CopyIcon />
-            <CheckIcon />
-          </span>
-        </button>
-      </div>
-      <div class="col4">
-        <h3>Paru</h3>
-         <button class="command" data-command="paru -S openctrlc-bin">
-          <code>
-             <span>paru -S</span> <span class="highlight">openctrlc-bin</span>
-          </code>
-          <span class="copy">
-            <CopyIcon />
-            <CheckIcon />
-          </span>
-        </button>
-      </div>
-      <div class="col4">
-        <h3>Mise</h3>
-        <button class="command" data-command="mise use -g github:ponponon/openctrlc">
-          <code>
-            <span>mise use -g</span> <span class="highlight">github:ponponon/openctrlc</span>
-          </code>
-          <span class="copy">
-            <CopyIcon />
-            <CheckIcon />
-          </span>
-        </button>
-      </div>
-    </section>
-
-    <section class="images">
-      <div class="left">
-        <figure>
-          <figcaption>{t('app.lander.images.tui.caption')}</figcaption>
-          <a href={docsCliHref}>
-            <Image src={TuiScreenshot} alt={t('app.lander.images.tui.alt')} />
-          </a>
-        </figure>
-      </div>
-      <div class="right">
-        <div class="row1">
-          <figure>
-            <figcaption>{t('app.lander.images.vscode.caption')}</figcaption>
-            <a href={docsIdeHref}>
-              <Image src={VscodeScreenshot} alt={t('app.lander.images.vscode.alt')} />
-            </a>
-          </figure>
-        </div>
-        <div class="row2">
-          <figure>
-            <figcaption>{t('app.lander.images.github.caption')}</figcaption>
-            <a href={docsGithubHref}>
-              <Image src={GithubScreenshot} alt={t('app.lander.images.github.alt')} />
-            </a>
-          </figure>
-        </div>
-      </div>
     </section>
 
     <section class="footer">

@@ -3,13 +3,10 @@ title: 简介
 description: 开始使用 OpenCtrlC。
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
-[**OpenCtrlC**](/) 是一个开源的 AI 编码代理。它提供终端界面、桌面应用和 IDE 扩展等多种使用方式。
-
-![使用 openctrlc 主题的 OpenCtrlC TUI](../../../assets/lander/screenshot.png)
+[**OpenCtrlC**](/) 是一个专注于终端工作流和本地开发的开源 AI 编码代理。
 
 让我们开始吧。
 
@@ -34,115 +31,25 @@ export const console = config.console
 安装 OpenCtrlC 最简单的方法是通过安装脚本。
 
 ```bash
-curl -fsSL https://openctrlc.ai/install | bash
+curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-你也可以使用以下方式安装：
-
-- **使用 Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **在 macOS 和 Linux 上使用 Homebrew**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > 我们推荐使用 OpenCtrlC tap 以获取最新版本。官方的 `brew install openctrlc` formula 由 Homebrew 团队维护，更新频率较低。
-
-- **在 Arch Linux 上安装**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[推荐：使用 WSL]
-为了在 Windows 上获得最佳体验，我们推荐使用 [Windows Subsystem for Linux (WSL)](/docs/windows-wsl)。它提供更好的性能，并完全兼容 OpenCtrlC 的所有功能。
-:::
-
-- **使用 Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **使用 Scoop**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **使用 NPM**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **使用 Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **使用 Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-在 Windows 上通过 Bun 安装 OpenCtrlC 的支持目前正在开发中。
-
-你也可以从 [Releases](https://github.com/ponponon/openctrlc/releases) 页面直接下载二进制文件。
+针对不同平台，可以从 [Releases](https://github.com/ponponon/openctrlc/releases) 页面下载最新二进制文件。
 
 ---
 
 ## 配置
 
-通过 OpenCtrlC，你可以配置 API 密钥来使用任意 LLM 提供商。
+通过 OpenCtrlC，你可以配置 API 密钥来使用受支持的 LLM 提供商。
+OpenCtrlC 不提供托管模型服务，你可以自行选择提供商和计费方式。
 
-如果你刚开始接触 LLM 提供商，我们推荐使用 [OpenCtrlC Zen](/docs/zen)。这是一组经过 OpenCtrlC 团队测试和验证的精选模型。
-
-1. 在 TUI 中运行 `/connect` 命令，选择 openctrlc，然后前往 [opencode.ai/auth](https://opencode.ai/auth)。
+1. 在 TUI 中运行 `/connect` 命令，选择一个 LLM 提供商，并按照[提供商文档](/docs/providers)完成配置。
 
    ```txt
    /connect
    ```
 
-2. 登录并添加账单信息，然后复制你的 API 密钥。
+2. 按照提供商的指引完成登录或配置，然后复制 API 密钥。
 
 3. 粘贴你的 API 密钥。
 
@@ -153,7 +60,7 @@ curl -fsSL https://openctrlc.ai/install | bash
    └ enter
    ```
 
-你也可以选择其他提供商。[了解更多](/docs/providers#directory)。
+你可以随时更换提供商。[查看提供商目录](/docs/providers#directory)。
 
 ---
 
@@ -332,7 +239,7 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 对话默认不会被分享。
 :::
 
-这是一个与 OpenCtrlC 的[示例对话](https://opencode.ai/s/4XP1fce5)。
+你可以使用 `/share` 命令与团队分享会话。
 
 ---
 
