@@ -184,3 +184,7 @@ Electron Builder 在 Linux 上会把同一 x64 架构分别写成 `amd64`（DEB�
 ## GitHub Release 正文不能直接暴露内部提交日志
 
 用户反馈正式 Release 中逐条列出 commit ID、提交作者和按内部模块拆分的长列表，阅读体验明显偏离面向用户的版本说明。以后 Release 正文应参考 AIVPlayer 的格式，只保留面向用户的 `Features`、`Performance and Reliability`、`Bug Fixes`、`Downloads` 和 `Full Changelog`；提交 ID 和内部作者信息不进入正文。`Contributors` 仅在存在第三方贡献者时展示，仓库所有者自己的提交不列出。自动生成器也必须遵守同一规则，避免下一次发布恢复成开发日志格式。
+
+## Downloads 必须先按产品类型再按平台分组
+
+用户反馈下载区直接按 Windows、macOS、Linux 展开后，CLI 和 Desktop 资产混在同一平台下，阅读和选择成本较高。以后 Release 正文应使用 `Downloads → CLI/Desktop → macOS/Linux/Windows` 的层级，先让用户选择产品类型，再选择目标平台和架构；自动生成器和手工版本说明必须保持同一层级。

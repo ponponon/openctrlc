@@ -10,7 +10,7 @@ Developer ID 证书签名并提交 Apple notarization；Windows 上传 NSIS 安�
 
 当前流程不会调用根目录的 `script/publish.ts`，因此不会发布 npm 包或执行版本同步 commit。macOS Desktop 当前构建 Apple Silicon（arm64）产物。
 
-如果某个版本需要手工整理面向用户的 Release 正文，可将正文放在 `docs/releases/v<version>.md`。发布流程会优先使用该文件；文件不存在时才回退到自动生成的简洁变更说明。
+如果某个版本需要手工整理面向用户的 Release 正文，可将正文放在 `docs/releases/v<version>.md`。发布流程会优先使用该文件；文件不存在时才回退到自动生成的简洁变更说明。Downloads 区按 `CLI/Desktop → macOS/Linux/Windows` 的层级组织。
 
 ### GitHub Actions 必需 Secrets
 

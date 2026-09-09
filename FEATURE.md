@@ -721,7 +721,7 @@ bun run desktop:mac
 
 - 自动生成的正文按 `Features`、`Bug Fixes`、`Downloads` 和 `Full Changelog` 组织，去掉 conventional commit 前缀和测试、构建噪音，不展示 commit ID、内部模块分组或提交作者标记。
 - 仓库所有者自动视为内部贡献者；只有存在第三方贡献者时才生成 `Contributors` 区块。
-- CLI 和 Desktop 资产仍按真实平台、架构和文件格式列出，不因精简正文而隐藏可下载内容。
+- Downloads 先按 CLI、Desktop 分类，再按 macOS、Linux、Windows 平台分组，仍列出真实架构和文件格式，不因精简正文而隐藏可下载内容。
 
 ### 代码位置
 

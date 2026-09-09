@@ -197,17 +197,31 @@ function format(from: string, to: string, version: string | undefined, list: Com
   const asset = (name: string) => `https://github.com/${repo}/releases/download/${releaseRef}/${name}`
 
   if (tag) {
-    lines.push("## Downloads", "", "### CLI", "")
+    lines.push("## Downloads", "", "### CLI", "", "#### macOS", "")
     lines.push(
-      `- macOS: [Apple Silicon ZIP](${asset("openctrlc-darwin-arm64.zip")}) | [Intel ZIP](${asset("openctrlc-darwin-x64.zip")})`,
-      `- Linux: [x64 tar.gz](${asset("openctrlc-linux-x64.tar.gz")}) | [ARM64 tar.gz](${asset("openctrlc-linux-arm64.tar.gz")})`,
-      `- Windows: [x64 ZIP](${asset("openctrlc-windows-x64.zip")}) | [ARM64 ZIP](${asset("openctrlc-windows-arm64.zip")})`,
+      `- [Apple Silicon ZIP](${asset("openctrlc-darwin-arm64.zip")}) | [Intel ZIP](${asset("openctrlc-darwin-x64.zip")})`,
+      "",
+      "#### Linux",
+      "",
+      `- [x64 tar.gz](${asset("openctrlc-linux-x64.tar.gz")}) | [ARM64 tar.gz](${asset("openctrlc-linux-arm64.tar.gz")})`,
+      "",
+      "#### Windows",
+      "",
+      `- [x64 ZIP](${asset("openctrlc-windows-x64.zip")}) | [ARM64 ZIP](${asset("openctrlc-windows-arm64.zip")})`,
       "",
       "### Desktop",
       "",
-      `- macOS Apple Silicon: [DMG](${asset("openctrlc-mac-arm64.dmg")}) | [ZIP](${asset("openctrlc-mac-arm64.zip")})`,
-      `- Linux x64: [DEB](${asset("openctrlc-linux-x64.deb")}) | [AppImage](${asset("openctrlc-linux-x64.AppImage")}) | [RPM](${asset("openctrlc-linux-x64.rpm")})`,
-      `- Windows x64: [Installer](${asset("openctrlc-win-x64.exe")})`,
+      "#### macOS",
+      "",
+      `- [Apple Silicon DMG](${asset("openctrlc-mac-arm64.dmg")}) | [Apple Silicon ZIP](${asset("openctrlc-mac-arm64.zip")})`,
+      "",
+      "#### Linux",
+      "",
+      `- [x64 DEB](${asset("openctrlc-linux-x64.deb")}) | [x64 AppImage](${asset("openctrlc-linux-x64.AppImage")}) | [x64 RPM](${asset("openctrlc-linux-x64.rpm")})`,
+      "",
+      "#### Windows",
+      "",
+      `- [x64 Installer](${asset("openctrlc-win-x64.exe")})`,
       "",
     )
   }
