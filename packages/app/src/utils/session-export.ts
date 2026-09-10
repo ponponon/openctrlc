@@ -81,25 +81,44 @@ export function sessionExportFilename(
 }
 
 export function sessionExportMarkdown(data: SessionExportData) {
-  return renderSessionMarkdown(data, markdownSimplePart)
+  return renderSessionMarkdown(data, markdownSimplePart, (info) => info.role === "user" || info.finish !== "tool-calls")
 }
 
 export function sessionExportMarkdownDetailed(data: SessionExportData) {
   return renderSessionMarkdown(data, markdownPart)
 }
 
-function renderSessionMarkdown(data: SessionExportData, renderPart: (part: Part) => string[]) {
+function renderSessionMarkdown(
+  data: SessionExportData,
+  renderPart: (part: Part) => string[],
+  includeMessage: (info: Message) => boolean = () => true,
+) {
   const title = data.info.title || data.info.slug || data.info.id
   const lines = [`# ${markdownHeading(title)}`, "", `- **Session ID:** \`${data.info.id}\``]
+
+  const sections: { key: string; role: "User" | "Assistant"; contents: string[] }[] = []
 
   if (data.info.directory) lines.push(`- **Directory:** \`${data.info.directory}\``)
   if (data.info.time?.created) lines.push(`- **Created:** ${new Date(data.info.time.created).toISOString()}`)
 
   for (const entry of data.messages) {
+    if (!includeMessage(entry.info)) continue
     const content = entry.parts.flatMap(renderPart).join("\n\n").trim()
     if (!content) continue
-    lines.push("", `## ${entry.info.role === "user" ? "User" : "Assistant"}`, "", content)
+
+    const role = entry.info.role === "user" ? "User" : "Assistant"
+    const key = entry.info.role === "user" ? entry.info.id : entry.info.parentID
+    const previous = sections.at(-1)
+    if (previous?.key === key && previous.role === role) {
+      previous.contents.push(content)
+      continue
+    }
+    sections.push({ key, role, contents: [content] })
   }
+
+  sections.forEach((section) => {
+    lines.push("", `## ${section.role}`, "", section.contents.join("\n\n"))
+  })
 
   return `${lines.join("\n").trimEnd()}\n`
 }

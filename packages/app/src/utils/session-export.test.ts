@@ -67,7 +67,7 @@ describe("sessionExportMarkdown", () => {
         parts: [{ id: "prt_user", type: "text", text: "hello" } as Part],
       },
       {
-        info: { id: "msg_assistant", role: "assistant" } as Message,
+        info: { id: "msg_assistant", role: "assistant", parentID: "msg_user", finish: "tool-calls" } as Message,
         parts: [
           { id: "prt_text", type: "text", text: "Hi there" } as Part,
           {
@@ -88,6 +88,10 @@ describe("sessionExportMarkdown", () => {
           } as Part,
         ],
       },
+      {
+        info: { id: "msg_assistant_final", role: "assistant", parentID: "msg_user", finish: "stop" } as Message,
+        parts: [{ id: "prt_final", type: "text", text: "Final answer" } as Part],
+      },
     ],
   }
 
@@ -97,10 +101,19 @@ describe("sessionExportMarkdown", () => {
     expect(result).toContain("# Test Session")
     expect(result).toContain("- **Session ID:** `ses_1`")
     expect(result).toContain("## User\n\nhello")
-    expect(result).toContain("## Assistant\n\nHi there")
+    expect(result).toContain("## Assistant\n\nFinal answer")
+    expect(result).not.toContain("Hi there")
     expect(result).not.toContain("### Tool: `bash`")
     expect(result).not.toContain("#### Input")
     expect(result).not.toContain("#### Output")
+  })
+
+  test("merges assistant messages from the same turn in detailed exports", () => {
+    const result = sessionExportMarkdownDetailed(data)
+
+    expect(result.match(/^## Assistant$/gm)).toHaveLength(1)
+    expect(result).toContain("Hi there")
+    expect(result).toContain("Final answer")
   })
 
   test("keeps tool details in the optional detailed export", () => {
