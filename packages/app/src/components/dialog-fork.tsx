@@ -17,6 +17,7 @@ import { Worktree as WorktreeState } from "@/utils/worktree"
 import type { TextPart as SDKTextPart } from "@openctrlc/sdk/v2/client"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import type { useLanguage } from "@/context/language"
+import { forkBoundaryAfterMessage } from "@/utils/session-fork"
 
 interface ForkableMessage {
   id: string
@@ -37,6 +38,7 @@ interface ForkLocationOption {
 interface DialogForkProps {
   sessionID?: string
   messageID?: string
+  includeMessage?: boolean
   sync: ReturnType<typeof useSync>
   serverSync: ReturnType<typeof useServerSync>
   sdk: ReturnType<typeof useSDK>
@@ -120,8 +122,22 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
 
     setState("pending", true)
     const sourceDirectory = props.sdk().directory
+    const selectedMessageID = state.selectedMessageID
+    const boundary =
+      props.includeMessage && selectedMessageID
+        ? forkBoundaryAfterMessage(props.sync().data.message[sourceSessionID] ?? [], selectedMessageID)
+        : { found: true, messageID: selectedMessageID }
+    if (!boundary.found) {
+      setState("pending", false)
+      showToast({
+        title: props.language.t("common.requestFailed"),
+        description: props.language.t("common.requestFailed"),
+      })
+      return
+    }
+
     const parts = state.selectedMessageID ? (props.sync().data.part[state.selectedMessageID] ?? []) : []
-    const restored = state.selectedMessageID
+    const restored = !props.includeMessage && state.selectedMessageID
       ? extractPromptFromParts(parts, {
           directory: sourceDirectory,
           attachmentName: props.language.t("common.attachment"),
@@ -144,10 +160,10 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
       const directory = createdDirectory ?? sourceDirectory
       const forked =
         directory === sourceDirectory
-          ? await props.sdk().api.session.fork({ sessionID: sourceSessionID, messageID: state.selectedMessageID })
+          ? await props.sdk().api.session.fork({ sessionID: sourceSessionID, messageID: boundary.messageID })
           : await props.sdk()
               .createClient({ directory, throwOnError: true })
-              .session.fork({ sessionID: sourceSessionID, messageID: state.selectedMessageID })
+              .session.fork({ sessionID: sourceSessionID, messageID: boundary.messageID })
               .then((result) => result.data)
       if (!forked?.id) throw new Error(props.language.t("common.requestFailed"))
 

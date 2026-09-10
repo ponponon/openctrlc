@@ -72,7 +72,7 @@ import {
 } from "@/pages/session/composer"
 import { createOpenReviewFile, createSessionTabs, createSizing, shouldShowFileTree } from "@/pages/session/helpers"
 import { MessageTimeline } from "@/pages/session/timeline/message-timeline"
-import type { SessionAction } from "@openctrlc/session-ui/message-part"
+import type { ForkAction, SessionAction } from "@openctrlc/session-ui/message-part"
 import { createTimelineModel } from "@/pages/session/timeline/model"
 import { type DiffStyle, SessionReviewTab, type SessionReviewTabProps } from "@/pages/session/review-tab"
 import { useSessionLayout } from "@/pages/session/session-layout"
@@ -2131,7 +2131,7 @@ export default function Page() {
     download()
   }
 
-  const fork: SessionAction = (input) => {
+  const fork: ForkAction = (input) => {
     const owner = sessionOwnership.capture()
     void import("@/components/dialog-fork").then((module) => {
       owner.run(() => {
@@ -2141,6 +2141,7 @@ export default function Page() {
           <module.DialogFork
             sessionID={input.sessionID}
             messageID={input.messageID}
+            includeMessage={input.includeMessage}
             sync={sync}
             serverSync={serverSync}
             sdk={sdk}

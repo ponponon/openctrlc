@@ -181,8 +181,10 @@ export type UserMessageSearchHit = { start: number; end: number; active?: boolea
 
 export type SessionAction = (input: { sessionID: string; messageID: string }) => Promise<void> | void
 
+export type ForkAction = (input: { sessionID: string; messageID: string; includeMessage?: boolean }) => Promise<void> | void
+
 export type UserActions = {
-  fork?: SessionAction
+  fork?: ForkAction
   revert?: SessionAction
   openAttachment?: (file: FilePart) => void
 }
@@ -1838,9 +1840,11 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={(event) => {
                   event.stopPropagation()
-                  const parentID = (props.message as AssistantMessage).parentID
-                  if (!parentID) return
-                  void props.actions?.fork?.({ sessionID: props.message.sessionID, messageID: parentID })
+                  void props.actions?.fork?.({
+                    sessionID: props.message.sessionID,
+                    messageID: props.message.id,
+                    includeMessage: true,
+                  })
                 }}
                 aria-label={i18n.t("ui.message.forkMessage")}
               />
