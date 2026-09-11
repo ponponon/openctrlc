@@ -778,3 +778,26 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 代码位置：`github/action.yml`、`github/README.md`、
 `packages/opencode/src/cli/cmd/github.handler.ts` 和
 `packages/opencode/src/cli/cmd/github-workflow.ts`。
+
+## 2026-09-12：补齐 Markdown 数学公式语法
+
+### 功能目标
+
+让会话消息中的常见 LaTeX 数学分隔符都能被 Markdown 渲染器识别，尤其修复公式写在列表正文同一行时仍显示原始 `$$...$$` 的问题。
+
+### 实现范围
+
+- 支持行内 `\(…\)` 和 `$…$` 数学公式。
+- 支持独立块公式 `$$…$$`，包括单行写法和原有多行写法。
+- 支持 `\[…\]` 显示公式。
+- 继续统一通过 KaTeX 生成 HTML，并沿用现有 Markdown 安全过滤。
+
+### 代码位置
+
+- `packages/ui/src/context/marked-parser.tsx`：数学分隔符扩展和 KaTeX 渲染。
+- `packages/ui/src/context/marked-parser.test.ts`：行内、块级及列表内公式回归测试。
+
+### 验证方式
+
+- 使用截图中的 `$$\\frac{...}{...}$$` 列表文本解析，结果包含 KaTeX 的 `katex-display` 节点且不再保留 `$$` 原文。
+- 运行 `packages/ui` 的 Markdown parser 测试。

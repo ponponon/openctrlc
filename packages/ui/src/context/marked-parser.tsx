@@ -17,8 +17,9 @@ export function createMarkdownParser(highlight: (code: string, language: string)
   )
 }
 
-const inlineMathRegex = /^\\\(((?:\\.|[^\\\n])*?)\\\)/
-const blockMathRegex = /^\$\$\n([\s\S]+?)\n\$\$(?:\n|$)/
+const inlineMathRegex = /^(?:\\\(((?:\\.|[^\\\n])*?)\\\)|\\\[([\s\S]+?)\\\]|(\$\$([^\n]+?)\$\$)|(\$(?!\s)((?:\\.|[^$\\\n])*?\S)\$(?!\$)))/
+const blockMathRegex = /^\$\$(?:\r?\n([\s\S]+?)\r?\n\$\$|([^\r\n]+?)\$\$)(?:\r?\n|$)/
+const mathDelimiters = ["\\(", "\\[", "$$", "$"]
 
 const katexExtension: MarkedExtension = {
   extensions: [
@@ -26,9 +27,9 @@ const katexExtension: MarkedExtension = {
       name: "inlineKatex",
       level: "inline",
       start(src) {
-        const index = src.indexOf("\\(")
-        if (index === -1) return
-        return index
+        const indexes = mathDelimiters.map((delimiter) => src.indexOf(delimiter)).filter((index) => index >= 0)
+        if (indexes.length === 0) return
+        return Math.min(...indexes)
       },
       tokenizer(src) {
         const match = src.match(inlineMathRegex)
@@ -36,8 +37,8 @@ const katexExtension: MarkedExtension = {
         return {
           type: "inlineKatex",
           raw: match[0],
-          text: match[1].trim(),
-          displayMode: false,
+          text: (match[1] ?? match[2] ?? match[4] ?? match[6] ?? "").trim(),
+          displayMode: match[2] !== undefined || match[4] !== undefined,
         }
       },
       renderer: renderKatexToken,
@@ -51,7 +52,7 @@ const katexExtension: MarkedExtension = {
         return {
           type: "blockKatex",
           raw: match[0],
-          text: match[1].trim(),
+          text: (match[1] ?? match[2] ?? "").trim(),
           displayMode: true,
         }
       },
