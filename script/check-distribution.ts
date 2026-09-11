@@ -43,7 +43,7 @@ const required: Array<[string, string[]]> = [
   ["packages/desktop/electron-builder.config.ts", ["owner: \"ponponon\"", "repo: \"openctrlc\"", "artifactName: \"openctrlc-"]],
   ["packages/opencode/script/publish.ts", ["ghcr.io/ponponon/openctrlc", "github.com/ponponon/openctrlc", "ponponon/homebrew-tap"]],
   ["nix/opencode.nix", ["OPENCTRLC_DISABLE_MODELS_FETCH"]],
-  ["github/action.yml", ["https://openctrlc.ai/install", "| OPENCTRLC_INSTALL_DIR=\"$HOME/.openctrlc/bin\" bash", "run: openctrlc github run"]],
+  ["github/action.yml", ["https://raw.githubusercontent.com/ponponon/openctrlc/dev/install", "| OPENCTRLC_INSTALL_DIR=\"$HOME/.openctrlc/bin\" bash", "run: openctrlc github run"]],
   ["github/README.md", ["openctrlc github install", "ponponon/openctrlc/github@latest", "ponponon/openctrlc/issues"]],
   ["packages/opencode/src/cli/cmd/github-workflow.ts", ["name: openctrlc", "jobs:\n  openctrlc:", "ponponon/openctrlc/github@latest", "/openctrlc", "/oc"]],
   ["script/version.ts", ["const repo = process.env.GH_REPO ?? \"ponponon/openctrlc\"", "const tag = Script.channel === \"beta\" ? \"beta\"", "--repo ${repo}"]],

@@ -101,7 +101,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   meta = {
     description = "The open source coding agent";
-    homepage = "https://opencode.ai";
+    homepage = "https://openctrlc.pages.dev";
     license = lib.licenses.mit;
     mainProgram = "openctrlc";
     inherit (node_modules.meta) platforms;

@@ -9,6 +9,6 @@
   <description><p>OpenCtrlC is an open source agent that helps you write and run code with any AI model.</p></description>
   <launchable type="desktop-id">cn.quniv.openctrlc.desktop</launchable>
   <url type="bugtracker">https://github.com/ponponon/openctrlc/issues</url>
-  <url type="homepage">https://openctrlc.ai</url>
+  <url type="homepage">https://openctrlc.pages.dev</url>
   <url type="vcs-browser">https://github.com/ponponon/openctrlc</url>
 </component>

@@ -4,10 +4,10 @@
   "version": "1.18.18",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://openctrlc.ai",
+  "homepage": "https://openctrlc.pages.dev",
   "author": {
     "name": "OpenCtrlC",
-    "email": "hello@openctrlc.ai"
+    "email": "ponponon.universe@gmail.com"
   },
   "scripts": {
     "typecheck": "tsgo -b",
