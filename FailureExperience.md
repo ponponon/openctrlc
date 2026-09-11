@@ -267,3 +267,17 @@ Marked 18 的 `renderer.link` 参数中 `title` 是可选字段。自定义 rend
 未标注类型的参数，会在单包检查时隐式退化成 `any`，并在全量依赖包检查时被严格模式拦截。
 以后扩展 Markdown renderer 时，必须复用 `Tokens.Link` 等库提供的精确 Token 类型，保留可选
 字段的语义，并在单包检查之外再跑一次全量 `bun turbo typecheck`，避免只在局部构建成功。
+
+## GitHub Release 标签不会自动完整进入本地 refs
+
+线上 GitHub 已经存在 `v0.1.3`、`v0.2.0`、`v0.2.1`、`v0.2.2`，但本地 Git Graph
+只有 `v0.1.1`。根因不是发布工作流没有打标签，而是这些 tag ref 后创建时，目标
+提交已经通过分支同步存在于本地；Git 的普通 fetch 只会自动跟随本次新获取对象上的
+标签，不保证扫描并拉取所有后来创建的标签，所以本地 refs 与 GitHub 不一致。
+
+以后遇到“GitHub 有 Release/tag、本地没有”的问题，必须先分别检查
+`git ls-remote --tags --refs origin` 与 `git show-ref --tags`，不要只看当前分支的
+提交图。修复时执行 `./script/sync-tags`，它会设置 `remote.<name>.tagOpt=--tags`
+并显式运行 `git fetch <remote> --tags --force`；确认标签目标提交后，再刷新 Git
+Graph。发布流程和排障记录都要区分“远程 tag 未创建”和“远程 tag 已创建但本地 ref
+未同步”这两类问题。

@@ -33,26 +33,9 @@ const betaAssetNames: Record<string, string> = {
   "linux-arm64-rpm": "openctrlc-linux-arm64.rpm",
 } satisfies Record<DownloadPlatform, string>
 
-// Doing this on the server lets us preserve the original name for platforms we don't care to rename for
-const downloadNames: Record<string, string> = {
-  "darwin-aarch64-dmg": "OpenCtrlC.dmg",
-  "darwin-x64-dmg": "OpenCtrlC.dmg",
-  "windows-x64-nsis": "OpenCtrlC Installer.exe",
-  "windows-arm64-nsis": "OpenCtrlC Installer ARM64.exe",
-} satisfies { [K in DownloadPlatform]?: string }
-
 export async function GET({ params: { platform, channel } }: APIEvent) {
   const assetName = channel === "stable" ? prodAssetNames[platform] : betaAssetNames[platform]
   if (!assetName) return new Response(null, { status: 404 })
 
-  const resp = await fetch(
-    releaseUrl(channel === "stable" ? "stable" : "beta", assetName),
-  )
-
-  const downloadName = downloadNames[platform]
-
-  const headers = new Headers(resp.headers)
-  if (downloadName) headers.set("content-disposition", `attachment; filename="${downloadName}"`)
-
-  return new Response(resp.body, { status: resp.status, statusText: resp.statusText, headers })
+  return Response.redirect(releaseUrl(channel === "stable" ? "stable" : "beta", assetName), 302)
 }
