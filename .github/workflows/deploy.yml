@@ -43,8 +43,33 @@ jobs:
             fi
           done
 
+      - name: Prepare marketing Pages output
+        shell: bash
+        run: |
+          set -euo pipefail
+          marketing_dir="$RUNNER_TEMP/openctrlc-pages"
+          mkdir -p "$marketing_dir"
+          rsync -a --exclude '_worker.js' packages/console/app/dist/ "$marketing_dir/"
+          bunx --package=esbuild@0.25.12 esbuild packages/console/app/dist/_worker.js/index.js \
+            --bundle \
+            --format=esm \
+            --platform=neutral \
+            --outfile="$marketing_dir/_worker.js" \
+            '--external:cloudflare:workers' \
+            '--external:node:*' \
+            --log-level=warning
+          cp packages/console/app/dist/_worker.js/wrangler.json "$marketing_dir/wrangler.json"
+
       - name: Deploy marketing site
-        run: bunx wrangler pages deploy packages/console/app/dist --project-name openctrlc --commit-dirty=true
+        run: bunx wrangler pages deploy "$RUNNER_TEMP/openctrlc-pages" --project-name openctrlc --commit-dirty=true --no-bundle
+
+      - name: Prepare documentation Pages output
+        shell: bash
+        run: |
+          set -euo pipefail
+          docs_dir="$RUNNER_TEMP/openctrlc-docs"
+          mkdir -p "$docs_dir/docs"
+          cp -R packages/web/dist/docs/. "$docs_dir/docs/"
 
       - name: Deploy documentation site
-        run: bunx wrangler pages deploy packages/web/dist/docs --project-name openctrlc-docs --commit-dirty=true
+        run: bunx wrangler pages deploy "$RUNNER_TEMP/openctrlc-docs" --project-name openctrlc-docs --commit-dirty=true
