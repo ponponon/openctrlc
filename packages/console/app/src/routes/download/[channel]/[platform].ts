@@ -37,5 +37,10 @@ export async function GET({ params: { platform, channel } }: APIEvent) {
   const assetName = channel === "stable" ? prodAssetNames[platform] : betaAssetNames[platform]
   if (!assetName) return new Response(null, { status: 404 })
 
-  return Response.redirect(releaseUrl(channel === "stable" ? "stable" : "beta", assetName), 302)
+  const releaseUrl =
+    channel === "stable"
+      ? `https://github.com/ponponon/openctrlc/releases/latest/download/${assetName}`
+      : `https://github.com/ponponon/openctrlc/releases/download/beta/${assetName}`
+
+  return Response.redirect(releaseUrl, 302)
 }
