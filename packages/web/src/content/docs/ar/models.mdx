@@ -52,12 +52,12 @@ description: تهيئة مزوّد LLM والنموذج.
 
 ```json title="openctrlc.json" {3}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
 
-المعرّف الكامل هنا يكون بالشكل `provider_id/model_id`. على سبيل المثال، إذا كنت تستخدم [OpenCtrlC Zen](/docs/zen) فستستخدم `opencode/gpt-5.1-codex` لنموذج GPT 5.1 Codex.
+المعرّف الكامل هنا يكون بالشكل `provider_id/model_id`. على سبيل المثال، إذا كنت تستخدم [مزود الخدمة الذي قمت بتهيئته](/docs/providers) فستستخدم `opencode/gpt-5.1-codex` لنموذج GPT 5.1 Codex.
 
 إذا كنت قد هيّأت [مزوّداً مخصّصاً](/docs/providers#custom)، فإن `provider_id` هو المفتاح الموجود ضمن قسم `provider` في إعداداتك، و`model_id` هو المفتاح الموجود ضمن `provider.models`.
 
@@ -69,7 +69,7 @@ description: تهيئة مزوّد LLM والنموذج.
 
 ```jsonc title="openctrlc.jsonc" {7-12,19-24}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -108,7 +108,7 @@ description: تهيئة مزوّد LLM والنموذج.
 
 ```jsonc title="openctrlc.jsonc" {6-21}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openctrlc": {
       "models": {
@@ -173,7 +173,7 @@ description: تهيئة مزوّد LLM والنموذج.
 
 ```jsonc title="openctrlc.jsonc" {7-18}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -210,7 +210,7 @@ description: تهيئة مزوّد LLM والنموذج.
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "model": "anthropic/claude-sonnet-4-20250514"
    }
    ```

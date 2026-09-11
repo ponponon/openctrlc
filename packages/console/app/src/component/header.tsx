@@ -1,149 +1,30 @@
-import logoLight from "../asset/logo-ornate-light.svg"
-import logoDark from "../asset/logo-ornate-dark.svg"
-import copyLogoLight from "../asset/lander/logo-light.svg"
-import copyLogoDark from "../asset/lander/logo-dark.svg"
-import copyWordmarkLight from "../asset/lander/wordmark-light.svg"
-import copyWordmarkDark from "../asset/lander/wordmark-dark.svg"
-import copyBrandAssetsLight from "../asset/lander/brand-assets-light.svg"
-import copyBrandAssetsDark from "../asset/lander/brand-assets-dark.svg"
-
-// SVG files for copying (separate from button icons)
-// Replace these with your actual SVG files for copying
-import copyLogoSvgLight from "../asset/lander/opencode-logo-light.svg"
-import copyLogoSvgDark from "../asset/lander/opencode-logo-dark.svg"
-import copyWordmarkSvgLight from "../asset/lander/opencode-wordmark-light.svg"
-import copyWordmarkSvgDark from "../asset/lander/opencode-wordmark-dark.svg"
-import { A, useNavigate } from "@solidjs/router"
-import { createMemo, Match, Show, Switch } from "solid-js"
+import { A } from "@solidjs/router"
+import { Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
-import { createEffect, onCleanup } from "solid-js"
 import { config } from "~/config"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
-import "./header-context-menu.css"
-
-const isDarkMode = () => window.matchMedia("(prefers-color-scheme: dark)").matches
-
-const fetchSvgContent = async (svgPath: string): Promise<string> => {
-  try {
-    const response = await fetch(svgPath)
-    const svgText = await response.text()
-    return svgText
-  } catch (err) {
-    console.error("Failed to fetch SVG content:", err)
-    throw err
-  }
-}
 
 export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: boolean }) {
-  const navigate = useNavigate()
   const i18n = useI18n()
   const language = useLanguage()
 
-  const [store, setStore] = createStore({
-    mobileMenuOpen: false,
-    contextMenuOpen: false,
-    contextMenuPosition: { x: 0, y: 0 },
-  })
-
-  createEffect(() => {
-    const handleClickOutside = () => {
-      setStore("contextMenuOpen", false)
-    }
-
-    const handleContextMenu = (event: MouseEvent) => {
-      event.preventDefault()
-      setStore("contextMenuOpen", false)
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setStore("contextMenuOpen", false)
-      }
-    }
-
-    if (store.contextMenuOpen) {
-      document.addEventListener("click", handleClickOutside)
-      document.addEventListener("contextmenu", handleContextMenu)
-      document.addEventListener("keydown", handleKeyDown)
-      onCleanup(() => {
-        document.removeEventListener("click", handleClickOutside)
-        document.removeEventListener("contextmenu", handleContextMenu)
-        document.removeEventListener("keydown", handleKeyDown)
-      })
-    }
-  })
-
-  const handleLogoContextMenu = (event: MouseEvent) => {
-    event.preventDefault()
-    const logoElement = (event.currentTarget as HTMLElement).querySelector("a")
-    if (logoElement) {
-      const rect = logoElement.getBoundingClientRect()
-      setStore("contextMenuPosition", {
-        x: rect.left - 16,
-        y: rect.bottom + 8,
-      })
-    }
-    setStore("contextMenuOpen", true)
-  }
-
-  const copyWordmarkToClipboard = async () => {
-    try {
-      const isDark = isDarkMode()
-      const wordmarkSvgPath = isDark ? copyWordmarkSvgDark : copyWordmarkSvgLight
-      const wordmarkSvg = await fetchSvgContent(wordmarkSvgPath)
-      await navigator.clipboard.writeText(wordmarkSvg)
-    } catch (err) {
-      console.error("Failed to copy wordmark to clipboard:", err)
-    }
-  }
-
-  const copyLogoToClipboard = async () => {
-    try {
-      const isDark = isDarkMode()
-      const logoSvgPath = isDark ? copyLogoSvgDark : copyLogoSvgLight
-      const logoSvg = await fetchSvgContent(logoSvgPath)
-      await navigator.clipboard.writeText(logoSvg)
-    } catch (err) {
-      console.error("Failed to copy logo to clipboard:", err)
-    }
-  }
+  const [store, setStore] = createStore({ mobileMenuOpen: false })
 
   return (
     <section data-component="top">
-      <div onContextMenu={handleLogoContextMenu}>
-        <A href={language.route("/")}>
-          <img data-slot="logo light" src={logoLight} alt={i18n.t("nav.logoAlt")} width="189" height="34" />
-          <img data-slot="logo dark" src={logoDark} alt={i18n.t("nav.logoAlt")} width="189" height="34" />
-        </A>
-      </div>
-
-      <Show when={store.contextMenuOpen}>
-        <div
-          class="context-menu"
-          style={`left: ${store.contextMenuPosition.x}px; top: ${store.contextMenuPosition.y}px;`}
-        >
-          <button class="context-menu-item" onClick={copyLogoToClipboard}>
-            <img data-slot="copy light" src={copyLogoLight} alt="" />
-            <img data-slot="copy dark" src={copyLogoDark} alt="" />
-            {i18n.t("nav.context.copyLogo")}
-          </button>
-          <button class="context-menu-item" onClick={copyWordmarkToClipboard}>
-            <img data-slot="copy light" src={copyWordmarkLight} alt="" />
-            <img data-slot="copy dark" src={copyWordmarkDark} alt="" />
-            {i18n.t("nav.context.copyWordmark")}
-          </button>
-          <button class="context-menu-item" onClick={() => navigate(language.route("/brand"))}>
-            <img data-slot="copy light" src={copyBrandAssetsLight} alt="" />
-            <img data-slot="copy dark" src={copyBrandAssetsDark} alt="" />
-            {i18n.t("nav.context.brandAssets")}
-          </button>
-        </div>
-      </Show>
+      <A href={language.route("/")} data-slot="brand" aria-label={i18n.t("nav.logoAlt")}>
+        <span data-slot="mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <span data-slot="wordmark">OpenCtrlC</span>
+      </A>
       <nav data-component="nav-desktop">
         <ul>
           <li>
-            <a href={config.github.repoUrl} target="_blank" style="white-space: nowrap;">
+            <a href={config.github.repoUrl} target="_blank" rel="noreferrer" style="white-space: nowrap;">
               {i18n.t("nav.github")}
             </a>
           </li>
@@ -151,22 +32,8 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
             <a href={language.route("/docs")}>{i18n.t("nav.docs")}</a>
           </li>
           <li>
-            <a href={language.route("/data")}>{i18n.t("nav.data")}</a>
+            <a href={language.route("/changelog")}>{i18n.t("nav.changelog")}</a>
           </li>
-          <li>
-            <A href={language.route("/zen")}>{i18n.t("nav.zen")}</A>
-          </li>
-          <li>
-            <A href={language.route("/go")}>{i18n.t("nav.go")}</A>
-          </li>
-          <li>
-            <A href={language.route("/enterprise")}>{i18n.t("nav.enterprise")}</A>
-          </li>
-          <Show when={props.zen || props.go}>
-            <li>
-              <a href="/auth">{i18n.t("nav.login")}</a>
-            </li>
-          </Show>
           <Show when={!props.hideGetStarted}>
             <li>
               <A href={language.route("/download")} data-slot="cta-button">
@@ -243,7 +110,7 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
                   <A href={language.route("/")}>{i18n.t("nav.home")}</A>
                 </li>
                 <li>
-                  <a href={config.github.repoUrl} target="_blank" style="white-space: nowrap;">
+                  <a href={config.github.repoUrl} target="_blank" rel="noreferrer" style="white-space: nowrap;">
                     {i18n.t("nav.github")}
                   </a>
                 </li>
@@ -251,26 +118,8 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
                   <a href={language.route("/docs")}>{i18n.t("nav.docs")}</a>
                 </li>
                 <li>
-                  <a href={language.route("/data")}>{i18n.t("nav.data")}</a>
+                  <a href={language.route("/changelog")}>{i18n.t("nav.changelog")}</a>
                 </li>
-                <Show when={!props.zen}>
-                  <li>
-                    <A href={language.route("/zen")}>{i18n.t("nav.zen")}</A>
-                  </li>
-                </Show>
-                <Show when={!props.go}>
-                  <li>
-                    <A href={language.route("/go")}>{i18n.t("nav.go")}</A>
-                  </li>
-                </Show>
-                <li>
-                  <A href={language.route("/enterprise")}>{i18n.t("nav.enterprise")}</A>
-                </li>
-                <Show when={props.zen || props.go}>
-                  <li>
-                    <a href="/auth">{i18n.t("nav.login")}</a>
-                  </li>
-                </Show>
                 <Show when={!props.hideGetStarted}>
                   <li>
                     <A href={language.route("/download")} data-slot="cta-button">

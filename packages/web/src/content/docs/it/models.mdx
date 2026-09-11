@@ -52,12 +52,12 @@ Per impostarne uno come modello predefinito, puoi impostare la chiave `model` ne
 
 ```json title="openctrlc.json" {3}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
 
-Qui l'ID completo e `provider_id/model_id`. Per esempio, se usi [OpenCtrlC Zen](/docs/zen), useresti `opencode/gpt-5.1-codex` per GPT 5.1 Codex.
+Qui l'ID completo e `provider_id/model_id`. Per esempio, se usi [il provider configurato](/docs/providers), useresti `opencode/gpt-5.1-codex` per GPT 5.1 Codex.
 
 Se hai configurato un [provider personalizzato](/docs/providers#custom), `provider_id` e la chiave nella sezione `provider` della config e `model_id` e la chiave in `provider.models`.
 
@@ -69,7 +69,7 @@ Puoi configurare globalmente le opzioni di un modello tramite la config.
 
 ```jsonc title="openctrlc.jsonc" {7-12,19-24}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -108,7 +108,7 @@ Puoi anche definire varianti personalizzate che estendono quelle integrate. Le v
 
 ```jsonc title="openctrlc.jsonc" {6-21}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openctrlc": {
       "models": {
@@ -173,7 +173,7 @@ Puoi sovrascrivere varianti esistenti o aggiungerne di tue:
 
 ```jsonc title="openctrlc.jsonc" {7-18}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -210,7 +210,7 @@ Quando OpenCtrlC si avvia, controlla i modelli in questo ordine di priorita:
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "model": "anthropic/claude-sonnet-4-20250514"
    }
    ```

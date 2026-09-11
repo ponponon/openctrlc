@@ -74,10 +74,10 @@ export default function Download() {
                 {i18n.t("home.promo.body")} {i18n.t("home.promo.cta")}
               </p>
               <Show when={detectedOS()}>
-                <a
-                   href={language.route(getDownloadHref(getDownloadPlatform(detectedOS(), detectedArch())))}
-                  data-component="download-button"
-                >
+                  <a
+                    href={language.route(getDownloadHref(getDownloadPlatform(detectedOS(), detectedArch())))}
+                    data-component="download-button"
+                  >
                   <IconDownload />
                   {i18n.t("download.hero.button", { os: detectedOS()! })}
                 </a>
@@ -92,34 +92,34 @@ export default function Download() {
             <div data-component="section-content">
               <button
                 data-component="cli-row"
-                 onClick={handleCopyClick("curl -fsSL https://openctrlc.ai/install | bash")}
+                onClick={handleCopyClick("curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash")}
               >
                 <code>
-                    curl -fsSL https://<strong>openctrlc.ai/install</strong> | bash
+                  curl -fsSL https://<strong>raw.githubusercontent.com/ponponon/openctrlc/dev/install</strong> | bash
                 </code>
                 <CopyStatus />
               </button>
-               <button data-component="cli-row" onClick={handleCopyClick("npm i -g openctrlc-ai")}>
+              <button data-component="cli-row" onClick={handleCopyClick("npm i -g openctrlc-ai")}>
                 <code>
-                   npm i -g <strong>openctrlc-ai</strong>
+                  npm i -g <strong>openctrlc-ai</strong>
                 </code>
                 <CopyStatus />
               </button>
-               <button data-component="cli-row" onClick={handleCopyClick("bun add -g openctrlc-ai")}>
+              <button data-component="cli-row" onClick={handleCopyClick("bun add -g openctrlc-ai")}>
                 <code>
-                   bun add -g <strong>openctrlc-ai</strong>
+                  bun add -g <strong>openctrlc-ai</strong>
                 </code>
                 <CopyStatus />
               </button>
-               <button data-component="cli-row" onClick={handleCopyClick("brew install openctrlc")}>
+              <button data-component="cli-row" onClick={handleCopyClick("brew install openctrlc")}>
                 <code>
-                   brew install <strong>openctrlc</strong>
+                  brew install <strong>openctrlc</strong>
                 </code>
                 <CopyStatus />
               </button>
-               <button data-component="cli-row" onClick={handleCopyClick("paru -S openctrlc-bin")}>
+              <button data-component="cli-row" onClick={handleCopyClick("paru -S openctrlc-bin")}>
                 <code>
-                   paru -S <strong>openctrlc-bin</strong>
+                  paru -S <strong>openctrlc-bin</strong>
                 </code>
                 <CopyStatus />
               </button>
@@ -131,9 +131,9 @@ export default function Download() {
               <span>[2]</span> {i18n.t("download.section.desktop")}
             </div>
             <div data-component="section-content">
-               <button data-component="cli-row" onClick={handleCopyClick("brew install --cask openctrlc-desktop")}>
+              <button data-component="cli-row" onClick={handleCopyClick("brew install --cask openctrlc-desktop")}>
                 <code>
-                   brew install --cask <strong>openctrlc-desktop</strong>
+                  brew install --cask <strong>openctrlc-desktop</strong>
                 </code>
                 <CopyStatus />
               </button>
@@ -150,22 +150,6 @@ export default function Download() {
                   <span>{i18n.t("download.platform.macosAppleSilicon")}</span>
                 </div>
                 <a href={language.route(getDownloadHref("darwin-aarch64-dmg"))} data-component="action-button">
-                  {i18n.t("download.action.download")}
-                </a>
-              </div>
-              <div data-component="download-row">
-                <div data-component="download-info">
-                  <span data-slot="icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M20.0035 7.15814C19.3171 7.5784 18.7485 8.16594 18.351 8.86579C17.9534 9.56563 17.74 10.3549 17.7305 11.1597C17.7332 12.0655 18.0016 12.9506 18.5024 13.7054C19.0032 14.4602 19.7144 15.0515 20.5479 15.4061C20.2193 16.4664 19.7329 17.4712 19.1051 18.3868C18.2069 19.6798 17.2677 20.9727 15.8387 20.9727C14.4096 20.9727 14.0421 20.1425 12.3952 20.1425C10.7892 20.1425 10.2175 21 8.91088 21C7.60426 21 6.69246 19.8022 5.6444 18.3323C4.25999 16.2732 3.49913 13.8583 3.45312 11.3774C3.45312 7.29427 6.10722 5.13028 8.72032 5.13028C10.1086 5.13028 11.2656 6.04208 12.1366 6.04208C12.9669 6.04208 14.2599 5.07572 15.8387 5.07572C16.6504 5.05478 17.4548 5.23375 18.1811 5.59689C18.9074 5.96003 19.5332 6.49619 20.0035 7.15814ZM15.0901 3.34726C15.7861 2.52858 16.18 1.49589 16.2062 0.421702C16.2074 0.280092 16.1937 0.13875 16.1654 0C14.9699 0.116777 13.8644 0.686551 13.0757 1.59245C12.3731 2.37851 11.9643 3.38362 11.9188 4.43697C11.9193 4.56507 11.933 4.69278 11.9597 4.81808C12.0539 4.8359 12.1496 4.84503 12.2455 4.84536C12.7964 4.80152 13.3327 4.64611 13.8217 4.38858C14.3108 4.13104 14.7423 3.77676 15.0901 3.34726Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </span>
-                  <span>{i18n.t("download.platform.macosIntel")}</span>
-                </div>
-                <a href={language.route(getDownloadHref("darwin-x64-dmg"))} data-component="action-button">
                   {i18n.t("download.action.download")}
                 </a>
               </div>
@@ -210,7 +194,7 @@ export default function Download() {
                       />
                     </svg>
                   </span>
-                   <span>{i18n.t("download.platform.linuxDeb")} (x64)</span>
+                  <span>{i18n.t("download.platform.linuxDeb")} (x64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-x64-deb"))} data-component="action-button">
                   {i18n.t("download.action.download")}
@@ -234,13 +218,13 @@ export default function Download() {
                       />
                     </svg>
                   </span>
-                   <span>{i18n.t("download.platform.linuxRpm")} (x64)</span>
+                  <span>{i18n.t("download.platform.linuxRpm")} (x64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-x64-rpm"))} data-component="action-button">
                   {i18n.t("download.action.download")}
                 </a>
               </div>
-               <div data-component="download-row">
+              <div data-component="download-row">
                 <div data-component="download-info">
                   <span data-slot="icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -250,12 +234,28 @@ export default function Download() {
                       />
                     </svg>
                   </span>
-                  <span>Linux (.AppImage)</span>
+                  <span>Linux (.AppImage) (x64)</span>
                 </div>
-                 <a href={language.route(getDownloadHref("linux-x64-appimage"))} data-component="action-button">
-                   {i18n.t("download.action.download")}
+                <a href={language.route(getDownloadHref("linux-x64-appimage"))} data-component="action-button">
+                  {i18n.t("download.action.download")}
                 </a>
-               </div>
+              </div>
+              <div data-component="download-row">
+                <div data-component="download-info">
+                  <span>{i18n.t("download.platform.linuxRpm")} (ARM64)</span>
+                </div>
+                <a href={language.route(getDownloadHref("linux-arm64-rpm"))} data-component="action-button">
+                  {i18n.t("download.action.download")}
+                </a>
+              </div>
+              <div data-component="download-row">
+                <div data-component="download-info">
+                  <span>Linux (.AppImage) (ARM64)</span>
+                </div>
+                <a href={language.route(getDownloadHref("linux-arm64-appimage"))} data-component="action-button">
+                  {i18n.t("download.action.download")}
+                </a>
+              </div>
             </div>
           </section>
 
@@ -422,13 +422,8 @@ export default function Download() {
             </li>
             <li>
               <Faq question={i18n.t("home.faq.q3")}>
-                {i18n.t("download.faq.a3.beforeLocal")}{" "}
-                <a href={language.route("/docs/providers/#lm-studio")} target="_blank">
-                  {i18n.t("download.faq.a3.localLink")}
-                </a>{" "}
-                {i18n.t("download.faq.a3.afterLocal.beforeZen")}{" "}
-                <A href={language.route("/zen")}>{i18n.t("nav.zen")}</A>
-                {i18n.t("download.faq.a3.afterZen")}
+                OpenCtrlC supports local models and remote providers. Configure the provider you trust in your project
+                settings, then follow the provider-specific setup in the <a href={language.route("/docs/providers/")}>provider docs</a>.
               </Faq>
             </li>
             <li>
@@ -440,9 +435,8 @@ export default function Download() {
             </li>
             <li>
               <Faq question={i18n.t("home.faq.q6")}>
-                {i18n.t("download.faq.a5.p1")} {i18n.t("download.faq.a5.p2.beforeZen")}{" "}
-                <A href={language.route("/zen")}>{i18n.t("nav.zen")}</A>
-                {i18n.t("download.faq.a5.p2.afterZen")}
+                OpenCtrlC is open source and does not add a model subscription. You pay only for the provider or local
+                model services you choose to use.
               </Faq>
             </li>
             <li>

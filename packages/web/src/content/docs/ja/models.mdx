@@ -51,12 +51,12 @@ OpenCtrlC は [AI SDK](https://ai-sdk.dev/) および [Models.dev](https://model
 
 ```json title="openctrlc.json" {3}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
 
-ここでの完全な ID は `provider_id/model_id` です。たとえば、[OpenCtrlC Zen](/docs/zen) を使用している場合、GPT 5.1 Codex には `opencode/gpt-5.1-codex` を使用します。
+ここでの完全な ID は `provider_id/model_id` です。たとえば、[設定したプロバイダー](/docs/providers) を使用している場合、GPT 5.1 Codex には `opencode/gpt-5.1-codex` を使用します。
 
 [カスタムプロバイダー](/docs/providers#custom) を構成している場合、`provider_id` は構成の `provider` 部分のキーであり、`model_id` は `provider.models` のキーです。
 
@@ -68,7 +68,7 @@ config を通じてモデルのオプションをグローバルに設定でき�
 
 ```jsonc title="openctrlc.jsonc" {7-12,19-24}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -107,7 +107,7 @@ config を通じてモデルのオプションをグローバルに設定でき�
 
 ```jsonc title="openctrlc.jsonc" {6-21}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openctrlc": {
       "models": {
@@ -172,7 +172,7 @@ OpenCtrlC には、多くのプロバイダーのデフォルトのバリアン�
 
 ```jsonc title="openctrlc.jsonc" {7-18}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -209,7 +209,7 @@ OpenCtrlC が起動すると、次の優先順位でモデルがチェックさ�
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "model": "anthropic/claude-sonnet-4-20250514"
    }
    ```

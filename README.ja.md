@@ -1,128 +1,73 @@
-<p align="center">
-  <a href="https://opencode.ai">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode logo">
-    </picture>
-  </a>
-</p>
-<p align="center">オープンソースのAIコーディングエージェント。</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
-  <a href="https://github.com/ponponon/openctrlc/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/ponponon/openctrlc/publish.yml?style=flat-square&branch=dev" /></a>
-</p>
+# OpenCtrlC
 
-<p align="center">
-  <a href="README.md">English</a> |
-  <a href="README.zh.md">简体中文</a> |
-  <a href="README.zht.md">繁體中文</a> |
-  <a href="README.ko.md">한국어</a> |
-  <a href="README.de.md">Deutsch</a> |
-  <a href="README.es.md">Español</a> |
-  <a href="README.fr.md">Français</a> |
-  <a href="README.it.md">Italiano</a> |
-  <a href="README.da.md">Dansk</a> |
-  <a href="README.ja.md">日本語</a> |
-  <a href="README.pl.md">Polski</a> |
-  <a href="README.ru.md">Русский</a> |
-  <a href="README.bs.md">Bosanski</a> |
-  <a href="README.ar.md">العربية</a> |
-  <a href="README.no.md">Norsk</a> |
-  <a href="README.br.md">Português (Brasil)</a> |
-  <a href="README.th.md">ไทย</a> |
-  <a href="README.tr.md">Türkçe</a> |
-  <a href="README.uk.md">Українська</a> |
-  <a href="README.bn.md">বাংলা</a> |
-  <a href="README.gr.md">Ελληνικά</a> |
-  <a href="README.vi.md">Tiếng Việt</a>
-</p>
+ターミナルとデスクトップで使える、オープンソースの AI コーディングエージェントです。プロジェクトを調査し、ファイルを編集し、コマンドを実行し、変更内容を確認できます。利用するモデルとプロバイダーは自分で選べます。
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+## まずはこちら
 
----
+- [公式サイト](https://openctrlc.pages.dev/)
+- [ドキュメント](https://openctrlc.pages.dev/docs/)
+- [ダウンロード](https://github.com/ponponon/openctrlc/releases)
+- [GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
 
-### インストール
+## インストール
+
+### CLI / TUI
+
+インストールスクリプトは現在の OS と CPU アーキテクチャを検出します。
 
 ```bash
-# YOLO
-curl -fsSL https://openctrlc.ai/install | bash
-
-# パッケージマネージャー
-npm i -g openctrlc-ai@latest       # bun/pnpm/yarn でもOK
-scoop install openctrlc             # Windows
-choco install openctrlc             # Windows
-brew install openctrlc # macOS と Linux（推奨。常に最新）
-brew install openctrlc              # macOS と Linux（公式 brew formula。更新頻度は低め）
-sudo pacman -S openctrlc            # Arch Linux (Stable)
-mise use -g openctrlc               # どのOSでも
-nix run github:ponponon/openctrlc
+curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-> [!TIP]
-> インストール前に 0.1.x より古いバージョンを削除してください。
-
-### デスクトップアプリ (BETA)
-
-OpenCtrlC はデスクトップアプリとしても利用できます。[releases page](https://github.com/ponponon/openctrlc/releases) から直接ダウンロードしてください。
-
-| プラットフォーム      | ダウンロード                       |
-| --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `openctrlc-mac-arm64.dmg`   |
-| macOS (Intel)         | `openctrlc-mac-x64.dmg`     |
-| Windows               | `openctrlc-win-x64.exe` |
-| Linux                 | `.deb`、`.rpm`、または AppImage    |
+または npm / Bun からインストールできます。
 
 ```bash
-# macOS (Homebrew)
-scoop install openctrlc-desktop
-# Windows (Scoop)
-scoop install openctrlc-desktop
+npm install --global openctrlc-ai
+# bun add --global openctrlc-ai
 ```
 
-#### インストールディレクトリ
+### デスクトップ
 
-インストールスクリプトは、インストール先パスを次の優先順位で決定します。
+最新のインストーラーは [GitHub Releases](https://github.com/ponponon/openctrlc/releases) からダウンロードしてください。
 
-1. `$OPENCTRLC_INSTALL_DIR` - カスタムのインストールディレクトリ
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification に準拠したパス
-3. `$HOME/bin` - 標準のユーザー用バイナリディレクトリ（存在する場合、または作成できる場合）
-4. `$HOME/.openctrlc/bin` - デフォルトのフォールバック
+| プラットフォーム | アーキテクチャ | 形式 |
+| --- | --- | --- |
+| macOS | Apple Silicon | DMG, ZIP |
+| Windows | x64, ARM64 | NSIS インストーラー |
+| Linux | x64, ARM64 | DEB, AppImage, RPM |
+
+## OpenCtrlC の特徴
+
+- ターミナルとネイティブデスクトップの同じセッションモデル
+- OpenAI、Anthropic、Google、ローカルモデルなど、選択したプロバイダーに接続
+- プロジェクトのルールと Skills を確認しながら作業
+- セッション検索、ターン間の移動、コンテキスト確認
+- ツール呼び出し、生成された変更、コマンド結果を追跡可能
+- セッションのエクスポートと、互換性のある OpenCode セッションのインポート
+
+## データとモデルプロバイダー
+
+OpenCtrlC はホスト型モデルサービスではありません。アプリケーションはローカルで動作し、設定したプロバイダーへリクエストを送信します。データの保存、料金、利用規約は選択したプロバイダーに従います。
+
+共有機能は明示的に選択した場合だけ使用してください。共有サービスを利用しない場合は、プロジェクト設定で無効にできます。
+
+## 開発
 
 ```bash
-# 例
-OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
+bun install
+bun run dev
+bun run dev:console
+bun run dev:desktop
 ```
 
-### Agents
+変更を確認するには、ルートからではなく各パッケージで次のコマンドを実行します。
 
-OpenCode には組み込みの Agent が2つあり、`Tab` キーで切り替えられます。
+```bash
+bun run --cwd packages/console/app typecheck
+bun run --cwd packages/console/app build
+bun run --cwd packages/web build
+```
 
-- **build** - デフォルト。開発向けのフルアクセス Agent
-- **plan** - 分析とコード探索向けの読み取り専用 Agent
-  - デフォルトでファイル編集を拒否
-  - bash コマンド実行前に確認
-  - 未知のコードベース探索や変更計画に最適
+OpenCtrlC は [OpenCode](https://github.com/anomalyco/opencode) を基盤とする、独立してメンテナンスされているフォークです。OpenCode チームとの提携や承認を意味するものではありません。
 
-また、複雑な検索やマルチステップのタスク向けに **general** サブ Agent も含まれています。
-内部的に使用されており、メッセージで `@general` と入力して呼び出せます。
-
-[agents](https://opencode.ai/docs/agents) の詳細はこちら。
-
-### ドキュメント
-
-OpenCode の設定については [**ドキュメント**](https://opencode.ai/docs) を参照してください。
-
-### コントリビュート
-
-OpenCode に貢献したい場合は、Pull Request を送る前に [contributing docs](./CONTRIBUTING.md) を読んでください。
-
-### OpenCode の上に構築する
-
-OpenCode に関連するプロジェクトで、名前に "opencode"（例: "opencode-dashboard" や "opencode-mobile"）を含める場合は、そのプロジェクトが OpenCode チームによって作られたものではなく、いかなる形でも関係がないことを README に明記してください。
-
----
-
-**コミュニティに参加** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode)
+貢献する場合は [CONTRIBUTING.md](./CONTRIBUTING.md) と [リリース手順](./docs/release.md) を確認してください。

@@ -32,7 +32,7 @@ You can customize the base URL for any provider by setting the `baseURL` option.
 
 ```json title="openctrlc.json" {6}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -51,7 +51,7 @@ You can hide specific models from the `/models` picker for a provider using the 
 
 ```json title="openctrlc.json" {6}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "anthropic": {
       "blacklist": ["claude-opus-4-20250514"]
@@ -64,7 +64,7 @@ The inverse `whitelist` option hides every model except the ones listed.
 
 ```json title="openctrlc.json" {6}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "anthropic": {
       "whitelist": ["claude-sonnet-4-20250514"]
@@ -164,7 +164,7 @@ To use Amazon Bedrock with OpenCtrlC:
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -193,7 +193,7 @@ To use Amazon Bedrock with OpenCtrlC:
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -242,7 +242,7 @@ For custom inference profiles, use the model and provider name in the key and se
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "amazon-bedrock": {
       // ...
@@ -305,7 +305,7 @@ You can configure openctrlc to use local models through [Atomic Chat](https://at
 
 ```json title="openctrlc.json" "atomic-chat" {5, 6, 8, 10-14}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "atomic-chat": {
       "npm": "@ai-sdk/openai-compatible",
@@ -538,7 +538,7 @@ Cloudflare AI Gateway lets you access models from OpenAI, Anthropic, Workers AI,
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "cloudflare-ai-gateway": {
          "models": {
@@ -896,7 +896,7 @@ to only use your own GitLab-hosted instance, add the following to your
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "small_model": "gitlab/duo-chat-haiku-4-5",
   "share": "disabled"
 }
@@ -960,7 +960,7 @@ Customize through `openctrlc.json`:
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "gitlab": {
       "options": {
@@ -991,7 +991,7 @@ To access GitLab tools (merge requests, issues, pipelines, CI/CD, etc.):
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "plugin": ["opencode-gitlab-plugin"]
 }
 ```
@@ -1201,7 +1201,7 @@ Here's [Helicone's Model Directory](https://helicone.ai/models), you'll need thi
 
 ```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1229,7 +1229,7 @@ Helicone supports custom headers for features like caching, user tracking, and s
 
 ```jsonc title="~/.config/openctrlc/openctrlc.jsonc"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1283,7 +1283,7 @@ You can configure openctrlc to use local models through [llama.cpp's](https://gi
 
 ```json title="openctrlc.json" "llama.cpp" {5, 6, 8, 10-15}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "llama.cpp": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1350,7 +1350,7 @@ You can configure openctrlc to use local models through LM Studio.
 
 ```json title="openctrlc.json" "lmstudio" {5, 6, 8, 10-14}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "lmstudio": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1491,7 +1491,7 @@ You can also use NVIDIA models locally via [NVIDIA NIM](https://docs.nvidia.com/
 
 ```json title="openctrlc.json" {6}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "nvidia": {
       "options": {
@@ -1549,7 +1549,7 @@ Ollama can automatically configure itself for OpenCtrlC. See the [Ollama integra
 
 ```json title="openctrlc.json" "ollama" {5, 6, 8, 10-14}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1686,7 +1686,7 @@ If you already have an API key, you can select **Manually enter API Key** and pa
 
    ```json title="openctrlc.json" {6}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1701,7 +1701,7 @@ If you already have an API key, you can select **Manually enter API Key** and pa
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1750,7 +1750,7 @@ If you already have an API key, you can select **Manually enter API Key** and pa
 
    ```json title="openctrlc.json" {6}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "llmgateway": {
          "models": {
@@ -1765,7 +1765,7 @@ If you already have an API key, you can select **Manually enter API Key** and pa
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "llmgateway": {
          "models": {
@@ -1822,7 +1822,7 @@ If your organization runs a Poolside deployment, configure it as a custom OpenAI
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "poolside-deployment": {
       "npm": "@ai-sdk/openai-compatible",
@@ -2121,7 +2121,7 @@ The model catalog is provided automatically. A minimal `openctrlc.json` is all t
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "snowflake-cortex/claude-sonnet-4-6",
   "small_model": "snowflake-cortex/claude-haiku-4-5"
 }
@@ -2214,7 +2214,7 @@ You can also customize models through your openctrlc config. Here's an example o
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "vercel": {
       "models": {
@@ -2348,7 +2348,7 @@ OpenCtrlC refreshes the OAuth access token automatically. Any Grok or X Premium 
 
    ```json title="openctrlc.json" {6}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "zenmux": {
          "models": {
@@ -2416,7 +2416,7 @@ You can use any OpenAI-compatible provider with openctrlc. Most modern AI provid
 
    ```json title="openctrlc.json" ""myprovider"" {5-15}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "provider": {
        "myprovider": {
          "npm": "@ai-sdk/openai-compatible",
@@ -2454,7 +2454,7 @@ Here's an example setting the `apiKey`, `headers`, and model `limit` options.
 
 ```json title="openctrlc.json" {9,11,17-20}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "myprovider": {
       "npm": "@ai-sdk/openai-compatible",

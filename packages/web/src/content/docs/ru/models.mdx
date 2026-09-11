@@ -53,12 +53,12 @@ openctrlc использует [AI SDK](https://ai-sdk.dev/) и [Models.dev](htt
 
 ```json title="openctrlc.json" {3}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
 
-Здесь полный идентификатор `provider_id/model_id`. Например, если вы используете [OpenCtrlC Zen](/docs/zen), вы должны использовать `opencode/gpt-5.1-codex` для кодекса GPT 5.1.
+Здесь полный идентификатор `provider_id/model_id`. Например, если вы используете [настроенного вами провайдера](/docs/providers), вы должны использовать `opencode/gpt-5.1-codex` для кодекса GPT 5.1.
 
 Если вы настроили [пользовательский поставщик](/docs/providers#custom), `provider_id` — это ключ из части `provider` вашей конфигурации, а `model_id` — это ключ из `provider.models`.
 
@@ -70,7 +70,7 @@ openctrlc использует [AI SDK](https://ai-sdk.dev/) и [Models.dev](htt
 
 ```jsonc title="openctrlc.jsonc" {7-12,19-24}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -109,7 +109,7 @@ openctrlc использует [AI SDK](https://ai-sdk.dev/) и [Models.dev](htt
 
 ```jsonc title="openctrlc.jsonc" {6-21}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openctrlc": {
       "models": {
@@ -174,7 +174,7 @@ openctrlc поставляется с вариантами по умолчани
 
 ```jsonc title="openctrlc.jsonc" {7-18}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -211,7 +211,7 @@ openctrlc поставляется с вариантами по умолчани
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "model": "anthropic/claude-sonnet-4-20250514"
    }
    ```

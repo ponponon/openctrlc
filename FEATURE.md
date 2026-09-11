@@ -735,3 +735,46 @@ bun run desktop:mac
 
 - 生成版本说明后检查正文不含 commit ID 和仓库所有者 Contributors。
 - 对照 GitHub Release 资产，确认 Downloads 中的链接和文件名完全一致，并确认 Windows/Linux 两种架构均有可用路由。
+
+## 2026-09-10：官网产品化与公开文档收口
+
+### 功能目标
+
+把 OpenCtrlC 从“能用的开源仓库”整理成可以直接面向用户宣传的正式项目：官网负责产品介绍，文档负责真实能力说明，README 和 Release 说明保持同一套入口、平台和服务边界。
+
+### 实现范围
+
+- 重做官网首页的产品叙事、终端预览、安装入口、工作流说明、功能介绍和 FAQ，并补齐中英文与繁体中文首页文案。
+- 将官网、文档、README、桌面元数据和安装脚本统一到 `openctrlc.pages.dev`、`openctrlc-docs.pages.dev` 与 OpenCtrlC GitHub 仓库。
+- 移除官网导航和文档中的 Zen、Go、旧企业宣传、旧分享服务和旧社区入口；历史路由统一跳转到当前首页或提供商文档。
+- 将多语言文档中会误导用户的旧安装地址、旧分享域名和旧服务商说明改为 OpenCtrlC 当前支持的本地优先工作流；缺少可靠翻译的专题页回退到准确的主文档，避免展示拼接后的伪服务。
+- 更新日文、韩文、中文和英文 README，明确 CLI/Desktop 下载范围、平台架构、数据边界、开发检查和独立维护关系。
+- 准备 `v0.2.2` 面向用户的 Release 正文，覆盖近期导出、会话分叉和跨平台发布修复；继续保留 CLI/Desktop、平台和架构三级下载结构。
+- 将旧 `/zen`、`/go`、`/black` 官网入口改为正式跳转，并让全局社交卡片使用 OpenCtrlC 资源。
+- 将配置 Schema、邀请邮件和认证界面的公开链接与品牌统一到 OpenCtrlC，避免生成的配置说明或账户邮件继续指向上游产品。
+
+### 代码位置
+
+- `packages/console/app/src/routes/index.tsx` 与 `index.css`：官网首页内容和视觉系统。
+- `packages/console/app/src/routes/zen/index.tsx`、`go/index.tsx`、`black.tsx`：历史宣传路由跳转。
+- `packages/web/src/content/docs/`：文档、翻译和服务边界说明。
+- `README.md`、`README.zh.md`、`README.ja.md`、`README.ko.md`：项目入口文档。
+- `.github/workflows/deploy.yml`、`docs/release.md`、`docs/releases/v0.2.2.md`：Pages 部署和版本发布说明。
+
+### 验证方式
+
+- 执行 `bun run --cwd packages/console/app typecheck`。
+- 执行 `bun run --cwd packages/console/app build`，确认官网、配置 Schema 和 sitemap 生成成功。
+- 执行 `SST_STAGE=production bun run --cwd packages/web build`，确认文档和多语言搜索索引生成成功。
+- 检查公开源码不再包含旧安装域名、旧分享域名或 Zen/Go 产品入口。
+
+### GitHub Actions 自管理接入
+
+GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成器写入
+`contents`、`issues` 和 `pull-requests` 的最小写权限。OIDC Token 交换仅作为
+显式配置 `OIDC_BASE_URL` 的私有扩展保留；会话分享默认关闭，只有同时配置外部
+`SHARE_URL` 才会启用。
+
+代码位置：`github/action.yml`、`github/README.md`、
+`packages/opencode/src/cli/cmd/github.handler.ts` 和
+`packages/opencode/src/cli/cmd/github-workflow.ts`。

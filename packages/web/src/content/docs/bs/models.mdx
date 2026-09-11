@@ -48,12 +48,12 @@ OpenCtrlC config.
 
 ```json title="openctrlc.json" {3}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
 
-Ovdje je puni ID `provider_id/model_id`. Na primjer, ako koristite [OpenCtrlC Zen](/docs/zen), koristili biste `opencode/gpt-5.1-codex` za GPT 5.1 Codex.
+Ovdje je puni ID `provider_id/model_id`. Na primjer, ako koristite [vašeg konfigurisanog provajdera](/docs/providers), koristili biste `opencode/gpt-5.1-codex` za GPT 5.1 Codex.
 Ako ste konfigurirali [prilagođenog provajdera](/docs/providers#custom), `provider_id` je ključ iz `provider` dijela vaše konfiguracije, a `model_id` je ključ iz `provider.models`.
 
 ---
@@ -64,7 +64,7 @@ Možete globalno konfigurirati opcije modela kroz config.
 
 ```jsonc title="openctrlc.jsonc" {7-12,19-24}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -101,7 +101,7 @@ Također možete definirati prilagođene varijante koje proširuju ugrađene. Va
 
 ```jsonc title="openctrlc.jsonc" {6-21}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openctrlc": {
       "models": {
@@ -159,7 +159,7 @@ Možete nadjačati postojeće varijante ili dodati svoje:
 
 ```jsonc title="openctrlc.jsonc" {7-18}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -193,7 +193,7 @@ Kada se OpenCtrlC pokrene, on provjerava modele u sljedećem prioritetnom redosl
 
 ```json title="openctrlc.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "anthropic/claude-sonnet-4-20250514"
 }
 ```

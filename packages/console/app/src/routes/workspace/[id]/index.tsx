@@ -4,7 +4,6 @@ import { createAsync, useParams, useAction, useSubmission } from "@solidjs/route
 import { NewUserSection } from "./new-user-section"
 import { ModelSection } from "./model-section"
 import { ProviderSection } from "./provider-section"
-import { IconZen } from "~/component/icon"
 import { querySessionInfo, queryBillingInfo, createCheckoutUrl, formatBalance } from "../common"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
@@ -34,11 +33,10 @@ export default function () {
   return (
     <div data-page="workspace-[id]">
       <section data-component="header-section">
-        <IconZen />
         <p>
           <span>
-            {i18n.t("workspace.home.banner.beforeLink")}{" "}
-            <a target="_blank" href={language.route("/docs/zen")}>
+            {i18n.t("workspace.home.banner.beforeLink")} {" "}
+            <a target="_blank" href={language.route("/docs/providers/")}>
               {i18n.t("common.learnMore")}
             </a>
             .

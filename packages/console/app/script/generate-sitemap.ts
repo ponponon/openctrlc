@@ -22,10 +22,8 @@ async function getMainRoutes(): Promise<SitemapEntry[]> {
   // Add main static routes
   const staticRoutes = [
     { path: "/", priority: 1.0, changefreq: "daily" },
-    { path: "/enterprise", priority: 0.8, changefreq: "weekly" },
-    { path: "/brand", priority: 0.6, changefreq: "monthly" },
-    { path: "/zen", priority: 0.8, changefreq: "weekly" },
-    { path: "/go", priority: 0.8, changefreq: "weekly" },
+    { path: "/download", priority: 0.9, changefreq: "weekly" },
+    { path: "/changelog", priority: 0.7, changefreq: "weekly" },
   ]
 
   for (const item of staticRoutes) {

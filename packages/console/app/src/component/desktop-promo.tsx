@@ -3,6 +3,7 @@ import { A, useLocation } from "@solidjs/router"
 import { createSignal, Show } from "solid-js"
 import { getRequestEvent } from "solid-js/web"
 import desktopPromoVideo from "~/asset/lander/desktop-tabs-landscape.mp4"
+import { config } from "~/config"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
 import { strip } from "~/lib/language"
@@ -20,7 +21,7 @@ export function DesktopPromo() {
   )
   const hostname = request ? new URL(request.url).hostname : typeof window === "object" ? window.location.hostname : ""
   const primaryHost =
-    hostname === "opencode.ai" || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1"
+    hostname === new URL(config.baseUrl).hostname || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1"
 
   return (
     <Show

@@ -1,6 +1,5 @@
 ---
 import Default from '@astrojs/starlight/components/Head.astro'
-import config from '../../config.mjs'
 
 const slug = Astro.url.pathname.replace(/^\//, "").replace(/\/$/, "");
 const {
@@ -14,7 +13,7 @@ const shareSlug = "docs/s"
 const isShare = slug === shareSlug || slug.startsWith(`${shareSlug}/`)
 const isHome = slug === "" || slug === "docs"
 
-const ogImage = `${config.url}/docs/social-share.png`;
+const ogImage = "https://openctrlc.pages.dev/social-share.svg";
 ---
 
 { isHome && (

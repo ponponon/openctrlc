@@ -1,150 +1,107 @@
+<h1 align="center">OpenCtrlC</h1>
+
+<p align="center">面向终端和桌面工作流的开源 AI 编程 Agent。</p>
+
 <p align="center">
-  <a href="https://openctrlc.quniv.cn">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCtrlC logo">
-    </picture>
-  </a>
-</p>
-<p align="center">开源的 AI Coding Agent。</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
-  <a href="https://github.com/ponponon/openctrlc/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/ponponon/openctrlc/publish.yml?style=flat-square&branch=dev" /></a>
+  <a href="https://github.com/ponponon/openctrlc/actions/workflows/publish.yml"><img alt="构建状态" src="https://img.shields.io/github/actions/workflow/status/ponponon/openctrlc/publish.yml?style=flat-square&branch=dev" /></a>
+  <a href="https://github.com/ponponon/openctrlc/blob/dev/LICENSE"><img alt="许可证" src="https://img.shields.io/github/license/ponponon/openctrlc?style=flat-square" /></a>
 </p>
 
 <p align="center">
   <a href="README.md">English</a> |
   <a href="README.zh.md">简体中文</a> |
-  <a href="README.zht.md">繁體中文</a> |
-  <a href="README.ko.md">한국어</a> |
-  <a href="README.de.md">Deutsch</a> |
-  <a href="README.es.md">Español</a> |
-  <a href="README.fr.md">Français</a> |
-  <a href="README.it.md">Italiano</a> |
-  <a href="README.da.md">Dansk</a> |
   <a href="README.ja.md">日本語</a> |
-  <a href="README.pl.md">Polski</a> |
-  <a href="README.ru.md">Русский</a> |
-  <a href="README.bs.md">Bosanski</a> |
-  <a href="README.ar.md">العربية</a> |
-  <a href="README.no.md">Norsk</a> |
-  <a href="README.br.md">Português (Brasil)</a> |
-  <a href="README.th.md">ไทย</a> |
-  <a href="README.tr.md">Türkçe</a> |
-  <a href="README.uk.md">Українська</a> |
-  <a href="README.bn.md">বাংলা</a> |
-  <a href="README.gr.md">Ελληνικά</a> |
-  <a href="README.vi.md">Tiếng Việt</a>
+  <a href="README.ko.md">한국어</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+OpenCtrlC 帮助你探索代码仓库、理解陌生代码、编辑文件、运行命令并审查变更。它面向希望把 AI 编程工作流保持在终端、项目文件和现有工具附近的开发者。
+
+## 快速入口
+
+- 官网：[openctrlc.pages.dev](https://openctrlc.pages.dev/)
+- 文档：[openctrlc.pages.dev/docs](https://openctrlc.pages.dev/docs/)
+- 下载：[GitHub Releases](https://github.com/ponponon/openctrlc/releases)
+- 讨论区：[GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
+
+## 安装
+
+### CLI / TUI
+
+安装脚本会自动识别操作系统和 CPU 架构：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
+```
+
+也可以安装 npm 包：
+
+```bash
+npm install --global openctrlc-ai
+# 或：bun add --global openctrlc-ai
+```
+
+安装器支持通过 `OPENCTRLC_INSTALL_DIR` 或 `XDG_BIN_DIR` 自定义安装路径，默认回退到 `$HOME/.openctrlc/bin`。
+
+### 桌面版
+
+从 [GitHub Releases](https://github.com/ponponon/openctrlc/releases) 下载最新桌面安装包：
+
+| 平台 | 架构 | 格式 |
+| --- | --- | --- |
+| macOS | Apple Silicon | DMG、ZIP |
+| Windows | x64、ARM64 | NSIS 安装程序 |
+| Linux | x64、ARM64 | DEB、AppImage、RPM |
+
+桌面版和 CLI 使用相同的本地项目与会话模型。桌面安装包会包含与目标平台匹配的 CLI 二进制文件。
+
+## OpenCtrlC 能做什么
+
+- **终端与桌面工作流**：在 TUI 或原生桌面应用中工作，不改变项目目录结构。
+- **自由选择模型供应商**：连接适合自己工作流和安全要求的远程供应商或本地模型。
+- **Skills 与项目规则**：查看可用技能，让项目约定和代码一起维护。
+- **会话导航**：搜索会话、跳转到指定轮次并检查本次回复使用的上下文。
+- **透明的执行过程**：查看工具调用、生成的变更和命令结果，不把 Agent 当作黑盒。
+- **会话导出与导入**：导出可读的对话记录，并按 ID 导入兼容的 OpenCode 会话。
+- **跨平台发布**：CLI 和桌面版面向 macOS、Windows、Linux 发布；发布流程覆盖 x64 与 ARM64 架构。
+
+## 数据与模型供应商
+
+OpenCtrlC 是客户端软件，不是托管模型服务。应用在本地运行，并按照你选择的供应商配置发送请求。具体供应商的条款、数据保留策略和费用规则适用于这些请求。
+
+可选的分享功能是显式触发的：只有你主动选择分享的会话才会发送到配置的分享服务。如果不适合分享，可以在项目配置中关闭它。
+
+## 与 OpenCode 的关系
+
+OpenCtrlC 是基于 [OpenCode](https://github.com/anomalyco/opencode) 独立维护的开源分支。OpenCode 为终端 AI 编程提供了坚实的技术基础；OpenCtrlC 在此基础上采用独立的产品方向和发布流程。
+
+OpenCtrlC 与 OpenCode 团队不存在隶属、代理或背书关系。
+
+## 开发
+
+OpenCtrlC 使用 [Bun](https://bun.sh) 和 Bun workspace：
+
+```bash
+bun install
+bun run dev
+bun run dev:console
+bun run dev:desktop
+```
+
+修改后可以运行以下检查：
+
+```bash
+bun run --cwd packages/console/app typecheck
+bun run --cwd packages/console/app build
+bun run --cwd packages/web build
+```
+
+提交 Pull Request 前请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)，发布维护者还应阅读 [docs/release.md](./docs/release.md)。
+
+## 许可证
+
+OpenCtrlC 使用 [MIT License](./LICENSE) 发布。
 
 ---
 
-### 安装
-
-```bash
-# 直接安装 (YOLO)
-curl -fsSL https://openctrlc.ai/install | bash
-
-# 软件包管理器
-npm i -g openctrlc-ai@latest       # 也可使用 bun/pnpm/yarn
-sudo pacman -S openctrlc            # Linux
-scoop install openctrlc             # Windows
-choco install openctrlc             # Windows
-brew install openctrlc # macOS 和 Linux（推荐，始终保持最新）
-brew install openctrlc              # macOS 和 Linux（官方 brew formula，更新频率较低）
-sudo pacman -S openctrlc            # Arch Linux (Stable)
-paru -S openctrlc-bin               # Arch Linux (Latest from AUR)
-mise use -g openctrlc               # 任意系统
-nix run github:ponponon/openctrlc
-```
-
-> [!TIP]
-> 安装前请先移除 0.1.x 之前的旧版本。
-
-### 桌面应用程序 (BETA)
-
-OpenCtrlC 也提供桌面版应用。可直接从 [发布页 (releases page)](https://github.com/ponponon/openctrlc/releases) 下载。
-
-| 平台                  | 下载文件                           |
-| --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `openctrlc-mac-arm64.dmg`   |
-| macOS (Intel)         | `openctrlc-mac-x64.dmg`     |
-| Windows               | `openctrlc-win-x64.exe` |
-| Linux                 | `.deb`、`.rpm` 或 AppImage         |
-
-```bash
-# macOS (Homebrew Cask)
-brew install --cask openctrlc-desktop
-# Windows (Scoop)
-scoop install openctrlc-desktop
-```
-
-#### 安装目录
-
-安装脚本按照以下优先级决定安装路径：
-
-1. `$OPENCTRLC_INSTALL_DIR` - 自定义安装目录
-2. `$XDG_BIN_DIR` - 符合 XDG 基础目录规范的路径
-3. `$HOME/bin` - 如果存在或可创建的用户二进制目录
-4. `$HOME/.openctrlc/bin` - 默认备用路径
-
-```bash
-# 示例
-OPENCTRLC_INSTALL_DIR=/usr/local/bin curl -fsSL https://openctrlc.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://openctrlc.ai/install | bash
-```
-
-#### macOS 本地开发打包安装
-
-在项目根目录执行下面的命令，会构建 Desktop、生成本机 `.app`、安装到 `/Applications/OpenCtrlC.app` 并启动：
-
-```bash
-bun run desktop:mac
-```
-
-默认构建 `dev` 通道。只构建不安装，或指定其他通道：
-
-```bash
-bun run desktop:mac -- --no-install --no-open
-bun run desktop:mac -- --channel=prod --no-open
-```
-
-如果需要生成正式分发用的 DMG/ZIP，先完成构建，再执行 Desktop macOS 打包命令：
-
-```bash
-OPENCTRLC_CHANNEL=prod bun run --cwd packages/desktop package:mac
-```
-
-### Agents
-
-OpenCode 内置两种 Agent，可用 `Tab` 键快速切换：
-
-- **build** - 默认模式，具备完整权限，适合开发工作
-- **plan** - 只读模式，适合代码分析与探索
-  - 默认拒绝修改文件
-  - 运行 bash 命令前会询问
-  - 便于探索未知代码库或规划改动
-
-另外还包含一个 **general** 子 Agent，用于复杂搜索和多步任务，内部使用，也可在消息中输入 `@general` 调用。
-
-了解更多 [Agents](https://opencode.ai/docs/agents) 相关信息。
-
-### 文档
-
-更多配置说明请查看我们的 [**官方文档**](https://opencode.ai/docs)。
-
-### 参与贡献
-
-如有兴趣贡献代码，请在提交 PR 前阅读 [贡献指南 (Contributing Docs)](./CONTRIBUTING.md)。
-
-### 基于 OpenCode 进行开发
-
-如果你在项目名中使用了 “opencode”（如 “opencode-dashboard” 或 “opencode-mobile”），请在 README 里注明该项目不是 OpenCode 团队官方开发，且不存在隶属关系。
-
----
-
-**加入我们的社区** [飞书](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=52ao9352-5623-4fa0-b7dd-3407c392c1af&qr_code=true) | [X.com](https://x.com/opencode)
+**项目链接：** [GitHub](https://github.com/ponponon/openctrlc) · [Issues](https://github.com/ponponon/openctrlc/issues) · [Discussions](https://github.com/ponponon/openctrlc/discussions)

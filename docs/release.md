@@ -1,43 +1,83 @@
 # Release
 
-## Current GitHub Actions release
+## 正式发布流程
 
-当前 GitHub Actions 发布流程是手动触发的正式发布流程，不会因为向 `dev` 推送普通 commit 自动发布。
-在 Actions 页面手动运行 `publish`，填写 `version` 或选择 `bump`。
+正式版本通过 GitHub Actions 的 `publish` 工作流手动发布，不会因为普通的
+`dev` 分支提交自动创建版本。
 
-流程会先创建 draft GitHub Release，然后确认对应 tag 指向本次工作流 commit；之后并行构建 CLI、macOS Apple Silicon Desktop、Windows x64 Desktop 和 Linux x64 Desktop。版本说明在 CI 中使用 Git 提交生成，避免依赖模型凭证。macOS Desktop 使用
-Developer ID 证书签名并提交 Apple notarization；Windows 上传 NSIS 安装程序，Linux 上传 AppImage、DEB 和 RPM。所有 Desktop 构建都会先校验图标源文件的尺寸、透明圆角和 macOS Dock inset，成功后把真实资产上传到 Release，最后自动将 Release 从 draft 发布。
+发布前先把代码、官网、文档和 `docs/releases/v<version>.md` 提交并推送到
+`dev`，然后在 GitHub Actions 中运行 `publish`，填写完整版本号，例如
+`0.2.2`。工作流会创建 draft Release、创建并校验版本 tag、构建所有平台
+资产，最后上传资产并将 Release 发布。
 
-当前流程不会调用根目录的 `script/publish.ts`，因此不会发布 npm 包或执行版本同步 commit。macOS Desktop 当前构建 Apple Silicon（arm64）产物。
+当前正式发布包含：
 
-如果某个版本需要手工整理面向用户的 Release 正文，可将正文放在 `docs/releases/v<version>.md`。发布流程会优先使用该文件；文件不存在时才回退到自动生成的简洁变更说明。Downloads 区按 `CLI/Desktop → macOS/Linux/Windows` 的层级组织。
+- CLI：macOS Apple Silicon / Intel、Linux x64 / ARM64、Windows x64 / ARM64。
+- Desktop：macOS Apple Silicon、Windows x64 / ARM64、Linux x64 / ARM64。
+- Desktop Linux：DEB、AppImage、RPM。
+- Desktop Windows：NSIS 安装程序。
+- macOS Desktop：Developer ID 签名和 notarization。
+- 所有 Desktop 构建：发布前执行图标尺寸、透明圆角和 Dock inset 校验。
 
-### GitHub Actions 必需 Secrets
+发布说明优先读取 `docs/releases/v<version>.md`。正文应面向最终用户，按
+`Features`、`Bug Fixes` 和 `Downloads` 组织；Downloads 先按 `CLI/Desktop`
+分类，再按 `macOS/Linux/Windows` 和架构分类。不要在正文中堆积 commit ID。
+如果没有第三方贡献者，不要添加 Contributors 小节。
 
-本机的 `openctrlc-notary` 是 macOS 钥匙串配置，只能在本机使用，GitHub Runner 无法读取。需要在仓库的
-`Settings → Secrets and variables → Actions` 中配置以下 Secrets：
+## 官网和文档部署
+
+`.github/workflows/deploy.yml` 会在 `dev` 分支更新时构建并部署两个 Cloudflare
+Pages 项目：
+
+- `openctrlc`：官网、下载页、更新日志和法律页面，地址为
+  `https://openctrlc.pages.dev`。
+- `openctrlc-docs`：多语言文档，地址为
+  `https://openctrlc-docs.pages.dev`，官网通过代理挂载到 `/docs/`。
+
+仓库需要配置以下 GitHub Actions 凭据：
 
 ```text
-MACOS_DEVELOPER_ID_P12_BASE64   # 包含 Developer ID Application 私钥的 .p12，经 base64 编码
-MACOS_DEVELOPER_ID_P12_PASSWORD # 导出 .p12 时设置的密码
-APPLE_ID                        # 有权访问该 Developer Team 的 Apple 账户邮箱
-APPLE_APP_SPECIFIC_PASSWORD     # Apple 账户页面生成的 App 专用密码
-APPLE_TEAM_ID                   # J6RWCMMG83
+CLOUDFLARE_API_TOKEN   # Secret，至少具备 Pages 项目部署权限
+CLOUDFLARE_ACCOUNT_ID  # Variable 或 Secret，Cloudflare Account ID
 ```
 
-在本机导出包含私钥的 Developer ID `.p12` 后，可使用下面的命令复制成 Secret 内容：
+工作流会在部署前自动创建缺失的 Pages 项目。若账号策略禁止自动创建，先
+在 Cloudflare Pages 中手动创建这两个项目，并把生产分支设为 `dev`。
 
-```bash
-base64 -i /path/to/OpenCtrlC-Developer-ID.p12 | pbcopy
+## GitHub Actions 必需 Secrets
+
+macOS 正式桌面包需要以下仓库 Secrets：
+
+```text
+MACOS_DEVELOPER_ID_P12_BASE64
+MACOS_DEVELOPER_ID_P12_PASSWORD
+APPLE_ID
+APPLE_APP_SPECIFIC_PASSWORD
+APPLE_TEAM_ID
 ```
 
-复制到 GitHub Secret `MACOS_DEVELOPER_ID_P12_BASE64` 后，不要把 `.p12` 或密码提交到仓库。
+其中 `MACOS_DEVELOPER_ID_P12_BASE64` 是包含 Developer ID Application 私钥的
+`.p12` 文件的 base64 内容。不要把 `.p12`、密码或任何 API token 提交到仓库。
 
-完成 Secrets 配置后，在 Actions 页面运行 `publish`；成功日志应包含 `notarization successful`，Release 会自动发布。
+## 发布前检查
 
-## Full package publishing
+1. 查看最近提交，确认版本变更确实面向用户，并更新 `docs/releases/`。
+2. 运行官网和文档构建：
 
-如果要执行包含 npm 包的完整发布流程，从仓库根目录执行：
+   ```bash
+   bun run --cwd packages/console/app typecheck
+   bun run --cwd packages/console/app build
+   SST_STAGE=production bun run --cwd packages/web build
+   ```
+
+3. 检查 GitHub Actions workflow 文件、下载资产名和发布说明中的链接一致。
+4. 检查 staged diff，确认没有 API key、账号密码、证书私钥或本地配置。
+5. 发布后验证 Release 页面、官网首页、`/download`、`/changelog` 和 `/docs/`。
+
+## npm 包发布
+
+当前 `publish` 工作流主要负责 GitHub Release 和 Desktop 资产，不会自动发布
+npm 包。若需要同步发布 CLI npm 包，使用：
 
 ```bash
 OPENCTRLC_VERSION=<version> \
@@ -46,53 +86,15 @@ OPENCTRLC_RELEASE=1 \
 bun ./script/publish.ts
 ```
 
-发布脚本会构建并发布 CLI 平台包以及 `openctrlc-ai`。不要直接修改
-`packages/desktop/scripts/utils.ts` 中的默认 CLI 版本来“发布”新版本。
-
-## 发布前检查
-
-确认以下 13 个 npm 包都使用同一个版本：
-
-```text
-openctrlc-ai
-openctrlc-darwin-arm64
-openctrlc-darwin-x64
-openctrlc-darwin-x64-baseline
-openctrlc-linux-arm64
-openctrlc-linux-arm64-musl
-openctrlc-linux-x64
-openctrlc-linux-x64-baseline
-openctrlc-linux-x64-musl
-openctrlc-linux-x64-baseline-musl
-openctrlc-windows-arm64
-openctrlc-windows-x64
-openctrlc-windows-x64-baseline
-```
-
-检查版本元数据和实际 tarball：
-
-```bash
-for package in openctrlc-ai openctrlc-darwin-arm64 openctrlc-darwin-x64 openctrlc-darwin-x64-baseline openctrlc-linux-arm64 openctrlc-linux-arm64-musl openctrlc-linux-x64 openctrlc-linux-x64-baseline openctrlc-linux-x64-musl openctrlc-linux-x64-baseline-musl openctrlc-windows-arm64 openctrlc-windows-x64 openctrlc-windows-x64-baseline; do
-  npm view "$package@<version>" version
-  npm pack "$package@<version>" --dry-run
-done
-```
-
-如果 `npm view` 已经能查到版本，但 `npm pack` 或 Bun 安装仍然返回 tarball `404`，这是 npm CDN 尚未同步完成。等待后重新执行实际安装验证，不要重复发布同一个版本。
+不要直接修改 `packages/desktop/scripts/utils.ts` 中的默认 CLI 版本来“发布”新版本。
 
 ## 桌面端验证
 
-确认当前平台包可以被桌面端实际下载并启动：
+发布后可以用对应版本验证本机桌面端下载：
 
 ```bash
 OPENCTRLC_CLI_VERSION=<version> bun run dev:desktop
 ```
 
-必须看到类似以下输出后，才认为桌面端发布链路完成：
-
-```text
-installed openctrlc-darwin-arm64@<version>
-Copied openctrlc-darwin-arm64 to resources/openctrlc
-```
-
-本地开发可以使用 `OPENCTRLC_CLI_VERSION` 临时覆盖版本，但不要把未发布版本写入源码默认值。
+应看到对应平台的 `openctrlc-<platform>-<arch>@<version>` 成功安装并复制到
+Desktop resources。开发环境可以临时覆盖版本，但不要把未发布版本写入源码默认值。

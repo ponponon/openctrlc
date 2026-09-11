@@ -17,7 +17,6 @@ const imageAttrs = {
 };
 
 const github = (config.social || []).filter(s => s.icon === 'github')[0];
-const discord = (config.social || []).filter(s => s.icon === 'discord')[0];
 const locale = Astro.currentLocale || 'root';
 const t = Astro.locals.t as (key: string) => string;
 const docsHref = getRelativeLocaleUrl(locale, "")
@@ -90,7 +89,7 @@ if (image) {
         <a href={github.href} target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
       <div class="col2">
-        <a href={discord.href} target="_blank" rel="noopener noreferrer">Discord</a>
+        <a href="https://github.com/ponponon/openctrlc/discussions" target="_blank" rel="noopener noreferrer">GitHub Discussions</a>
       </div>
       <div class="col3">
       <span>&copy;2026 OpenCtrlC contributors</span>

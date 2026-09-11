@@ -52,12 +52,12 @@ OpenCtrlC 使用 [AI SDK](https://ai-sdk.dev/) 和 [Models.dev](https://models.d
 
 ```json title="openctrlc.json" {3}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
 
-這裡完整的 ID 格式為 `provider_id/model_id`。例如，如果您使用 [OpenCtrlC Zen](/docs/zen)，則 GPT 5.1 Codex 對應的值為 `opencode/gpt-5.1-codex`。
+這裡完整的 ID 格式為 `provider_id/model_id`。例如，如果您使用 [您設定的供應商](/docs/providers)，則 GPT 5.1 Codex 對應的值為 `opencode/gpt-5.1-codex`。
 
 如果您設定了[自訂提供商](/docs/providers#custom)，`provider_id` 是設定中 `provider` 部分的鍵名，`model_id` 是 `provider.models` 中的鍵名。
 
@@ -69,7 +69,7 @@ OpenCtrlC 使用 [AI SDK](https://ai-sdk.dev/) 和 [Models.dev](https://models.d
 
 ```jsonc title="openctrlc.jsonc" {7-12,19-24}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -108,7 +108,7 @@ OpenCtrlC 使用 [AI SDK](https://ai-sdk.dev/) 和 [Models.dev](https://models.d
 
 ```jsonc title="openctrlc.jsonc" {6-21}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openctrlc": {
       "models": {
@@ -173,7 +173,7 @@ OpenCtrlC 為許多提供商提供了預設變體：
 
 ```jsonc title="openctrlc.jsonc" {7-18}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://openctrlc.pages.dev/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -210,7 +210,7 @@ OpenCtrlC 啟動時，會按以下優先順序載入模型：
 
    ```json title="openctrlc.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://openctrlc.pages.dev/config.json",
      "model": "anthropic/claude-sonnet-4-20250514"
    }
    ```

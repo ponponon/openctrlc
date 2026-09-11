@@ -483,7 +483,7 @@ If you don't provide a session ID, you'll be prompted to select from available s
 
 ### import
 
-Import session data from a JSON file, OpenCtrlC share URL, or an existing OpenCode session.
+Import session data from a JSON file or an existing OpenCtrlC session.
 
 ```bash
 openctrlc import <file>
@@ -493,12 +493,12 @@ You can import from a local file or an OpenCtrlC share URL.
 
 ```bash
 openctrlc import session.json
-openctrlc import https://opncd.ai/s/abc123
+openctrlc import https://your-sharing-service.example/s/abc123
 openctrlc import ses_01H...
 ```
 
 When the argument is a session ID, OpenCtrlC reads that session from
-`~/.local/share/opencode/opencode.db` without modifying the source database.
+`~/.local/share/openctrlc/openctrlc.db` without modifying the source database.
 Use `--opencode-db` to provide a different OpenCode database path.
 
 ---

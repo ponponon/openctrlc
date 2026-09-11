@@ -8,8 +8,8 @@ export default defineConfig({
       middleware: "./src/middleware.ts",
     }) as PluginOption,
     nitro({
-      compatibilityDate: "2024-09-19",
-      preset: "cloudflare-module",
+      compatibilityDate: "2026-09-10",
+      preset: "cloudflare-pages",
       cloudflare: {
         nodeCompat: true,
       },
