@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$#" -gt 1 ]; then
+  echo "用法: ./script/sync-tags [remote]" >&2
+  exit 1
+fi
+
+remote="${1:-origin}"
+git remote get-url "$remote" >/dev/null
+
+# Releases may create a tag for a commit that is already present locally.
+# In that case ordinary fetch does not auto-follow the newly created tag ref.
+git config --local "remote.${remote}.tagOpt" --tags
+git fetch "$remote" --tags --force
+
+echo "已同步远程标签（remote: ${remote}）："
+git for-each-ref --sort=refname --format='%(refname:short)' refs/tags |
+  while IFS= read -r tag; do
+    printf '%s -> %s\n' "$tag" "$(git rev-parse "${tag}^{commit}")"
+  done

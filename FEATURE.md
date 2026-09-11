@@ -826,3 +826,25 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 
 - 对截图中跨行的 `**列式存储...\\n**最底层...` 解析，结果包含 `<strong>` 且不保留 `**`。
 - 运行 UI Markdown parser 测试和 Session UI 类型检查。
+
+## 远程 Git 标签同步入口
+
+### 功能目标
+
+让本地 Git Graph、发布检查和新环境初始化能够稳定看到 GitHub 上已经创建的
+版本标签，避免远程 Release 已完成但本地 refs 不完整。
+
+### 实现范围
+
+- 新增 `script/sync-tags`，默认同步 `origin` 的全部标签。
+- 首次运行时为当前仓库设置 `remote.<name>.tagOpt=--tags`，让后续普通 fetch
+  也会获取后来创建、但目标提交已经存在于本地的标签。
+- 使用 `git fetch <remote> --tags --force` 以远程标签为准修复本地缺失或落后的
+  tag ref，并输出同步后的标签列表。
+- 在 `docs/release.md` 记录标签 ref 与 GitHub Release 的关系、修复命令和验收方式。
+
+### 验证方式
+
+- 执行 `./script/sync-tags`，确认远程标签出现在 `git tag --list` 和 Git Graph 中。
+- 检查 `git config --local --get remote.origin.tagOpt` 返回 `--tags`。
+- 执行普通 `git fetch origin` 后，确认已同步标签仍然存在。

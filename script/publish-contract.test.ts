@@ -120,3 +120,12 @@ test("CLI release uploads use the shared release tag contract", async () => {
   expect(source).toContain("releaseTag(Script.channel, Script.version)")
   expect(source).toContain("gh release upload ${releaseTag(Script.channel, Script.version)}")
 })
+
+test("local tag sync persists all-tag fetch behavior", async () => {
+  const source = await read("script/sync-tags")
+
+  expect(source).toContain('git remote get-url "$remote"')
+  expect(source).toContain('git config --local "remote.${remote}.tagOpt" --tags')
+  expect(source).toContain('git fetch "$remote" --tags --force')
+  expect(source).toContain('git rev-parse "${tag}^{commit}"')
+})

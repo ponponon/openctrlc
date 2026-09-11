@@ -10,6 +10,27 @@
 `0.2.2`。工作流会创建 draft Release、创建并校验版本 tag、构建所有平台
 资产，最后上传资产并将 Release 发布。
 
+## 本地标签同步
+
+GitHub Release 创建的 tag 是远程仓库的独立 ref。若对应提交已经存在于本地，
+普通 `git fetch` 可能不会自动带回后来创建的 tag，因此 Git Graph 里会看不到
+线上已有标签。首次在本仓库使用或发现本地标签不完整时，执行：
+
+```bash
+./script/sync-tags
+```
+
+该脚本会把 `remote.origin.tagOpt` 设置为 `--tags`，并通过
+`git fetch origin --tags --force` 同步远程标签。设置完成后，后续普通 fetch
+也会自动获取标签；如果使用其他远程名，可以把远程名作为第一个参数传入。
+
+同步后可用下面的命令核对本地标签：
+
+```bash
+git tag --list --sort=version:refname
+git show-ref --tags
+```
+
 当前正式发布包含：
 
 - CLI：macOS Apple Silicon / Intel、Linux x64 / ARM64、Windows x64 / ARM64。
