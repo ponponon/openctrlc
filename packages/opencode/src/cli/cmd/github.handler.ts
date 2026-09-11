@@ -1,5 +1,4 @@
 import path from "path"
-import { exec } from "child_process"
 import { Filesystem } from "@/util/filesystem"
 import * as prompts from "@clack/prompts"
 import { map, pipe, sortBy, values } from "remeda"
@@ -141,7 +140,7 @@ type IssueQueryResponse = {
   }
 }
 
-const AGENT_USERNAME = "opencode-agent[bot]"
+const AGENT_USERNAME = "openctrlc-agent[bot]"
 const AGENT_REACTION = "eyes"
 const WORKFLOW_FILE = ".github/workflows/openctrlc.yml"
 
@@ -164,10 +163,8 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
   yield* Effect.promise(async () => {
     {
       UI.empty()
-      prompts.intro("Install GitHub agent")
+      prompts.intro("Install OpenCtrlC GitHub agent")
       const app = await getAppInfo()
-      await installGitHubApp()
-
       const providers = await Effect.runPromise(modelsDev.get()).then((p) => {
         // TODO: add guide for copilot, for now just hide it
         delete p["github-copilot"]
@@ -203,7 +200,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
             "",
             "    3. Go to a GitHub issue and comment `/oc summarize` to see the agent in action",
             "",
-            "   Learn more about the GitHub agent - https://opencode.ai/docs/github/#usage-examples",
+            "   Learn more about the GitHub agent - https://openctrlc-docs.pages.dev/docs/github/",
           ].join("\n"),
         )
       }
@@ -278,57 +275,6 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
         return model
       }
 
-      async function installGitHubApp() {
-        const s = prompts.spinner()
-        s.start("Installing GitHub app")
-
-        // Get installation
-        const installation = await getInstallation()
-        if (installation) return s.stop("GitHub app already installed")
-
-        // Open browser
-        const url = "https://github.com/apps/opencode-agent"
-        const command =
-          process.platform === "darwin"
-            ? `open "${url}"`
-            : process.platform === "win32"
-              ? `start "" "${url}"`
-              : `xdg-open "${url}"`
-
-        exec(command, (error) => {
-          if (error) {
-            prompts.log.warn(`Could not open browser. Please visit: ${url}`)
-          }
-        })
-
-        // Wait for installation
-        s.message("Waiting for GitHub app to be installed")
-        const MAX_RETRIES = 120
-        let retries = 0
-        do {
-          const installation = await getInstallation()
-          if (installation) break
-
-          if (retries > MAX_RETRIES) {
-            s.stop(
-              `Failed to detect GitHub app installation. Make sure to install the app for the \`${app.owner}/${app.repo}\` repository.`,
-            )
-            throw new UI.CancelledError()
-          }
-
-          retries++
-          await sleep(1000)
-        } while (true) // oxlint-disable-line no-constant-condition
-
-        s.stop("Installed GitHub app")
-
-        async function getInstallation() {
-          return await fetch(`https://api.opencode.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`)
-            .then((res) => res.json())
-            .then((data) => data.installation)
-        }
-      }
-
       async function addWorkflowFiles() {
         await Filesystem.write(
           path.join(app.root, WORKFLOW_FILE),
@@ -398,7 +344,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
         ? (payload as IssueCommentEvent | IssuesEvent).issue.number
         : (payload as PullRequestEvent | PullRequestReviewCommentEvent).pull_request.number
     const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
-    const shareBaseUrl = isMock ? "https://dev.opencode.ai" : "https://opencode.ai"
+    const shareBaseUrl = (process.env["SHARE_URL"] || "").replace(/\/+$/, "")
 
     let appToken: string
     let octoRest: Octokit
@@ -457,16 +403,14 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       })
 
       const { userPrompt, promptFiles } = await getUserPrompt()
-      if (!useGithubToken) {
-        await configureGit(appToken)
-      }
+      await configureGit(appToken)
       // Skip permission check and reactions for repo events (no actor to check, no issue to react to)
       if (isUserEvent) {
         await assertPermissions()
         await addReaction(commentType)
       }
 
-      // Setup opencode session
+      // Setup OpenCtrlC session
       const repoData = await fetchRepo()
       session = await runLocalEffect(
         sessionSvc.create({
@@ -481,12 +425,11 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       )
       await subscribeSessionEvents()
       shareId = await (async () => {
-        if (share === false) return
-        if (!share && repoData.data.private) return
+        if (share !== true || !shareBaseUrl) return
         await runLocalEffect(sessionShare.share(session.id))
         return session.id.slice(-8)
       })()
-      console.log("opencode session", session.id)
+      console.log("OpenCtrlC session", session.id)
 
       // Handle event types:
       // REPO_EVENTS (schedule, workflow_dispatch): no issue/PR context, output to logs/PR only
@@ -617,10 +560,8 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       // Also output the clean error message for the action to capture
       //core.setOutput("prepare_error", e.message);
     } finally {
-      if (!useGithubToken) {
-        await restoreGitConfig()
-        await revokeAppToken()
-      }
+      await restoreGitConfig()
+      if (!useGithubToken) await revokeAppToken()
     }
     process.exit(exitCode)
 
@@ -643,7 +584,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
 
     function normalizeShare() {
       const value = process.env["SHARE"]
-      if (!value) return undefined
+      if (!value) return false
       if (value === "true") return true
       if (value === "false") return false
       throw new Error(`Invalid share value: ${value}. Share must be a boolean.`)
@@ -651,7 +592,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
 
     function normalizeUseGithubToken() {
       const value = process.env["USE_GITHUB_TOKEN"]
-      if (!value) return false
+      if (!value) return true
       if (value === "true") return true
       if (value === "false") return false
       throw new Error(`Invalid use_github_token value: ${value}. Must be a boolean.`)
@@ -659,7 +600,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
 
     function normalizeOidcBaseUrl(): string {
       const value = process.env["OIDC_BASE_URL"]
-      if (!value) return "https://api.opencode.ai"
+      if (!value) return ""
       return value.replace(/\/+$/, "")
     }
 
@@ -859,7 +800,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
     }
 
     async function chat(message: string, files: PromptFiles = []) {
-      console.log("Sending message to opencode...")
+      console.log("Sending message to OpenCtrlC...")
 
       return runLocalEffect(
         Effect.gen(function* () {
@@ -947,7 +888,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
 
     async function getOidcToken() {
       try {
-        return await core.getIDToken("opencode-github-action")
+        return await core.getIDToken("openctrlc-github-action")
       } catch (error) {
         console.error("Failed to get OIDC token:", error instanceof Error ? error.message : error)
         throw new Error(
@@ -958,6 +899,9 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
     }
 
     async function exchangeForAppToken(token: string) {
+      if (!oidcBaseUrl) {
+        throw new Error("OIDC_BASE_URL is required when use_github_token is false.")
+      }
       const response = token.startsWith("github_pat_")
         ? await fetch(`${oidcBaseUrl}/exchange_github_app_token_with_pat`, {
             method: "POST",
@@ -1048,9 +992,9 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
         .join("")
       if (type === "schedule" || type === "dispatch") {
         const hex = crypto.randomUUID().slice(0, 6)
-        return `opencode/${type}-${hex}-${timestamp}`
+        return `openctrlc/${type}-${hex}-${timestamp}`
       }
-      return `opencode/${type}${issueId}-${timestamp}`
+      return `openctrlc/${type}${issueId}-${timestamp}`
     }
 
     async function pushToNewBranch(summary: string, branch: string, commit: boolean, isSchedule: boolean) {
@@ -1320,12 +1264,10 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
         if (!opts?.image) return ""
 
         const titleAlt = encodeURIComponent(session.title.substring(0, 50))
-        const title64 = Buffer.from(session.title.substring(0, 700), "utf8").toString("base64")
-
-        return `<a href="${shareBaseUrl}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
+        return `<a href="${shareBaseUrl}/s/${shareId}">${titleAlt}</a>\n`
       })()
-      const shareUrl = shareId ? `[opencode session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
-      return `\n\n${image}${shareUrl}[github run](${runUrl})`
+      const shareUrl = shareId ? `[OpenCtrlC session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
+      return `\n\n${image}${shareUrl}[GitHub run](${runUrl})`
     }
 
     async function fetchRepo() {
@@ -1385,7 +1327,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
       return [
         "<github_action_context>",
         "You are running as a GitHub Action. Important:",
-        "- Git push and PR creation are handled AUTOMATICALLY by the opencode infrastructure after your response",
+        "- Git push and PR creation are handled AUTOMATICALLY by the OpenCtrlC infrastructure after your response",
         "- Do NOT include warnings or disclaimers about GitHub tokens, workflow permissions, or PR creation capabilities",
         "- Do NOT suggest manual steps for creating PRs or pushing code - this happens automatically",
         "- Focus only on the code changes and your analysis/response",
@@ -1525,7 +1467,7 @@ query($owner: String!, $repo: String!, $number: Int!) {
       return [
         "<github_action_context>",
         "You are running as a GitHub Action. Important:",
-        "- Git push and PR creation are handled AUTOMATICALLY by the opencode infrastructure after your response",
+        "- Git push and PR creation are handled AUTOMATICALLY by the OpenCtrlC infrastructure after your response",
         "- Do NOT include warnings or disclaimers about GitHub tokens, workflow permissions, or PR creation capabilities",
         "- Do NOT suggest manual steps for creating PRs or pushing code - this happens automatically",
         "- Focus only on the code changes and your analysis/response",

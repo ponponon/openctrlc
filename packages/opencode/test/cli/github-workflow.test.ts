@@ -14,6 +14,9 @@ test("renders a valid OpenCtrlC workflow with OpenCtrlC triggers", () => {
   expect(workflow.jobs.openctrlc.if).toContain("/oc")
   expect(workflow.jobs.openctrlc.steps).toHaveLength(2)
   expect(workflow.jobs.openctrlc.steps[1]?.uses).toBe("ponponon/openctrlc/github@latest")
-  expect(workflow.jobs.openctrlc.steps[1]?.env).toEqual({ ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}" })
+  expect(workflow.jobs.openctrlc.steps[1]?.env).toEqual({
+    GITHUB_TOKEN: "${{ github.token }}",
+    ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}",
+  })
   expect(source).not.toContain("/opencode")
 })

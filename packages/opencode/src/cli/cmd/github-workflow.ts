@@ -3,9 +3,10 @@ export function renderGitHubWorkflow(input: {
   model: string
   secrets?: ReadonlyArray<string>
 }) {
-  const env = input.secrets?.length
-    ? `\n        env:\n${input.secrets.map((name) => `          ${name}: \${{ secrets.${name} }}`).join("\n")}`
-    : ""
+  const env = [
+    "          GITHUB_TOKEN: ${{ github.token }}",
+    ...(input.secrets ?? []).map((name) => `          ${name}: \${{ secrets.${name} }}`),
+  ].join("\n")
 
   return `name: openctrlc
 
@@ -24,10 +25,9 @@ jobs:
       startsWith(github.event.comment.body, '/openctrlc')
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -35,8 +35,11 @@ jobs:
           persist-credentials: false
 
       - name: Run OpenCtrlC
-        uses: ponponon/openctrlc/github@latest${env}
+        uses: ponponon/openctrlc/github@latest
+        env:
+${env}
         with:
           model: ${input.provider}/${input.model}
+          use_github_token: true
 `
 }

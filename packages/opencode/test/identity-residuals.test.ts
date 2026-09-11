@@ -4,14 +4,15 @@ import { debugInitializeRequest } from "../src/mcp/client-info"
 
 const read = (path: string) => Bun.file(path).text()
 
-test("uses the current installer and CLI contract in locale sync", async () => {
-  const workflow = await read("../../.github/workflows/docs-locale-sync.yml")
+test("uses the current installer and Pages deployment contract", async () => {
+  const workflow = await read("../../.github/workflows/deploy.yml")
+  const action = await read("../../github/action.yml")
 
-  expect(workflow).toContain("https://openctrlc.ai/install")
-  expect(workflow).toContain(`${Brand.cli} run`)
-  expect(workflow).toContain("OPENCODE_API_KEY")
+  expect(action).toContain("https://raw.githubusercontent.com/ponponon/openctrlc/dev/install")
+  expect(workflow).toContain("openctrlc")
+  expect(workflow).toContain("openctrlc-docs")
+  expect(action).toContain("run: openctrlc github run")
   expect(workflow).not.toContain("https://opencode.ai/install")
-  expect(workflow).not.toContain("opencode run")
 })
 
 test("uses the product CLI for MCP user guidance and local detection", async () => {
@@ -49,7 +50,7 @@ test("uses product identity for all MCP client initialization paths", async () =
 
 test("uses the OpenCtrlC canonical URI for MCP OAuth client metadata", async () => {
   const oauth = await read("./src/mcp/oauth-provider.ts")
-  expect(oauth).toContain('client_uri: "https://openctrlc.ai"')
+  expect(oauth).toContain('client_uri: "https://openctrlc.pages.dev"')
   expect(oauth).not.toContain('client_uri: "https://opencode.ai"')
 })
 

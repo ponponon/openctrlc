@@ -14,7 +14,12 @@ inputs:
     required: false
 
   share:
-    description: "Share the OpenCtrlC session (defaults to true for public repos)"
+    description: "Share the OpenCtrlC session through a configured external share service"
+    required: false
+    default: "false"
+
+  share_url:
+    description: "Base URL of the external session-sharing service"
     required: false
 
   prompt:
@@ -22,9 +27,9 @@ inputs:
     required: false
 
   use_github_token:
-    description: "Use GITHUB_TOKEN directly instead of OpenCode App token exchange. When true, skips OIDC and uses the GITHUB_TOKEN env var."
+    description: "Use GITHUB_TOKEN directly instead of an OIDC app-token exchange. When true, skips OIDC and uses the GITHUB_TOKEN env var."
     required: false
-    default: "false"
+    default: "true"
 
   mentions:
     description: "Comma-separated list of trigger phrases (case-insensitive). Defaults to '/openctrlc,/oc'"
@@ -35,7 +40,7 @@ inputs:
     required: false
 
   oidc_base_url:
-    description: "Base URL for OIDC token exchange API. Only required when running a custom GitHub App install. Defaults to https://api.opencode.ai"
+    description: "Base URL for an optional OIDC token exchange service. Only required when running a compatible custom GitHub App installation."
     required: false
 
 runs:
@@ -58,7 +63,7 @@ runs:
     - name: Install OpenCtrlC
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-      run: curl -fsSL https://openctrlc.ai/install | OPENCTRLC_INSTALL_DIR="$HOME/.openctrlc/bin" bash
+      run: curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | OPENCTRLC_INSTALL_DIR="$HOME/.openctrlc/bin" bash
 
     - name: Add OpenCtrlC to PATH
       shell: bash
@@ -72,8 +77,10 @@ runs:
         MODEL: ${{ inputs.model }}
         AGENT: ${{ inputs.agent }}
         SHARE: ${{ inputs.share }}
+        SHARE_URL: ${{ inputs.share_url }}
         PROMPT: ${{ inputs.prompt }}
         USE_GITHUB_TOKEN: ${{ inputs.use_github_token }}
         MENTIONS: ${{ inputs.mentions }}
         VARIANT: ${{ inputs.variant }}
         OIDC_BASE_URL: ${{ inputs.oidc_base_url }}
+        GITHUB_TOKEN: ${{ github.token }}
