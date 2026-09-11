@@ -47,4 +47,4 @@ jobs:
         run: bunx wrangler pages deploy packages/console/app/dist --project-name openctrlc --commit-dirty=true
 
       - name: Deploy documentation site
-        run: bunx wrangler pages deploy packages/web/dist --project-name openctrlc-docs --commit-dirty=true
+        run: bunx wrangler pages deploy packages/web/dist/docs --project-name openctrlc-docs --commit-dirty=true
