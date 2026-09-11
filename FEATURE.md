@@ -801,3 +801,28 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 
 - 使用截图中的 `$$\\frac{...}{...}$$` 列表文本解析，结果包含 KaTeX 的 `katex-display` 节点且不再保留 `$$` 原文。
 - 运行 `packages/ui` 的 Markdown parser 测试。
+
+## 2026-09-12：流式 Markdown 等待期间保持格式化
+
+### 功能目标
+
+避免会话流式输出在 Markdown worker 尚未完成解析时直接显示原始 `**`、链接标记或其他语法符号，让粗体等基础格式从首屏开始就保持一致。
+
+### 实现范围
+
+- 增加不依赖 Shiki 的同步 Markdown 基础解析器，复用现有链接和 KaTeX 扩展。
+- 增加兼容中日韩文字紧邻 `**...**`/`__...__` 分隔符的粗体解析，匹配 Typora 等常见编辑器的使用习惯。
+- 将会话渲染等待 worker 结果时的浏览器 fallback 改为同步解析并继续经过 DOMPurify 安全过滤。
+- 服务端渲染继续使用原有转义文本 fallback，避免引入浏览器依赖。
+- 代码块仍由现有 worker 负责高亮，不把重型 Shiki 解析搬回主线程。
+
+### 代码位置
+
+- `packages/ui/src/context/marked-parser.tsx`：同步基础解析器。
+- `packages/session-ui/src/components/markdown.tsx`：流式 Markdown fallback。
+- `packages/ui/src/context/marked-parser.test.ts`：跨行粗体回归测试。
+
+### 验证方式
+
+- 对截图中跨行的 `**列式存储...\\n**最底层...` 解析，结果包含 `<strong>` 且不保留 `**`。
+- 运行 UI Markdown parser 测试和 Session UI 类型检查。

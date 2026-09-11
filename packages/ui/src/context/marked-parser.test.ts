@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { createMarkdownParser } from "./marked-parser"
+import { createMarkdownParser, parseMarkdownSync } from "./marked-parser"
 
 const parser = createMarkdownParser((code, language) => `<pre data-language="${language}">${code}</pre>`)
 
@@ -24,6 +24,21 @@ test("renders display math embedded in a list item", async () => {
 
   expect(result).toContain('<span class="katex-display">')
   expect(result).not.toContain("$$")
+})
+
+test("renders strong text in the synchronous fallback parser", () => {
+  const text = "直击**列式存储\n**最底层的工程秘密！"
+  const result = parseMarkdownSync(text)
+
+  expect(result).toContain("<strong>")
+  expect(result).not.toContain("**")
+})
+
+test("renders strong text adjacent to CJK characters in the worker parser", async () => {
+  const result = await parser.parse("直击**列式存储**最底层的工程秘密！")
+
+  expect(result).toContain("<strong>")
+  expect(result).not.toContain("**")
 })
 
 test("uses the configured code highlighter", async () => {

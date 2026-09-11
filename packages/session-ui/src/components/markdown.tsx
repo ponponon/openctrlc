@@ -16,6 +16,7 @@ import { isServer, render } from "solid-js/web"
 import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
 import { IconButtonV2 } from "@openctrlc/ui/v2/icon-button-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
+import { parseMarkdownSync } from "@openctrlc/ui/context/marked-parser"
 import { canReusePendingBlock, completedProjection } from "./markdown-projection"
 import type { Block, Projection } from "./markdown-stream"
 import {
@@ -64,6 +65,7 @@ function escape(text: string) {
 }
 
 function fallback(markdown: string) {
+  if (!isServer) return sanitizeMarkdown(parseMarkdownSync(markdown))
   return escape(markdown).replace(/\r\n?/g, "\n").replace(/\n/g, "<br>")
 }
 
