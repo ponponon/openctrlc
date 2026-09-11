@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           for project in openctrlc openctrlc-docs; do
-            if ! bunx wrangler pages project list --json | jq -e --arg project "$project" '.[] | select(.name == $project)' >/dev/null; then
+            if ! bunx wrangler pages project list --json | jq -e --arg project "$project" 'any(.[]; (."Project Name" // .name) == $project)' >/dev/null; then
               bunx wrangler pages project create "$project" --production-branch dev
             fi
           done

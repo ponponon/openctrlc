@@ -215,6 +215,13 @@ OIDC Token 交换服务、旧的 GitHub App 和旧分享地址。以后调整公
 Token/Git 推送路径；自管理模式要让 `GITHUB_TOKEN` 真正进入运行时，并确保
 `actions/checkout` 使用 `persist-credentials: false` 时仍能完成推送。
 
+## Cloudflare Pages 项目检查必须匹配 Wrangler 的真实输出字段
+
+Wrangler 的 `pages project list --json` 当前返回的是表格字段名 `Project Name`，不是
+直觉上的 `name`。以后在部署 Workflow 中检查 Pages 项目是否存在时，必须兼容实际
+CLI 输出字段，并用 `any(...)` 返回明确的布尔结果；否则已有项目会被误判为不存在，
+重复创建直接阻断官网部署。
+
 ## 回复分叉必须保留被点击的助手回复
 
 用户从助手回复 A 的操作区创建会话 B 时，旧实现错误地把 A 的 `parentID`（用户提问）传给 `session.fork`，又把该用户提问恢复到 B 的输入框。由于 OpenCode 的 `messageID` 是排他边界，结果 A 的提问和回复都从 B 的历史中消失。以后必须区分“从用户消息之前分叉”的命令面板流程和“包含当前助手回复分叉”的回复操作流程；后者传助手消息 ID，并把下一条消息作为排他边界，最后一条消息则省略边界，同时保持 B 的输入框为空。
