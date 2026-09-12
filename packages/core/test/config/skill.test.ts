@@ -62,35 +62,35 @@ describe("ConfigSkillPlugin.Plugin", () => {
       expect(sources).toEqual([
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/home/test/.claude/skills"),
+          path: AbsolutePath.make(path.join("/home/test", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/home/test/.agents/skills"),
+          path: AbsolutePath.make(path.join("/home/test", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/repo/packages/app/.claude/skills"),
+          path: AbsolutePath.make(path.join("/repo", "packages", "app", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/repo/packages/app/.agents/skills"),
+          path: AbsolutePath.make(path.join("/repo", "packages", "app", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/repo/packages/.claude/skills"),
+          path: AbsolutePath.make(path.join("/repo", "packages", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/repo/packages/.agents/skills"),
+          path: AbsolutePath.make(path.join("/repo", "packages", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/repo/.claude/skills"),
+          path: AbsolutePath.make(path.join("/repo", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make("/repo/.agents/skills"),
+          path: AbsolutePath.make(path.join("/repo", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",

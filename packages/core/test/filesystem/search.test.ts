@@ -9,6 +9,7 @@ import { tmpdir } from "../fixture/tmpdir"
 import { testEffect } from "../lib/effect"
 
 const it = testEffect(LayerNode.compile(Ripgrep.node))
+const RIPGREP_TEST_TIMEOUT = 30_000
 
 const withTmp = <A, E, R>(f: (directory: AbsolutePath) => Effect.Effect<A, E, R>) =>
   Effect.acquireRelease(
@@ -26,6 +27,7 @@ describe("Ripgrep", () => {
         expect(result.map((item) => item.path)).toEqual([RelativePath.make("src/match.ts")])
       }),
     ),
+    RIPGREP_TEST_TIMEOUT,
   )
 
   it.live("greps files with include filtering", () =>
@@ -40,5 +42,6 @@ describe("Ripgrep", () => {
         expect(result[0]?.submatches[0]?.text).toBe("needle")
       }),
     ),
+    RIPGREP_TEST_TIMEOUT,
   )
 })

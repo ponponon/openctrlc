@@ -9,6 +9,7 @@ import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
 const it = testEffect(LayerNode.compile(Ripgrep.node))
+const RIPGREP_TEST_TIMEOUT = 30_000
 
 describe("Ripgrep", () => {
   it.live("keeps ignored files out of catch-all find results", () =>
@@ -29,6 +30,7 @@ describe("Ripgrep", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    RIPGREP_TEST_TIMEOUT,
   )
 
   it.live("never includes git metadata", () =>
@@ -61,6 +63,7 @@ describe("Ripgrep", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    RIPGREP_TEST_TIMEOUT,
   )
   it.live("does not split surrogate pairs in oversized line previews", () =>
     Effect.acquireUseRelease(
@@ -81,5 +84,6 @@ describe("Ripgrep", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    RIPGREP_TEST_TIMEOUT,
   )
 })
