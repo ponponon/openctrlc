@@ -79,6 +79,11 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
     if (path === "/experimental/capabilities") return json(route, { backgroundSubagents: true })
     if (path === "/provider")
       return json(route, typeof config.provider === "function" ? config.provider() : config.provider)
+    if (path === "/api/provider")
+      return json(route, {
+        location: location(config),
+        data: typeof config.provider === "function" ? config.provider() : config.provider,
+      })
     if (path === "/provider/auth") return json(route, config.integrationMethods ?? {})
     const legacyAuth = path.match(/^\/auth\/([^/]+)$/)?.[1]
     if (legacyAuth && route.request().method() === "PUT") {

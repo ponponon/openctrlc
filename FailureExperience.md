@@ -14,6 +14,10 @@
 
 周期检查不能每 30 秒重复刷屏，也不能对所有长耗时模型请求直接中断。诊断应以助手消息、pending 请求和 active tool 的身份组成稳定 key，只在状态首次出现或发生变化时记录；自动动作限定为活跃目录的一次 bootstrap，用于补回丢失的 permission/question 事件，模型本身仍由用户决定是否停止或重试。
 
+## E2E mock 必须覆盖协议探测期间的兼容接口
+
+回归测试的 mock server 不能只覆盖当前主协议的接口。协议探测或兼容回退可能访问 `/api/provider`，如果 mock 返回空对象，应用会在 `normalizeProviderList` 中读取不存在的 `data.all`，表现为与业务无关的随机 reload 失败。公共 mock 应同时返回 v1 兼容响应和 v2 响应，避免把环境时序误判成产品回归。
+
 ## Cloudflare Pages 的 Wrangler 上传必须显式使用代理
 
 本机通过 `curl` 访问 Cloudflare API 正常，不代表 Wrangler 的 Node 网络库会自动读取代理环境变量。未显式设置代理时，Pages API 的元数据请求可能成功，但批量 `POST /pages/assets/upload` 会在上传数 MB 后因直连链路被关闭而失败。以后在中国大陆环境发布 Pages，必须先运行代理连通性检查，并同时设置 `HTTPS_PROXY`、`HTTP_PROXY` 和 `ALL_PROXY` 后再执行 Wrangler；验收要检查完整上传、部署记录、正式域名 HTTP 状态和页面内容。
