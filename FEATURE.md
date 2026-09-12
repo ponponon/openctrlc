@@ -1,3 +1,27 @@
+## 子智能体权限请求与会话索引恢复
+
+### 功能目标
+
+避免子智能体在等待文件权限时，因目录会话列表没有同步到子会话而无法显示权限操作，导致页面长期停留在“思考中”。
+
+### 实现范围
+
+- 目录启动预热权限或问题请求时，将解析到的子会话同步加入当前目录会话列表。
+- 收到全局或目录级权限/问题事件时，补偿解析并索引缺失的子会话，覆盖事件竞态和重连丢事件场景。
+- 将工具权限等待与模型回合的 AbortSignal 关联，停止回合时清理等待中的权限请求并释放工具。
+
+### 代码位置
+
+- `packages/app/src/context/global-sync/bootstrap.ts`：权限/问题请求预热时补齐目录会话索引。
+- `packages/app/src/context/server-sync.tsx`：全局事件和请求事件的会话索引兜底。
+- `packages/opencode/src/session/tools.ts`：权限等待的中断传播。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun typecheck`。
+- 执行带 `--conditions=solid --preload ./happydom.ts` 的目录同步、权限事件和 Server Sync 单元测试。
+- 复现“子智能体请求外部目录权限但创建事件丢失”的场景，确认当前页面能显示权限操作；停止回合后确认权限请求不再悬挂。
+
 ## GitHub Actions 定时任务静默时段
 
 ### 功能目标

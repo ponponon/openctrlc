@@ -1,3 +1,7 @@
+## 子智能体权限请求不能只依赖实时事件
+
+用户反馈页面显示“思考中”但模型实际不再产生对话流。排查指定 session 后发现，最后一个助手消息没有完成时间，多个 `read` 工具停在 `running`，日志记录了 `external_directory` 权限请求但没有回复；后端因此一直等待权限 Deferred。前端的权限请求查找又依赖当前目录会话列表，而根会话列表不会包含子智能体；如果 `session.created` 在启动或重连期间丢失，权限请求虽存在，全局缓存也虽能预热子会话，却没有把它加入目录列表，页面就无法显示允许/拒绝按钮。以后处理子智能体权限问题时，必须同时检查：权限请求是否 pending、工具是否有 result、助手消息是否 completed、事件流是否有 session.idle，以及当前目录缓存是否包含请求所属的完整会话树；启动预热和请求事件都要能补偿索引，不能只依赖一次实时创建事件。工具侧的权限等待还必须绑定 AbortSignal，避免用户停止回合后留下悬挂 Deferred 和永久 pending permission。
+
 ## Cloudflare Pages 的 Wrangler 上传必须显式使用代理
 
 本机通过 `curl` 访问 Cloudflare API 正常，不代表 Wrangler 的 Node 网络库会自动读取代理环境变量。未显式设置代理时，Pages API 的元数据请求可能成功，但批量 `POST /pages/assets/upload` 会在上传数 MB 后因直连链路被关闭而失败。以后在中国大陆环境发布 Pages，必须先运行代理连通性检查，并同时设置 `HTTPS_PROXY`、`HTTP_PROXY` 和 `ALL_PROXY` 后再执行 Wrangler；验收要检查完整上传、部署记录、正式域名 HTTP 状态和页面内容。

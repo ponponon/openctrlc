@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { createStore } from "solid-js/store"
 import { QueryClient } from "@tanstack/solid-query"
-import type { Config, OpencodeClient, Project } from "@openctrlc/sdk/v2/client"
+import type { Config, OpencodeClient, Project, Session } from "@openctrlc/sdk/v2/client"
 import type { AgentApi, CatalogApi, CommandApi, ReferenceApi } from "@opencode-ai/client/promise"
 import type { NormalizedProviderListResponse } from "@openctrlc/session-ui/context"
 import {
@@ -18,6 +18,7 @@ import {
 import type { State, VcsCache } from "./types"
 import { ServerScope } from "@/utils/server-scope"
 import type { ServerApi } from "@/utils/server"
+import type { ServerSession } from "../server-session"
 
 type ProjectApi = ServerApi["project"]
 
@@ -181,6 +182,68 @@ describe("bootstrapDirectory", () => {
     await new Promise((resolve) => setTimeout(resolve, 80))
 
     expect(store.status).toBe("complete")
+  })
+
+  test("indexes sessions resolved for pending child permissions", async () => {
+    const [store, setStore] = directoryState()
+    const permission = {
+      id: "permission",
+      sessionID: "child",
+      permission: "external_directory",
+      patterns: ["/tmp/*"],
+      always: ["/tmp/*"],
+      metadata: {},
+    }
+    const child = {
+      id: "child",
+      directory: "/project",
+      parentID: "root",
+      title: "child",
+      time: { created: 1, updated: 1 },
+    } as unknown as Session
+    const resolved: string[] = []
+    const session = {
+      data: { permission: {} },
+      resolve: async (sessionID: string) => {
+        resolved.push(sessionID)
+        return child
+      },
+      set() {},
+    } as unknown as ServerSession
+
+    await bootstrapDirectory({
+      directory: "/project",
+      scope: ServerScope.local,
+      mcp: false,
+      global: {
+        config: {} satisfies Config,
+        path: { state: "", config: "", worktree: "/project", directory: "/project", home: "/home" },
+        project: [{ id: "project", worktree: "/project" } as Project],
+        provider,
+      },
+      sdk: {} as OpencodeClient,
+      api: {
+        ...api,
+        permission: {
+          request: {
+            list: async () => ({ location: { directory: "/project" }, data: [permission] }),
+          },
+        },
+      } as unknown as ServerApi,
+      store,
+      setStore,
+      vcsCache: { setStore() {} } as unknown as VcsCache,
+      loadSessions() {},
+      translate: (key) => key,
+      queryClient: new QueryClient(),
+      session,
+      protocol: Promise.resolve("v2"),
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
+    expect(resolved).toEqual(["child"])
+    expect(store.session).toContainEqual(child)
   })
 })
 

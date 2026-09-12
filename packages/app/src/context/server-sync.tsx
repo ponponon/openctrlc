@@ -58,6 +58,7 @@ import type {
   McpServer,
   SessionActiveOutput,
 } from "@opencode-ai/client/promise"
+import type { Session } from "@openctrlc/sdk/v2/client"
 import { toggleMcp } from "./global-sync/mcp"
 import { createServerSession, type ServerSession } from "./server-session"
 
@@ -532,6 +533,24 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     })
   }
 
+  const eventSessionID = (event: { properties?: unknown }) => {
+    if (!event.properties || typeof event.properties !== "object") return
+    const sessionID = (event.properties as Record<string, unknown>).sessionID
+    return typeof sessionID === "string" ? sessionID : undefined
+  }
+
+  const indexSessionForRequest = (event: { type: string; properties?: unknown }) => {
+    if (event.type !== "permission.asked" && event.type !== "question.asked") return
+    const sessionID = eventSessionID(event)
+    if (!sessionID) return
+    const info = session.get(sessionID)
+    if (info) {
+      indexSession(info)
+      return
+    }
+    void session.resolve(sessionID).then(indexSession).catch(() => {})
+  }
+
   const unsub = serverSDK.event.listen((e) => {
     const directory = e.name
     const key = directoryKey(directory)
@@ -541,6 +560,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
 
     if (event.current) session.applyV2(event.current)
     session.apply(event)
+    indexSessionForRequest(event)
     if (event.type === "session.created" || event.type === "session.updated" || event.type === "session.deleted") {
       homeSessions.apply(event)
     }
@@ -548,6 +568,10 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     if (eventType === "integration.connection.updated") void refreshProviders()
 
     if (directory === "global") {
+      if (eventType === "session.created" || eventType === "session.updated") {
+        const info = (event.properties as { info?: Session } | undefined)?.info
+        if (info) indexSession(info)
+      }
       if (eventType === "server.connected" && activeSessionsQuery.data === undefined && !activeSessionsQuery.isFetching)
         void activeSessionsQuery.refetch()
       applyGlobalEvent({

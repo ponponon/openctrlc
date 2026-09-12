@@ -23,6 +23,7 @@ import { ProviderV2 } from "@openctrlc/core/provider"
 import { ModelV2 } from "@openctrlc/core/model"
 import { isRecord } from "@/util/record"
 import { RuntimeFlags } from "@/effect/runtime-flags"
+import { waitForAbort } from "@openctrlc/core/process"
 
 const MCP_RESOURCE_TOOLS = {
   list: "list_mcp_resources",
@@ -78,15 +79,20 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
           },
         }
       }),
-    ask: (req) =>
-      permission
+    ask: (req) => {
+      const ask = permission
         .ask({
           ...req,
           sessionID: input.session.id,
           tool: { messageID: input.processor.message.id, callID: options.toolCallId },
           ruleset: Permission.merge(input.agent.permission, input.session.permission ?? []),
         })
-        .pipe(Effect.orDie),
+        .pipe(Effect.orDie)
+      if (!options.abortSignal) return ask
+      // Permission.ask waits on a Deferred. Race it with the provider abort so
+      // stopping a turn removes the pending request and releases the tool.
+      return Effect.raceFirst(ask, waitForAbort(options.abortSignal)).pipe(Effect.orDie)
+    },
   })
 
   for (const item of yield* registry.tools({

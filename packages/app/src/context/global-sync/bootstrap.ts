@@ -204,18 +204,24 @@ function mergeSession(setStore: SetStoreFunction<State>, session: Session) {
 
 function warmSessions(input: {
   ids: string[]
+  directory: string
   store: Store<State>
   setStore: SetStoreFunction<State>
   api: SessionApi
+  resolve?: (sessionID: string) => Promise<Session>
 }) {
   const known = new Set(input.store.session.map((item) => item.id))
   const ids = [...new Set(input.ids)].filter((id) => !!id && !known.has(id))
   if (ids.length === 0) return Promise.resolve()
   return Promise.all(
     ids.map((sessionID) =>
-      retry(() => input.api.get({ sessionID })).then((session) =>
-        mergeSession(input.setStore, normalizeSessionInfo(session)),
-      ),
+      (input.resolve
+        ? input.resolve(sessionID)
+        : retry(() => input.api.get({ sessionID })).then((session) => normalizeSessionInfo(session))
+      ).then((session) => {
+        if (session.directory !== input.directory) return
+        mergeSession(input.setStore, session)
+      }),
     ),
   ).then(() => undefined)
 }
@@ -479,9 +485,14 @@ export async function bootstrapDirectory(input: {
             const grouped = groupBySession(
               permissions.filter((permission) => !!permission.id && !!permission.sessionID),
             )
-            const warm = input.session
-              ? Promise.all(ids.map((sessionID) => input.session!.resolve(sessionID))).then(() => undefined)
-              : warmSessions({ ids, store: input.store, setStore: input.setStore, api: input.api.session })
+            const warm = warmSessions({
+              ids,
+              directory: input.directory,
+              store: input.store,
+              setStore: input.setStore,
+              api: input.api.session,
+              resolve: input.session ? (sessionID) => input.session!.resolve(sessionID) : undefined,
+            })
             return warm.then(() =>
               batch(() => {
                 const current = input.session?.data.permission ?? input.store.permission
@@ -515,9 +526,14 @@ export async function bootstrapDirectory(input: {
             const grouped = groupBySession(
               questions.filter((question) => !!question.id && !!question.sessionID) as QuestionRequest[],
             )
-            const warm = input.session
-              ? Promise.all(ids.map((sessionID) => input.session!.resolve(sessionID))).then(() => undefined)
-              : warmSessions({ ids, store: input.store, setStore: input.setStore, api: input.api.session })
+            const warm = warmSessions({
+              ids,
+              directory: input.directory,
+              store: input.store,
+              setStore: input.setStore,
+              api: input.api.session,
+              resolve: input.session ? (sessionID) => input.session!.resolve(sessionID) : undefined,
+            })
             return warm.then(() =>
               batch(() => {
                 const current = input.session?.data.question ?? input.store.question
