@@ -208,11 +208,10 @@ function normalizeMessages(
             return part.text !== ""
           }
           if (part.type === "reasoning") {
-            return (
-              part.text.trim().length > 0 ||
-              part.providerOptions?.bedrock?.signature != null ||
-              part.providerOptions?.bedrock?.redactedData != null
-            )
+            // Match what the SDK can replay before assigning cache points. Otherwise
+            // unsigned reasoning can leave an empty or cache-point-only message.
+            const metadata = part.providerOptions?.[model.providerID] ?? part.providerOptions?.bedrock
+            return metadata?.signature != null || metadata?.redactedContent != null || metadata?.redactedData != null
           }
           return true
         })
@@ -1303,13 +1302,13 @@ export function options(input: {
       }
     }
 
-    // Only set textVerbosity for non-chat gpt-5.x models
-    // Chat models (e.g. gpt-5.2-chat-latest) only support "medium" verbosity
+    // Generic OpenAI-compatible APIs do not necessarily support OpenAI's verbosity parameter.
+    // Only enable the default for integrations known to implement it.
     if (
       input.model.api.id.includes("gpt-5.") &&
       !input.model.api.id.includes("codex") &&
       !input.model.api.id.includes("-chat") &&
-      input.model.providerID !== "azure"
+      (input.model.api.npm === "@ai-sdk/openai" || input.model.api.npm === "@ai-sdk/amazon-bedrock/mantle")
     ) {
       result["textVerbosity"] = "low"
     }
@@ -1774,11 +1773,14 @@ function reasoningEffort(model: Provider.Model, effort: string) {
     case "ai-gateway-provider":
     case "merge-gateway-ai-sdk-provider":
       return { reasoningEffort: effort }
+    case "gitlab-ai-provider":
+      if (model.family?.startsWith("gpt")) return { reasoningEffort: effort }
+      if (model.family?.startsWith("claude")) return { thinking: { type: "adaptive", effort } }
+      return
     case "@ai-sdk/cohere":
     case "@ai-sdk/perplexity":
     case "@ai-sdk/vercel":
     case "@ai-sdk/alibaba":
-    case "gitlab-ai-provider":
       return
   }
 }

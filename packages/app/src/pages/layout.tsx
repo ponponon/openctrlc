@@ -886,6 +886,7 @@ export default function LegacyLayout(props: ParentProps) {
         if (match.found) draft.session.splice(match.index, 1)
       }),
     )
+    serverSync().homeSessions.remove(session.id)
     if (session.id === params.id) {
       if (nextSession) {
         navigate(`/${params.dir}/session/${nextSession.id}`)

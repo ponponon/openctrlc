@@ -1,3 +1,22 @@
+## OpenCode 上游选择性同步
+
+### 功能目标
+
+在保留 OpenCtrlC 独立产品改动的前提下，持续吸收 OpenCode 上游对模型兼容性、会话可靠性、ACP、App 和 Desktop 的高价值修复，并记录可复查的同步游标，降低后续定期同步成本。
+
+### 实现范围
+
+- 以 `7774461bbf7bd0600070cdede4fe8b9d9f301bf4` 作为内容基线，不把上游历史强行改造成 OpenCtrlC 的父提交。
+- 本轮检查至 `95daf90670b7c039c436c85537da5fbfe2205b41`，按单个上游 commit 选择性移植，覆盖 provider/session/runtime、数据库迁移、Home/UI、Azure CLI、GitHub Copilot、ACP 和 Desktop OAuth。
+- 在 `UPSTREAM.md` 中记录已集成与延期的上游 commit，在 `scripts/upstream-sync-report.sh` 中根据游标生成下一轮待审查范围。
+- 对上游生成文件、依赖补丁和 OpenCtrlC 定制边界保留人工审查，避免一次性全量 diff 引入 Go/Console/Zen 等不属于本项目的产品代码。
+
+### 验证方式
+
+- 在 `packages/opencode`、`packages/core`、`packages/app` 分别执行对应的单元测试和 `bun typecheck`。
+- 使用 `git diff --check` 检查空白错误，并在提交前扫描改动文件中的 API key、token、密码和私钥内容。
+- 后续同步先执行 `git fetch upstream dev`，再运行 `bash scripts/upstream-sync-report.sh`，按 `UPSTREAM.md` 的延期清单逐项复核，完成后更新游标和台账。
+
 ## 子智能体权限请求与会话索引恢复
 
 ### 功能目标
