@@ -884,3 +884,21 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 - 推送后确认上述工作流能从 `queued` 进入运行状态。
 - 确认 Linux/Windows 测试、类型检查、生成检查和 Nix 评估结果均由 GitHub Actions
   回报，不依赖本地环境。
+
+## 个人仓库 CI 凭据自动降级
+
+### 功能目标
+
+让代码生成和 Nix 哈希更新在个人仓库没有 OpenCtrlC GitHub App 配置时仍能完成，避免把
+本来与产品代码无关的 App 凭据缺失误报成 CI 失败。
+
+### 实现范围
+
+- `setup-git-committer` 优先使用 OpenCtrlC GitHub App Token。
+- 当 App ID 或私钥未配置时，自动使用当前工作流的 `GITHUB_TOKEN`。
+- Nix 哈希工作流的 Linux 任务使用可分配的 GitHub 托管 Runner。
+
+### 验证方式
+
+- 在没有 `OPENCTRL[C]?_APP_*` 配置的个人仓库中运行 `generate`，确认能完成生成检查。
+- 修改 Nix 依赖后确认 x64、ARM64 Linux 哈希任务能被正常调度并完成更新。

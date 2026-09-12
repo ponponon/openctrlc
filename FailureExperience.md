@@ -324,3 +324,17 @@ WebFetch 遇到 Cloudflare 挑战时原本会用 `opencode` 作为第二次请�
 通过 `Brand.cli` 默认使用 `openctrlc`，结果所有认证场景都会被拒绝。以后迁移上游
 测试夹具时，认证用户名、User-Agent、运行目录和环境变量都必须从统一品牌常量读取，
 不能只改服务实现而遗漏测试请求里的旧身份。
+
+## 个人仓库工作流不能强制依赖未配置的 GitHub App
+
+代码生成和 Nix 哈希更新原本无条件调用 `actions/create-github-app-token`，但个人仓库
+没有组织级的 `OPENCTRL[C]?_APP_ID` 和私钥时，工作流会在真正执行检查前因缺少 `appId`
+直接失败。以后复用需要推送权限的工作流时，应让 GitHub App 作为可选的增强凭据，并在
+个人仓库中安全回退到工作流自带的 `GITHUB_TOKEN`；同时不能把 Token 写入普通日志。
+
+## Node EventEmitter 类型不能依赖已移除的兼容导出
+
+`@types/node` 新版本已经不再导出 `EventEmitterEventMap`，直接从 `events` 导入会让远程
+全新安装环境的类型检查失败，即使本地残留依赖仍可能暂时通过。以后扩展 Node
+`EventEmitter` 时应使用当前公开的泛型接口或局部重载，不要依赖版本特定的内部类型名，
+并在干净 Runner 上验证类型检查。

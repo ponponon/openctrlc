@@ -1,4 +1,4 @@
-import { EventEmitter, type EventEmitterEventMap } from "events"
+import { EventEmitter } from "events"
 import { Identifier } from "@/id/id"
 
 export type GlobalEvent = {
@@ -13,11 +13,7 @@ class GlobalBusEmitter extends EventEmitter<{
 }> {
   override emit<E extends string | symbol>(
     eventName: E,
-    ...args: E extends "event"
-      ? [event: GlobalEvent]
-      : E extends keyof EventEmitterEventMap
-        ? EventEmitterEventMap[E]
-        : any[]
+    ...args: E extends "event" ? [event: GlobalEvent] : any[]
   ): boolean {
     if (eventName === "event") {
       const event = args[0] as GlobalEvent
@@ -25,7 +21,7 @@ class GlobalBusEmitter extends EventEmitter<{
         event.payload.id = event.payload.syncEvent?.id ?? Identifier.create("evt", "ascending")
       }
     }
-    return super.emit(eventName, ...args)
+    return Reflect.apply(EventEmitter.prototype.emit, this, [eventName, ...args]) as boolean
   }
 }
 
