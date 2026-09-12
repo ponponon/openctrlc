@@ -41,6 +41,28 @@
 - 执行带 `--conditions=solid --preload ./happydom.ts` 的目录同步、权限事件和 Server Sync 单元测试。
 - 复现“子智能体请求外部目录权限但创建事件丢失”的场景，确认当前页面能显示权限操作；停止回合后确认权限请求不再悬挂。
 
+## 会话停滞诊断与目录自愈
+
+### 功能目标
+
+当会话长时间显示“思考中”时，自动区分权限等待、问题等待、工具运行和模型回合停滞，并在活跃目录中执行一次低频重新预热，补回可能丢失的请求事件。
+
+### 实现范围
+
+- busy 会话连续 90 秒没有完成且没有新的可识别进展时输出结构化 `[session-stall]` 日志。
+- 相同助手消息、请求和工具组成的停滞状态只记录一次，回合恢复或状态变化后解除去重。
+- 当前目录处于活跃状态时，对首次识别到的停滞执行一次目录 bootstrap，使 pending permission/question 能重新进入页面。
+
+### 代码位置
+
+- `packages/app/src/context/session-stall.ts`：停滞判定和诊断信息模型。
+- `packages/app/src/context/server-sync.tsx`：周期检查、日志去重和目录自愈。
+
+### 验证方式
+
+- 执行 `session-stall.test.ts`，覆盖权限等待、工具运行、模型回合和已完成回合。
+- 在 `packages/app` 执行 `bun typecheck`，确认周期检查不影响 Server Sync 生命周期。
+
 ## GitHub Actions 定时任务静默时段
 
 ### 功能目标

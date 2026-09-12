@@ -61,6 +61,7 @@ import type {
 import type { Session } from "@openctrlc/sdk/v2/client"
 import { toggleMcp } from "./global-sync/mcp"
 import { createServerSession, type ServerSession } from "./server-session"
+import { diagnoseSessionStall, SESSION_STALL_CHECK_INTERVAL_MS } from "./session-stall"
 
 type GlobalStore = {
   ready: boolean
@@ -390,6 +391,39 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     global: {
       provider: globalStore.provider,
     },
+  })
+
+  const reportedStalls = new Map<string, string>()
+  const inspectStalledSessions = () => {
+    const active = new Set<string>()
+    for (const [sessionID, status] of Object.entries(session.data.session_status)) {
+      const diagnosis = diagnoseSessionStall({
+        sessionID,
+        status,
+        messages: session.data.message[sessionID] ?? [],
+        parts: (messageID) => session.data.part[messageID] ?? [],
+        permissions: session.data.permission[sessionID] ?? [],
+        questions: session.data.question[sessionID] ?? [],
+        now: Date.now(),
+      })
+      if (!diagnosis) continue
+      active.add(sessionID)
+      if (reportedStalls.get(sessionID) === diagnosis.key) continue
+      reportedStalls.set(sessionID, diagnosis.key)
+      console.warn("[session-stall] session made no progress", diagnosis)
+
+      const info = session.get(sessionID)
+      if (info && children.active(info.directory)) queue.push(info.directory)
+    }
+    for (const sessionID of reportedStalls.keys()) {
+      if (!active.has(sessionID)) reportedStalls.delete(sessionID)
+    }
+  }
+
+  const stallTimer = setInterval(inspectStalledSessions, SESSION_STALL_CHECK_INTERVAL_MS)
+  onCleanup(() => {
+    clearInterval(stallTimer)
+    reportedStalls.clear()
   })
 
   async function loadSessions(directory: string, options?: { limit?: number }) {
