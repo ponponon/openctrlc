@@ -197,7 +197,14 @@ export const DESKTOP_NATIVE_LOCALE_TAGS: Record<DesktopNativeLocale, string> = {
 
 export function detectDesktopNativeLocale(languages: readonly string[]): DesktopNativeLocale {
   for (const language of languages) {
-    const source = locale(language)
+    const parsed = parseLocale(language)
+    if (!parsed) continue
+
+    // Some Linux ICU builds expand pa-PK to a script that does not compare equal
+    // to the product's pa-Aran-PK bundle. Preserve the explicit user locale first.
+    if (parsed.language === "pa" && parsed.region === "PK" && !parsed.script) return "pa"
+
+    const source = parsed.maximize()
     if (!source) continue
     if (["no", "nb", "nn"].includes(source.language)) return "no"
     const match = DESKTOP_NATIVE_LOCALES.find((candidate) => {
@@ -214,8 +221,12 @@ export function desktopNativePluralCategories(locale: DesktopNativeLocale) {
 }
 
 function locale(value: string) {
+  return parseLocale(value)?.maximize()
+}
+
+function parseLocale(value: string) {
   try {
-    return new Intl.Locale(value).maximize()
+    return new Intl.Locale(value)
   } catch {
     return undefined
   }

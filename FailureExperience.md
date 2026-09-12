@@ -309,3 +309,11 @@ WebFetch 遇到 Cloudflare 挑战时原本会用 `opencode` 作为第二次请�
 当前仓库实际权限验证 Runner 标签；个人仓库的基础门禁应优先使用可分配的
 `ubuntu-24.04`、`windows-2025` 等标准 Runner，只有确认专用 Runner 可用时才使用
 自定义标签。
+
+## Locale 推断不能依赖不同平台的 ICU 补全结果
+
+同一个 `pa-PK` 在 macOS 和 Linux 的 ICU likely-subtags 数据中可能补出不同的脚本，
+导致基于 `language + script` 的匹配在 Linux 上退回英语。以后做桌面语言包选择时，
+应先读取用户显式提供的 language/region/script，针对产品明确支持的区域保留稳定映射，
+再使用 `Intl.Locale.maximize()` 处理缺少区域或脚本的输入；不能只在开发机的 ICU
+环境中验证结果。
