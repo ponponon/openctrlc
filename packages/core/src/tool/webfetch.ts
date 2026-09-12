@@ -148,8 +148,8 @@ const layer = Layer.effectDiscard(
 
               const { body, contentType } = yield* Effect.gen(function* () {
                 const response = yield* execute(http, input.url, input.format).pipe(
-                  // 伪装成原版 opencode 以避免被限制
-                  Effect.catchIf(isCloudflareChallenge, () => execute(http, input.url, input.format, "opencode")),
+                  // 通过浏览器请求触发挑战页后，使用产品标识重试，避免伪装成其他客户端。
+                  Effect.catchIf(isCloudflareChallenge, () => execute(http, input.url, input.format, Brand.cli)),
                 )
                 const contentType = response.headers["content-type"] || ""
                 const mime = mimeFrom(contentType)

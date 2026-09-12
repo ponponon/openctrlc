@@ -848,3 +848,19 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 - 执行 `./script/sync-tags`，确认远程标签出现在 `git tag --list` 和 Git Graph 中。
 - 检查 `git config --local --get remote.origin.tagOpt` 返回 `--tags`。
 - 执行普通 `git fetch origin` 后，确认已同步标签仍然存在。
+
+## UI 包 DOM 测试环境
+
+### 功能目标
+
+让 `packages/ui` 可以直接运行包含真实 DOM 交互的单元测试，并与应用包使用同一套 Happy DOM 运行时。
+
+### 实现范围
+
+- 为 UI 包增加独立的 Happy DOM preload 入口。
+- 让 UI 包的 Bun 测试脚本自动加载该环境，覆盖 DOM、事件和 `PointerEvent` 测试。
+- 复用工作区已有的 `@happy-dom/global-registrator` 版本，避免测试依赖漂移。
+
+### 验证方式
+
+- 在 `packages/ui` 执行 `bun run test`，确认 DOM 测试不再因 `document is not defined` 失败。

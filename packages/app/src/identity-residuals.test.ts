@@ -176,6 +176,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     "e2e/regression/session-timeline-history-root.spec.ts",
     "e2e/regression/session-timeline-lifecycle-state.spec.ts",
     "e2e/regression/session-timeline-locale-projection.spec.ts",
+    "e2e/regression/session-timeline-navigator.spec.ts",
     "e2e/regression/session-timeline-projection.spec.ts",
     "e2e/regression/session-timeline-reasoning-projection.spec.ts",
     "e2e/regression/session-timeline-reducer-projection.spec.ts",
@@ -222,8 +223,8 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
   expect(discoveredPersistence).toEqual(
     new Map([...expectedPersistence.entries()].map(([path, keys]) => [path, keys.sort()])),
   )
-  expect(new Set(specs)).toEqual(
-    new Set([...expectedPersistence.keys(), ...expectedNoPersistence, "e2e/regression/legacy-new-session.spec.ts"]),
+  expect([...specs].sort()).toEqual(
+    [...expectedPersistence.keys(), ...expectedNoPersistence, "e2e/regression/legacy-new-session.spec.ts"].sort(),
   )
   expect(new Set([...expectedNoPersistence].filter((path) => discoveredPersistence.has(path)))).toEqual(new Set())
   for (const path of expectedNoPersistence) expect(await read(path)).not.toMatch(persistenceKey)

@@ -1034,6 +1034,7 @@
         "strip-ansi": "7.1.2",
       },
       "devDependencies": {
+        "@happy-dom/global-registrator": "catalog:",
         "@solidjs/meta": "catalog:",
         "@tailwindcss/vite": "catalog:",
         "@tsconfig/node22": "catalog:",

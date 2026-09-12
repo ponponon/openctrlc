@@ -288,3 +288,15 @@ Marked 18 的 `renderer.link` 参数中 `title` 是可选字段。自定义 rend
 并显式运行 `git fetch <remote> --tags --force`；确认标签目标提交后，再刷新 Git
 Graph。发布流程和排障记录都要区分“远程 tag 未创建”和“远程 tag 已创建但本地 ref
 未同步”这两类问题。
+
+## UI 包的 DOM 测试必须显式加载浏览器运行时
+
+`packages/ui` 原本直接运行 Bun 测试，新增的滚动条 PointerEvent 回归测试访问真实 `document` 时会在本地和 CI 失败。以后只要测试涉及 DOM、事件或浏览器全局对象，就必须让所属包自己的测试脚本显式加载 Happy DOM preload；不能因为另一个工作区包已经有 DOM 测试环境，就假设 Bun 会自动继承它。
+
+## 目录清单测试必须对新增 fixture 和遍历顺序保持稳定
+
+`packages/app` 的身份残留测试用固定清单校验 E2E 文件。新增导航轨道测试文件后，清单没有同步更新；同时 Bun 的 Glob 遍历顺序变化会让直接比较 Set 产生噪声。以后维护这类清单门禁时，新增文件必须同时归类，集合比较应先排序，避免把合法的遍历顺序变化误报为产品失败。
+
+## 网络重试不能携带旧产品身份
+
+WebFetch 遇到 Cloudflare 挑战时原本会用 `opencode` 作为第二次请求的 User-Agent，即使主流程已经迁移到 OpenCtrlC，也会在真实网络请求中泄露旧产品身份。以后处理网络兼容重试时，浏览器 User-Agent 只用于触发兼容路径，后续请求仍必须使用当前产品的 `Brand` 标识；测试要同时验证初次请求和重试请求的身份。
