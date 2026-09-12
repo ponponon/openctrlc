@@ -317,3 +317,10 @@ WebFetch 遇到 Cloudflare 挑战时原本会用 `opencode` 作为第二次请�
 应先读取用户显式提供的 language/region/script，针对产品明确支持的区域保留稳定映射，
 再使用 `Intl.Locale.maximize()` 处理缺少区域或脚本的输入；不能只在开发机的 ICU
 环境中验证结果。
+
+## HTTP API 认证夹具必须使用当前产品身份
+
+上游 HTTP API exerciser 的有效认证用户名曾被写死为 `opencode`，而服务配置已经
+通过 `Brand.cli` 默认使用 `openctrlc`，结果所有认证场景都会被拒绝。以后迁移上游
+测试夹具时，认证用户名、User-Agent、运行目录和环境变量都必须从统一品牌常量读取，
+不能只改服务实现而遗漏测试请求里的旧身份。

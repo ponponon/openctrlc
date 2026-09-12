@@ -1,5 +1,6 @@
 import { ConfigProvider, Effect, Layer } from "effect"
 import { HttpRouter } from "effect/unstable/http"
+import { Brand } from "@openctrlc/identity"
 import { parse } from "./assertions"
 import { runtime, type Runtime } from "./runtime"
 import type { ActiveScenario, BackendApp, CallResult, CaptureMode, SeededContext } from "./types"
@@ -94,7 +95,7 @@ function toAuthProbeRequest(scenario: ActiveScenario, credentials: "missing" | "
   const headers = {
     ...(spec.body === undefined ? {} : { "content-type": "application/json" }),
     ...spec.headers,
-    ...(credentials === "valid" ? { authorization: basic("opencode", "secret") } : {}),
+    ...(credentials === "valid" ? { authorization: basic(Brand.cli, "secret") } : {}),
   }
   return new Request(new URL(spec.path, "http://localhost"), {
     method: scenario.method,
