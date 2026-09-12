@@ -2014,7 +2014,12 @@ describe("ProviderTransform.message - surrogate sanitization", () => {
         content: [
           { type: "text", text: text("assistant text") },
           { type: "reasoning", text: text("assistant reasoning") },
-          { type: "tool-call", toolCallId: "call-1", toolName: "Read", input: { filePath: ".openctrlc/tool/emoji.ts" } },
+          {
+            type: "tool-call",
+            toolCallId: "call-1",
+            toolName: "Read",
+            input: { filePath: ".openctrlc/tool/emoji.ts" },
+          },
           {
             type: "tool-result",
             toolCallId: "call-2",

@@ -40,7 +40,13 @@ test("the yargs parser uses the product CLI name", async () => {
 
 test("the built current-platform binary responds to --version", async () => {
   const target = `${process.platform === "win32" ? "windows" : process.platform}-${process.arch}`
-  const binary = path.join(opencodeRoot, "dist", `openctrlc-${target}`, "bin", process.platform === "win32" ? "openctrlc.exe" : "openctrlc")
+  const binary = path.join(
+    opencodeRoot,
+    "dist",
+    `openctrlc-${target}`,
+    "bin",
+    process.platform === "win32" ? "openctrlc.exe" : "openctrlc",
+  )
   const child = Bun.spawn([binary, "--version"], { stdout: "pipe", stderr: "pipe" })
   const [exitCode, stdout, stderr] = await Promise.all([
     child.exited,
@@ -54,7 +60,13 @@ test("the built current-platform binary responds to --version", async () => {
 
 test("the built current-platform binary serves both help contracts", async () => {
   const target = `${process.platform === "win32" ? "windows" : process.platform}-${process.arch}`
-  const binary = path.join(opencodeRoot, "dist", `openctrlc-${target}`, "bin", process.platform === "win32" ? "openctrlc.exe" : "openctrlc")
+  const binary = path.join(
+    opencodeRoot,
+    "dist",
+    `openctrlc-${target}`,
+    "bin",
+    process.platform === "win32" ? "openctrlc.exe" : "openctrlc",
+  )
 
   for (const args of [["--help"], ["serve", "--help"]]) {
     const child = Bun.spawn([binary, ...args], { stdout: "pipe", stderr: "pipe" })

@@ -2,9 +2,7 @@ import { expect, test } from "bun:test"
 import { DESKTOP_NATIVE_LOCALES } from "./desktop-native"
 import { dict as en } from "./en"
 
-const keys = Object.keys(en).filter(
-  (key) => key.startsWith("wsl.onboarding.") || key.startsWith("desktop.wsl.error."),
-)
+const keys = Object.keys(en).filter((key) => key.startsWith("wsl.onboarding.") || key.startsWith("desktop.wsl.error."))
 const bundles = await Promise.all(
   DESKTOP_NATIVE_LOCALES.map(async (locale) => (locale === "en" ? { dict: en } : await import(`./${locale}`))),
 )

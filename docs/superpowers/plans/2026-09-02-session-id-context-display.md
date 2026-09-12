@@ -22,10 +22,12 @@
 ### Task 1: Add a Testable Clipboard Boundary
 
 **Files:**
+
 - Create: `packages/app/src/components/session/session-id-copy.ts`
 - Test: `packages/app/src/components/session/session-id-copy.test.ts`
 
 **Interfaces:**
+
 - Produces `copySessionID(sessionID: string | undefined, clipboard?: Pick<Clipboard, "writeText">): Promise<boolean>`.
 - Returns `false` and does not call `writeText` when `sessionID` is absent.
 - Returns `true` after the clipboard writes the exact full ID.
@@ -77,10 +79,7 @@ Expected: FAIL because `./session-id-copy` does not exist yet.
 - [ ] **Step 3: Implement the minimal clipboard boundary**
 
 ```ts
-export function copySessionID(
-  sessionID: string | undefined,
-  clipboard?: Pick<Clipboard, "writeText">,
-) {
+export function copySessionID(sessionID: string | undefined, clipboard?: Pick<Clipboard, "writeText">) {
   if (!sessionID) return Promise.resolve(false)
   const target = clipboard ?? navigator.clipboard
   return target.writeText(sessionID).then(() => true)
@@ -102,11 +101,13 @@ Expected: the boundary only handles the absent-ID guard and the Clipboard API wr
 ### Task 2: Add Complete Locale Coverage
 
 **Files:**
+
 - Modify: `packages/app/src/i18n/en.ts:501-516,568-582`
 - Modify: `packages/app/src/i18n/zh.ts` at the corresponding context and toast sections
 - Modify: every other `packages/app/src/i18n/*.ts` app locale file, adding the same four keys with English fallback values
 
 **Interfaces:**
+
 - Adds the typed keys `context.stats.sessionID`, `context.sessionID.copy`, `context.sessionID.copied`, and `context.sessionID.copyFailed` to every app locale bundle.
 - The component uses only these keys plus the existing `common.requestFailed` fallback.
 
@@ -156,9 +157,11 @@ Expected: PASS with no missing app-locale keys.
 ### Task 3: Render Session ID and Copy Action in Context
 
 **Files:**
+
 - Modify: `packages/app/src/components/session/session-context-tab.tsx:1-225,301-315`
 
 **Interfaces:**
+
 - Consumes `copySessionID` from `./session-id-copy`.
 - Uses `params.id` from the existing `useSessionLayout()` result.
 - Keeps the existing `Stat` component for the label/value hierarchy and adds a dedicated value renderer only because the copy button is interactive.
@@ -229,6 +232,7 @@ Expected: PASS from `packages/app` with no new diagnostics.
 ### Task 4: Full Verification and Review
 
 **Files:**
+
 - Verify: `packages/app/src/components/session/session-context-tab.tsx`
 - Verify: `packages/app/src/components/session/session-id-copy.ts`
 - Verify: `packages/app/src/components/session/session-id-copy.test.ts`

@@ -334,14 +334,16 @@ it.instance("uses the new config directory environment variable", () =>
   }),
 )
 
-it.instance("does not read the old project config disable environment variable", () =>
-  withProcessEnvs(
-    { OPENCODE_DISABLE_PROJECT_CONFIG: "true", OPENCTRLC_DISABLE_PROJECT_CONFIG: "false" },
-    Effect.gen(function* () {
-      const config = yield* Config.use.get()
-      expect(config.model).toBe("project/model")
-    }),
-  ),
+it.instance(
+  "does not read the old project config disable environment variable",
+  () =>
+    withProcessEnvs(
+      { OPENCODE_DISABLE_PROJECT_CONFIG: "true", OPENCTRLC_DISABLE_PROJECT_CONFIG: "false" },
+      Effect.gen(function* () {
+        const config = yield* Config.use.get()
+        expect(config.model).toBe("project/model")
+      }),
+    ),
   { config: { model: "project/model" } },
 )
 
@@ -430,7 +432,7 @@ it.effect("updates global config and omits empty shell key in json", () =>
 )
 
 it.effect("updates global config and omits empty shell key in jsonc", () =>
-      withGlobalConfig({ config: { shell: "bash", model: "test/model" }, name: "openctrlc.jsonc" }, ({ dir }) =>
+  withGlobalConfig({ config: { shell: "bash", model: "test/model" }, name: "openctrlc.jsonc" }, ({ dir }) =>
     Effect.gen(function* () {
       yield* Config.use.updateGlobal({ shell: "" })
 
@@ -1290,7 +1292,7 @@ it.instance(
 it.instance("managed jsonc settings override managed json settings", () =>
   Effect.gen(function* () {
     yield* writeManagedSettingsEffect({ model: "managed/json" })
-      yield* writeManagedSettingsEffect({ model: "managed/jsonc" }, "openctrlc.jsonc")
+    yield* writeManagedSettingsEffect({ model: "managed/jsonc" }, "openctrlc.jsonc")
 
     const config = yield* Config.use.get()
     expect(config.model).toBe("managed/jsonc")
@@ -1633,7 +1635,7 @@ test("remote well-known config can use FetchHttpClient layer", async () => {
 
 const templatedHeaderWellKnown = wellKnown({
   remoteConfig: {
-      url: "https://config.example.com/opencode.json",
+    url: "https://config.example.com/opencode.json",
     headers: { Authorization: "Bearer {env:TEST_TOKEN}" },
   },
   remote: {
@@ -1666,7 +1668,7 @@ remotePrecedenceWellKnown.it.instance(
   () =>
     Effect.gen(function* () {
       const config = yield* Config.use.get()
-    expect(remotePrecedenceWellKnown.seen.remote).toBe("https://config.example.com/test-token/opencode.json")
+      expect(remotePrecedenceWellKnown.seen.remote).toBe("https://config.example.com/test-token/opencode.json")
       expect(config.mcp?.confluence?.enabled).toBe(true)
     }),
 )
@@ -1735,7 +1737,7 @@ loginPageWellKnown.it.instance(
   () =>
     Effect.gen(function* () {
       const exit = yield* Config.use.get().pipe(Effect.exit)
-    expect(loginPageWellKnown.seen.remote).toBe("https://config.example.com/opencode.json")
+      expect(loginPageWellKnown.seen.remote).toBe("https://config.example.com/opencode.json")
       expect(Exit.isFailure(exit)).toBe(true)
       const error = Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined
       expect(NamedError.hasName(error, "ConfigRemoteAuthError")).toBe(true)
@@ -1950,7 +1952,7 @@ describe("OPENCTRLC_DISABLE_PROJECT_CONFIG", () => {
           }),
         )
       }),
-     { config: { model: "project/model" } },
+    { config: { model: "project/model" } },
   )
 })
 
@@ -1960,7 +1962,7 @@ describe("OPENCTRLC_DISABLE_PROJECT_CONFIG", () => {
 describe("OPENCTRLC_PERMISSION env var", () => {
   it.instance("does not crash when OPENCTRLC_PERMISSION contains invalid JSON", () =>
     withProcessEnv(
-       "OPENCTRLC_PERMISSION",
+      "OPENCTRLC_PERMISSION",
       "{invalid",
       Effect.gen(function* () {
         const config = yield* Config.use.get()

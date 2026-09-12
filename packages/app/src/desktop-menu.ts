@@ -285,7 +285,11 @@ export const DESKTOP_MENU: DesktopMenu[] = [
     labelKey: "desktop.menu.help",
     items: [
       { type: "item", labelKey: "desktop.menu.documentation", href: "https://openctrlc.pages.dev/docs/" },
-      { type: "item", labelKey: "desktop.menu.supportForum", href: "https://github.com/ponponon/openctrlc/discussions" },
+      {
+        type: "item",
+        labelKey: "desktop.menu.supportForum",
+        href: "https://github.com/ponponon/openctrlc/discussions",
+      },
       { type: "item", labelKey: "desktop.menu.exportLogs", command: "logs.export" },
       { type: "separator" },
       {

@@ -53,7 +53,10 @@ async function readJsonResponse(response, label) {
     throw new Error(`${label} returned invalid JSON (${response.status})`)
   }
   if (!response.ok || payload?.success === false) {
-    const errors = payload?.errors?.map((item) => item.message).filter(Boolean).join("; ")
+    const errors = payload?.errors
+      ?.map((item) => item.message)
+      .filter(Boolean)
+      .join("; ")
     throw new Error(`${label} failed (${response.status}): ${errors || body.slice(0, 300)}`)
   }
   return payload
@@ -70,10 +73,9 @@ function r2ListUrl({ accountId, bucket, prefix, cursor }) {
 }
 
 async function fetchRelease({ repository, tag, githubToken }) {
-  const response = await fetch(
-    `${GITHUB_API_BASE_URL}/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`,
-    { headers: githubHeaders(githubToken) },
-  )
+  const response = await fetch(`${GITHUB_API_BASE_URL}/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`, {
+    headers: githubHeaders(githubToken),
+  })
   const payload = await readJsonResponse(response, `GitHub release ${tag}`)
   if (payload.draft || payload.prerelease) throw new Error(`Release ${tag} must be published and non-prerelease`)
   return payload
@@ -96,7 +98,8 @@ async function downloadAsset(asset, destination, githubToken) {
     headers: githubHeaders(githubToken),
     redirect: "follow",
   })
-  if (!response.ok || !response.body) throw new Error(`GitHub asset download failed (${response.status}): ${asset.name}`)
+  if (!response.ok || !response.body)
+    throw new Error(`GitHub asset download failed (${response.status}): ${asset.name}`)
 
   const output = createWriteStream(destination)
   const hash = createHash("sha256")
@@ -114,7 +117,16 @@ async function downloadAsset(asset, destination, githubToken) {
   return hash.digest("hex")
 }
 
-async function uploadR2File({ accountId, bucket, key, filePath, contentType, cacheControl, contentDisposition, token }) {
+async function uploadR2File({
+  accountId,
+  bucket,
+  key,
+  filePath,
+  contentType,
+  cacheControl,
+  contentDisposition,
+  token,
+}) {
   const fileStats = await stat(filePath)
   const response = await fetch(r2ObjectUrl({ accountId, bucket, key }), {
     method: "PUT",
@@ -227,7 +239,8 @@ export async function publishReleaseDownloads(options = {}) {
   const retention = options.retention ?? Number.parseInt(process.env.R2_RELEASE_RETENTION ?? "3", 10)
 
   if (!tag) throw new Error("RELEASE_TAG or --tag is required")
-  if (!repository || !/^[^/]+\/[^/]+$/.test(repository)) throw new Error("GITHUB_REPOSITORY or --repository must be owner/name")
+  if (!repository || !/^[^/]+\/[^/]+$/.test(repository))
+    throw new Error("GITHUB_REPOSITORY or --repository must be owner/name")
   if (!accountId || !token) throw new Error("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required")
   if (!Number.isInteger(retention) || retention < 1) throw new Error("R2 release retention must be a positive integer")
 

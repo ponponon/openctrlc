@@ -169,7 +169,8 @@ describe("installation", () => {
       testLayer(
         () => jsonResponse({}), // HTTP not used for tap formula
         (cmd, args) => {
-          if (cmd === "brew" && args.includes("ponponon/tap/openctrlc") && args.includes("--formula")) return "openctrlc"
+          if (cmd === "brew" && args.includes("ponponon/tap/openctrlc") && args.includes("--formula"))
+            return "openctrlc"
           if (cmd === "brew" && args.includes("--json=v2")) return brewInfoJson
           return ""
         },

@@ -646,7 +646,8 @@ export const dict = {
   "workspace.black.subscription.useBalance": "Use seu saldo disponível após atingir os limites de uso",
   "workspace.black.waitlist.title": "Lista de Espera",
   "workspace.black.waitlist.joined": "Você está na lista de espera para o plano OpenCtrlC Black de ${{plan}} por mês.",
-  "workspace.black.waitlist.ready": "Estamos prontos para inscrever você no plano OpenCtrlC Black de ${{plan}} por mês.",
+  "workspace.black.waitlist.ready":
+    "Estamos prontos para inscrever você no plano OpenCtrlC Black de ${{plan}} por mês.",
   "workspace.black.waitlist.leave": "Sair da Lista de Espera",
   "workspace.black.waitlist.leaving": "Saindo...",
   "workspace.black.waitlist.left": "Saiu",

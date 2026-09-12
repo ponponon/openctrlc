@@ -32,9 +32,9 @@ export default function PrivacyPolicy() {
 
               <h2 id="website">This website</h2>
               <p>
-                The website is hosted on Cloudflare Pages. Cloudflare may process standard connection information such as
-                an IP address, browser details, and request timestamps to deliver and protect the site. OpenCtrlC does
-                not operate an account system, advertising tracker, or hosted inference service on this website.
+                The website is hosted on Cloudflare Pages. Cloudflare may process standard connection information such
+                as an IP address, browser details, and request timestamps to deliver and protect the site. OpenCtrlC
+                does not operate an account system, advertising tracker, or hosted inference service on this website.
               </p>
 
               <h2 id="application">The application</h2>
@@ -46,9 +46,9 @@ export default function PrivacyPolicy() {
 
               <h2 id="sharing">Optional sharing</h2>
               <p>
-                If you explicitly use the share feature, the selected conversation is sent to the share service configured
-                for your deployment. Do not share secrets or private source code unless you have reviewed that service's
-                terms and retention policy. You can disable sharing in your OpenCtrlC configuration.
+                If you explicitly use the share feature, the selected conversation is sent to the share service
+                configured for your deployment. Do not share secrets or private source code unless you have reviewed
+                that service's terms and retention policy. You can disable sharing in your OpenCtrlC configuration.
               </p>
 
               <h2 id="third-party">Third-party services</h2>

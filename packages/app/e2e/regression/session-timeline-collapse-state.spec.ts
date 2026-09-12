@@ -161,10 +161,10 @@ test.describe("regression: session timeline local row state", () => {
         page.evaluate((textPartID) => {
           const stepsFrame = document
             .querySelector<HTMLElement>('[data-slot="session-turn-steps"]')
-            ?.closest<HTMLElement>('[data-timeline-row]')
+            ?.closest<HTMLElement>("[data-timeline-row]")
           const responseFrame = document
             .querySelector<HTMLElement>(`[data-timeline-part-id="${textPartID}"]`)
-            ?.closest<HTMLElement>('[data-timeline-row]')
+            ?.closest<HTMLElement>("[data-timeline-row]")
           if (!stepsFrame || !responseFrame) return Number.POSITIVE_INFINITY
           return responseFrame.getBoundingClientRect().top - stepsFrame.getBoundingClientRect().bottom
         }, textPartID),

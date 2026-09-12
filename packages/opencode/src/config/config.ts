@@ -136,9 +136,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Co
 export const use = serviceUse(Service)
 
 function globalConfigFile() {
-    const candidates = [Brand.configFileJsonc, Brand.configFile].map((file) =>
-    path.join(Global.Path.config, file),
-  )
+  const candidates = [Brand.configFileJsonc, Brand.configFile].map((file) => path.join(Global.Path.config, file))
   for (const file of candidates) {
     if (existsSync(file)) return file
   }
@@ -386,7 +384,11 @@ const layer = Layer.effect(
         }
 
         if (!Flag.OPENCTRLC_DISABLE_PROJECT_CONFIG) {
-          for (const file of yield* ConfigPaths.files(Brand.configFile.replace(/\.json$/, ""), ctx.directory, ctx.worktree).pipe(Effect.orDie)) {
+          for (const file of yield* ConfigPaths.files(
+            Brand.configFile.replace(/\.json$/, ""),
+            ctx.directory,
+            ctx.worktree,
+          ).pipe(Effect.orDie)) {
             yield* merge(file, yield* loadFile(file, authEnv), "local")
           }
         }

@@ -48,10 +48,11 @@ describe("v1 SDK runtime smoke", () => {
   })
 
   test("CLI smoke identity is OpenCtrlC and excludes the legacy product name", async () => {
-    const process = Bun.spawn(
-      ["bun", "run", "--conditions=browser", "./src/index.ts", "--help"],
-      { cwd: path.resolve(import.meta.dir, "../.."), stdout: "pipe", stderr: "pipe" },
-    )
+    const process = Bun.spawn(["bun", "run", "--conditions=browser", "./src/index.ts", "--help"], {
+      cwd: path.resolve(import.meta.dir, "../.."),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
     const output = `${await new Response(process.stdout).text()}\n${await new Response(process.stderr).text()}`
     expect(await process.exited).toBe(0)
     expect(output).toContain("openctrlc")

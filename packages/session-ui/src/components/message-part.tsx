@@ -181,7 +181,11 @@ export type UserMessageSearchHit = { start: number; end: number; active?: boolea
 
 export type SessionAction = (input: { sessionID: string; messageID: string }) => Promise<void> | void
 
-export type ForkAction = (input: { sessionID: string; messageID: string; includeMessage?: boolean }) => Promise<void> | void
+export type ForkAction = (input: {
+  sessionID: string
+  messageID: string
+  includeMessage?: boolean
+}) => Promise<void> | void
 
 export type UserActions = {
   fork?: ForkAction

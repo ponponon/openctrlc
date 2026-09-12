@@ -190,7 +190,7 @@ export const RunCommand = effectCmd({
       })
       .option("attach", {
         type: "string",
-         describe: "attach to a running OpenCtrlC server (e.g., http://localhost:4096)",
+        describe: "attach to a running OpenCtrlC server (e.g., http://localhost:4096)",
       })
       .option("password", {
         alias: ["p"],
@@ -200,7 +200,7 @@ export const RunCommand = effectCmd({
       .option("username", {
         alias: ["u"],
         type: "string",
-         describe: "basic auth username (defaults to OPENCTRLC_SERVER_USERNAME or 'openctrlc')",
+        describe: "basic auth username (defaults to OPENCTRLC_SERVER_USERNAME or 'openctrlc')",
       })
       .option("dir", {
         type: "string",

@@ -30,7 +30,9 @@ export const SkillRuntimeInfo: Component<{
         <div class="skill-runtime-info-value skill-runtime-info-sources">
           <Show
             when={props.groups().length > 0}
-            fallback={<span class="skill-runtime-info-empty">{language.t("settings.skills.runtime.sources.empty")}</span>}
+            fallback={
+              <span class="skill-runtime-info-empty">{language.t("settings.skills.runtime.sources.empty")}</span>
+            }
           >
             <For each={props.groups()}>
               {(group) => (

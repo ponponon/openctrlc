@@ -178,7 +178,9 @@ export function SessionSearchBar(props: SessionSearchBarProps) {
   )
 }
 
-export function sessionSearchBarState(props: Pick<SessionSearchBarProps, "query" | "matches" | "loading" | "partial" | "error">) {
+export function sessionSearchBarState(
+  props: Pick<SessionSearchBarProps, "query" | "matches" | "loading" | "partial" | "error">,
+) {
   return {
     hasResults: !props.loading && props.matches > 0,
     noResults: !props.loading && !!props.query && props.matches === 0,

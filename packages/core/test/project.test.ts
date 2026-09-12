@@ -176,7 +176,9 @@ describe("ProjectV2.resolve", () => {
 
       yield* project.resolve(abs(tmp.path))
 
-      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, ".git", Brand.runtimeDirectory)).exists())).toBe(false)
+      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, ".git", Brand.runtimeDirectory)).exists())).toBe(
+        false,
+      )
     }),
   )
 

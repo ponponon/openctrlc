@@ -78,13 +78,13 @@ openctrlc attach http://10.20.30.40:4096
 
 #### الرايات
 
-| الراية                                   | المختصر | الوصف                                                                             |
-| ---------------------------------------- | ------- | --------------------------------------------------------------------------------- |
-| <nobr><code>{"--dir"}</code></nobr>      |         | دليل العمل الذي ستبدأ منه واجهة TUI                                               |
-| <nobr><code>{"--continue"}</code></nobr> | `-c`    | متابعة آخر جلسة                                                                   |
-| <nobr><code>{"--session"}</code></nobr>  | `-s`    | معرّف الجلسة للمتابعة                                                             |
-| <nobr><code>{"--fork"}</code></nobr>     |         | تفريع الجلسة عند المتابعة (استخدمه مع `--continue` أو `--session`)                |
-| <nobr><code>{"--password"}</code></nobr> | `-p`    | كلمة مرور المصادقة الأساسية (الافتراضي `OPENCTRLC_SERVER_PASSWORD`)                |
+| الراية                                   | المختصر | الوصف                                                                               |
+| ---------------------------------------- | ------- | ----------------------------------------------------------------------------------- |
+| <nobr><code>{"--dir"}</code></nobr>      |         | دليل العمل الذي ستبدأ منه واجهة TUI                                                 |
+| <nobr><code>{"--continue"}</code></nobr> | `-c`    | متابعة آخر جلسة                                                                     |
+| <nobr><code>{"--session"}</code></nobr>  | `-s`    | معرّف الجلسة للمتابعة                                                               |
+| <nobr><code>{"--fork"}</code></nobr>     |         | تفريع الجلسة عند المتابعة (استخدمه مع `--continue` أو `--session`)                  |
+| <nobr><code>{"--password"}</code></nobr> | `-p`    | كلمة مرور المصادقة الأساسية (الافتراضي `OPENCTRLC_SERVER_PASSWORD`)                 |
 | <nobr><code>{"--username"}</code></nobr> | `-u`    | اسم مستخدم المصادقة الأساسية (الافتراضي `OPENCTRLC_SERVER_USERNAME` أو `openctrlc`) |
 
 ---
@@ -339,25 +339,25 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 #### الرايات
 
-| الراية                                   | المختصر | الوصف                                                                             |
-| ---------------------------------------- | ------- | --------------------------------------------------------------------------------- |
-| <nobr><code>{"--command"}</code></nobr>  |         | الأمر المراد تشغيله؛ استخدم الرسالة كوسائط                                        |
-| <nobr><code>{"--continue"}</code></nobr> | `-c`    | متابعة الجلسة الأخيرة                                                             |
-| <nobr><code>{"--session"}</code></nobr>  | `-s`    | معرّف الجلسة للمتابعة                                                             |
-| <nobr><code>{"--fork"}</code></nobr>     |         | تفريع الجلسة عند المتابعة (يستخدم مع `--continue` أو `--session`)                 |
-| <nobr><code>{"--share"}</code></nobr>    |         | مشاركة الجلسة                                                                     |
-| <nobr><code>{"--model"}</code></nobr>    | `-m`    | النموذج المراد استخدامه بصيغة provider/model                                      |
-| <nobr><code>{"--agent"}</code></nobr>    |         | الوكيل المراد استخدامه                                                            |
-| <nobr><code>{"--file"}</code></nobr>     | `-f`    | ملف/ملفات لإرفاقها بالرسالة                                                       |
-| <nobr><code>{"--format"}</code></nobr>   |         | التنسيق: default (منسق) أو json (أحداث JSON خام)                                  |
-| <nobr><code>{"--title"}</code></nobr>    |         | عنوان للجلسة (يستخدم موجهًا مقتطعًا إن لم تُحدَّد قيمة)                           |
-| <nobr><code>{"--attach"}</code></nobr>   |         | الإرفاق بخادم openctrlc قيد التشغيل (مثل http://localhost:4096)                    |
-| <nobr><code>{"--password"}</code></nobr> | `-p`    | كلمة مرور المصادقة الأساسية (الافتراضي `OPENCTRLC_SERVER_PASSWORD`)                |
+| الراية                                   | المختصر | الوصف                                                                               |
+| ---------------------------------------- | ------- | ----------------------------------------------------------------------------------- |
+| <nobr><code>{"--command"}</code></nobr>  |         | الأمر المراد تشغيله؛ استخدم الرسالة كوسائط                                          |
+| <nobr><code>{"--continue"}</code></nobr> | `-c`    | متابعة الجلسة الأخيرة                                                               |
+| <nobr><code>{"--session"}</code></nobr>  | `-s`    | معرّف الجلسة للمتابعة                                                               |
+| <nobr><code>{"--fork"}</code></nobr>     |         | تفريع الجلسة عند المتابعة (يستخدم مع `--continue` أو `--session`)                   |
+| <nobr><code>{"--share"}</code></nobr>    |         | مشاركة الجلسة                                                                       |
+| <nobr><code>{"--model"}</code></nobr>    | `-m`    | النموذج المراد استخدامه بصيغة provider/model                                        |
+| <nobr><code>{"--agent"}</code></nobr>    |         | الوكيل المراد استخدامه                                                              |
+| <nobr><code>{"--file"}</code></nobr>     | `-f`    | ملف/ملفات لإرفاقها بالرسالة                                                         |
+| <nobr><code>{"--format"}</code></nobr>   |         | التنسيق: default (منسق) أو json (أحداث JSON خام)                                    |
+| <nobr><code>{"--title"}</code></nobr>    |         | عنوان للجلسة (يستخدم موجهًا مقتطعًا إن لم تُحدَّد قيمة)                             |
+| <nobr><code>{"--attach"}</code></nobr>   |         | الإرفاق بخادم openctrlc قيد التشغيل (مثل http://localhost:4096)                     |
+| <nobr><code>{"--password"}</code></nobr> | `-p`    | كلمة مرور المصادقة الأساسية (الافتراضي `OPENCTRLC_SERVER_PASSWORD`)                 |
 | <nobr><code>{"--username"}</code></nobr> | `-u`    | اسم مستخدم المصادقة الأساسية (الافتراضي `OPENCTRLC_SERVER_USERNAME` أو `openctrlc`) |
-| <nobr><code>{"--dir"}</code></nobr>      |         | دليل التشغيل، أو المسار على الخادم البعيد عند الإرفاق                             |
-| <nobr><code>{"--variant"}</code></nobr>  |         | متغير النموذج (جهد الاستدلال الخاص بالمزود)                                       |
-| <nobr><code>{"--thinking"}</code></nobr> |         | عرض كتل التفكير                                                                   |
-| <nobr><code>{"--port"}</code></nobr>     |         | منفذ الخادم المحلي (الافتراضي منفذ عشوائي)                                        |
+| <nobr><code>{"--dir"}</code></nobr>      |         | دليل التشغيل، أو المسار على الخادم البعيد عند الإرفاق                               |
+| <nobr><code>{"--variant"}</code></nobr>  |         | متغير النموذج (جهد الاستدلال الخاص بالمزود)                                         |
+| <nobr><code>{"--thinking"}</code></nobr> |         | عرض كتل التفكير                                                                     |
+| <nobr><code>{"--port"}</code></nobr>     |         | منفذ الخادم المحلي (الافتراضي منفذ عشوائي)                                          |
 
 ---
 
@@ -562,31 +562,31 @@ openctrlc upgrade v0.1.48
 
 يمكن تهيئة OpenCtrlC باستخدام متغيرات البيئة.
 
-| المتغير                               | النوع   | الوصف                                                     |
-| ------------------------------------- | ------- | --------------------------------------------------------- |
-| `OPENCTRLC_AUTO_SHARE`                 | boolean | مشاركة الجلسات تلقائيا                                    |
-| `OPENCTRLC_GIT_BASH_PATH`              | string  | مسار ملف Git Bash التنفيذي على Windows                    |
-| `OPENCTRLC_CONFIG`                     | string  | مسار ملف التهيئة                                          |
-| `OPENCTRLC_CONFIG_DIR`                 | string  | مسار دليل التهيئة                                         |
-| `OPENCTRLC_CONFIG_CONTENT`             | string  | محتوى تهيئة JSON مُضمّن                                   |
-| `OPENCTRLC_DISABLE_AUTOUPDATE`         | boolean | تعطيل التحقق التلقائي من التحديثات                        |
-| `OPENCTRLC_DISABLE_PRUNE`              | boolean | تعطيل تنقية البيانات القديمة                              |
-| `OPENCTRLC_DISABLE_TERMINAL_TITLE`     | boolean | تعطيل تحديث عنوان terminal تلقائيا                        |
-| `OPENCTRLC_PERMISSION`                 | string  | تهيئة أذونات JSON مُضمّنة                                 |
-| `OPENCTRLC_DISABLE_DEFAULT_PLUGINS`    | boolean | تعطيل الإضافات الافتراضية                                 |
-| `OPENCTRLC_DISABLE_LSP_DOWNLOAD`       | boolean | تعطيل تنزيل خوادم LSP تلقائيا                             |
-| `OPENCTRLC_ENABLE_EXPERIMENTAL_MODELS` | boolean | تفعيل النماذج التجريبية                                   |
-| `OPENCTRLC_DISABLE_AUTOCOMPACT`        | boolean | تعطيل ضغط السياق تلقائيا                                  |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE`        | boolean | تعطيل القراءة من `.claude` (الموجه + المهارات)            |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE_PROMPT` | boolean | تعطيل قراءة `~/.claude/CLAUDE.md`                         |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` | boolean | تعطيل تحميل `.claude/skills`                              |
-| `OPENCTRLC_DISABLE_MODELS_FETCH`       | boolean | تعطيل جلب النماذج من مصادر بعيدة                          |
-| `OPENCTRLC_FAKE_VCS`                   | string  | مزود VCS وهمي لأغراض الاختبار                             |
-| `OPENCTRLC_CLIENT`                     | string  | معرّف العميل (الافتراضي `cli`)                            |
-| `OPENCTRLC_ENABLE_EXA`                 | boolean | تفعيل أدوات بحث الويب من Exa                              |
-| `OPENCTRLC_SERVER_PASSWORD`            | string  | تفعيل المصادقة الأساسية لخادمي `serve`/`web`              |
+| المتغير                                | النوع   | الوصف                                                      |
+| -------------------------------------- | ------- | ---------------------------------------------------------- |
+| `OPENCTRLC_AUTO_SHARE`                 | boolean | مشاركة الجلسات تلقائيا                                     |
+| `OPENCTRLC_GIT_BASH_PATH`              | string  | مسار ملف Git Bash التنفيذي على Windows                     |
+| `OPENCTRLC_CONFIG`                     | string  | مسار ملف التهيئة                                           |
+| `OPENCTRLC_CONFIG_DIR`                 | string  | مسار دليل التهيئة                                          |
+| `OPENCTRLC_CONFIG_CONTENT`             | string  | محتوى تهيئة JSON مُضمّن                                    |
+| `OPENCTRLC_DISABLE_AUTOUPDATE`         | boolean | تعطيل التحقق التلقائي من التحديثات                         |
+| `OPENCTRLC_DISABLE_PRUNE`              | boolean | تعطيل تنقية البيانات القديمة                               |
+| `OPENCTRLC_DISABLE_TERMINAL_TITLE`     | boolean | تعطيل تحديث عنوان terminal تلقائيا                         |
+| `OPENCTRLC_PERMISSION`                 | string  | تهيئة أذونات JSON مُضمّنة                                  |
+| `OPENCTRLC_DISABLE_DEFAULT_PLUGINS`    | boolean | تعطيل الإضافات الافتراضية                                  |
+| `OPENCTRLC_DISABLE_LSP_DOWNLOAD`       | boolean | تعطيل تنزيل خوادم LSP تلقائيا                              |
+| `OPENCTRLC_ENABLE_EXPERIMENTAL_MODELS` | boolean | تفعيل النماذج التجريبية                                    |
+| `OPENCTRLC_DISABLE_AUTOCOMPACT`        | boolean | تعطيل ضغط السياق تلقائيا                                   |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE`        | boolean | تعطيل القراءة من `.claude` (الموجه + المهارات)             |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE_PROMPT` | boolean | تعطيل قراءة `~/.claude/CLAUDE.md`                          |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` | boolean | تعطيل تحميل `.claude/skills`                               |
+| `OPENCTRLC_DISABLE_MODELS_FETCH`       | boolean | تعطيل جلب النماذج من مصادر بعيدة                           |
+| `OPENCTRLC_FAKE_VCS`                   | string  | مزود VCS وهمي لأغراض الاختبار                              |
+| `OPENCTRLC_CLIENT`                     | string  | معرّف العميل (الافتراضي `cli`)                             |
+| `OPENCTRLC_ENABLE_EXA`                 | boolean | تفعيل أدوات بحث الويب من Exa                               |
+| `OPENCTRLC_SERVER_PASSWORD`            | string  | تفعيل المصادقة الأساسية لخادمي `serve`/`web`               |
 | `OPENCTRLC_SERVER_USERNAME`            | string  | تجاوز اسم مستخدم المصادقة الأساسية (الافتراضي `openctrlc`) |
-| `OPENCTRLC_MODELS_URL`                 | string  | رابط مخصص لجلب تهيئة النماذج                              |
+| `OPENCTRLC_MODELS_URL`                 | string  | رابط مخصص لجلب تهيئة النماذج                               |
 
 ---
 
@@ -594,8 +594,8 @@ openctrlc upgrade v0.1.48
 
 تقوم متغيرات البيئة التالية بتفعيل ميزات تجريبية قد تتغير أو تتم إزالتها.
 
-| المتغير                                         | النوع   | الوصف                                        |
-| ----------------------------------------------- | ------- | -------------------------------------------- |
+| المتغير                                          | النوع   | الوصف                                        |
+| ------------------------------------------------ | ------- | -------------------------------------------- |
 | `OPENCTRLC_EXPERIMENTAL`                         | boolean | تفعيل الميزات التجريبية الخاضعة للعلم الشامل |
 | `OPENCTRLC_EXPERIMENTAL_ICON_DISCOVERY`          | boolean | تفعيل اكتشاف الأيقونات                       |
 | `OPENCTRLC_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolean | تعطيل النسخ عند التحديد في TUI               |

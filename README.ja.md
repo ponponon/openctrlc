@@ -30,11 +30,11 @@ npm install --global openctrlc-ai
 
 最新のインストーラーは [GitHub Releases](https://github.com/ponponon/openctrlc/releases) からダウンロードしてください。
 
-| プラットフォーム | アーキテクチャ | 形式 |
-| --- | --- | --- |
-| macOS | Apple Silicon | DMG, ZIP |
-| Windows | x64, ARM64 | NSIS インストーラー |
-| Linux | x64, ARM64 | DEB, AppImage, RPM |
+| プラットフォーム | アーキテクチャ | 形式                |
+| ---------------- | -------------- | ------------------- |
+| macOS            | Apple Silicon  | DMG, ZIP            |
+| Windows          | x64, ARM64     | NSIS インストーラー |
+| Linux            | x64, ARM64     | DEB, AppImage, RPM  |
 
 ## OpenCtrlC の特徴
 

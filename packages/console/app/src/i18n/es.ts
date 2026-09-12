@@ -398,7 +398,8 @@ export const dict = {
     "La promoción gratuita de {{model}} ha finalizado. Puedes seguir usando el modelo suscribiéndote a OpenCtrlC Go - {{link}}",
 
   "black.meta.title": "OpenCtrlC Black | Accede a los mejores modelos de codificación del mundo",
-  "black.meta.description": "Obtén acceso a Claude, GPT, Gemini y más con los planes de suscripción de OpenCtrlC Black.",
+  "black.meta.description":
+    "Obtén acceso a Claude, GPT, Gemini y más con los planes de suscripción de OpenCtrlC Black.",
   "black.hero.title": "Accede a los mejores modelos de codificación del mundo",
   "black.hero.subtitle": "Incluyendo Claude, GPT, Gemini y más",
   "black.title": "OpenCtrlC Black | Precios",

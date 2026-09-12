@@ -78,13 +78,13 @@ openctrlc attach http://10.20.30.40:4096
 
 #### Flag
 
-| Flag                                     | Kort | Beskrivelse                                                                       |
-| ---------------------------------------- | ---- | --------------------------------------------------------------------------------- |
-| <nobr><code>{"--dir"}</code></nobr>      |      | Arbejdsmappe til at starte TUI i                                                  |
-| <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsæt den seneste session                                                       |
-| <nobr><code>{"--session"}</code></nobr>  | `-s` | Sessions-id for at fortsætte                                                      |
-| <nobr><code>{"--fork"}</code></nobr>     |      | Forgren sessionen ved fortsættelse (brug med `--continue` eller `--session`)      |
-| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCTRLC_SERVER_PASSWORD`)                 |
+| Flag                                     | Kort | Beskrivelse                                                                         |
+| ---------------------------------------- | ---- | ----------------------------------------------------------------------------------- |
+| <nobr><code>{"--dir"}</code></nobr>      |      | Arbejdsmappe til at starte TUI i                                                    |
+| <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsæt den seneste session                                                         |
+| <nobr><code>{"--session"}</code></nobr>  | `-s` | Sessions-id for at fortsætte                                                        |
+| <nobr><code>{"--fork"}</code></nobr>     |      | Forgren sessionen ved fortsættelse (brug med `--continue` eller `--session`)        |
+| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCTRLC_SERVER_PASSWORD`)                  |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`) |
 
 ---
@@ -351,9 +351,9 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 | <nobr><code>{"--file"}</code></nobr>     | `-f` | Fil(er), der skal vedhæftes til meddelelsen                                         |
 | <nobr><code>{"--format"}</code></nobr>   |      | Format: standard (formateret) eller json (rå JSON hændelser)                        |
 | <nobr><code>{"--title"}</code></nobr>    |      | Titel for sessionen (bruger trunkeret prompt, hvis der ikke er angivet nogen værdi) |
-| <nobr><code>{"--attach"}</code></nobr>   |      | Tilslut til en kørende openctrlc-server (f.eks. http://localhost:4096)               |
-| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCTRLC_SERVER_PASSWORD`)                   |
-| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`)   |
+| <nobr><code>{"--attach"}</code></nobr>   |      | Tilslut til en kørende openctrlc-server (f.eks. http://localhost:4096)              |
+| <nobr><code>{"--password"}</code></nobr> | `-p` | Adgangskode til basic auth (standard: `OPENCTRLC_SERVER_PASSWORD`)                  |
+| <nobr><code>{"--username"}</code></nobr> | `-u` | Brugernavn til basic auth (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`) |
 | <nobr><code>{"--dir"}</code></nobr>      |      | Mappe at køre i, eller sti på fjernserveren ved tilkobling                          |
 | <nobr><code>{"--variant"}</code></nobr>  |      | Modelvariant (udbyder-specifik ræsonneringsindsats)                                 |
 | <nobr><code>{"--thinking"}</code></nobr> |      | Vis tænkeblokke                                                                     |
@@ -562,32 +562,32 @@ openctrlc CLI tager følgende globale flag.
 
 OpenCtrlC kan konfigureres ved hjælp af miljøvariabler.
 
-| Variabel                              | Skriv   | Beskrivelse                                                           |
-| ------------------------------------- | ------- | --------------------------------------------------------------------- |
-| `OPENCTRLC_AUTO_SHARE`                 | boolean | Del automatisk session                                                |
-| `OPENCTRLC_GIT_BASH_PATH`              | string  | Sti til Git Bash eksekverbar på Windows                               |
-| `OPENCTRLC_CONFIG`                     | string  | Sti til konfigurationsfil                                             |
-| `OPENCTRLC_TUI_CONFIG`                 | string  | Sti til TUI-konfigurationsfil                                         |
-| `OPENCTRLC_CONFIG_DIR`                 | string  | Sti til konfigurationsmappe                                           |
-| `OPENCTRLC_CONFIG_CONTENT`             | string  | Indbygget json-konfigurationsindhold                                  |
-| `OPENCTRLC_DISABLE_AUTOUPDATE`         | boolean | Deaktiver automatisk opdateringskontrol                               |
-| `OPENCTRLC_DISABLE_PRUNE`              | boolean | Deaktiver beskæring af gamle data                                     |
-| `OPENCTRLC_DISABLE_TERMINAL_TITLE`     | boolean | Deaktiver automatisk opdatering af terminaltitel                      |
-| `OPENCTRLC_PERMISSION`                 | string  | Indbygget json-tilladelseskonfiguration                               |
-| `OPENCTRLC_DISABLE_DEFAULT_PLUGINS`    | boolean | Deaktiver standard plugins                                            |
-| `OPENCTRLC_DISABLE_LSP_DOWNLOAD`       | boolean | Deaktiver automatisk LSP-serverdownloads                              |
-| `OPENCTRLC_ENABLE_EXPERIMENTAL_MODELS` | boolean | Aktive eksperimentelle modeller                                       |
-| `OPENCTRLC_DISABLE_AUTOCOMPACT`        | boolean | Deaktiver automatisk kontekstkomprimering                             |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE`        | boolean | Deaktiver læsning fra `.claude` (prompt + færdigheder)                |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE_PROMPT` | boolean | Deaktiver læsning `~/.claude/CLAUDE.md`                               |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` | boolean | Deaktiver indlæsning af `.claude/skills`                              |
-| `OPENCTRLC_DISABLE_MODELS_FETCH`       | boolean | Deaktivering af modeller fra eksterne kilder                          |
-| `OPENCTRLC_FAKE_VCS`                   | string  | Falsk VCS-udbyder til testformål                                      |
-| `OPENCTRLC_CLIENT`                     | string  | Klient-id (standard til `cli`)                                        |
-| `OPENCTRLC_ENABLE_EXA`                 | boolean | Aktiver Exa-websøgeværktøjer                                          |
-| `OPENCTRLC_SERVER_PASSWORD`            | string  | Aktiver grundlæggende godkendelse for `serve`/`web`                   |
+| Variabel                               | Skriv   | Beskrivelse                                                            |
+| -------------------------------------- | ------- | ---------------------------------------------------------------------- |
+| `OPENCTRLC_AUTO_SHARE`                 | boolean | Del automatisk session                                                 |
+| `OPENCTRLC_GIT_BASH_PATH`              | string  | Sti til Git Bash eksekverbar på Windows                                |
+| `OPENCTRLC_CONFIG`                     | string  | Sti til konfigurationsfil                                              |
+| `OPENCTRLC_TUI_CONFIG`                 | string  | Sti til TUI-konfigurationsfil                                          |
+| `OPENCTRLC_CONFIG_DIR`                 | string  | Sti til konfigurationsmappe                                            |
+| `OPENCTRLC_CONFIG_CONTENT`             | string  | Indbygget json-konfigurationsindhold                                   |
+| `OPENCTRLC_DISABLE_AUTOUPDATE`         | boolean | Deaktiver automatisk opdateringskontrol                                |
+| `OPENCTRLC_DISABLE_PRUNE`              | boolean | Deaktiver beskæring af gamle data                                      |
+| `OPENCTRLC_DISABLE_TERMINAL_TITLE`     | boolean | Deaktiver automatisk opdatering af terminaltitel                       |
+| `OPENCTRLC_PERMISSION`                 | string  | Indbygget json-tilladelseskonfiguration                                |
+| `OPENCTRLC_DISABLE_DEFAULT_PLUGINS`    | boolean | Deaktiver standard plugins                                             |
+| `OPENCTRLC_DISABLE_LSP_DOWNLOAD`       | boolean | Deaktiver automatisk LSP-serverdownloads                               |
+| `OPENCTRLC_ENABLE_EXPERIMENTAL_MODELS` | boolean | Aktive eksperimentelle modeller                                        |
+| `OPENCTRLC_DISABLE_AUTOCOMPACT`        | boolean | Deaktiver automatisk kontekstkomprimering                              |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE`        | boolean | Deaktiver læsning fra `.claude` (prompt + færdigheder)                 |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE_PROMPT` | boolean | Deaktiver læsning `~/.claude/CLAUDE.md`                                |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` | boolean | Deaktiver indlæsning af `.claude/skills`                               |
+| `OPENCTRLC_DISABLE_MODELS_FETCH`       | boolean | Deaktivering af modeller fra eksterne kilder                           |
+| `OPENCTRLC_FAKE_VCS`                   | string  | Falsk VCS-udbyder til testformål                                       |
+| `OPENCTRLC_CLIENT`                     | string  | Klient-id (standard til `cli`)                                         |
+| `OPENCTRLC_ENABLE_EXA`                 | boolean | Aktiver Exa-websøgeværktøjer                                           |
+| `OPENCTRLC_SERVER_PASSWORD`            | string  | Aktiver grundlæggende godkendelse for `serve`/`web`                    |
 | `OPENCTRLC_SERVER_USERNAME`            | string  | Tilsidesæt grundlæggende godkendelsesbrugernavn (standard `openctrlc`) |
-| `OPENCTRLC_MODELS_URL`                 | string  | Brugerdefineret URL til hentning af modelkonfiguration                |
+| `OPENCTRLC_MODELS_URL`                 | string  | Brugerdefineret URL til hentning af modelkonfiguration                 |
 
 ---
 
@@ -595,8 +595,8 @@ OpenCtrlC kan konfigureres ved hjælp af miljøvariabler.
 
 Disse miljøvariabler muliggør eksperimentelle funktioner, der kan ændres eller fjernes.
 
-| Variabel                                        | Skriv   | Beskrivelse                                          |
-| ----------------------------------------------- | ------- | ---------------------------------------------------- |
+| Variabel                                         | Skriv   | Beskrivelse                                          |
+| ------------------------------------------------ | ------- | ---------------------------------------------------- |
 | `OPENCTRLC_EXPERIMENTAL`                         | boolean | Aktiver eksperimentelle funktioner under samleflaget |
 | `OPENCTRLC_EXPERIMENTAL_ICON_DISCOVERY`          | boolean | Aktiver ikonopdagelse                                |
 | `OPENCTRLC_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolean | Deaktiver kopi ved valg i TUI                        |

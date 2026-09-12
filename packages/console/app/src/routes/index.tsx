@@ -192,7 +192,8 @@ const COPY: Record<string, Copy> = {
     faq: [
       {
         question: "OpenCtrlC 是什么？",
-        answer: "OpenCtrlC 是独立维护的开源 AI 编程代理，提供终端和桌面工作流，用于探索项目、修改文件、运行命令和检查变更。",
+        answer:
+          "OpenCtrlC 是独立维护的开源 AI 编程代理，提供终端和桌面工作流，用于探索项目、修改文件、运行命令和检查变更。",
       },
       {
         question: "需要购买 OpenCtrlC 账号或订阅吗？",
@@ -200,11 +201,13 @@ const COPY: Record<string, Copy> = {
       },
       {
         question: "我的代码会发送到哪里？",
-        answer: "OpenCtrlC 围绕本地项目运行，并把请求发送给你配置的服务商。请同时查看服务商的数据政策；只有在你明确需要时才使用可选的会话分享功能。",
+        answer:
+          "OpenCtrlC 围绕本地项目运行，并把请求发送给你配置的服务商。请同时查看服务商的数据政策；只有在你明确需要时才使用可选的会话分享功能。",
       },
       {
         question: "支持哪些系统？",
-        answer: "CLI 支持 macOS、Windows 和 Linux。桌面版发布流程覆盖 macOS、Windows 和 Linux，并提供 x64 与 arm64 目标。",
+        answer:
+          "CLI 支持 macOS、Windows 和 Linux。桌面版发布流程覆盖 macOS、Windows 和 Linux，并提供 x64 与 arm64 目标。",
       },
     ],
     finalTitle: "让下一个代码库，更容易开始工作。",
@@ -227,26 +230,69 @@ const COPY: Record<string, Copy> = {
     workflowTitle: "同一份專案上下文，兩種工作方式。",
     workflowBody: "在高效的終端循環和清晰的桌面工作區之間切換，不丟失真正重要的會話上下文。",
     workflows: [
-      { label: "01 / 終端", title: "只需要鍵盤時，保持高效。", body: "在原生 TUI 中提問、規劃、編輯檔案和執行命令，不讓介面打斷你的思路。" },
-      { label: "02 / 桌面", title: "完整看清一次會話。", body: "使用獨立桌面視窗瀏覽專案、管理會話歷史、匯出結果，並處理較長時間運行的任務。" },
-      { label: "03 / 專案", title: "把關鍵上下文保持可檢查。", body: "OpenCtrlC 直接圍繞本地專案檔案工作，你可以檢查每一步實際看到的上下文、工具和輸出。" },
+      {
+        label: "01 / 終端",
+        title: "只需要鍵盤時，保持高效。",
+        body: "在原生 TUI 中提問、規劃、編輯檔案和執行命令，不讓介面打斷你的思路。",
+      },
+      {
+        label: "02 / 桌面",
+        title: "完整看清一次會話。",
+        body: "使用獨立桌面視窗瀏覽專案、管理會話歷史、匯出結果，並處理較長時間運行的任務。",
+      },
+      {
+        label: "03 / 專案",
+        title: "把關鍵上下文保持可檢查。",
+        body: "OpenCtrlC 直接圍繞本地專案檔案工作，你可以檢查每一步實際看到的上下文、工具和輸出。",
+      },
     ],
     featuresTitle: "有用的部分，都應該看得見。",
     featuresBody: "OpenCtrlC 關注讓代理變得可靠的細節：知道它看到了什麼、保留完整歷史、讓結果方便帶走。",
     features: [
-      { label: "上下文", title: "先理解，再修改。", body: "需要知道代理為什麼這樣工作時，可以檢查生效的系統提示詞、Skills 和上下文佔用。" },
-      { label: "會話", title: "回來時不用從頭開始。", body: "瀏覽會話歷史、搜尋對話、折疊已經完成的活動，讓長會話依然清晰。" },
-      { label: "輸出", title: "把結果真正帶走。", body: "可以匯出簡潔的 Markdown 總結、完整執行記錄或結構化 JSON，接入自己的工具和記錄流程。" },
-      { label: "平台", title: "使用你手頭的裝置。", body: "發布流程覆蓋 macOS、Windows 和 Linux，並為支援的平台提供 x64 與 arm64 建置。" },
+      {
+        label: "上下文",
+        title: "先理解，再修改。",
+        body: "需要知道代理為什麼這樣工作時，可以檢查生效的系統提示詞、Skills 和上下文佔用。",
+      },
+      {
+        label: "會話",
+        title: "回來時不用從頭開始。",
+        body: "瀏覽會話歷史、搜尋對話、折疊已經完成的活動，讓長會話依然清晰。",
+      },
+      {
+        label: "輸出",
+        title: "把結果真正帶走。",
+        body: "可以匯出簡潔的 Markdown 總結、完整執行記錄或結構化 JSON，接入自己的工具和記錄流程。",
+      },
+      {
+        label: "平台",
+        title: "使用你手頭的裝置。",
+        body: "發布流程覆蓋 macOS、Windows 和 Linux，並為支援的平台提供 x64 與 arm64 建置。",
+      },
     ],
     docsCta: "瀏覽完整文件",
     downloadCta: "查看全部下載",
     faqTitle: "幾個直接的答案。",
     faq: [
-      { question: "OpenCtrlC 是什麼？", answer: "OpenCtrlC 是獨立維護的開源 AI 編程代理，提供終端和桌面工作流，用於探索專案、修改檔案、執行命令和檢查變更。" },
-      { question: "需要購買 OpenCtrlC 帳號或訂閱嗎？", answer: "不需要。OpenCtrlC 不要求使用由 OpenCtrlC 託管的模型訂閱，你可以配置適合自己工作流的模型服務商和憑據。" },
-      { question: "我的程式碼會發送到哪裡？", answer: "OpenCtrlC 圍繞本地專案運行，並把請求發送給你配置的服務商。請同時查看服務商的資料政策；只有在你明確需要時才使用可選的會話分享功能。" },
-      { question: "支援哪些系統？", answer: "CLI 支援 macOS、Windows 和 Linux。桌面版發布流程覆蓋 macOS、Windows 和 Linux，並提供 x64 與 arm64 目標。" },
+      {
+        question: "OpenCtrlC 是什麼？",
+        answer:
+          "OpenCtrlC 是獨立維護的開源 AI 編程代理，提供終端和桌面工作流，用於探索專案、修改檔案、執行命令和檢查變更。",
+      },
+      {
+        question: "需要購買 OpenCtrlC 帳號或訂閱嗎？",
+        answer: "不需要。OpenCtrlC 不要求使用由 OpenCtrlC 託管的模型訂閱，你可以配置適合自己工作流的模型服務商和憑據。",
+      },
+      {
+        question: "我的程式碼會發送到哪裡？",
+        answer:
+          "OpenCtrlC 圍繞本地專案運行，並把請求發送給你配置的服務商。請同時查看服務商的資料政策；只有在你明確需要時才使用可選的會話分享功能。",
+      },
+      {
+        question: "支援哪些系統？",
+        answer:
+          "CLI 支援 macOS、Windows 和 Linux。桌面版發布流程覆蓋 macOS、Windows 和 Linux，並提供 x64 與 arm64 目標。",
+      },
     ],
     finalTitle: "讓下一個程式碼庫，更容易開始工作。",
     finalBody: "OpenCtrlC 開源、可檢查，也能貼合你已經習慣的開發方式。",
@@ -271,7 +317,11 @@ function CopyButton(props: { value: string }) {
     <button type="button" data-component="copy-button" data-copied={copied()} onClick={copy} aria-label="Copy command">
       <span>{copied() ? "Copied" : "Copy"}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M5.5 5.5V3.75C5.5 3.06 6.06 2.5 6.75 2.5H12.25C12.94 2.5 13.5 3.06 13.5 3.75V9.25C13.5 9.94 12.94 10.5 12.25 10.5H10.5" stroke="currentColor" stroke-width="1.25" />
+        <path
+          d="M5.5 5.5V3.75C5.5 3.06 6.06 2.5 6.75 2.5H12.25C12.94 2.5 13.5 3.06 13.5 3.75V9.25C13.5 9.94 12.94 10.5 12.25 10.5H10.5"
+          stroke="currentColor"
+          stroke-width="1.25"
+        />
         <rect x="2.5" y="5.5" width="8" height="8" rx="1.25" stroke="currentColor" stroke-width="1.25" />
       </svg>
     </button>
@@ -336,18 +386,34 @@ export default function Home() {
             <div data-slot="hero-art" aria-label="OpenCtrlC terminal preview">
               <div data-component="terminal-window">
                 <div data-slot="window-bar">
-                  <span data-slot="window-dots"><i></i><i></i><i></i></span>
+                  <span data-slot="window-dots">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                  </span>
                   <span>openctrlc · ~/project</span>
                   <span data-slot="window-status">● connected</span>
                 </div>
                 <div data-slot="terminal-body">
-                  <p><span data-slot="muted">›</span> <span data-slot="accent">openctrlc</span></p>
+                  <p>
+                    <span data-slot="muted">›</span> <span data-slot="accent">openctrlc</span>
+                  </p>
                   <p data-slot="muted">Ready to work in your project.</p>
-                  <p class="terminal-gap"><span data-slot="prompt">you</span> Find the safest place to add this feature.</p>
+                  <p class="terminal-gap">
+                    <span data-slot="prompt">you</span> Find the safest place to add this feature.
+                  </p>
                   <p data-slot="muted">I’ll inspect the project structure and trace the existing pattern first.</p>
-                  <div data-slot="terminal-progress"><span></span><span></span><span></span></div>
-                  <p class="terminal-gap"><span data-slot="prompt">openctrlc</span> 4 files inspected · context ready</p>
-                  <p data-slot="cursor"><span>▌</span></p>
+                  <div data-slot="terminal-progress">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <p class="terminal-gap">
+                    <span data-slot="prompt">openctrlc</span> 4 files inspected · context ready
+                  </p>
+                  <p data-slot="cursor">
+                    <span>▌</span>
+                  </p>
                 </div>
               </div>
               <div data-slot="hero-art-caption">A focused loop from question to change.</div>

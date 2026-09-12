@@ -19,17 +19,17 @@ internal package names are not read or preserved by the new product.
 Add a small shared identity package named `@openctrlc/identity`. It is the single
 source for product-owned identity values:
 
-| Field | Value |
-| --- | --- |
-| Product name | `OpenCtrlC` |
-| CLI name | `openctrlc` |
-| Runtime directory | `openctrlc` |
-| Project directory | `.openctrlc` |
-| JSON config | `openctrlc.json` |
-| JSONC config | `openctrlc.jsonc` |
-| Environment prefix | `OPENCTRLC_` |
-| URL scheme | `openctrlc` |
-| Desktop app ID | `cn.quniv.openctrlc` |
+| Field              | Value                |
+| ------------------ | -------------------- |
+| Product name       | `OpenCtrlC`          |
+| CLI name           | `openctrlc`          |
+| Runtime directory  | `openctrlc`          |
+| Project directory  | `.openctrlc`         |
+| JSON config        | `openctrlc.json`     |
+| JSONC config       | `openctrlc.jsonc`    |
+| Environment prefix | `OPENCTRLC_`         |
+| URL scheme         | `openctrlc`          |
+| Desktop app ID     | `cn.quniv.openctrlc` |
 
 Core, CLI, app, desktop, build scripts, and release configuration consume these
 values instead of defining product-owned strings independently.

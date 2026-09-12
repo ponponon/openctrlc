@@ -675,7 +675,9 @@ export default function Page() {
     const match = matches[index]
     if (match) {
       previousSearchMatch = match
-      const message = params.id ? sync().data.message[params.id]?.find((item) => item.id === match.messageID) : undefined
+      const message = params.id
+        ? sync().data.message[params.id]?.find((item) => item.id === match.messageID)
+        : undefined
       const userMessageID = message?.role === "assistant" ? message.parentID : match.messageID
       requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
     }
@@ -1102,13 +1104,13 @@ export default function Page() {
   )
 
   createEffect(
-      on(
-        sessionKey,
-        () => {
-          setStore(sessionViewState())
-          setUi("pendingMessage", undefined)
-          resetSearch()
-        },
+    on(
+      sessionKey,
+      () => {
+        setStore(sessionViewState())
+        setUi("pendingMessage", undefined)
+        resetSearch()
+      },
       { defer: true },
     ),
   )
@@ -1797,7 +1799,8 @@ export default function Page() {
     const owner = sessionOwnership.capture()
     if (
       historyLoading() ||
-      (searchHistoryLoading?.owner === owner.key || searchHydrationOwners.has(owner.key)) ||
+      searchHistoryLoading?.owner === owner.key ||
+      searchHydrationOwners.has(owner.key) ||
       historyRequests.has(owner.key)
     )
       return
@@ -1806,9 +1809,10 @@ export default function Page() {
     let anchor: HistoryAnchor | undefined
     try {
       await timeline.history.loadOlder({
-        before: () => owner.run(() => {
-          anchor = captureHistoryAnchor?.("normal")
-        }),
+        before: () =>
+          owner.run(() => {
+            anchor = captureHistoryAnchor?.("normal")
+          }),
         after: (done) => owner.run(() => anchor?.restore(done)),
       })
     } finally {

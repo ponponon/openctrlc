@@ -23,10 +23,12 @@
 ### Task 1: Normalize Directory Permission Operations
 
 **Files:**
+
 - Modify: `packages/app/src/context/permission.tsx:151-183,425-471`
 - Test: `packages/app/src/context/permission-auto-respond.test.ts`
 
 **Interfaces:**
+
 - Consumes: existing `createServerPermissionState` directory methods and `usePermission` selected-server API.
 - Produces: explicit `enableAutoAcceptDirectory`, `disableAutoAcceptDirectory`, and `toggleAutoAcceptDirectory` methods on `usePermission()`.
 
@@ -89,11 +91,13 @@
 ### Task 2: Add Localized Prompt Permission Control
 
 **Files:**
+
 - Create: `packages/app/src/components/prompt-permission-control.tsx`
 - Modify: `packages/app/src/i18n/en.ts:82-84,550-553`
 - Modify: `packages/app/src/i18n/zh.ts:202-204,645-648`
 
 **Interfaces:**
+
 - Consumes: `usePermission()`, `useLanguage()`, `MenuV2`, `IconV2`, and the active directory string.
 - Produces: `PromptPermissionControl(props: { directory: string; visible?: boolean })`.
 
@@ -156,11 +160,13 @@
 ### Task 3: Integrate the Control Into Both Prompt Inputs
 
 **Files:**
+
 - Modify: `packages/app/src/components/prompt-input.tsx:117-130,1624-1789`
 - Modify: `packages/app/src/components/prompt-input-v2.tsx:1-80`
 - Test: `packages/app/src/components/prompt-input.test.tsx` if an existing component test harness exists; otherwise use typecheck and focused source-level behavior tests only.
 
 **Interfaces:**
+
 - Consumes: `PromptPermissionControl`, `useSDK()`, and the existing prompt control rows.
 - Produces: visible directory permission control in legacy and V2 prompt compositions.
 
@@ -199,6 +205,7 @@
 ### Task 4: Final Verification and Review
 
 **Files:**
+
 - Modify: none unless verification finds a defect.
 - Test: `packages/app/src/context/permission-auto-respond.test.ts`, relevant prompt tests, application typecheck.
 

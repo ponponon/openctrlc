@@ -198,9 +198,7 @@ export const SettingsSkillsV2: Component<{
                             >
                               <span class="settings-v2-skill-group-copy">
                                 <span class="settings-v2-skill-group-name">{group.name}</span>
-                                <span class="settings-v2-skill-group-source">
-                                  {sourceLabel(group.location)}
-                                </span>
+                                <span class="settings-v2-skill-group-source">{sourceLabel(group.location)}</span>
                                 <code class="settings-v2-skill-group-location">{group.location}</code>
                               </span>
                               <span class="settings-v2-skill-group-actions">

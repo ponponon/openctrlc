@@ -598,7 +598,7 @@ it.instance(
   () =>
     Effect.gen(function* () {
       const test = yield* TestInstance
-       const skillDir = path.join(test.directory, ".openctrlc", "skill", "perm-skill")
+      const skillDir = path.join(test.directory, ".openctrlc", "skill", "perm-skill")
       yield* Effect.promise(() =>
         Bun.write(
           path.join(skillDir, "SKILL.md"),

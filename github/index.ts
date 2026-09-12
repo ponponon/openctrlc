@@ -721,7 +721,7 @@ function generateBranchName(type: "issue" | "pr") {
     .replace(/\.\d{3}Z/, "")
     .split("T")
     .join("")
-    return `openctrlc/${type}${useIssueId()}-${timestamp}`
+  return `openctrlc/${type}${useIssueId()}-${timestamp}`
 }
 
 async function pushToNewBranch(summary: string, branch: string) {

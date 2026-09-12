@@ -98,7 +98,8 @@ export const dict = {
   "settings.skills.title": "Skills",
   "settings.skills.description": "See which skills are available to this project and which ones this session has used.",
   "settings.skills.section.available": "Available in this project",
-  "settings.skills.section.available.description": "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
+  "settings.skills.section.available.description":
+    "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
   "settings.skills.section.session": "Used in this session",
   "settings.skills.session.empty": "No skill has been activated in this session yet.",
   "settings.skills.session.used": "Activated by the agent in this session",
@@ -1062,7 +1063,8 @@ export const dict = {
   "settings.general.row.releaseNotes.title": "Išleidimo pastabos",
   "settings.general.row.releaseNotes.description": "Po atnaujinimų rodyti iššokančius langus „Kas naujo“.",
   "settings.updates.row.startup.title": "Patikrinkite, ar nėra naujinimų paleidžiant",
-  "settings.updates.row.startup.description": "Automatiškai patikrinkite, ar nėra naujinimų, kai paleidžiamas OpenCtrlC",
+  "settings.updates.row.startup.description":
+    "Automatiškai patikrinkite, ar nėra naujinimų, kai paleidžiamas OpenCtrlC",
   "settings.updates.row.check.title": "Patikrinkite, ar nėra atnaujinimų",
   "settings.updates.row.check.description": "Rankiniu būdu patikrinkite, ar nėra naujinimų, ir įdiekite, jei yra",
   "settings.updates.action.checkNow": "Patikrinkite dabar",

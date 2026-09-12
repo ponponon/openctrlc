@@ -74,10 +74,10 @@ export default function Download() {
                 {i18n.t("home.promo.body")} {i18n.t("home.promo.cta")}
               </p>
               <Show when={detectedOS()}>
-                  <a
-                    href={language.route(getDownloadHref(getDownloadPlatform(detectedOS(), detectedArch())))}
-                    data-component="download-button"
-                  >
+                <a
+                  href={language.route(getDownloadHref(getDownloadPlatform(detectedOS(), detectedArch())))}
+                  data-component="download-button"
+                >
                   <IconDownload />
                   {i18n.t("download.hero.button", { os: detectedOS()! })}
                 </a>
@@ -92,7 +92,9 @@ export default function Download() {
             <div data-component="section-content">
               <button
                 data-component="cli-row"
-                onClick={handleCopyClick("curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash")}
+                onClick={handleCopyClick(
+                  "curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash",
+                )}
               >
                 <code>
                   curl -fsSL https://<strong>raw.githubusercontent.com/ponponon/openctrlc/dev/install</strong> | bash
@@ -423,7 +425,8 @@ export default function Download() {
             <li>
               <Faq question={i18n.t("home.faq.q3")}>
                 OpenCtrlC supports local models and remote providers. Configure the provider you trust in your project
-                settings, then follow the provider-specific setup in the <a href={language.route("/docs/providers/")}>provider docs</a>.
+                settings, then follow the provider-specific setup in the{" "}
+                <a href={language.route("/docs/providers/")}>provider docs</a>.
               </Faq>
             </li>
             <li>

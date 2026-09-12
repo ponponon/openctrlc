@@ -2,7 +2,8 @@ export const dict: Record<string, string> = {
   "settings.skills.title": "Skills",
   "settings.skills.description": "See which skills are available to this project and which ones this session has used.",
   "settings.skills.section.available": "Available in this project",
-  "settings.skills.section.available.description": "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
+  "settings.skills.section.available.description":
+    "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
   "settings.skills.section.session": "Used in this session",
   "settings.skills.session.empty": "No skill has been activated in this session yet.",
   "settings.skills.session.used": "Activated by the agent in this session",
@@ -258,7 +259,7 @@ export const dict: Record<string, string> = {
   "provider.connect.apiKey.placeholder": "APIལྡེ་མིག།",
   "provider.connect.apiKey.required": "APIལྡེ་མིག་དགོས་མཁོ་ཡོད།",
   "provider.connect.opencodeZen.line1":
-     "OpenCode Zen གྱིས་ཁྱོད་ལུ་ གསང་ཡིག་ལས་ཚབ་ཚུ་གི་དོན་ལུ་ བློ་གཏད་ཅན་གྱི་ཡར་འཕེལ་ཅན་གྱི་དཔེ་ཚད་ཚུ་གི་ བཀོད་སྒྲིག་འབད་ཡོད་པའི་ཆ་ཚན་ཅིག་ལུ་འཛུལ་སྤྱོད་བྱིནམ་ཨིན།",
+    "OpenCode Zen གྱིས་ཁྱོད་ལུ་ གསང་ཡིག་ལས་ཚབ་ཚུ་གི་དོན་ལུ་ བློ་གཏད་ཅན་གྱི་ཡར་འཕེལ་ཅན་གྱི་དཔེ་ཚད་ཚུ་གི་ བཀོད་སྒྲིག་འབད་ཡོད་པའི་ཆ་ཚན་ཅིག་ལུ་འཛུལ་སྤྱོད་བྱིནམ་ཨིན།",
   "provider.connect.opencodeZen.line2":
     "API ལྡེ་མིག་རྐྱང་པ་གཅིག་གིས་ ཁྱོད་ཀྱིས་ Claude དང་ GPT དེ་ལས་ Gemini དང་ GLM དེ་ལས་མངམ་བཟུམ་གྱི་དཔེ་ཚད་ཚུ་ལུ་འཛུལ་སྤྱོད་འབད་ཚུགས།",
   "provider.connect.opencodeZen.visit.prefix": "འགྱོ་ནི",

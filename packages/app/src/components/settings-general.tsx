@@ -482,7 +482,9 @@ export const SettingsGeneral: Component = () => {
           description={
             <>
               {language.t("settings.general.row.theme.description")}{" "}
-              <ExternalLink href="https://openctrlc.pages.dev/docs/themes/">{language.t("common.learnMore")}</ExternalLink>
+              <ExternalLink href="https://openctrlc.pages.dev/docs/themes/">
+                {language.t("common.learnMore")}
+              </ExternalLink>
             </>
           }
         >

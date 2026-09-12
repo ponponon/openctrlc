@@ -49,14 +49,16 @@ test.describe("session search timeline reveal", () => {
   })
 
   for (const newLayoutDesigns of [true, false]) {
-    test(`reveals and marks an offscreen match in the ${newLayoutDesigns ? "new" : "legacy"} layout`, async ({ page }) => {
+    test(`reveals and marks an offscreen match in the ${newLayoutDesigns ? "new" : "legacy"} layout`, async ({
+      page,
+    }) => {
       await setupTimeline(page, {
         messages: historyMessages(80),
         settings: { newLayoutDesigns },
         viewport: { width: 900, height: 420 },
       })
 
-      const timeline = page.locator('[data-timeline-virtual-content]')
+      const timeline = page.locator("[data-timeline-virtual-content]")
       await expect(timeline).toBeAttached()
       await timeline.evaluate((element) => element.setAttribute("data-timeline-mount-probe", "search-reveal"))
       const timelineElement = await timeline.elementHandle()
@@ -71,7 +73,9 @@ test.describe("session search timeline reveal", () => {
         .poll(() =>
           page.evaluate((id) => {
             const view = document.querySelector<HTMLElement>(".scroll-view__viewport")
-            const element = document.querySelector<HTMLElement>(`[data-timeline-row="UserMessage"][data-message-id="${id}"]`)
+            const element = document.querySelector<HTMLElement>(
+              `[data-timeline-row="UserMessage"][data-message-id="${id}"]`,
+            )
             if (!view) return { view: "missing", element: element ? "mounted" : "missing" }
             if (!element) return { view: "mounted", element: "missing" }
             const viewBox = view.getBoundingClientRect()
@@ -109,7 +113,12 @@ test.describe("session search timeline reveal", () => {
         .toBeLessThanOrEqual(40)
       await expect(timeline).toHaveAttribute("data-timeline-mount-probe", "search-reveal")
       await expect
-        .poll(() => page.evaluate((element) => element === document.querySelector("[data-timeline-virtual-content]"), timelineElement))
+        .poll(() =>
+          page.evaluate(
+            (element) => element === document.querySelector("[data-timeline-virtual-content]"),
+            timelineElement,
+          ),
+        )
         .toBe(true)
       await expect
         .poll(async () => {
@@ -128,7 +137,7 @@ test.describe("session search timeline reveal", () => {
       viewport: { width: 900, height: 420 },
     })
 
-    const timeline = page.locator('[data-timeline-virtual-content]')
+    const timeline = page.locator("[data-timeline-virtual-content]")
     const scroller = page.locator(".scroll-view__viewport", { has: timeline })
     await timeline.evaluate((element) => {
       element.dataset.timelineMountProbe = "mounted"
@@ -138,11 +147,13 @@ test.describe("session search timeline reveal", () => {
     })
     await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
     await expect(timeline).toBeAttached()
-    await expect(page.locator('[data-timeline-virtual-content]')).toHaveCount(1)
+    await expect(page.locator("[data-timeline-virtual-content]")).toHaveCount(1)
     await expect(timeline).toHaveAttribute("data-timeline-mount-probe", "mounted")
   })
 
-  test("hydrates paginated history, preserves initial results for retry, and ignores stale session loads", async ({ page }) => {
+  test("hydrates paginated history, preserves initial results for retry, and ignores stale session loads", async ({
+    page,
+  }) => {
     const firstSession = makeSession({ id: "ses_timeline_stability" })
     const secondSession = makeSession({ id: "ses_search_second", title: "Search second" })
     const firstMessages = historyMessages(120)
@@ -181,7 +192,7 @@ test.describe("session search timeline reveal", () => {
     await page.keyboard.press("Control+f")
     await input.fill("Historical response 119.")
     await expect(page.getByRole("search")).toContainText("No results")
-    await expect(page.locator('[data-search-active]')).toHaveCount(0)
+    await expect(page.locator("[data-search-active]")).toHaveCount(0)
     await expect(page.locator("body")).not.toContainText("Historical response 119.")
     await timeline.settle()
   })
@@ -229,7 +240,9 @@ test.describe("session search timeline reveal", () => {
     await input.fill(oldMarker)
     await expect(page.getByRole("search")).toContainText("No results")
     await expect(page.getByRole("search")).not.toContainText(oldMarker)
-    expect(timeline.historyRequests.some((request) => request.sessionID === firstSession.id && request.before)).toBe(true)
+    expect(timeline.historyRequests.some((request) => request.sessionID === firstSession.id && request.before)).toBe(
+      true,
+    )
     await expect(page.locator("body")).toContainText(newMarker)
     await expect(page.locator("body")).not.toContainText(oldMarker)
     await expect(page.locator('[data-timeline-row="UserMessage"][data-search-active]')).toHaveCount(0)

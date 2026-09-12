@@ -202,7 +202,8 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
 
         for (const check of checks) {
           const output = yield* check.command()
-          const installedName = check.name === "brew" || check.name === "choco" || check.name === "scoop" ? Brand.cli : productPackageName
+          const installedName =
+            check.name === "brew" || check.name === "choco" || check.name === "scoop" ? Brand.cli : productPackageName
           if (output.includes(installedName)) {
             return check.name
           }

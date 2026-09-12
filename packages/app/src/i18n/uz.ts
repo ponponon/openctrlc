@@ -2,7 +2,8 @@ export const dict = {
   "settings.skills.title": "Skills",
   "settings.skills.description": "See which skills are available to this project and which ones this session has used.",
   "settings.skills.section.available": "Available in this project",
-  "settings.skills.section.available.description": "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
+  "settings.skills.section.available.description":
+    "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
   "settings.skills.section.session": "Used in this session",
   "settings.skills.session.empty": "No skill has been activated in this session yet.",
   "settings.skills.session.used": "Activated by the agent in this session",
@@ -1061,7 +1062,8 @@ export const dict = {
   "settings.general.row.releaseNotes.description":
     "Yangilanishlardan so'ng nimalar yangi qalqib chiquvchi oynalarni ko'rsating",
   "settings.updates.row.startup.title": "Ishga tushganda yangilanishlarni tekshiring",
-  "settings.updates.row.startup.description": "OpenCtrlC ishga tushganda avtomatik ravishda yangilanishlarni tekshiring",
+  "settings.updates.row.startup.description":
+    "OpenCtrlC ishga tushganda avtomatik ravishda yangilanishlarni tekshiring",
   "settings.updates.row.check.title": "Yangilanishlarni tekshiring",
   "settings.updates.row.check.description": "Yangilanishlarni qo'lda tekshiring va mavjud bo'lsa o'rnating",
   "settings.updates.action.checkNow": "Hozir tekshiring",

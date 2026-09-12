@@ -44,8 +44,8 @@ export default function TermsOfService() {
               <h2 id="sharing">Optional services</h2>
               <p>
                 Some integrations, including optional conversation sharing, may send data to a service you configure.
-                Review the destination before enabling an integration and do not upload information you are not permitted
-                to share.
+                Review the destination before enabling an integration and do not upload information you are not
+                permitted to share.
               </p>
 
               <h2 id="availability">Availability and warranty</h2>

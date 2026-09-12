@@ -30,11 +30,11 @@ npm install --global openctrlc-ai
 
 최신 설치 파일은 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)에서 다운로드하세요.
 
-| 플랫폼 | 아키텍처 | 형식 |
-| --- | --- | --- |
-| macOS | Apple Silicon | DMG, ZIP |
-| Windows | x64, ARM64 | NSIS 설치 프로그램 |
-| Linux | x64, ARM64 | DEB, AppImage, RPM |
+| 플랫폼  | 아키텍처      | 형식               |
+| ------- | ------------- | ------------------ |
+| macOS   | Apple Silicon | DMG, ZIP           |
+| Windows | x64, ARM64    | NSIS 설치 프로그램 |
+| Linux   | x64, ARM64    | DEB, AppImage, RPM |
 
 ## OpenCtrlC의 주요 기능
 

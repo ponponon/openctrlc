@@ -8,7 +8,10 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   const source = await read(".github/workflows/publish.yml")
   const workflow = parse(source) as {
     on?: { push?: unknown; workflow_dispatch?: unknown }
-    jobs?: Record<string, { "runs-on"?: unknown; needs?: unknown; strategy?: unknown; steps?: Array<Record<string, unknown>> }>
+    jobs?: Record<
+      string,
+      { "runs-on"?: unknown; needs?: unknown; strategy?: unknown; steps?: Array<Record<string, unknown>> }
+    >
   }
 
   expect(workflow.on?.push).toBeUndefined()

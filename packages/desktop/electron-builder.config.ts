@@ -75,10 +75,7 @@ const getBase = (appId: string): Configuration => ({
     // Electron ships hundreds of locale data files and optional binaries for other platforms.
     // They are not executable code for this macOS artifact, so signing each one separately
     // causes unnecessary timestamp requests during packaging.
-    signIgnore: [
-      "\\.pak$",
-      "(^|[-/])(linux|win32|freebsd|android|aix|sunos)([-/]|$)",
-    ],
+    signIgnore: ["\\.pak$", "(^|[-/])(linux|win32|freebsd|android|aix|sunos)([-/]|$)"],
     notarize: true,
     target: ["dmg", "zip"],
   },

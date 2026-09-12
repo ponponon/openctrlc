@@ -98,7 +98,9 @@ export function scrollTopFromThumbPointer(input: {
 }
 
 export function isScrollViewThumbPointerDown(event: Event | undefined) {
-  return event?.composedPath().some((target) => target instanceof Element && target.matches(".scroll-view__thumb")) ?? false
+  return (
+    event?.composedPath().some((target) => target instanceof Element && target.matches(".scroll-view__thumb")) ?? false
+  )
 }
 
 export function ScrollView(props: ScrollViewProps) {

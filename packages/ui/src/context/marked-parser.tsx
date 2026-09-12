@@ -15,7 +15,8 @@ export function createMarkdownParser(highlight: (code: string, language: string)
   return new Marked(markdownOptions, katexExtension, markedShiki({ highlight }))
 }
 
-const inlineMathRegex = /^(?:\\\(((?:\\.|[^\\\n])*?)\\\)|\\\[([\s\S]+?)\\\]|(\$\$([^\n]+?)\$\$)|(\$(?!\s)((?:\\.|[^$\\\n])*?\S)\$(?!\$)))/
+const inlineMathRegex =
+  /^(?:\\\(((?:\\.|[^\\\n])*?)\\\)|\\\[([\s\S]+?)\\\]|(\$\$([^\n]+?)\$\$)|(\$(?!\s)((?:\\.|[^$\\\n])*?\S)\$(?!\$)))/
 const blockMathRegex = /^\$\$(?:\r?\n([\s\S]+?)\r?\n\$\$|([^\r\n]+?)\$\$)(?:\r?\n|$)/
 const mathDelimiters = ["\\(", "\\[", "$$", "$"]
 const strongRegex = /^(\*\*|__)([\s\S]+?)\1/

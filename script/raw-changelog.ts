@@ -66,7 +66,9 @@ function type(message: string) {
 }
 
 function message(message: string) {
-  const match = message.match(/^(?:feat|fix|perf|refactor|docs|style|build|chore|test|ci|release)(?:\([^)]*\))?\s*!?\s*:\s*(.+)$/i)
+  const match = message.match(
+    /^(?:feat|fix|perf|refactor|docs|style|build|chore|test|ci|release)(?:\([^)]*\))?\s*!?\s*:\s*(.+)$/i,
+  )
   return match?.[1]?.trim() ?? message
 }
 

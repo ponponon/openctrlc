@@ -2,7 +2,8 @@ export const dict = {
   "settings.skills.title": "Skills",
   "settings.skills.description": "See which skills are available to this project and which ones this session has used.",
   "settings.skills.section.available": "Available in this project",
-  "settings.skills.section.available.description": "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
+  "settings.skills.section.available.description":
+    "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
   "settings.skills.section.session": "Used in this session",
   "settings.skills.session.empty": "No skill has been activated in this session yet.",
   "settings.skills.session.used": "Activated by the agent in this session",
@@ -731,7 +732,8 @@ export const dict = {
   "error.chain.didYouMean": "Bedoelde je: {{suggestions}}",
   "error.chain.modelNotFound": "Model niet gevonden: {{provider}}/{{model}}",
   "error.chain.checkConfig": "Controleer de provider- en modelnamen in je configuratie (openctrlc.json)",
-  "error.chain.mcpFailed": 'MCP-server "{{name}}" is mislukt. Let op: OpenCtrlC ondersteunt nog geen MCP-authenticatie.',
+  "error.chain.mcpFailed":
+    'MCP-server "{{name}}" is mislukt. Let op: OpenCtrlC ondersteunt nog geen MCP-authenticatie.',
   "error.chain.providerAuthFailed": "Authenticatie bij aanbieder mislukt ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
     'Kan provider "{{provider}}" niet initialiseren. Controleer de inloggegevens en configuratie.',

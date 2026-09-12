@@ -35,7 +35,7 @@ export default function () {
       <section data-component="header-section">
         <p>
           <span>
-            {i18n.t("workspace.home.banner.beforeLink")} {" "}
+            {i18n.t("workspace.home.banner.beforeLink")}{" "}
             <a target="_blank" href={language.route("/docs/providers/")}>
               {i18n.t("common.learnMore")}
             </a>

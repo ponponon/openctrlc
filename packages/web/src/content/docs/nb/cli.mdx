@@ -78,13 +78,13 @@ openctrlc attach http://10.20.30.40:4096
 
 #### Flagg
 
-| Flagg                                    | Kort | Beskrivelse                                                                                        |
-| ---------------------------------------- | ---- | -------------------------------------------------------------------------------------------------- |
-| <nobr><code>{"--dir"}</code></nobr>      |      | Arbeidskatalog for å starte TUI i                                                                  |
-| <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsett siste økt                                                                                 |
-| <nobr><code>{"--session"}</code></nobr>  | `-s` | Økt ID for å fortsette                                                                             |
-| <nobr><code>{"--fork"}</code></nobr>     |      | Forgren økten ved fortsettelse (bruk med `--continue` eller `--session`)                           |
-| <nobr><code>{"--password"}</code></nobr> | `-p` | Passord for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_PASSWORD`)                     |
+| Flagg                                    | Kort | Beskrivelse                                                                                          |
+| ---------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------- |
+| <nobr><code>{"--dir"}</code></nobr>      |      | Arbeidskatalog for å starte TUI i                                                                    |
+| <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsett siste økt                                                                                   |
+| <nobr><code>{"--session"}</code></nobr>  | `-s` | Økt ID for å fortsette                                                                               |
+| <nobr><code>{"--fork"}</code></nobr>     |      | Forgren økten ved fortsettelse (bruk med `--continue` eller `--session`)                             |
+| <nobr><code>{"--password"}</code></nobr> | `-p` | Passord for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_PASSWORD`)                      |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | Brukernavn for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`) |
 
 ---
@@ -339,25 +339,25 @@ openctrlc run --attach http://localhost:4096 "Explain async/await in JavaScript"
 
 #### Flagg
 
-| Flagg                                    | Kort | Beskrivelse                                                                                        |
-| ---------------------------------------- | ---- | -------------------------------------------------------------------------------------------------- |
-| <nobr><code>{"--command"}</code></nobr>  |      | Kommandoen for å kjøre, bruk melding for args                                                      |
-| <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsett siste økt                                                                                 |
-| <nobr><code>{"--session"}</code></nobr>  | `-s` | Økt ID for å fortsette                                                                             |
-| <nobr><code>{"--fork"}</code></nobr>     |      | Forgren økten ved fortsettelse (bruk med `--continue` eller `--session`)                           |
-| <nobr><code>{"--share"}</code></nobr>    |      | Del økten                                                                                          |
-| <nobr><code>{"--model"}</code></nobr>    | `-m` | Modell å bruke i form av leverandør/modell                                                         |
-| <nobr><code>{"--agent"}</code></nobr>    |      | Agent å bruke                                                                                      |
-| <nobr><code>{"--file"}</code></nobr>     | `-f` | Fil(er) som skal legges ved meldingen                                                              |
-| <nobr><code>{"--format"}</code></nobr>   |      | Format: standard (formatert) eller json (rå JSON hendelser)                                        |
-| <nobr><code>{"--title"}</code></nobr>    |      | Tittel for økten (bruker avkortet ledetekst hvis ingen verdi er oppgitt)                           |
-| <nobr><code>{"--attach"}</code></nobr>   |      | Koble til en kjørende OpenCtrlC-server (f.eks. http://localhost:4096)                               |
-| <nobr><code>{"--password"}</code></nobr> | `-p` | Passord for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_PASSWORD`)                     |
+| Flagg                                    | Kort | Beskrivelse                                                                                          |
+| ---------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------- |
+| <nobr><code>{"--command"}</code></nobr>  |      | Kommandoen for å kjøre, bruk melding for args                                                        |
+| <nobr><code>{"--continue"}</code></nobr> | `-c` | Fortsett siste økt                                                                                   |
+| <nobr><code>{"--session"}</code></nobr>  | `-s` | Økt ID for å fortsette                                                                               |
+| <nobr><code>{"--fork"}</code></nobr>     |      | Forgren økten ved fortsettelse (bruk med `--continue` eller `--session`)                             |
+| <nobr><code>{"--share"}</code></nobr>    |      | Del økten                                                                                            |
+| <nobr><code>{"--model"}</code></nobr>    | `-m` | Modell å bruke i form av leverandør/modell                                                           |
+| <nobr><code>{"--agent"}</code></nobr>    |      | Agent å bruke                                                                                        |
+| <nobr><code>{"--file"}</code></nobr>     | `-f` | Fil(er) som skal legges ved meldingen                                                                |
+| <nobr><code>{"--format"}</code></nobr>   |      | Format: standard (formatert) eller json (rå JSON hendelser)                                          |
+| <nobr><code>{"--title"}</code></nobr>    |      | Tittel for økten (bruker avkortet ledetekst hvis ingen verdi er oppgitt)                             |
+| <nobr><code>{"--attach"}</code></nobr>   |      | Koble til en kjørende OpenCtrlC-server (f.eks. http://localhost:4096)                                |
+| <nobr><code>{"--password"}</code></nobr> | `-p` | Passord for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_PASSWORD`)                      |
 | <nobr><code>{"--username"}</code></nobr> | `-u` | Brukernavn for grunnleggende autentisering (standard: `OPENCTRLC_SERVER_USERNAME` eller `openctrlc`) |
-| <nobr><code>{"--dir"}</code></nobr>      |      | Katalog å kjøre i, eller sti på fjernserveren ved tilkobling                                       |
-| <nobr><code>{"--variant"}</code></nobr>  |      | Modellvariant (leverandørspesifikk resonneringsinnsats)                                            |
-| <nobr><code>{"--thinking"}</code></nobr> |      | Vis tenkeblokker                                                                                   |
-| <nobr><code>{"--port"}</code></nobr>     |      | Port for den lokale serveren (standard til tilfeldig port)                                         |
+| <nobr><code>{"--dir"}</code></nobr>      |      | Katalog å kjøre i, eller sti på fjernserveren ved tilkobling                                         |
+| <nobr><code>{"--variant"}</code></nobr>  |      | Modellvariant (leverandørspesifikk resonneringsinnsats)                                              |
+| <nobr><code>{"--thinking"}</code></nobr> |      | Vis tenkeblokker                                                                                     |
+| <nobr><code>{"--port"}</code></nobr>     |      | Port for den lokale serveren (standard til tilfeldig port)                                           |
 
 ---
 
@@ -562,32 +562,32 @@ OpenCtrlC CLI bruker følgende globale flagg.
 
 OpenCtrlC kan konfigureres ved hjelp av miljøvariabler.
 
-| Variabel                              | Type   | Beskrivelse                                                           |
-| ------------------------------------- | ------ | --------------------------------------------------------------------- |
-| `OPENCTRLC_AUTO_SHARE`                 | boolsk | Del økter automatisk                                                  |
-| `OPENCTRLC_GIT_BASH_PATH`              | streng | Bane til Git Bash-kjørbar på Windows                                  |
-| `OPENCTRLC_CONFIG`                     | streng | Bane til konfigurasjonsfil                                            |
-| `OPENCTRLC_TUI_CONFIG`                 | streng | Bane til TUI-konfigurasjonsfil                                        |
-| `OPENCTRLC_CONFIG_DIR`                 | streng | Bane til konfigurasjonskatalog                                        |
-| `OPENCTRLC_CONFIG_CONTENT`             | streng | Innebygd json-konfigurasjonsinnhold                                   |
-| `OPENCTRLC_DISABLE_AUTOUPDATE`         | boolsk | Deaktiver automatiske oppdateringskontroller                          |
-| `OPENCTRLC_DISABLE_PRUNE`              | boolsk | Deaktiver beskjæring av gamle data                                    |
-| `OPENCTRLC_DISABLE_TERMINAL_TITLE`     | boolsk | Deaktiver automatiske terminaltitteloppdateringer                     |
-| `OPENCTRLC_PERMISSION`                 | streng | Innebygd json-tillatelseskonfigurasjon                                |
-| `OPENCTRLC_DISABLE_DEFAULT_PLUGINS`    | boolsk | Deaktiver standard plugins                                            |
-| `OPENCTRLC_DISABLE_LSP_DOWNLOAD`       | boolsk | Deaktiver automatiske LSP servernedlastinger                          |
-| `OPENCTRLC_ENABLE_EXPERIMENTAL_MODELS` | boolsk | Aktiver eksperimentelle modeller                                      |
-| `OPENCTRLC_DISABLE_AUTOCOMPACT`        | boolsk | Deaktiver automatisk kontekstkomprimering                             |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE`        | boolsk | Deaktiver lesing fra `.claude` (spørsmål + ferdigheter)               |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE_PROMPT` | boolsk | Deaktiver lesing `~/.claude/CLAUDE.md`                                |
-| `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` | boolsk | Deaktiver innlasting av `.claude/skills`                              |
-| `OPENCTRLC_DISABLE_MODELS_FETCH`       | boolsk | Deaktiver henting av modeller fra eksterne kilder                     |
-| `OPENCTRLC_FAKE_VCS`                   | streng | Falsk VCS-leverandør for testformål                                   |
-| `OPENCTRLC_CLIENT`                     | streng | Klientidentifikator (standard til `cli`)                              |
-| `OPENCTRLC_ENABLE_EXA`                 | boolsk | Aktiver Exa-nettsøkeverktøy                                           |
-| `OPENCTRLC_SERVER_PASSWORD`            | streng | Aktiver grunnleggende autentisering for `serve`/`web`                 |
+| Variabel                               | Type   | Beskrivelse                                                            |
+| -------------------------------------- | ------ | ---------------------------------------------------------------------- |
+| `OPENCTRLC_AUTO_SHARE`                 | boolsk | Del økter automatisk                                                   |
+| `OPENCTRLC_GIT_BASH_PATH`              | streng | Bane til Git Bash-kjørbar på Windows                                   |
+| `OPENCTRLC_CONFIG`                     | streng | Bane til konfigurasjonsfil                                             |
+| `OPENCTRLC_TUI_CONFIG`                 | streng | Bane til TUI-konfigurasjonsfil                                         |
+| `OPENCTRLC_CONFIG_DIR`                 | streng | Bane til konfigurasjonskatalog                                         |
+| `OPENCTRLC_CONFIG_CONTENT`             | streng | Innebygd json-konfigurasjonsinnhold                                    |
+| `OPENCTRLC_DISABLE_AUTOUPDATE`         | boolsk | Deaktiver automatiske oppdateringskontroller                           |
+| `OPENCTRLC_DISABLE_PRUNE`              | boolsk | Deaktiver beskjæring av gamle data                                     |
+| `OPENCTRLC_DISABLE_TERMINAL_TITLE`     | boolsk | Deaktiver automatiske terminaltitteloppdateringer                      |
+| `OPENCTRLC_PERMISSION`                 | streng | Innebygd json-tillatelseskonfigurasjon                                 |
+| `OPENCTRLC_DISABLE_DEFAULT_PLUGINS`    | boolsk | Deaktiver standard plugins                                             |
+| `OPENCTRLC_DISABLE_LSP_DOWNLOAD`       | boolsk | Deaktiver automatiske LSP servernedlastinger                           |
+| `OPENCTRLC_ENABLE_EXPERIMENTAL_MODELS` | boolsk | Aktiver eksperimentelle modeller                                       |
+| `OPENCTRLC_DISABLE_AUTOCOMPACT`        | boolsk | Deaktiver automatisk kontekstkomprimering                              |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE`        | boolsk | Deaktiver lesing fra `.claude` (spørsmål + ferdigheter)                |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE_PROMPT` | boolsk | Deaktiver lesing `~/.claude/CLAUDE.md`                                 |
+| `OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS` | boolsk | Deaktiver innlasting av `.claude/skills`                               |
+| `OPENCTRLC_DISABLE_MODELS_FETCH`       | boolsk | Deaktiver henting av modeller fra eksterne kilder                      |
+| `OPENCTRLC_FAKE_VCS`                   | streng | Falsk VCS-leverandør for testformål                                    |
+| `OPENCTRLC_CLIENT`                     | streng | Klientidentifikator (standard til `cli`)                               |
+| `OPENCTRLC_ENABLE_EXA`                 | boolsk | Aktiver Exa-nettsøkeverktøy                                            |
+| `OPENCTRLC_SERVER_PASSWORD`            | streng | Aktiver grunnleggende autentisering for `serve`/`web`                  |
 | `OPENCTRLC_SERVER_USERNAME`            | streng | Overstyr grunnleggende autentiseringsbrukernavn (standard `openctrlc`) |
-| `OPENCTRLC_MODELS_URL`                 | streng | Egendefinert URL for henting av modellkonfigurasjon                   |
+| `OPENCTRLC_MODELS_URL`                 | streng | Egendefinert URL for henting av modellkonfigurasjon                    |
 
 ---
 
@@ -595,8 +595,8 @@ OpenCtrlC kan konfigureres ved hjelp av miljøvariabler.
 
 Disse miljøvariablene muliggjør eksperimentelle funksjoner som kan endres eller fjernes.
 
-| Variabel                                        | Type   | Beskrivelse                                           |
-| ----------------------------------------------- | ------ | ----------------------------------------------------- |
+| Variabel                                         | Type   | Beskrivelse                                           |
+| ------------------------------------------------ | ------ | ----------------------------------------------------- |
 | `OPENCTRLC_EXPERIMENTAL`                         | boolsk | Aktiver eksperimentelle funksjoner under samleflagget |
 | `OPENCTRLC_EXPERIMENTAL_ICON_DISCOVERY`          | boolsk | Aktiver ikonoppdagelse                                |
 | `OPENCTRLC_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolsk | Deaktiver kopi ved valg i TUI                         |

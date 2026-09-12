@@ -2,7 +2,8 @@ export const dict = {
   "settings.skills.title": "Skills",
   "settings.skills.description": "See which skills are available to this project and which ones this session has used.",
   "settings.skills.section.available": "Available in this project",
-  "settings.skills.section.available.description": "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
+  "settings.skills.section.available.description":
+    "These skills were discovered from the project and server configuration. The agent can load their instructions when needed.",
   "settings.skills.section.session": "Used in this session",
   "settings.skills.session.empty": "No skill has been activated in this session yet.",
   "settings.skills.session.used": "Activated by the agent in this session",
@@ -1057,7 +1058,8 @@ export const dict = {
   "settings.general.row.releaseNotes.title": "Белешки за ослободување",
   "settings.general.row.releaseNotes.description": "Прикажи скокачки прозорци „Што има ново“ по ажурирањата",
   "settings.updates.row.startup.title": "Проверете дали има ажурирања при стартување",
-  "settings.updates.row.startup.description": "Автоматски проверувајте дали има ажурирања кога ќе се стартува OpenCtrlC",
+  "settings.updates.row.startup.description":
+    "Автоматски проверувајте дали има ажурирања кога ќе се стартува OpenCtrlC",
   "settings.updates.row.check.title": "Проверете дали има ажурирања",
   "settings.updates.row.check.description": "Рачно проверете дали има ажурирања и инсталирајте ако е достапно",
   "settings.updates.action.checkNow": "Проверете сега",

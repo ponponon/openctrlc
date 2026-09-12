@@ -640,6 +640,7 @@ bun run desktop:mac
 - 在 `packages/web` 目录执行 `bun run build`，确认 Astro/Cloudflare Pages 产物生成。
 - 检查构建产物中的 canonical URL 和站点标题均指向 `openctrlc.pages.dev` / `OpenCtrlC`。
 - 发布后访问 `https://openctrlc.pages.dev/` 和 `https://openctrlc.pages.dev/docs/`，确认首页和文档页均返回 HTTP 200。
+
 ## OpenCtrlC 官网品牌与功能说明收敛
 
 ### 功能目标

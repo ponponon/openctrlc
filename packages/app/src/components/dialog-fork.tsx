@@ -137,17 +137,19 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
     }
 
     const parts = state.selectedMessageID ? (props.sync().data.part[state.selectedMessageID] ?? []) : []
-    const restored = !props.includeMessage && state.selectedMessageID
-      ? extractPromptFromParts(parts, {
-          directory: sourceDirectory,
-          attachmentName: props.language.t("common.attachment"),
-        })
-      : undefined
+    const restored =
+      !props.includeMessage && state.selectedMessageID
+        ? extractPromptFromParts(parts, {
+            directory: sourceDirectory,
+            attachmentName: props.language.t("common.attachment"),
+          })
+        : undefined
     let createdDirectory: string | undefined
 
     try {
       if (location === "worktree") {
-        const created = await props.sdk()
+        const created = await props
+          .sdk()
           .client.worktree.create({ directory: projectRoot() })
           .then((result) => result.data)
         if (!created?.directory) throw new Error(props.language.t("common.requestFailed"))
@@ -161,7 +163,8 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
       const forked =
         directory === sourceDirectory
           ? await props.sdk().api.session.fork({ sessionID: sourceSessionID, messageID: boundary.messageID })
-          : await props.sdk()
+          : await props
+              .sdk()
               .createClient({ directory, throwOnError: true })
               .session.fork({ sessionID: sourceSessionID, messageID: boundary.messageID })
               .then((result) => result.data)
@@ -174,7 +177,8 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
       props.navigate(`/${dir}/session/${forked.id}`)
     } catch (err) {
       if (createdDirectory) {
-        await props.sdk()
+        await props
+          .sdk()
           .client.worktree.remove({ directory: projectRoot(), worktreeRemoveInput: { directory: createdDirectory } })
           .catch(() => undefined)
       }
@@ -189,7 +193,9 @@ export const DialogFork: Component<DialogForkProps> = (props) => {
   return (
     <Dialog
       title={
-        state.step === "locations" ? props.language.t("dialog.fork.location.title") : props.language.t("command.session.fork")
+        state.step === "locations"
+          ? props.language.t("dialog.fork.location.title")
+          : props.language.t("command.session.fork")
       }
     >
       <Show when={state.step === "locations"}>

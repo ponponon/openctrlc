@@ -1265,11 +1265,8 @@ export function MessageTimeline(props: {
           const part = getMsgPart(item.ref.messageID, item.ref.partID)
           if (part?.type !== "tool") return []
           return [
-            getToolInfo(
-              part.tool,
-              part.state.input ?? {},
-              "metadata" in part.state ? part.state.metadata : undefined,
-            ).title,
+            getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined)
+              .title,
           ]
         })
         .filter((name, index, names) => names.indexOf(name) === index)
@@ -1331,17 +1328,10 @@ export function MessageTimeline(props: {
     }
 
     return (
-      <Collapsible
-        open={open()}
-        onOpenChange={onOpenChange}
-        variant="ghost"
-        data-slot="session-turn-steps"
-      >
+      <Collapsible open={open()} onOpenChange={onOpenChange} variant="ghost" data-slot="session-turn-steps">
         <Collapsible.Trigger>
           <div data-slot="session-turn-steps-trigger">
-            <Show when={duration()}>
-              {(value) => <span data-slot="session-turn-steps-duration">{value()}</span>}
-            </Show>
+            <Show when={duration()}>{(value) => <span data-slot="session-turn-steps-duration">{value()}</span>}</Show>
             <Show when={duration()}>·</Show>
             <span data-slot="session-turn-steps-label">
               {open() ? language.t("ui.sessionTurn.steps.hide") : language.t("ui.sessionTurn.steps.show")}
@@ -1352,9 +1342,7 @@ export function MessageTimeline(props: {
         <Show when={open()}>
           <Collapsible.Content>
             <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
-              <For each={groups()}>
-                {(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}
-              </For>
+              <For each={groups()}>{(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}</For>
             </div>
           </Collapsible.Content>
         </Show>

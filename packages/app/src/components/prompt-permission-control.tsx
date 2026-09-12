@@ -18,9 +18,7 @@ export function PromptPermissionControl(props: { directory: string; visible?: bo
   })
   const accepting = controller.enabled
   const actionLabel = () =>
-    language.t(
-      accepting() ? "prompt.permissions.autoaccept.disable" : "prompt.permissions.autoaccept.enable",
-    )
+    language.t(accepting() ? "prompt.permissions.autoaccept.disable" : "prompt.permissions.autoaccept.enable")
 
   return (
     <Show when={props.visible !== false && props.directory.length > 0}>

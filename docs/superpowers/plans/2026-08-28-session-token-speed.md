@@ -35,9 +35,11 @@
 ## Task 1: Record Baseline And Add Calculation Tests
 
 **Files:**
+
 - Create: `packages/session-ui/src/components/message-statistics.test.ts`
 
 **Interfaces:**
+
 - Produces the test contract for `assistantStatistics` from `message-statistics.ts`:
 
 ```ts
@@ -47,11 +49,13 @@ type AssistantStatisticsInput = {
   completed: number | undefined
 }
 
-type AssistantStatistics = {
-  output: number
-  durationMs: number
-  tokensPerSecond: number
-} | undefined
+type AssistantStatistics =
+  | {
+      output: number
+      durationMs: number
+      tokensPerSecond: number
+    }
+  | undefined
 
 function assistantStatistics(input: AssistantStatisticsInput): AssistantStatistics
 ```
@@ -119,10 +123,12 @@ Expected: FAIL because `message-statistics.ts` and `assistantStatistics` do not 
 ## Task 2: Implement The Pure Statistics Boundary
 
 **Files:**
+
 - Create: `packages/session-ui/src/components/message-statistics.ts`
 - Test: `packages/session-ui/src/components/message-statistics.test.ts`
 
 **Interfaces:**
+
 - Consumes the numeric fields supplied by an assistant message.
 - Produces `AssistantStatistics | undefined` exactly as declared in Task 1.
 - The helper must be a named export from `message-statistics.ts` so the unit test and `message-part.tsx` use one implementation.
@@ -178,10 +184,12 @@ Expected: PASS with no new diagnostics.
 ## Task 3: Add Shared UI Translations
 
 **Files:**
+
 - Modify: `packages/ui/src/i18n/en.ts`
 - Modify: `packages/ui/src/i18n/zh.ts`
 
 **Interfaces:**
+
 - Produces two new `UiI18nKey` values through the English dictionary:
   - `ui.message.tokens`
   - `ui.message.tokensPerSecond`
@@ -221,11 +229,13 @@ Expected: PASS; the new English keys are available through `UiI18nKey`, and part
 ## Task 4: Render Statistics In The Shared Assistant Metadata
 
 **Files:**
+
 - Modify: `packages/session-ui/src/components/message-part.tsx`
 - Modify: `packages/session-ui/src/components/message-part.css` only if verification demonstrates a necessary layout fix.
 - Test: `packages/session-ui/src/components/message-part.test.ts` or a focused render test alongside it.
 
 **Interfaces:**
+
 - Consumes `assistantStatistics` from `./message-statistics`.
 - Consumes `useI18n()` from the existing UI context.
 - Does not add a prop or change the `MessagePart` public API.
@@ -304,10 +314,12 @@ Expected: PASS, with no regressions to existing message-part behavior.
 ## Task 5: Verify Both Session Paths And Performance
 
 **Files:**
+
 - Modify: no source files unless verification finds a concrete regression.
 - Test/benchmark: existing `packages/app` and `packages/session-ui` test suites and performance commands.
 
 **Interfaces:**
+
 - Verifies that the shared `MessagePart` path covers both `message-timeline.tsx` and `SessionTurn` without duplicate implementation.
 
 - [ ] **Step 1: Run the shared session UI tests**

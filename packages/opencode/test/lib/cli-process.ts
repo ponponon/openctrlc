@@ -103,7 +103,7 @@ export type RunOpts = SpawnOpts & {
   readonly extraArgs?: string[]
 }
 
-  // `openctrlc serve` is a long-lived process — it never exits on its own.
+// `openctrlc serve` is a long-lived process — it never exits on its own.
 // `serve(opts)` therefore returns a handle inside the caller's Scope: the
 // subprocess is killed when the scope closes (test end), and the URL the
 // server actually bound to (port 0 means OS-assigned) is parsed off stdout.
@@ -506,7 +506,7 @@ function expectExit(result: RunResult, expected: number, label = "opencode") {
   throw new Error(`${label}: expected exit ${expected}, got ${result.exitCode}`)
 }
 
-  // `cliIt.live(name, fixture => effect)` is the same as
+// `cliIt.live(name, fixture => effect)` is the same as
 // `it.live(name, () => withCliFixture(fixture))` — one fewer nesting level at
 // every call site. Use this for any test that needs the opencode CLI fixture.
 //

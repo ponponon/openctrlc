@@ -50,10 +50,16 @@ test("postinstall resolves and installs the openctrlc platform binary", async ()
       optionalDependencies: { [platformPackage]: "1.2.3" },
     }),
   )
-  await Bun.write(path.join(platformDirectory, "package.json"), JSON.stringify({ name: platformPackage, version: "1.2.3" }))
+  await Bun.write(
+    path.join(platformDirectory, "package.json"),
+    JSON.stringify({ name: platformPackage, version: "1.2.3" }),
+  )
   await Bun.write(platformBinary, "#!/bin/sh\nexit 0\n")
   await chmod(platformBinary, 0o755)
-  await Bun.write(path.join(root, "postinstall.mjs"), await Bun.file(path.join(import.meta.dir, "../../script/postinstall.mjs")).text())
+  await Bun.write(
+    path.join(root, "postinstall.mjs"),
+    await Bun.file(path.join(import.meta.dir, "../../script/postinstall.mjs")).text(),
+  )
 
   const child = Bun.spawn(["node", "postinstall.mjs"], {
     cwd: root,

@@ -1,8 +1,4 @@
-export function renderGitHubWorkflow(input: {
-  provider: string
-  model: string
-  secrets?: ReadonlyArray<string>
-}) {
+export function renderGitHubWorkflow(input: { provider: string; model: string; secrets?: ReadonlyArray<string> }) {
   const env = [
     "          GITHUB_TOKEN: ${{ github.token }}",
     ...(input.secrets ?? []).map((name) => `          ${name}: \${{ secrets.${name} }}`),

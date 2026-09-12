@@ -47,11 +47,11 @@ npm install --global openctrlc-ai
 
 从 [GitHub Releases](https://github.com/ponponon/openctrlc/releases) 下载最新桌面安装包：
 
-| 平台 | 架构 | 格式 |
-| --- | --- | --- |
-| macOS | Apple Silicon | DMG、ZIP |
-| Windows | x64、ARM64 | NSIS 安装程序 |
-| Linux | x64、ARM64 | DEB、AppImage、RPM |
+| 平台    | 架构          | 格式               |
+| ------- | ------------- | ------------------ |
+| macOS   | Apple Silicon | DMG、ZIP           |
+| Windows | x64、ARM64    | NSIS 安装程序      |
+| Linux   | x64、ARM64    | DEB、AppImage、RPM |
 
 桌面版和 CLI 使用相同的本地项目与会话模型。桌面安装包会包含与目标平台匹配的 CLI 二进制文件。
 

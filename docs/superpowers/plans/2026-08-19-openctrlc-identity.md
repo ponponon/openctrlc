@@ -41,6 +41,7 @@
 ### Task 1: Add The OpenCtrlC Identity Package
 
 **Files:**
+
 - Create: `packages/identity/package.json`
 - Create: `packages/identity/src/index.ts`
 - Create: `packages/identity/test/index.test.ts`
@@ -48,6 +49,7 @@
 - Modify: `bun.lock`
 
 **Interfaces:**
+
 - Produces package `@openctrlc/identity` with named export `Brand`.
 - `Brand` exposes `name`, `cli`, `runtimeDirectory`, `projectDirectory`, `configFile`, `configFileJsonc`, `envPrefix`, `urlScheme`, and `desktopAppId` as readonly string values.
 - The package has no runtime dependency on any other workspace package.
@@ -134,6 +136,7 @@ git commit -m "chore(identity): add OpenCtrlC product identity"
 ### Task 2: Rename Internal Workspace Packages And Imports
 
 **Files:**
+
 - Modify: every workspace `package.json` containing an internally owned `@opencode-ai/*` name or dependency.
 - Modify: every source, test, script, fixture, and config file containing an internally owned package import or package string.
 - Modify: `turbo.json`, root `package.json`, `github/package.json`, and package-local manifests.
@@ -141,6 +144,7 @@ git commit -m "chore(identity): add OpenCtrlC product identity"
 - Rename: repository-owned `.opencode/` package/config fixture to `.openctrlc/` only if it is a product fixture, not an external test fixture.
 
 **Interfaces:**
+
 - Every internal workspace package is addressable as `@openctrlc/<name>`.
 - No product-owned import resolves through `@opencode-ai/*`.
 - Third-party packages such as `opencode-gitlab-auth` and `opencode-poe-auth` remain unchanged.
@@ -230,6 +234,7 @@ git commit -m "refactor(namespace): rename workspace packages"
 ### Task 3: Rename Project Configuration And Environment Variables
 
 **Files:**
+
 - Modify: `packages/opencode/src/config/paths.ts`
 - Modify: `packages/opencode/src/config/config.ts`
 - Modify: `packages/opencode/src/config/tui.ts`
@@ -241,6 +246,7 @@ git commit -m "refactor(namespace): rename workspace packages"
 - Modify: affected config tests and fixtures.
 
 **Interfaces:**
+
 - Config discovery recognizes `.openctrlc`, `openctrlc.json`, and `openctrlc.jsonc` only.
 - Product flags read `OPENCTRLC_*` only.
 - Existing `OPENCODE_*`, `.opencode`, and `opencode.json(c)` values have no effect.
@@ -326,12 +332,14 @@ git commit -m "refactor(config): rename OpenCtrlC project namespace"
 ### Task 4: Move Core And CLI Runtime Paths To OpenCtrlC
 
 **Files:**
+
 - Modify: `packages/core/src/global.ts`
 - Modify: `packages/core/test/global.test.ts`
 - Modify: all direct product-owned runtime path literals found under `packages/core` and `packages/opencode`.
 - Modify: database, logging, model cache, repository cache, LSP binary, flock, plan, tool-output, and service-state tests.
 
 **Interfaces:**
+
 - `Global.Path.data`, `cache`, `config`, `state`, `tmp`, `log`, `repos`, and `bin` are all under the OpenCtrlC namespace.
 - The module creates only OpenCtrlC directories.
 - No old directory lookup or fallback exists.
@@ -389,6 +397,7 @@ git commit -m "refactor(runtime): use OpenCtrlC data paths"
 ### Task 5: Expose Only The `openctrlc` CLI
 
 **Files:**
+
 - Modify: `packages/opencode/package.json`
 - Modify: `packages/opencode/src/index.ts`
 - Modify: `packages/opencode/src/cli/error.ts`, CLI command descriptions, and product-owned subprocess calls.
@@ -396,6 +405,7 @@ git commit -m "refactor(runtime): use OpenCtrlC data paths"
 - Modify: `packages/opencode/script/build.ts`, `packages/opencode/script/build-node.ts`, and package CLI tests.
 
 **Interfaces:**
+
 - `package.json.bin` contains only `openctrlc`.
 - `openctrlc --help`, `openctrlc --version`, and `openctrlc serve --help` work.
 - `opencode` is not registered by the package and is not invoked by product-owned subprocesses.
@@ -460,6 +470,7 @@ git commit -m "refactor(cli): expose openctrlc command"
 ### Task 6: Migrate Desktop And App Product Identity
 
 **Files:**
+
 - Modify: `packages/desktop/electron-builder.config.ts`, `packages/desktop/package.json`, and `packages/desktop/electron.vite.config.ts`.
 - Modify: `packages/desktop/src/main/index.ts`, `server.ts`, `sidecar.ts`, `logging.ts`, `store.ts`, `store-keys.ts`, `store-cleanup.ts`, `install-state.ts`, `migrate.ts`, and background CLI code.
 - Modify: `packages/desktop/src/main/env.d.ts` and preload declarations.
@@ -468,6 +479,7 @@ git commit -m "refactor(cli): expose openctrlc command"
 - Modify: desktop resources, metainfo, launcher, and artifact naming files.
 
 **Interfaces:**
+
 - Product name is `OpenCtrlC`.
 - App IDs use `cn.quniv.openctrlc`, `cn.quniv.openctrlc.dev`, and `cn.quniv.openctrlc.beta` as channel variants.
 - URL scheme is `openctrlc`; the old scheme is not registered.
@@ -537,12 +549,14 @@ git commit -m "refactor(desktop): adopt OpenCtrlC application identity"
 ### Task 7: Rename Distribution, Generated References, And Automation
 
 **Files:**
+
 - Modify: `packages/opencode/script/`, `packages/cli/script/`, `packages/desktop/scripts/`, `install`, `nix/`, `.github/`, and release package manifests.
 - Modify: generator templates and scripts under `packages/client/script/`, `packages/httpapi-codegen/`, and `packages/sdk/js/script/` only where internal package names are generated.
 - Regenerate: `packages/client/src/generated`, `packages/client/src/generated-effect`, and legacy SDK output using documented commands when generator inputs change.
 - Modify: root and localized README files, install instructions, and distribution metadata.
 
 **Interfaces:**
+
 - Platform artifacts, package-manager metadata, postinstall scripts, and GitHub artifacts use OpenCtrlC names.
 - Generated files match their generators and do not contain stale internal `@opencode-ai/*` imports.
 - External repository URLs, service URLs, provider IDs, third-party dependencies, and OAuth audiences remain on the explicit allowlist.
@@ -614,10 +628,12 @@ git commit -m "chore(build): rename OpenCtrlC distribution metadata"
 ### Task 8: Final Residual Audit And Isolated Runtime Verification
 
 **Files:**
+
 - Modify: tests and audit allowlists only when a verified missed product-owned reference is found.
 - Create: `docs/superpowers/audits/2026-08-19-openctrlc-residuals.md`.
 
 **Interfaces:**
+
 - The audit records intentional external OpenCode strings and proves product-owned OpenCode names are absent.
 - The isolated runtime test proves new directories are used and old variables/directories have no effect.
 

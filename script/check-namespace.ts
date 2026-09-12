@@ -327,7 +327,9 @@ function findAppI18nContractRanges(source: string, lineIndex: number, file: stri
   const lines = source.split("\n")
   const line = lines[lineIndex] ?? ""
   const ranges: number[][] = []
-  for (const match of line.matchAll(/"((?:dialog\.provider\.opencode(?:Go)?|provider\.connect\.opencodeZen)(?:\.[A-Za-z0-9_]+)*)"\s*:/g)) {
+  for (const match of line.matchAll(
+    /"((?:dialog\.provider\.opencode(?:Go)?|provider\.connect\.opencodeZen)(?:\.[A-Za-z0-9_]+)*)"\s*:/g,
+  )) {
     const start = match.index ?? 0
     const colon = start + match[0].length
     ranges.push([start, colon])
@@ -344,7 +346,12 @@ function findAppI18nContractRanges(source: string, lineIndex: number, file: stri
   if (lineIndex === 0) return ranges
   const previous = lines[lineIndex - 1] ?? ""
   if (!/^\s+['"]/.test(line)) return ranges
-  if (!/"((?:dialog\.provider\.opencode(?:Go)?|provider\.connect\.opencodeZen)(?:\.[A-Za-z0-9_]+)*)"\s*:\s*$/.test(previous)) return ranges
+  if (
+    !/"((?:dialog\.provider\.opencode(?:Go)?|provider\.connect\.opencodeZen)(?:\.[A-Za-z0-9_]+)*)"\s*:\s*$/.test(
+      previous,
+    )
+  )
+    return ranges
   const continuation = findQuotedString(line, findNextQuote(line, 0))
   if (continuation) ranges.push([continuation.start, continuation.end])
   return ranges
@@ -392,8 +399,7 @@ function isContractToken(line: string, offset: number, token: string, tokenCount
   return (
     /(?:User-Agent|X-Title|X-Source|X-BILLING|originator|providerID|provider\.id|Integration|provider|id)\s*[^\n]*["'`]opencode["'`]/.test(
       line,
-    ) ||
-    /["'`]opencode["'`]|opencode\//.test(before + token + after)
+    ) || /["'`]opencode["'`]|opencode\//.test(before + token + after)
   )
 }
 

@@ -216,7 +216,9 @@ describe("Config", () => {
     ).pipe(
       Effect.flatMap((tmp) =>
         Effect.gen(function* () {
-          yield* Effect.promise(() => fs.writeFile(path.join(tmp.path, "openctrlc.json"), JSON.stringify({ $schema: "openctrlc" })))
+          yield* Effect.promise(() =>
+            fs.writeFile(path.join(tmp.path, "openctrlc.json"), JSON.stringify({ $schema: "openctrlc" })),
+          )
 
           return yield* Effect.gen(function* () {
             const config = yield* Config.Service
@@ -236,7 +238,9 @@ describe("Config", () => {
     ).pipe(
       Effect.flatMap((tmp) =>
         Effect.gen(function* () {
-          yield* Effect.promise(() => fs.writeFile(path.join(tmp.path, "opencode.json"), JSON.stringify({ $schema: "legacy" })))
+          yield* Effect.promise(() =>
+            fs.writeFile(path.join(tmp.path, "opencode.json"), JSON.stringify({ $schema: "legacy" })),
+          )
 
           return yield* Effect.gen(function* () {
             const config = yield* Config.Service

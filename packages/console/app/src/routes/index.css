@@ -122,7 +122,10 @@
   border-radius: 999px;
   background: var(--page-ink);
   color: var(--page-bg);
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 [data-page="openctrlc"] [data-component="nav-desktop"] [data-slot="cta-button"]:hover,
@@ -220,7 +223,11 @@
   border-radius: 9px;
   font-size: 13px;
   font-weight: 700;
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
 }
 
 [data-page="openctrlc"] [data-slot="primary-button"] {
@@ -270,7 +277,9 @@
   border: 1px solid #353b37;
   border-radius: 18px;
   background: #1f2421;
-  box-shadow: 24px 26px 0 rgba(31, 37, 33, 0.08), 0 28px 70px rgba(31, 37, 33, 0.2);
+  box-shadow:
+    24px 26px 0 rgba(31, 37, 33, 0.08),
+    0 28px 70px rgba(31, 37, 33, 0.2);
   color: #dce8df;
   font-family: var(--font-mono, ui-monospace, monospace);
   transform: rotate(1.5deg);
@@ -370,7 +379,9 @@
 }
 
 @keyframes openctrlc-blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 [data-page="openctrlc"] [data-slot="hero-art-caption"] {

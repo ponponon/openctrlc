@@ -12,12 +12,7 @@ test("server auth accepts the product CLI default username", () => {
   const authorization = ServerAuth.header({ password: "secret" })
 
   expect(authorization).toBe(`Basic ${Buffer.from(`${Brand.cli}:secret`).toString("base64")}`)
-  expect(
-    ServerAuth.authorized(
-      { username: Brand.cli, password: Redacted.make("secret") },
-      config,
-    ),
-  ).toBe(true)
+  expect(ServerAuth.authorized({ username: Brand.cli, password: Redacted.make("secret") }, config)).toBe(true)
 })
 
 const servedRoutes = HttpRouter.serve(createRoutes("secret"), { disableListenLog: true, disableLogger: true }).pipe(
@@ -33,7 +28,10 @@ test("createRoutes authenticates the OpenCtrlC CLI username over HTTP", async ()
         const client = Context.get(context, HttpClient.HttpClient)
         const request = (username: string) =>
           HttpClientRequest.get("/api/health").pipe(
-            HttpClientRequest.setHeader("authorization", `Basic ${Buffer.from(`${username}:secret`).toString("base64")}`),
+            HttpClientRequest.setHeader(
+              "authorization",
+              `Basic ${Buffer.from(`${username}:secret`).toString("base64")}`,
+            ),
             HttpClient.execute,
           )
 

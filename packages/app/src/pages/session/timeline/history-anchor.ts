@@ -67,11 +67,7 @@ export function startHistoryAnchorCorrection(input: {
 
 export function createHistoryAnchorRegistry(input: {
   snapshot: (kind: HistoryAnchorKind) => HistoryAnchorSnapshot
-  restore: (
-    snapshot: HistoryAnchorSnapshot,
-    done: boolean,
-    settled: () => void,
-  ) => (() => void) | undefined
+  restore: (snapshot: HistoryAnchorSnapshot, done: boolean, settled: () => void) => (() => void) | undefined
   cancel: (snapshot: HistoryAnchorSnapshot) => void
   update?: (snapshot: HistoryAnchorSnapshot) => HistoryAnchorSnapshot
 }) {

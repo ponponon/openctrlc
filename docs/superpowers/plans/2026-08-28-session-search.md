@@ -58,10 +58,19 @@ export type SessionSearchScope = "conversation" | "all"
 export type SessionSearchDocument = { messageID: string; text: string }
 export type SessionSearchMatch = { messageID: string; start: number; end: number }
 export function searchableText(input: { message: Message; parts: Part[]; scope: SessionSearchScope }): string
-export function createSessionSearchDocuments(input: { messages: Message[]; parts: (messageID: string) => Part[]; scope: SessionSearchScope }): SessionSearchDocument[]
+export function createSessionSearchDocuments(input: {
+  messages: Message[]
+  parts: (messageID: string) => Part[]
+  scope: SessionSearchScope
+}): SessionSearchDocument[]
 export function findSessionSearchMatches(documents: SessionSearchDocument[], query: string): SessionSearchMatch[]
 export function nextSessionSearchMatchIndex(current: number, count: number, direction: -1 | 1): number
-export function hydrateSessionSearchHistory(input: { sessionID: () => string | undefined; more: () => boolean; loading: () => boolean; loadMore: (sessionID: string) => Promise<void> }): Promise<void>
+export function hydrateSessionSearchHistory(input: {
+  sessionID: () => string | undefined
+  more: () => boolean
+  loading: () => boolean
+  loadMore: (sessionID: string) => Promise<void>
+}): Promise<void>
 ```
 
 Write failing tests first. The default scope includes user text and assistant text parts; all scope additionally includes readable reasoning, tool input/output, and error strings. Skip binaries and unsupported values, never blindly stringify objects, preserve message order, bound each document with a named maximum, use case-insensitive substring matching, return all non-overlapping matches, handle empty queries, and wrap navigation in both directions. Hydration loops until `more()` is false, prevents duplicate concurrent calls, and propagates failures for the caller to expose as partial history.
