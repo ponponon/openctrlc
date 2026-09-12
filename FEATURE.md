@@ -903,3 +903,19 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 
 - 在没有 `OPENCTRL[C]?_APP_*` 配置的个人仓库中运行 `generate`，确认能完成生成检查。
 - 修改 Nix 依赖后确认 x64、ARM64 Linux 哈希任务能被正常调度并完成更新。
+
+## Nix 依赖源包含全部工作区
+
+### 功能目标
+
+确保 Nix 生成 `node_modules` 时包含根 `package.json` 声明的每一个工作区，避免 CI 在
+新架构或新机器上因为源文件裁剪过度而找不到本地包。
+
+### 实现范围
+
+- 将 `github` 工作区加入 `nix/node_modules.nix` 的源文件集合。
+- 保持 Nix 的跨平台 node_modules 哈希计算与 Bun 工作区解析一致。
+
+### 验证方式
+
+- 运行 Nix 哈希工作流，确认四个平台的工作区安装阶段不再报告 `Workspace not found`。

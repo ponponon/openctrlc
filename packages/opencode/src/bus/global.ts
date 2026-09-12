@@ -11,8 +11,8 @@ export type GlobalEvent = {
 class GlobalBusEmitter extends EventEmitter<{
   event: [GlobalEvent]
 }> {
-  override emit<E extends string | symbol>(
-    eventName: E,
+  override emit<E>(
+    eventName: E | "event",
     ...args: E extends "event" ? [event: GlobalEvent] : any[]
   ): boolean {
     if (eventName === "event") {

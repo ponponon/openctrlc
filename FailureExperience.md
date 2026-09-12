@@ -339,3 +339,10 @@ WebFetch 遇到 Cloudflare 挑战时原本会用 `opencode` 作为第二次请�
 全新安装环境的类型检查失败，即使本地残留依赖仍可能暂时通过。以后扩展 Node
 `EventEmitter` 时应使用当前公开的泛型接口或局部重载，不要依赖版本特定的内部类型名，
 并在干净 Runner 上验证类型检查。
+
+## Nix node_modules 源必须覆盖全部 Bun 工作区
+
+Nix 为了缩小源文件范围只收集了 `packages` 和少量根目录，但根 `package.json` 仍声明了
+`github` 工作区；全新 Runner 在安装时因此报 `Workspace not found "github"`，四个平台的
+哈希任务都会失败。以后调整 Nix 文件集合时，必须对照根 `workspaces.packages` 逐项检查，
+新增工作区后同步加入源集合，并至少在一个 Linux 和一个 macOS 任务上验证 Bun install。
