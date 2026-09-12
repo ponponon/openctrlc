@@ -51,62 +51,64 @@ async function initRepo(directory: string) {
 }
 
 describe("MoveSession", () => {
-  it.live("moves session changes to another project directory", () =>
-    Effect.gen(function* () {
-      const root = yield* Effect.acquireRelease(
-        Effect.promise(() => tmpdir()),
-        (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
-      )
-      yield* Effect.promise(() => initRepo(root.path))
-      const source = abs(yield* Effect.promise(() => fs.realpath(root.path)))
-      const destination = abs(`${root.path}-move-destination`)
-      yield* Effect.addFinalizer(() =>
-        Effect.promise(() => fs.rm(destination, { recursive: true, force: true })).pipe(Effect.ignore),
-      )
-      yield* Effect.promise(() => $`git worktree add --detach ${destination} HEAD`.cwd(root.path).quiet())
-      const moved = abs(yield* Effect.promise(() => fs.realpath(destination)))
-      yield* Effect.promise(() => fs.writeFile(path.join(source, "tracked.txt"), "changed\n"))
-      yield* Effect.promise(() => fs.writeFile(path.join(source, "untracked.txt"), "new\n"))
+  it.live(
+    "moves session changes to another project directory",
+    () =>
+      Effect.gen(function* () {
+        const root = yield* Effect.acquireRelease(
+          Effect.promise(() => tmpdir()),
+          (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
+        )
+        yield* Effect.promise(() => initRepo(root.path))
+        const source = abs(yield* Effect.promise(() => fs.realpath(root.path)))
+        const destination = abs(`${root.path}-move-destination`)
+        yield* Effect.addFinalizer(() =>
+          Effect.promise(() => fs.rm(destination, { recursive: true, force: true })).pipe(Effect.ignore),
+        )
+        yield* Effect.promise(() => $`git worktree add --detach ${destination} HEAD`.cwd(root.path).quiet())
+        const moved = abs(yield* Effect.promise(() => fs.realpath(destination)))
+        yield* Effect.promise(() => fs.writeFile(path.join(source, "tracked.txt"), "changed\n"))
+        yield* Effect.promise(() => fs.writeFile(path.join(source, "untracked.txt"), "new\n"))
 
-      const projectID = (yield* Project.Service.use((service) => service.resolve(source))).id
-      const sessionID = SessionV2.ID.make("ses_move")
-      const { db } = yield* Database.Service
-      yield* db
-        .insert(ProjectTable)
-        .values({ id: projectID, worktree: source, sandboxes: [], time_created: 1, time_updated: 1 })
-        .run()
-        .pipe(Effect.orDie)
-      yield* db
-        .insert(SessionTable)
-        .values({
-          id: sessionID,
-          project_id: projectID,
-          slug: "move",
-          directory: source,
-          title: "move",
-          version: "test",
-          time_created: 1,
-          time_updated: 1,
-        })
-        .run()
-        .pipe(Effect.orDie)
-
-      yield* MoveSession.Service.use((service) =>
-        service.moveSession({ sessionID, destination: { directory: moved }, moveChanges: true }),
-      )
-
-      expect(yield* Effect.promise(() => fs.readFile(path.join(moved, "tracked.txt"), "utf8"))).toBe("changed\n")
-      expect(yield* Effect.promise(() => fs.readFile(path.join(moved, "untracked.txt"), "utf8"))).toBe("new\n")
-      expect(yield* Effect.promise(() => fs.readFile(path.join(source, "tracked.txt"), "utf8"))).toBe("initial\n")
-      expect(yield* Effect.promise(() => Bun.file(path.join(source, "untracked.txt")).exists())).toBe(false)
-      expect(
+        const projectID = (yield* Project.Service.use((service) => service.resolve(source))).id
+        const sessionID = SessionV2.ID.make("ses_move")
+        const { db } = yield* Database.Service
         yield* db
-          .select({ directory: SessionTable.directory, path: SessionTable.path })
-          .from(SessionTable)
-          .where(eq(SessionTable.id, sessionID))
-          .get(),
-      ).toEqual({ directory: moved, path: "" })
-    }),
+          .insert(ProjectTable)
+          .values({ id: projectID, worktree: source, sandboxes: [], time_created: 1, time_updated: 1 })
+          .run()
+          .pipe(Effect.orDie)
+        yield* db
+          .insert(SessionTable)
+          .values({
+            id: sessionID,
+            project_id: projectID,
+            slug: "move",
+            directory: source,
+            title: "move",
+            version: "test",
+            time_created: 1,
+            time_updated: 1,
+          })
+          .run()
+          .pipe(Effect.orDie)
+
+        yield* MoveSession.Service.use((service) =>
+          service.moveSession({ sessionID, destination: { directory: moved }, moveChanges: true }),
+        )
+
+        expect(yield* Effect.promise(() => fs.readFile(path.join(moved, "tracked.txt"), "utf8"))).toBe("changed\n")
+        expect(yield* Effect.promise(() => fs.readFile(path.join(moved, "untracked.txt"), "utf8"))).toBe("new\n")
+        expect(yield* Effect.promise(() => fs.readFile(path.join(source, "tracked.txt"), "utf8"))).toBe("initial\n")
+        expect(yield* Effect.promise(() => Bun.file(path.join(source, "untracked.txt")).exists())).toBe(false)
+        expect(
+          yield* db
+            .select({ directory: SessionTable.directory, path: SessionTable.path })
+            .from(SessionTable)
+            .where(eq(SessionTable.id, sessionID))
+            .get(),
+        ).toEqual({ directory: moved, path: "" })
+      }),
     30_000,
   )
 

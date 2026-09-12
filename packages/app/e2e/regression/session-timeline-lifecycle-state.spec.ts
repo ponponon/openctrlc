@@ -28,7 +28,10 @@ for (const expanded of [false, true]) {
     await timeline.send(partUpdated(textPart(`prt_sibling_${expanded}`, "Sibling content")), 180)
     await timeline.send(status("busy"), 100)
     await timeline.send(status("idle"), 250)
-    await page.getByRole("button", { name: /Show steps/ }).first().click()
+    await page
+      .getByRole("button", { name: /Show steps/ })
+      .first()
+      .click()
     await expect(trigger).toHaveAttribute("aria-expanded", String(!expanded))
   })
 }
