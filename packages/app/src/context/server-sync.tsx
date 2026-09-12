@@ -548,7 +548,10 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
       indexSession(info)
       return
     }
-    void session.resolve(sessionID).then(indexSession).catch(() => {})
+    void session
+      .resolve(sessionID)
+      .then(indexSession)
+      .catch(() => {})
   }
 
   const unsub = serverSDK.event.listen((e) => {
