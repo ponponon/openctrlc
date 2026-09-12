@@ -52,7 +52,7 @@ describe("i18n parity", () => {
         expect(value).not.toContain("opencode")
       }
     }
-  })
+  }, 30_000)
 
   test("external OpenCode Zen copy keeps its service identity", async () => {
     const bundles = [

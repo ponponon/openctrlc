@@ -134,6 +134,18 @@ describe("persist localStorage resilience", () => {
     expect(target.legacyStorageNames).toEqual([persistTesting.workspaceStorage("C:\\Users\\foo")])
   })
 
+  test("window target keeps the previous runtime storage as a migration fallback", () => {
+    const target = persistTesting.resolveTarget(Persist.window("tabs"), {
+      platform: "web",
+      openExternal: () => undefined,
+      restart: async () => undefined,
+      notify: async () => undefined,
+    })
+
+    expect(target.storage).toBe("openctrlc.window.browser.dat")
+    expect(target.legacyStorageNames).toEqual(["opencode.window.browser.dat"])
+  })
+
   test("migrates direct legacy keys into scoped storage", () => {
     storage.setItem("legacy.workspace", '{"value":2}')
     const target = Persist.workspace("C:/Users/foo", "demo", ["legacy.workspace"])

@@ -523,6 +523,8 @@ async function expectCanScrollToStart(
 
     const before = current
     const changed = await scrollTimelineUp(page, current)
+    await expandVisibleSteps(page)
+    await waitForTimelineStable(page)
     current = await timelineState(page)
     if (!changed && current.signature === before.signature && current.scrollTop <= 1) unchangedAtTop++
     else unchangedAtTop = 0
@@ -678,6 +680,7 @@ async function expectSessionTimelineReady(
   expectedMessageIDs: string[],
   errors: string[],
 ) {
+  await expandVisibleSteps(page)
   await waitForTimelineStable(page)
   for (const text of forbiddenText) await expect(page.getByText(text)).toHaveCount(0)
   const currentState = await timelineState(page)
@@ -686,6 +689,15 @@ async function expectSessionTimelineReady(
   expectOrderedIDs(expectedPartIDs, currentState.visibleIds, "visible part")
   expectOrderedIDs(expectedMessageIDs, unique(currentState.messageIds), "mounted message")
   expectOrderedIDs(expectedMessageIDs, unique(currentState.visibleMessageIds), "visible message")
+}
+
+async function expandVisibleSteps(page: Page) {
+  const toggles = page.getByRole("button", { name: /Show steps/ })
+  const count = await toggles.count()
+  for (let index = 0; index < count; index++) {
+    const toggle = toggles.nth(index)
+    if (await toggle.isVisible()) await toggle.click()
+  }
 }
 
 function expectCompleteScroll(

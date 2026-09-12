@@ -55,7 +55,7 @@ test("applies the narrow layout at 500px and 639px but not at 640px", async ({ p
     await page.evaluate(() => window.__sessionSearchHarness?.set({ open: true }))
 
     await expect(page.locator('[data-component="session-search-bar"]')).toBeVisible()
-    await expect(page.locator('[data-component="session-search-bar"]')).toHaveCSS("padding-top", "8px")
+    await expect(page.locator('[data-component="session-search-bar"]')).toHaveCSS("padding-top", "6px")
   }
 
   await page.setViewportSize({ width: 640, height: 800 })

@@ -81,6 +81,12 @@ const streamedTextPart = {
   text: "Streaming added a later assistant text part.",
 }
 
+const followUpTextPart = {
+  ...streamedTextPart,
+  id: "prt_9999_followup",
+  text: "A sibling assistant text part was added.",
+}
+
 const assistantMessage = {
   info: {
     id: assistantMessageID,
@@ -128,10 +134,11 @@ test.describe("regression: session timeline local row state", () => {
     })
 
     await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toBeVisible({ timeout: 10_000 })
+    await page.getByRole("button", { name: "Show steps" }).click()
 
     expect(await readToolState(page)).toEqual({
       expanded: false,
-      row: "AssistantPart",
+      row: "AssistantSteps",
       streamedTextVisible: true,
     })
   })
@@ -151,9 +158,10 @@ test.describe("regression: session timeline local row state", () => {
 
     await steps.locator('[data-slot="collapsible-trigger"]').first().click()
     const activity = steps.locator('[data-slot="session-turn-step-group"]').first()
-    await expect(activity.locator('[data-slot="collapsible-trigger"]')).toHaveAttribute("aria-expanded", "true")
-    await activity.locator('[data-slot="collapsible-trigger"]').click()
-    await expect(activity.locator('[data-slot="collapsible-trigger"]')).toHaveAttribute("aria-expanded", "false")
+    const activityTrigger = activity.locator(':scope > [data-slot="collapsible-trigger"]')
+    await expect(activityTrigger).toHaveAttribute("aria-expanded", "true")
+    await activityTrigger.click()
+    await expect(activityTrigger).toHaveAttribute("aria-expanded", "false")
     await expect(activity.locator('[data-slot="session-turn-step-group-content"]')).toHaveCount(0)
 
     await expect
@@ -175,11 +183,12 @@ test.describe("regression: session timeline local row state", () => {
   test("does not remount an edit diff when sibling parts or diff counts update", async ({ page }) => {
     const events: EventPayload[] = []
     await installDiffProbe(page)
-    await mockServer(page, events)
+    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, streamedTextPart] }])
     await configurePage(page)
 
     await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
     await expectSessionTitle(page, title)
+    await page.getByRole("button", { name: "Show steps" }).click()
 
     const wrapper = page.locator(`[data-timeline-part-id="${editPartID}"]`).first()
     await expectAppVisible(wrapper)
@@ -191,16 +200,18 @@ test.describe("regression: session timeline local row state", () => {
       directory,
       payload: {
         type: "message.part.updated",
-        properties: { part: streamedTextPart },
+        properties: { part: followUpTextPart },
       },
     })
 
-    await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator(`[data-timeline-part-id="${followUpTextPart.id}"]`).first()).toBeVisible({
+      timeout: 10_000,
+    })
     const siblingProbe = await readDiffProbe(page)
     expect(siblingProbe).toEqual({
       fileMarker: "before",
       frameMarker: "before",
-      rowKey: `assistant-part:${userMessageID}:part:${assistantMessageID}:${editPartID}`,
+      rowKey: `assistant-steps:${userMessageID}`,
       rowMarker: "before",
       shadowRoots: 0,
       toolMarker: "before",
@@ -221,7 +232,7 @@ test.describe("regression: session timeline local row state", () => {
     expect(await readDiffProbe(page)).toEqual({
       fileMarker: "before",
       frameMarker: "before",
-      rowKey: `assistant-part:${userMessageID}:part:${assistantMessageID}:${editPartID}`,
+      rowKey: `assistant-steps:${userMessageID}`,
       rowMarker: "before",
       shadowRoots: 0,
       toolMarker: "before",

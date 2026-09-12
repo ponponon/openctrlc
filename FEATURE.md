@@ -919,3 +919,22 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 ### 验证方式
 
 - 运行 Nix 哈希工作流，确认四个平台的工作区安装阶段不再报告 `Workspace not found`。
+
+## 跨平台测试与旧版身份迁移
+
+### 功能目标
+
+让 Windows、Linux 和 macOS 的测试使用相同的路径语义，并在 OpenCtrlC 更名后继续读取旧版
+OpenCode 的本地标签页数据。
+
+### 实现范围
+
+- 统一身份残留测试中的 E2E 路径分隔符，避免 Windows 反斜杠造成清单误报。
+- 将旧版 `opencode.*` 持久化存储作为 OpenCtrlC 存储的迁移来源。
+- 为 Windows 较慢的 Git 变更迁移测试和多语言加载测试设置合理超时。
+- 将独立复现页面从主应用 E2E 中隔离，并在 CI 中使用各自的 Vite/Playwright 配置运行。
+
+### 验证方式
+
+- 在 Windows Runner 上运行应用单测，确认身份清单和多语言一致性测试不因平台差异失败。
+- 分别运行主应用 E2E 与搜索栏、时间线复现 E2E，确认复现页使用自己的测试 Harness。

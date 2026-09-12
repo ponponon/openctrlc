@@ -26,6 +26,7 @@ type PersistTarget = {
 }
 
 const LEGACY_STORAGE = "default.dat"
+const LEGACY_RUNTIME_DIRECTORY = "opencode"
 const GLOBAL_STORAGE = `${Brand.runtimeDirectory}.global.dat`
 const WINDOW_STORAGE = `${Brand.runtimeDirectory}.window`
 const LOCAL_PREFIX = `${Brand.runtimeDirectory}.`
@@ -364,6 +365,12 @@ function windowStorage(windowID: string) {
   return `${WINDOW_STORAGE}.${safe}.dat`
 }
 
+function legacyRuntimeStorage(storage?: string) {
+  const prefix = `${Brand.runtimeDirectory}.`
+  if (!storage?.startsWith(prefix)) return
+  return `${LEGACY_RUNTIME_DIRECTORY}.${storage.slice(prefix.length)}`
+}
+
 function legacyWorkspaceStorage(dir: string) {
   const storage = workspaceStorage(pathKey(dir))
   const result = new Set<string>()
@@ -529,12 +536,20 @@ export const Persist = {
 }
 
 function resolveTarget(target: PersistTarget, platform: Platform): PersistTarget {
-  if (target.scope !== "window") return target
-  if (platform.platform === "desktop" && !platform.windowID) return { ...target, storage: GLOBAL_STORAGE }
-  const windowID = platform.platform === "desktop" ? (platform.windowID ?? "browser") : "browser"
+  const resolved = (() => {
+    if (target.scope !== "window") return target
+    if (platform.platform === "desktop" && !platform.windowID) return { ...target, storage: GLOBAL_STORAGE }
+    const windowID = platform.platform === "desktop" ? (platform.windowID ?? "browser") : "browser"
+    return {
+      ...target,
+      storage: windowStorage(windowID),
+    }
+  })()
+  const legacyStorage = legacyRuntimeStorage(resolved.storage)
+  if (!legacyStorage) return resolved
   return {
-    ...target,
-    storage: windowStorage(windowID),
+    ...resolved,
+    legacyStorageNames: [...new Set([...(resolved.legacyStorageNames ?? []), legacyStorage])],
   }
 }
 

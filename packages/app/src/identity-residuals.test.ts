@@ -35,7 +35,7 @@ test("uses the product identity for server defaults and config copy", async () =
 
 test("all E2E TypeScript fixtures use the expected persistence namespace", async () => {
   const specs: string[] = []
-  for await (const path of new Bun.Glob("e2e/**/*.ts").scan({ cwd: "." })) specs.push(path)
+  for await (const path of new Bun.Glob("e2e/**/*.ts").scan({ cwd: "." })) specs.push(path.replaceAll("\\", "/"))
   const legacySpecs = specs.filter((path) => path === "e2e/regression/legacy-new-session.spec.ts")
   const expectedPersistence = new Map([
     [
