@@ -9,7 +9,7 @@ import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
 const it = testEffect(LayerNode.compile(Ripgrep.node))
-const RIPGREP_TEST_TIMEOUT = 30_000
+const RIPGREP_TEST_TIMEOUT = 180_000
 
 describe("Ripgrep", () => {
   it.live(

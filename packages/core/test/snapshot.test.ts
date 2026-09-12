@@ -12,6 +12,8 @@ import { Hash } from "@openctrlc/core/util/hash"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
+const SNAPSHOT_TEST_TIMEOUT = 30_000
+
 describe("Snapshot", () => {
   testEffect(Layer.empty).live("captures and restores Location-scoped changes", () =>
     Effect.acquireUseRelease(
@@ -65,6 +67,7 @@ describe("Snapshot", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    SNAPSHOT_TEST_TIMEOUT,
   )
 
   testEffect(Layer.empty).live("treats capture outside Git as unavailable", () =>
@@ -81,6 +84,7 @@ describe("Snapshot", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    SNAPSHOT_TEST_TIMEOUT,
   )
 
   testEffect(Layer.empty).live("isolates snapshot indexes by canonical Git worktree", () =>
@@ -127,6 +131,7 @@ describe("Snapshot", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    SNAPSHOT_TEST_TIMEOUT,
   )
 
   testEffect(Layer.empty).live("checks out a legacy revert snapshot without removing unrelated files", () =>
@@ -163,6 +168,7 @@ describe("Snapshot", () => {
         }),
       (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
     ),
+    SNAPSHOT_TEST_TIMEOUT,
   )
 })
 

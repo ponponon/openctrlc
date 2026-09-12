@@ -70,27 +70,27 @@ describe("ConfigSkillPlugin.Plugin", () => {
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make(path.join("/repo", "packages", "app", ".claude", "skills")),
+          path: AbsolutePath.make(path.resolve("/repo", "packages", "app", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make(path.join("/repo", "packages", "app", ".agents", "skills")),
+          path: AbsolutePath.make(path.resolve("/repo", "packages", "app", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make(path.join("/repo", "packages", ".claude", "skills")),
+          path: AbsolutePath.make(path.resolve("/repo", "packages", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make(path.join("/repo", "packages", ".agents", "skills")),
+          path: AbsolutePath.make(path.resolve("/repo", "packages", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make(path.join("/repo", ".claude", "skills")),
+          path: AbsolutePath.make(path.resolve("/repo", ".claude", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
-          path: AbsolutePath.make(path.join("/repo", ".agents", "skills")),
+          path: AbsolutePath.make(path.resolve("/repo", ".agents", "skills")),
         }),
         SkillV2.DirectorySource.make({
           type: "directory",
