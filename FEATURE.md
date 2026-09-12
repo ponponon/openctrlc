@@ -864,3 +864,23 @@ GitHub Action 默认直接使用运行器提供的 `GITHUB_TOKEN`，并由生成
 ### 验证方式
 
 - 在 `packages/ui` 执行 `bun run test`，确认 DOM 测试不再因 `document is not defined` 失败。
+
+## 常规 CI 使用 GitHub 托管 Runner
+
+### 功能目标
+
+让个人仓库的常规测试、类型检查、代码生成和 Nix 评估使用可直接分配的 GitHub
+托管 Runner，避免依赖当前账号不可用的专用 Runner 标签而永久排队。
+
+### 实现范围
+
+- `test` 工作流的 Linux 和 Windows 单元测试、E2E 测试使用 `ubuntu-24.04` 和
+  `windows-2025`。
+- `typecheck`、`generate` 和 `nix-eval` 使用 `ubuntu-24.04`。
+- 正式跨平台发布工作流保持现有平台 Runner 和构建矩阵不变。
+
+### 验证方式
+
+- 推送后确认上述工作流能从 `queued` 进入运行状态。
+- 确认 Linux/Windows 测试、类型检查、生成检查和 Nix 评估结果均由 GitHub Actions
+  回报，不依赖本地环境。
