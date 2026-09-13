@@ -86,6 +86,10 @@ const required: Array<[string, string[]]> = [
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
   ["packages/console/app/src/routes/download/index.tsx", ["raw.githubusercontent.com/ponponon/openctrlc/dev/install"]],
+  [
+    "packages/web/src/assets/lander/terminal-preview.svg",
+    ["<title id=\"title\">OpenCtrlC terminal preview</title>", "<desc id=\"desc\">"]
+  ],
 ]
 
 const workflows = await Array.fromAsync(new Bun.Glob(".github/workflows/*.{yml,yaml}").scan({ cwd: root }))
@@ -204,6 +208,17 @@ for (const relative of publicInstallGuides) {
   const source = await read(relative)
   if (unsupportedInstallCommand.test(source)) failures.push(`${relative} advertises an unverified installation channel`)
 }
+
+const docsIndexes = await Array.fromAsync(new Bun.Glob("packages/web/src/content/docs/**/index.mdx").scan({ cwd: root }))
+for (const relative of docsIndexes) {
+  const source = await read(relative)
+  if (source.includes("assets/lander/screenshot.png")) {
+    failures.push(`${relative} references the retired upstream screenshot asset`)
+  }
+}
+
+const terminalPreview = await read("packages/web/src/assets/lander/terminal-preview.svg")
+if (/OpenCode|Zen/.test(terminalPreview)) failures.push("terminal-preview.svg contains upstream product branding")
 
 if (failures.length > 0) {
   console.error(["Distribution contract failed:", ...failures.map((failure) => `- ${failure}`)].join("\n"))

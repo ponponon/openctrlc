@@ -24,7 +24,7 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
       <nav data-component="nav-desktop">
         <ul>
           <li>
-            <a href={config.github.repoUrl} target="_blank" rel="noreferrer" style="white-space: nowrap;">
+            <a href={config.github.repoUrl} target="_blank" rel="noopener noreferrer" style="white-space: nowrap;">
               {i18n.t("nav.github")}
             </a>
           </li>
@@ -62,7 +62,7 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
         <button
           type="button"
           data-component="nav-mobile-toggle"
-          aria-expanded="false"
+          aria-expanded={store.mobileMenuOpen}
           aria-controls="nav-mobile-menu"
           class="nav-toggle"
           onClick={() => setStore("mobileMenuOpen", !store.mobileMenuOpen)}
@@ -110,7 +110,7 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
                   <A href={language.route("/")}>{i18n.t("nav.home")}</A>
                 </li>
                 <li>
-                  <a href={config.github.repoUrl} target="_blank" rel="noreferrer" style="white-space: nowrap;">
+                  <a href={config.github.repoUrl} target="_blank" rel="noopener noreferrer" style="white-space: nowrap;">
                     {i18n.t("nav.github")}
                   </a>
                 </li>
