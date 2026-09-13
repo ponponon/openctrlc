@@ -1051,6 +1051,8 @@ OpenCode 的本地标签页数据。
 - 英文与中文文档 SEO 标题改为 OpenCtrlC 自身的产品定位。
 - 文档首页的提问、计划、修改和撤销示例改用 `packages/opencode/src/session` 的
   实际路径和“持久化提示 admission / session processor”主题。
+- 简体中文文档首页同步相同的真实示例，并在安装说明中给出官网 R2 下载镜像与 GitHub
+  回退入口。
 - 保留 `opencode` 作为代码包和兼容协议的内部名称，不把它当作官网产品品牌展示。
 
 ### 代码位置

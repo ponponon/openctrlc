@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
-import { releaseTag, releaseUrl, resolveR2AssetUrl } from "./[platform]"
+import { releaseTag, releaseUrl } from "./[platform]"
+import { resolveR2AssetUrl } from "../r2"
 
 test("uses separate release tags for stable and beta downloads", () => {
   expect(releaseTag("stable")).toBe("latest")

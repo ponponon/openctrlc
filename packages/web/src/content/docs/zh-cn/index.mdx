@@ -34,7 +34,8 @@ export const console = config.console
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-针对不同平台，可以从 [Releases](https://github.com/ponponon/openctrlc/releases) 页面下载最新二进制文件。
+针对不同平台，可以从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新安装包；
+稳定版在可用时优先使用 R2 镜像，失败时自动回退到 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)。
 
 ---
 
@@ -110,8 +111,8 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
 使用 `@` 键可以模糊搜索项目中的文件。
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@packages/opencode/src/session/prompt.ts"
+@packages/opencode/src/session/prompt.ts 中的提示词 admission 是如何工作的？
 ```
 
 当你遇到不熟悉的代码时，这个功能非常有用。
@@ -135,9 +136,8 @@ How is authentication handled in @packages/functions/src/api/index.ts
    接下来描述你希望它做什么。
 
    ```txt frame="none"
-   When a user deletes a note, we'd like to flag it as deleted in the database.
-   Then create a screen that shows all the recently deleted notes.
-   From this screen, the user can undelete a note or permanently delete it.
+   当提示词被 admission 后，我们希望为会话记录一条诊断事件。
+   请先追踪现有的提示词和会话事件流程，再提出保持当前持久化行为的最小实现方案。
    ```
 
    你需要提供足够的细节，让 OpenCtrlC 理解你的需求。可以把它当作团队中的一名初级开发者来沟通。
@@ -181,10 +181,9 @@ How is authentication handled in @packages/functions/src/api/index.ts
 
 对于比较简单的修改，你可以直接让 OpenCtrlC 实施，无需先审查计划。
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
-We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+```txt frame="none" "@packages/opencode/src/session/processor.ts" "@packages/opencode/src/session/prompt.ts"
+请追踪已 admission 的提示词如何进入 session processor，说明持久化提示词 admission
+与模型执行之间的边界，并提出一个不重复实现会话编排的聚焦改动。
 ```
 
 请确保提供足够的细节，以便 OpenCtrlC 做出正确的修改。
@@ -195,8 +194,8 @@ the same logic in @packages/functions/src/settings.ts
 
 假设你让 OpenCtrlC 做了一些修改。
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@packages/opencode/src/session/processor.ts"
+请重构 @packages/opencode/src/session/processor.ts 中的 session processor。
 ```
 
 但你发现结果不是你想要的。你**可以使用** `/undo` 命令来撤销修改。
@@ -207,8 +206,8 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 
 OpenCtrlC 会还原所做的修改，并重新显示你之前的消息。
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@packages/opencode/src/session/processor.ts"
+请重构 @packages/opencode/src/session/processor.ts 中的 session processor。
 ```
 
 你可以调整提示词，让 OpenCtrlC 重新尝试。
