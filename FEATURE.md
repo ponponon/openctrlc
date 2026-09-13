@@ -1179,8 +1179,8 @@ ARM64 入口清晰可辨。
 - macOS 桌面自动下载仅保留已发布的 Apple Silicon DMG；Intel Mac 不再生成死链，
   改为显示当前桌面包支持范围和 CLI 替代方案提示。
 - Windows ARM64、Linux ARM64 和 Linux AppImage 行补齐平台图标与本地化文案。
-- 下载路由清单删除未发布的 `openctrlc-mac-x64.dmg` 映射，并增加 Intel Mac 与未知
-  平台的回归测试。
+- 下载路由清单删除未发布的 `openctrlc-mac-x64.dmg` 映射，并用完整的
+  `DownloadPlatform` 类型校验资产表，增加 Intel Mac 与未知平台的回归测试。
 
 ### 代码位置
 

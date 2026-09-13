@@ -8,7 +8,7 @@ export const releaseUrl = (channel: "stable" | "beta", assetName: string) =>
     ? `https://github.com/ponponon/openctrlc/releases/latest/download/${assetName}`
     : `https://github.com/ponponon/openctrlc/releases/download/${releaseTag(channel)}/${assetName}`
 
-const prodAssetNames: Record<string, string> = {
+const prodAssetNames = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
   "windows-arm64-nsis": "openctrlc-win-arm64.exe",
@@ -20,7 +20,7 @@ const prodAssetNames: Record<string, string> = {
   "linux-arm64-rpm": "openctrlc-linux-arm64.rpm",
 } satisfies Record<DownloadPlatform, string>
 
-const betaAssetNames: Record<string, string> = {
+const betaAssetNames = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
   "windows-arm64-nsis": "openctrlc-win-arm64.exe",
@@ -31,12 +31,17 @@ const betaAssetNames: Record<string, string> = {
   "linux-arm64-appimage": "openctrlc-linux-arm64.AppImage",
   "linux-arm64-rpm": "openctrlc-linux-arm64.rpm",
 } satisfies Record<DownloadPlatform, string>
+
+function isDownloadPlatform(value: string): value is DownloadPlatform {
+  return value in prodAssetNames
+}
 
 export async function GET({ params: { platform, channel } }: APIEvent) {
   if (channel !== "stable" && channel !== "beta") return new Response(null, { status: 404 })
 
+  if (!isDownloadPlatform(platform)) return new Response(null, { status: 404 })
+
   const assetName = channel === "stable" ? prodAssetNames[platform] : betaAssetNames[platform]
-  if (!assetName) return new Response(null, { status: 404 })
 
   const targetUrl =
     channel === "stable"
