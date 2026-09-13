@@ -1003,3 +1003,35 @@ OpenCode 的本地标签页数据。
 
 - 在 Windows Runner 上运行应用单测，确认身份清单和多语言一致性测试不因平台差异失败。
 - 分别运行主应用 E2E 与搜索栏、时间线复现 E2E，确认复现页使用自己的测试 Harness。
+## 官网稳定版下载使用 R2 加速并自动回退
+
+### 功能目标
+
+让国内用户访问官网时优先从已经准备好的 Cloudflare R2 下载公开 Release 资产，
+降低 GitHub Release 下载失败或速度不稳定对安装流程的影响，同时保留 GitHub 作为
+可靠回退路径。
+
+### 实现范围
+
+- 官网 `/download/stable/*` 路由读取公开的 R2 `download-manifest.json`，只接受
+  `openctrlc-releases.quniv.cn` 下的 HTTPS 资产地址。
+- R2 清单缺失、格式异常、网络超时或资产不存在时，稳定版下载自动回退到 GitHub
+  `releases/latest/download`；Beta 下载继续使用 GitHub beta Release。
+- 正式发布工作流在 GitHub Release 发布后自动执行 R2 同步；保留手动
+  `sync-downloads` 工作流用于历史版本补传和失败重试。
+- Cloudflare Account ID 同时兼容 Repository Variable 和 Repository Secret，避免
+  因凭据放置位置不同而阻断同步。
+
+### 代码位置
+
+- `packages/console/app/src/routes/download/[channel]/[platform].ts`：R2 清单解析、
+  可信域名校验和 GitHub 回退。
+- `.github/workflows/publish.yml`：正式发布后的自动同步任务。
+- `.github/workflows/sync-downloads.yml`：手动补传任务。
+- `script/publish-release-downloads.mjs`：下载、校验、上传和清单保留逻辑。
+
+### 验证方式
+
+- 测试有效 R2 资产、缺失资产和非可信域名均得到正确结果。
+- 发布后检查公开清单包含新版本，并用 `curl -I` 抽查 R2 资产。
+- 检查官网稳定版下载路由优先重定向到 R2；临时不可访问 R2 时仍重定向到 GitHub。

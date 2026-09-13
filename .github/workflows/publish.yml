@@ -317,6 +317,9 @@ jobs:
       - build-desktop-linux
     if: github.repository == 'ponponon/openctrlc'
     runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ needs.version.outputs.tag }}
+      repo: ${{ needs.version.outputs.repo }}
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -332,3 +335,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release edit "${{ needs.version.outputs.tag }}" --draft=false --repo "${{ needs.version.outputs.repo }}"
+
+  sync-downloads:
+    needs:
+      - version
+      - publish
+    if: github.repository == 'ponponon/openctrlc'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Sync published release assets to R2
+        run: node script/publish-release-downloads.mjs --tag "${{ needs.publish.outputs.tag }}" --repository "${{ needs.publish.outputs.repo }}" --retention 3
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

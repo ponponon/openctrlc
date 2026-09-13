@@ -8,7 +8,9 @@
 发布前先把代码、官网、文档和 `docs/releases/v<version>.md` 提交并推送到
 `dev`，然后在 GitHub Actions 中运行 `publish`，填写完整版本号，例如
 `0.2.2`。工作流会创建 draft Release、创建并校验版本 tag、构建所有平台
-资产，最后上传资产并将 Release 发布。
+资产，最后上传资产并将 Release 发布。Release 发布成功后，工作流会自动把公开
+资产同步到 Cloudflare R2，官网的稳定版下载入口优先使用 R2，R2 不可用时自动
+回退到 GitHub Release。
 
 ## 本地标签同步
 
@@ -65,6 +67,12 @@ CLOUDFLARE_ACCOUNT_ID  # Variable 或 Secret，Cloudflare Account ID
 工作流会在部署前自动创建缺失的 Pages 项目。若账号策略禁止自动创建，先
 在 Cloudflare Pages 中手动创建这两个项目，并把生产分支设为 `dev`。
 
+下载加速使用 R2 存储桶 `openctrlc-releases` 和公开域名
+`https://openctrlc-releases.quniv.cn/openctrlc/releases`。发布工作流会使用
+同一组 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID` 凭据同步清单和资产；
+账号 ID 可以配置为 Repository Variable，也可以配置为 Secret。`sync-downloads`
+工作流保留手动触发入口，用于补传历史 Release 或修复一次同步失败。
+
 ## GitHub Actions 必需 Secrets
 
 macOS 正式桌面包需要以下仓库 Secrets：
@@ -92,8 +100,10 @@ APPLE_TEAM_ID
    ```
 
 3. 检查 GitHub Actions workflow 文件、下载资产名和发布说明中的链接一致。
-4. 检查 staged diff，确认没有 API key、账号密码、证书私钥或本地配置。
-5. 发布后验证 Release 页面、官网首页、`/download`、`/changelog` 和 `/docs/`。
+4. 检查 R2 `download-manifest.json` 已包含新版本，并抽查官网稳定版下载路由是否
+   重定向到 R2；R2 同步失败时确认官网仍能回退到 GitHub。
+5. 检查 staged diff，确认没有 API key、账号密码、证书私钥或本地配置。
+6. 发布后验证 Release 页面、官网首页、`/download`、`/changelog` 和 `/docs/`。
 
 ## npm 包发布
 
