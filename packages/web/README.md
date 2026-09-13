@@ -1,54 +1,58 @@
-# Starlight Starter Kit: Basics
+# OpenCtrlC documentation site
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+This package builds the public OpenCtrlC documentation site. It contains the
+multilingual documentation pages, the share viewer, and the Cloudflare Pages
+server entrypoint.
 
-```
-npm create astro@latest -- --template starlight
-```
+- Public site: <https://openctrlc.pages.dev/>
+- Documentation: <https://openctrlc.pages.dev/docs/>
+- Repository: <https://github.com/ponponon/openctrlc>
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/starlight/tree/main/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/starlight/tree/main/examples/basics)
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/withastro/starlight&create_from_path=examples/basics)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwithastro%2Fstarlight%2Ftree%2Fmain%2Fexamples%2Fbasics&project-name=my-starlight-docs&repository-name=my-starlight-docs)
+## Local development
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Install dependencies from the repository root, then start the documentation
+site from this package:
 
-## 🚀 Project Structure
-
-Inside of your Astro + Starlight project, you'll see the following folders and files:
-
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   ├── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+```bash
+bun install
+bun run --cwd packages/web dev
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+The local server is available at <http://localhost:4321/docs/>.
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+## Production build
 
-Static assets, like favicons, can be placed in the `public/` directory.
+The production build uses the `production` stage so that the generated site
+uses the public Cloudflare Pages configuration:
 
-## 🧞 Commands
+```bash
+SST_STAGE=production bun run --cwd packages/web build
+```
 
-All commands are run from the root of the project, from a terminal:
+Use `bun run --cwd packages/web preview` to inspect the generated output
+locally before deployment.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## Project structure
 
-## 👀 Want to learn more?
+- `src/content/docs/` — English documentation and localized page content.
+- `src/content/i18n/` — Starlight interface translations.
+- `src/components/` — shared header, footer, language selector, and share UI.
+- `src/pages/` — Astro server routes, including the share viewer.
+- `src/styles/` — documentation theme overrides.
+- `astro.config.mjs` — locales, sidebar, branding, and Cloudflare adapter setup.
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+The marketing homepage and download page are maintained in
+`packages/console/app`; this package owns the documentation site under
+`/docs/`.
+
+## Content guidelines
+
+When changing public documentation:
+
+1. Use OpenCtrlC's current product names and commands.
+2. Keep compatibility references clearly separated from user-facing branding.
+3. Update the relevant localized page when a translated route exists.
+4. Verify both the default and Chinese documentation routes after building.
+
+See the repository [contribution guide](../../CONTRIBUTING.md) for the complete
+development and review workflow.
