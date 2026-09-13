@@ -437,9 +437,8 @@ export default function Download() {
             </li>
             <li>
               <Faq question={i18n.t("home.faq.q3")}>
-                OpenCtrlC supports local models and remote providers. Configure the provider you trust in your project
-                settings, then follow the provider-specific setup in the{" "}
-                <a href={language.route("/docs/providers/")}>provider docs</a>.
+                {i18n.t("home.faq.a3.p1")} {i18n.t("home.faq.a4.p1")} {i18n.t("home.faq.a3.p4.beforeLocal")}{" "}
+                <a href={language.route("/docs/providers/")}>{i18n.t("home.faq.a3.p4.localLink")}</a>.
               </Faq>
             </li>
             <li>
@@ -450,10 +449,7 @@ export default function Download() {
               </Faq>
             </li>
             <li>
-              <Faq question={i18n.t("home.faq.q6")}>
-                OpenCtrlC is open source and does not add a model subscription. You pay only for the provider or local
-                model services you choose to use.
-              </Faq>
+              <Faq question={i18n.t("home.faq.q6")}>{i18n.t("home.faq.a6")}</Faq>
             </li>
             <li>
               <Faq question={i18n.t("home.faq.q7")}>

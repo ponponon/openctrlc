@@ -5,7 +5,7 @@ import { config } from "~/config"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
 
-export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: boolean }) {
+export function Header(props: { hideGetStarted?: boolean }) {
   const i18n = useI18n()
   const language = useLanguage()
 

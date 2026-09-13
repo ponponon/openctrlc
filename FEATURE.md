@@ -1264,3 +1264,27 @@ ARM64 入口清晰可辨。
 - 对照 `.github/workflows/publish.yml` 核对所有下载链接的资产名和架构。
 - 发布前执行官网构建、发行版契约检查和 staged diff 敏感信息扫描。
 - 发布后检查 GitHub Release、官网 `/download`、R2 清单和稳定下载路由的实际响应。
+
+## 下载页 FAQ 品牌与多语言收口
+
+### 功能目标
+
+让下载页 FAQ 与 OpenCtrlC 当前实际提供的能力一致，避免旧上游的托管模型文案或写死的
+英文答案出现在其他语言页面。
+
+### 实现范围
+
+- 下载页关于模型、订阅和费用的答案改为复用现有多语言词条。
+- 删除 Header 中已经没有调用方的旧 Zen/Go 导航参数，避免继续扩大无效品牌入口。
+- 增加下载页源码契约测试，防止旧的写死英文 FAQ 回流。
+
+### 代码位置
+
+- `packages/console/app/src/routes/download/index.tsx`
+- `packages/console/app/src/routes/download/index.test.ts`
+- `packages/console/app/src/component/header.tsx`
+
+### 验证方式
+
+- 执行下载页定向测试、应用类型检查和官网生产构建。
+- 抽查中文、英文及其他语言下载页，确认 FAQ 不再回退为写死英文或 Zen 文案。

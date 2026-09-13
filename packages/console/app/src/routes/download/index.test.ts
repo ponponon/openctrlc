@@ -9,6 +9,15 @@ test("only advertises verified OpenCtrlC download channels", async () => {
   }
 })
 
+test("keeps the download FAQ localized and product-scoped", async () => {
+  const source = await Bun.file(new URL("./index.tsx", import.meta.url)).text()
+  expect(source).not.toContain("OpenCtrlC supports local models and remote providers")
+  expect(source).not.toContain("OpenCtrlC is open source and does not add a model subscription")
+  expect(source).not.toContain(">provider docs</a>")
+  expect(source).toContain('i18n.t("home.faq.a3.p1")')
+  expect(source).toContain('i18n.t("home.faq.a6")')
+})
+
 test("maps Linux architectures to distinct OpenCtrlC download routes", () => {
   expect(getDownloadPlatform("Linux", "x64")).toBe("linux-x64-deb")
   expect(getDownloadPlatform("Linux", "arm64")).toBe("linux-arm64-deb")
