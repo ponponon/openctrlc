@@ -85,10 +85,7 @@ const required: Array<[string, string[]]> = [
   ],
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
-  [
-    "packages/console/app/src/routes/download/index.tsx",
-    ["raw.githubusercontent.com/ponponon/openctrlc/dev/install"],
-  ],
+  ["packages/console/app/src/routes/download/index.tsx", ["raw.githubusercontent.com/ponponon/openctrlc/dev/install"]],
 ]
 
 const workflows = await Array.fromAsync(new Bun.Glob(".github/workflows/*.{yml,yaml}").scan({ cwd: root }))
@@ -170,7 +167,8 @@ const tracked = (await Bun.$`git ls-files -z`.cwd(root).text()).split("\0").filt
 const readmes = tracked.filter((file) => /(?:^|\/)README[^/]*\.md$/.test(file)).map((file) => path.join(root, file))
 const staleReleaseGuide =
   /(?<!@)opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
-const unsupportedInstallCommand = /(?:npm\s+(?:i|install)\s+(?:-g|--global)|bun\s+add\s+-g|brew\s+install(?:\s+--cask)?|(?:sudo\s+)?pacman\s+-S|paru\s+-S|choco\s+install|scoop\s+install|mise\s+use\s+-g|docker\s+run[\s\S]*ghcr\.io\/ponponon\/openctrlc)/i
+const unsupportedInstallCommand =
+  /(?:npm\s+(?:i|install)\s+(?:-g|--global)|bun\s+add\s+-g|brew\s+install(?:\s+--cask)?|(?:sudo\s+)?pacman\s+-S|paru\s+-S|choco\s+install|scoop\s+install|mise\s+use\s+-g|docker\s+run[\s\S]*ghcr\.io\/ponponon\/openctrlc)/i
 const publicInstallGuides = [
   "README.md",
   "README.zh.md",
