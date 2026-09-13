@@ -50,7 +50,12 @@ export function resolveR2AssetUrl(manifest: unknown, assetName: string) {
   if (!URL.canParse(asset.url)) return
   const publicBase = new URL(r2PublicBaseUrl)
   const url = new URL(asset.url)
-  if (url.protocol !== "https:" || url.origin !== publicBase.origin || !url.pathname.startsWith(`${publicBase.pathname}/`)) return
+  if (
+    url.protocol !== "https:" ||
+    url.origin !== publicBase.origin ||
+    !url.pathname.startsWith(`${publicBase.pathname}/`)
+  )
+    return
 
   return url.href
 }
