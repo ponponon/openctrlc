@@ -116,8 +116,8 @@ You can ask OpenCtrlC to explain the codebase to you.
 Use the `@` key to fuzzy search for files in the project.
 :::
 
-```txt frame="none" "@packages/opencode/src/session/prompt.ts"
-How does prompt admission work in @packages/opencode/src/session/prompt.ts?
+```txt frame="none" "@src/auth/session.ts"
+How does authentication flow through @src/auth/session.ts?
 ```
 
 This is helpful if there's a part of the codebase that you didn't work on.
@@ -142,9 +142,9 @@ You can ask OpenCtrlC to add new features to your project. Though we first recom
    Now let's describe what we want it to do.
 
    ```txt frame="none"
-   When a prompt is admitted, we'd like to record a diagnostic event for the session.
-   First trace the existing prompt and session event flow, then propose the smallest
-   implementation that preserves the current durable session behavior.
+   Add a diagnostic event when a user signs in.
+   First trace the existing authentication flow, then propose the smallest
+   implementation that preserves the current session behavior.
    ```
 
    You want to give OpenCtrlC enough details to understand what you want. It helps
@@ -160,8 +160,8 @@ You can ask OpenCtrlC to add new features to your project. Though we first recom
    Once it gives you a plan, you can give it feedback or add more details.
 
    ```txt frame="none"
-   We'd like to design this new screen using a design I've used before.
-   [Image #1] Take a look at this image and use it as a reference.
+   We'd like to improve the account screen using the attached design reference.
+   [Image #1] Keep the existing navigation and responsive behavior.
    ```
 
    :::tip
@@ -193,10 +193,10 @@ You can ask OpenCtrlC to add new features to your project. Though we first recom
 For more straightforward changes, you can ask OpenCtrlC to directly build it
 without having to review the plan first.
 
-```txt frame="none" "@packages/opencode/src/session/processor.ts" "@packages/opencode/src/session/prompt.ts"
-Trace how an admitted prompt reaches the session processor. Identify the existing
-boundary between durable prompt admission and model execution, then suggest a
-focused change without duplicating session orchestration.
+```txt frame="none" "@src/auth/session.ts" "@src/api/session.ts"
+Trace how a signed-in user reaches the session API. Identify the existing
+boundary between authentication and session creation, then suggest a focused
+change without duplicating request handling.
 ```
 
 You want to make sure you provide a good amount of detail so OpenCtrlC makes the right
@@ -208,8 +208,8 @@ changes.
 
 Let's say you ask OpenCtrlC to make some changes.
 
-```txt frame="none" "@packages/opencode/src/session/processor.ts"
-Can you refactor the session processor in @packages/opencode/src/session/processor.ts?
+```txt frame="none" "@src/api/session.ts"
+Can you refactor the session handler in @src/api/session.ts?
 ```
 
 But you realize that it is not what you wanted. You **can undo** the changes
@@ -222,8 +222,8 @@ using the `/undo` command.
 OpenCtrlC will now revert the changes you made and show your original message
 again.
 
-```txt frame="none" "@packages/opencode/src/session/processor.ts"
-Can you refactor the session processor in @packages/opencode/src/session/processor.ts?
+```txt frame="none" "@src/api/session.ts"
+Can you refactor the session handler in @src/api/session.ts?
 ```
 
 From here you can tweak the prompt and ask OpenCtrlC to try again.

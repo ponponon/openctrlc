@@ -689,7 +689,9 @@ GitLab Duo 通过 GitLab 的 Anthropic 代理提供具有原生工具调用能�
 ##### 自托管 GitLab
 
 :::note[合规说明]
-OpenCtrlC 会使用一个小模型来执行部分 AI 任务，例如生成会话标题。默认情况下使用由 Zen 托管的 gpt-5-nano。如果你需要让 OpenCtrlC 仅使用你自己的 GitLab 托管实例，请在 `openctrlc.json` 文件中添加以下内容。同时建议禁用会话共享。
+OpenCtrlC 不提供内置的托管模型服务。对于生成会话标题等轻量任务，
+如果你希望明确控制使用的服务商，可以在配置中显式设置 `small_model`。
+如果希望这些任务只使用自托管的 GitLab 实例，可以在 `openctrlc.json` 中添加以下内容。
 
 ```json
 {
@@ -1692,48 +1694,6 @@ Vercel AI Gateway 允许你通过统一端点访问来自 OpenAI、Anthropic、G
 
    ```txt
    /models
-   ```
-
----
-
-### ZenMux
-
-1. 前往 [ZenMux 仪表盘](https://zenmux.ai/settings/keys)，点击 **Create API Key** 并复制密钥。
-
-2. 执行 `/connect` 命令并搜索 ZenMux。
-
-   ```txt
-   /connect
-   ```
-
-3. 输入该提供商的 API 密钥。
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-4. 默认已预加载了许多 ZenMux 模型，执行 `/models` 命令选择你想要的模型。
-
-   ```txt
-   /models
-   ```
-
-   你也可以通过 OpenCtrlC 配置添加更多模型。
-
-   ```json title="openctrlc.json" {6}
-   {
-     "$schema": "https://openctrlc.pages.dev/config.json",
-     "provider": {
-       "zenmux": {
-         "models": {
-           "somecoolnewmodel": {}
-         }
-       }
-     }
-   }
    ```
 
 ---

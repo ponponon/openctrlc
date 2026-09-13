@@ -111,8 +111,8 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
 使用 `@` 键可以模糊搜索项目中的文件。
 :::
 
-```txt frame="none" "@packages/opencode/src/session/prompt.ts"
-@packages/opencode/src/session/prompt.ts 中的提示词 admission 是如何工作的？
+```txt frame="none" "@src/auth/session.ts"
+@src/auth/session.ts 中的身份验证流程是如何工作的？
 ```
 
 当你遇到不熟悉的代码时，这个功能非常有用。
@@ -136,8 +136,8 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
    接下来描述你希望它做什么。
 
    ```txt frame="none"
-   当提示词被 admission 后，我们希望为会话记录一条诊断事件。
-   请先追踪现有的提示词和会话事件流程，再提出保持当前持久化行为的最小实现方案。
+   用户登录后，我们希望为会话记录一条诊断事件。
+   请先追踪现有的身份验证流程，再提出保持当前会话行为的最小实现方案。
    ```
 
    你需要提供足够的细节，让 OpenCtrlC 理解你的需求。可以把它当作团队中的一名初级开发者来沟通。
@@ -151,8 +151,8 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
    当它给出计划后，你可以提供反馈或补充更多细节。
 
    ```txt frame="none"
-   We'd like to design this new screen using a design I've used before.
-   [Image #1] Take a look at this image and use it as a reference.
+   我们希望参考附带的设计稿改进账户页面。
+   [Image #1] 请保留现有导航和响应式行为。
    ```
 
    :::tip
@@ -181,9 +181,9 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
 
 对于比较简单的修改，你可以直接让 OpenCtrlC 实施，无需先审查计划。
 
-```txt frame="none" "@packages/opencode/src/session/processor.ts" "@packages/opencode/src/session/prompt.ts"
-请追踪已 admission 的提示词如何进入 session processor，说明持久化提示词 admission
-与模型执行之间的边界，并提出一个不重复实现会话编排的聚焦改动。
+```txt frame="none" "@src/auth/session.ts" "@src/api/session.ts"
+请追踪登录用户如何进入 session API，说明身份验证与会话创建之间的边界，
+并提出一个不重复实现请求处理的聚焦改动。
 ```
 
 请确保提供足够的细节，以便 OpenCtrlC 做出正确的修改。
@@ -194,8 +194,8 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
 
 假设你让 OpenCtrlC 做了一些修改。
 
-```txt frame="none" "@packages/opencode/src/session/processor.ts"
-请重构 @packages/opencode/src/session/processor.ts 中的 session processor。
+```txt frame="none" "@src/api/session.ts"
+请重构 @src/api/session.ts 中的 session handler。
 ```
 
 但你发现结果不是你想要的。你**可以使用** `/undo` 命令来撤销修改。
@@ -206,8 +206,8 @@ OpenCtrlC 会分析你的项目并在项目根目录创建一个 `AGENTS.md` 文
 
 OpenCtrlC 会还原所做的修改，并重新显示你之前的消息。
 
-```txt frame="none" "@packages/opencode/src/session/processor.ts"
-请重构 @packages/opencode/src/session/processor.ts 中的 session processor。
+```txt frame="none" "@src/api/session.ts"
+请重构 @src/api/session.ts 中的 session handler。
 ```
 
 你可以调整提示词，让 OpenCtrlC 重新尝试。

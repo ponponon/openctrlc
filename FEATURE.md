@@ -1085,3 +1085,30 @@ OpenCode 的本地标签页数据。
 
 - 检查 README 链接与官网实际路由一致。
 - 对照发布工作流、Release 资产和下载页确认平台/架构列表一致。
+
+## 文档入口清理上游示例和未启用服务
+
+### 功能目标
+
+让官网默认英文文档和简体中文文档直接服务于 OpenCtrlC 用户，避免首页示例指向不
+存在的仓库目录，也避免把当前没有提供的托管模型服务误写成产品能力。
+
+### 实现范围
+
+- 文档首页、TUI 和规则页使用通用的用户项目路径与示例，不再展示上游 monorepo 的
+  `packages/functions`、SST 示例或内部会话实现路径。
+- 提供商文档明确 OpenCtrlC 不内置托管模型服务，删除未启用的 ZenMux 入口和 Zen
+  托管说明；`small_model` 仍作为用户可选的轻量任务模型配置保留。
+- 保留真正属于兼容协议、CLI 参数和第三方插件包名的历史名称，避免把兼容性破坏
+  误当作品牌清理。
+
+### 代码位置
+
+- `packages/web/src/content/docs/index.mdx`、`tui.mdx`、`rules.mdx`、`providers.mdx`
+- `packages/web/src/content/docs/zh-cn/index.mdx`、`tui.mdx`、`rules.mdx`、`providers.mdx`
+
+### 验证方式
+
+- 对英文和简体中文重点入口执行关键词审计，确认没有不存在的上游示例或 ZenMux
+  产品说明。
+- 执行文档生产构建，确认 18 种语言和 Pagefind 索引仍然完整生成。

@@ -889,10 +889,10 @@ to store token in openctrlc auth storage.
 ##### Self-Hosted GitLab
 
 :::note[compliance note]
-OpenCtrlC uses a small model for some AI tasks like generating the session title.
-It is configured to use gpt-5-nano by default, hosted by Zen. To lock OpenCtrlC
-to only use your own GitLab-hosted instance, add the following to your
-`openctrlc.json` file. It is also recommended to disable session sharing.
+OpenCtrlC does not bundle a hosted model service. For lightweight tasks such as
+generating session titles, configure `small_model` explicitly if you want to
+control which provider is used. To keep these tasks on your self-hosted GitLab
+instance, add the following to `openctrlc.json`.
 
 ```json
 {
@@ -2315,48 +2315,6 @@ OpenCtrlC refreshes the OAuth access token automatically. Any Grok or X Premium 
 
    ```txt
    /models
-   ```
-
----
-
-### ZenMux
-
-1. Head over to the [ZenMux dashboard](https://zenmux.ai/settings/keys), click **Create API Key**, and copy the key.
-
-2. Run the `/connect` command and search for ZenMux.
-
-   ```txt
-   /connect
-   ```
-
-3. Enter the API key for the provider.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-4. Many ZenMux models are preloaded by default, run the `/models` command to select the one you want.
-
-   ```txt
-   /models
-   ```
-
-   You can also add additional models through your openctrlc config.
-
-   ```json title="openctrlc.json" {6}
-   {
-     "$schema": "https://openctrlc.pages.dev/config.json",
-     "provider": {
-       "zenmux": {
-         "models": {
-           "somecoolnewmodel": {}
-         }
-       }
-     }
-   }
    ```
 
 ---

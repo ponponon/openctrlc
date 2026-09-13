@@ -26,26 +26,27 @@ description: 为 openctrlc 设置自定义指令。
 您也可以手动创建此文件。以下是一些可以放入 `AGENTS.md` 文件中的内容示例。
 
 ```markdown title="AGENTS.md"
-# SST v3 Monorepo Project
+# TypeScript 应用
 
-This is an SST v3 monorepo with TypeScript. The project uses bun workspaces for package management.
+这是一个 TypeScript 应用，使用 Bun 管理依赖和开发脚本。
 
 ## Project Structure
 
-- `packages/` - Contains all workspace packages (functions, core, web, etc.)
-- `infra/` - Infrastructure definitions split by service (storage.ts, api.ts, web.ts)
-- `sst.config.ts` - Main SST configuration with dynamic imports
+- `src/` - 应用源代码
+- `tests/` - 单元测试和集成测试
+- `docs/` - 产品与工程文档
+- `package.json` - 开发脚本和依赖
 
 ## Code Standards
 
 - Use TypeScript with strict mode enabled
-- Shared code goes in `packages/core/` with proper exports configuration
-- Functions go in `packages/functions/`
-- Infrastructure should be split into logical files in `infra/`
+- 共享代码放在 `src/` 下职责清晰的模块中
+- API handler 保持简洁，将领域逻辑委托给专注的模块
+- 新增用户可见行为时，应补充针对性测试和必要文档
 
 ## Monorepo Conventions
 
-- Import shared modules using workspace names: `@my-app/core/example`
+- 遵循项目现有的模块边界和导入方式
 ```
 
 我们在这里添加了项目特定的指令，这些指令会在您的团队中共享。
