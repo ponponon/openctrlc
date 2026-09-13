@@ -3,7 +3,6 @@ title: Введение
 description: Начните работу с openctrlc.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,130 +30,27 @@ export const console = config.console
 
 ## Установка
 
-Самый простой способ установить openctrlc — через сценарий установки.
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-Вы также можете установить его с помощью следующих команд:
-
-- **Использование Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **Использование Homebrew в macOS и Linux**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > Мы рекомендуем использовать tap openctrlc для получения самых последних версий. Официальная формула `brew install openctrlc` поддерживается командой Homebrew и обновляется реже.
-
-- **Использование Paru в Arch Linux**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[Рекомендуется: используйте WSL]
-Для наилучшей работы в Windows мы рекомендуем использовать [Подсистема Windows для Linux (WSL)](/docs/windows-wsl). Он обеспечивает лучшую производительность и полную совместимость с функциями openctrlc.
-:::
-
-- **Используя Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **Использование Scoop**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **Использование NPM**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **Использование Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **Использование Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-В настоящее время добавляется поддержка установки openctrlc в Windows с помощью Bun.
-
-Вы также можете получить бинарный файл в разделе [Releases](https://github.com/ponponon/openctrlc/releases).
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## Настроить
 
-С openctrlc вы можете использовать любого поставщика LLM, настроив его ключи API.
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-Если вы новичок в использовании поставщиков LLM, мы рекомендуем использовать [настроенного вами провайдера](/docs/providers).
-Это тщательно подобранный список моделей, протестированных и проверенных openctrlc.
-
-1. Запустите команду `/connect` в TUI, выберите openctrlc и перейдите по адресу [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers).
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. Войдите в систему, добавьте свои платежные данные и скопируйте ключ API.
-
-3. Вставьте свой ключ API.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-Альтернативно вы можете выбрать одного из других поставщиков. [Подробнее](/docs/providers#directory).
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -207,8 +103,8 @@ openctrlc
 Используйте ключ `@` для нечеткого поиска файлов в проекте.
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 Это полезно, если есть часть кодовой базы, над которой вы не работали.
@@ -284,10 +180,10 @@ How is authentication handled in @packages/functions/src/api/index.ts
 Для более простых изменений вы можете попросить openctrlc создать их напрямую.
 без необходимости предварительного рассмотрения плана.
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 Убедитесь, что предоставили достаточно деталей, чтобы openctrlc внес корректные изменения.
@@ -298,8 +194,8 @@ the same logic in @packages/functions/src/settings.ts
 
 Допустим, вы просите openctrlc внести некоторые изменения.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Но вы понимаете, что это не то, чего вы хотели. Вы **можете отменить** изменения
@@ -312,8 +208,8 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 openctrlc отменит внесенные вами изменения и покажет исходное сообщение.
 снова.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Отсюда вы можете настроить подсказку и попросить openctrlc повторить попытку.

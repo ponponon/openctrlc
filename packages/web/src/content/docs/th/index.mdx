@@ -3,7 +3,6 @@ title: บทนำ
 description: เริ่มต้นใช้งาน OpenCtrlC
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,131 +30,27 @@ export const console = config.console
 
 ## ติดตั้ง
 
-วิธีที่ง่ายที่สุดในการติดตั้ง OpenCtrlC คือการใช้สคริปต์การติดตั้ง
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-คุณยังสามารถติดตั้งได้ด้วยคำสั่งต่อไปนี้:
-
-- **ใช้ Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **ใช้ Homebrew บน macOS และ Linux**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > เราขอแนะนำให้ใช้ OpenCtrlC tap เพื่อเผยแพร่ข้อมูลล่าสุด สูตร `brew install openctrlc` อย่างเป็นทางการได้รับการดูแลโดยทีมงาน Homebrew และมีการอัปเดตไม่บ่อยนัก
-
-- **ใช้ Paru บน Arch Linux**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[แนะนำ: ใช้ WSL]
-เพื่อประสบการณ์ที่ดีที่สุดบน Windows เราขอแนะนำให้ใช้ [ระบบย่อย Windows สำหรับ Linux (WSL)](/docs/windows-wsl) ให้ประสิทธิภาพที่ดีขึ้นและความเข้ากันได้เต็มรูปแบบกับคุณสมบัติของ OpenCtrlC
-:::
-
-- **ใช้ Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **ใช้ Scoop**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **การใช้ NPM**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **ใช้ Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **ใช้ Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-ขณะนี้การสนับสนุนสำหรับการติดตั้ง OpenCtrlC บน Windows โดยใช้ Bun อยู่ระหว่างดำเนินการ
-
-คุณยังสามารถคว้าไบนารี่ได้จาก [เผยแพร่](https://github.com/ponponon/openctrlc/releases)
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## กำหนดค่า
 
-ด้วย OpenCtrlC คุณสามารถใช้ผู้ให้บริการ LLM ใดก็ได้โดยกำหนดค่าคีย์ API
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-หากคุณยังใหม่ต่อการใช้ผู้ให้บริการ LLM เราขอแนะนำให้ใช้ [ผู้ให้บริการที่คุณกำหนดค่า](/docs/providers)
-เป็นรายการโมเดลที่ได้รับการดูแลจัดการซึ่งได้รับการทดสอบและตรวจสอบโดย OpenCtrlC
-ทีม.
-
-1. เรียกใช้คำสั่ง `/connect` ใน TUI เลือก openctrlc และไปที่ [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers)
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. ลงชื่อเข้าใช้ เพิ่มรายละเอียดการเรียกเก็บเงินของคุณ และคัดลอกรหัส API ของคุณ
-
-3. วางคีย์ API ของคุณ
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-หรือคุณสามารถเลือกหนึ่งในผู้ให้บริการรายอื่นได้ [เรียนรู้เพิ่มเติม](/docs/providers#ไดเรกทอรี)
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -210,8 +105,8 @@ openctrlc
 ใช้ปุ่ม `@` เพื่อค้นหาไฟล์ในโครงการอย่างคลุมเครือ
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 สิ่งนี้มีประโยชน์หากมีส่วนหนึ่งของโค้ดเบสที่คุณไม่ได้ดำเนินการ
@@ -287,10 +182,10 @@ How is authentication handled in @packages/functions/src/api/index.ts
 หากต้องการการเปลี่ยนแปลงที่ตรงไปตรงมามากขึ้น คุณสามารถขอให้ OpenCtrlC สร้างมันโดยตรงได้
 โดยไม่ต้องทบทวนแผนก่อน
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 คุณต้องการให้แน่ใจว่าคุณให้รายละเอียดในปริมาณที่เหมาะสมเพื่อให้ OpenCtrlC ดำเนินการได้ถูกต้อง
@@ -302,8 +197,8 @@ the same logic in @packages/functions/src/settings.ts
 
 สมมติว่าคุณขอให้ OpenCtrlC ทำการเปลี่ยนแปลงบางอย่าง
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 แต่คุณก็รู้ว่ามันไม่ใช่สิ่งที่คุณต้องการ คุณ **สามารถยกเลิก** การเปลี่ยนแปลงได้
@@ -316,8 +211,8 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 OpenCtrlC จะคืนค่าการเปลี่ยนแปลงที่คุณทำและแสดงข้อความต้นฉบับของคุณ
 อีกครั้ง.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 จากที่นี่ คุณสามารถปรับแต่งข้อความแจ้งและขอให้ OpenCtrlC ลองอีกครั้ง

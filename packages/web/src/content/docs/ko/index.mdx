@@ -3,7 +3,6 @@ title: 소개
 description: OpenCtrlC를 시작해 보세요.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,130 +30,27 @@ export const console = config.console
 
 ## 설치
 
-OpenCtrlC를 설치하는 가장 쉬운 방법은 설치 스크립트를 사용하는 것입니다.
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-다음 명령으로도 설치할 수 있습니다.
-
-- **Node.js 사용**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **macOS/Linux에서 Homebrew 사용**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > 최신 릴리스를 사용하려면 OpenCtrlC tap 사용을 권장합니다. 공식 `brew install openctrlc` formula는 Homebrew 팀이 관리하며 업데이트 주기가 더 깁니다.
-
-- **Arch Linux에 설치**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[권장: WSL 사용]
-Windows에서는 [Windows Subsystem for Linux (WSL)](/docs/windows-wsl) 사용을 권장합니다. 성능이 더 좋고 OpenCtrlC 기능과의 완전한 호환성을 제공합니다.
-:::
-
-- **Chocolatey 사용**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **Scoop 사용**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **NPM 사용**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **Mise 사용**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **Docker 사용**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-현재 Windows에서 Bun을 사용한 OpenCtrlC 설치 지원은 준비 중입니다.
-
-[Releases](https://github.com/ponponon/openctrlc/releases)에서 바이너리를 직접 받아 설치할 수도 있습니다.
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## 구성
 
-OpenCtrlC는 API 키를 설정하면 원하는 LLM 제공자를 사용할 수 있습니다.
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-LLM 제공자를 처음 사용한다면 [구성한 프로바이더](/docs/providers) 사용을 권장합니다.
-OpenCtrlC 팀이 테스트하고 검증한 모델 목록입니다.
-
-1. TUI에서 `/connect` 명령을 실행하고 `openctrlc`를 선택한 다음 [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers)로 이동합니다.
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. 로그인하고 결제 정보를 추가한 뒤 API 키를 복사합니다.
-
-3. API 키를 붙여 넣습니다.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-또는 다른 제공자 중 하나를 선택할 수도 있습니다. [더 알아보기](/docs/providers#directory).
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -204,8 +100,8 @@ OpenCtrlC에 코드베이스 설명을 요청할 수 있습니다.
 프로젝트 파일은 `@` 키로 퍼지 검색할 수 있습니다.
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 이 방법은 직접 작업하지 않은 코드 영역을 이해할 때 유용합니다.
@@ -275,10 +171,10 @@ OpenCtrlC에 프로젝트의 새 기능 추가를 요청할 수 있습니다. �
 
 비교적 간단한 변경은 계획을 먼저 검토하지 않고 바로 구현하도록 요청할 수 있습니다.
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 OpenCtrlC가 올바른 변경을 하도록 충분한 세부 정보를 제공해야 합니다.
@@ -289,8 +185,8 @@ OpenCtrlC가 올바른 변경을 하도록 충분한 세부 정보를 제공해�
 
 예를 들어 OpenCtrlC에 변경을 요청했다고 해보겠습니다.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 그런데 원하는 결과가 아니었다면 `/undo` 명령으로 변경을 **되돌릴 수** 있습니다.
@@ -301,8 +197,8 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 
 OpenCtrlC가 방금 적용한 변경을 되돌리고 원래 메시지를 다시 보여줍니다.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 여기에서 prompt를 수정해 다시 요청할 수 있습니다.

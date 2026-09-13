@@ -3,7 +3,6 @@
 <p align="center">面向终端和桌面工作流的开源 AI 编程 Agent。</p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
   <a href="https://github.com/ponponon/openctrlc/actions/workflows/publish.yml"><img alt="构建状态" src="https://img.shields.io/github/actions/workflow/status/ponponon/openctrlc/publish.yml?style=flat-square&branch=dev" /></a>
   <a href="https://github.com/ponponon/openctrlc/blob/dev/LICENSE"><img alt="许可证" src="https://img.shields.io/github/license/ponponon/openctrlc?style=flat-square" /></a>
 </p>
@@ -32,13 +31,6 @@ OpenCtrlC 帮助你探索代码仓库、理解陌生代码、编辑文件、运�
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
-```
-
-也可以安装 npm 包：
-
-```bash
-npm install --global openctrlc-ai
-# 或：bun add --global openctrlc-ai
 ```
 
 安装器支持通过 `OPENCTRLC_INSTALL_DIR` 或 `XDG_BIN_DIR` 自定义安装路径，默认回退到 `$HOME/.openctrlc/bin`。

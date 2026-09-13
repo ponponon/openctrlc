@@ -3,7 +3,6 @@ title: Uvod
 description: Započnite sa OpenCtrlC.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -28,127 +27,27 @@ Da biste koristili OpenCtrlC u svom terminalu, trebat će vam:
 
 ## Instalacija
 
-Najlakši način za instaliranje OpenCtrlC je putem instalacijske skripte.
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-Također ga možete instalirati pomoću sljedećih naredbi:
-
-- **Korištenje Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **Korištenje Homebrew-a na macOS-u i Linux-u**
-
-```bash
-  brew install ponponon/tap/openctrlc
-```
-
-> Preporučujemo korištenje OpenCtrlC tap za najnovija izdanja. Službenu formulu `brew install openctrlc` održava Homebrew tim i ažurira se rjeđe.
-
-- **Korištenje Parua na Arch Linuxu**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[Preporučeno: Koristite WSL]
-Za najbolje iskustvo na Windows-u preporučujemo korištenje [Windows Subsystem for Linux (WSL)](/docs/windows-wsl). Pruža bolje performanse i potpunu kompatibilnost sa OpenCtrlC funkcijama.
-:::
-
-- **Korištenje Chocolatey-a**
-
-```bash
-  choco install openctrlc
-```
-
-- **Korištenje Scoop-a**
-
-```bash
-  scoop install openctrlc
-```
-
-- **Korištenje NPM-a**
-
-```bash
-  npm install -g openctrlc-ai
-```
-
-- **Korištenje Mise**
-
-```bash
-  mise use -g github:ponponon/openctrlc
-```
-
-- **Korištenje Dockera**
-
-```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-```
-
-Podrška za instaliranje OpenCtrlC na Windows koristeći Bun je trenutno u toku.
-Također možete preuzeti binarnu datoteku iz [Releases](https://github.com/ponponon/openctrlc/releases).
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## Konfiguracija
 
-Uz OpenCtrlC možete koristiti bilo kojeg LLM provajdera tako što ćete konfigurirati njihove API ključeve.
-Ako ste tek počeli koristiti LLM provajdere, preporučujemo korištenje [vašeg konfigurisanog provajdera](/docs/providers).
-To je kurirana lista modela koji su testirani i verifikovani od strane OpenCtrlC tima.
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-1. Pokrenite naredbu `/connect` u TUI-u, odaberite openctrlc i idite na [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers).
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
-```txt
+   ```txt
    /connect
-```
+   ```
 
-2. Prijavite se, dodajte svoje detalje naplate i kopirajte svoj API ključ.
-3. Zalijepite svoj API ključ.
-
-```txt
-   ┌ API key
-   │
-   │
-   └ enter
-```
-
-Alternativno, možete odabrati jednog od drugih provajdera. [Saznajte više](/docs/providers#directory).
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -194,8 +93,8 @@ Možete zamoliti OpenCtrlC da vam objasni kodnu bazu.
 Koristite tipku `@` za nejasnu pretragu datoteka u projektu.
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 Ovo je korisno ako postoji dio kodne baze na kojem niste radili.
@@ -259,10 +158,10 @@ I tražeći od njega da napravi promjene.
 
 Za jednostavnije promjene, možete zamoliti OpenCtrlC da ga direktno izgradi bez potrebe da prvo pregledate plan.
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 Želite da budete sigurni da ste pružili dobru količinu detalja kako bi OpenCtrlC napravio ispravne promjene.
@@ -273,8 +172,8 @@ the same logic in @packages/functions/src/settings.ts
 
 Recimo da tražite od OpenCtrlC da izvrši neke promjene.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Ali shvatate da to nije ono što ste željeli. Možete **poništiti** promjene koristeći naredbu `/undo`.
@@ -285,8 +184,8 @@ Ali shvatate da to nije ono što ste željeli. Možete **poništiti** promjene k
 
 OpenCtrlC će sada poništiti promjene koje ste napravili i ponovo prikazati vašu originalnu poruku.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Odavde možete podesiti prompt i zamoliti OpenCtrlC da pokuša ponovo.

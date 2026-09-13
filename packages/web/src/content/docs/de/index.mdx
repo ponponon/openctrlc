@@ -3,7 +3,6 @@ title: Einführung
 description: Beginnen Sie mit OpenCtrlC.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,130 +30,27 @@ Um OpenCtrlC in Ihrem Terminal verwenden zu können, benötigen Sie:
 
 ## Installation
 
-Der einfachste Weg, OpenCtrlC zu installieren, ist über das Installationsskript.
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-Sie können es auch mit den folgenden Befehlen installieren:
-
-- **Mit Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **Homebrew unter macOS und Linux verwenden**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > Wir empfehlen die Verwendung des OpenCtrlC-Taps für die aktuellsten Versionen. Die offizielle `brew install openctrlc`-Formel wird vom Homebrew-Team gepflegt und seltener aktualisiert.
-
-- **Verwendung von Paru unter Arch Linux**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[Empfohlen: Verwenden Sie WSL]
-Für das beste Erlebnis unter Windows empfehlen wir die Verwendung von [Windows Subsystem for Linux (WSL)](/docs/windows-wsl). Es bietet eine bessere Leistung und vollständige Kompatibilität mit den Funktionen von OpenCtrlC.
-:::
-
-- **Verwendung von Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **Scoop verwenden**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **Mit NPM**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **Mit Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **Verwendung von Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-Die Unterstützung für die Installation von OpenCtrlC unter Windows mit Bun ist derzeit in Arbeit.
-
-Sie können die Binärdatei auch aus [Releases](https://github.com/ponponon/openctrlc/releases) abrufen.
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## Konfiguration
 
-Mit OpenCtrlC können Sie jeden LLM-Anbieter verwenden, indem Sie dessen API-Schlüssel konfigurieren.
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-Wenn Sie mit der Verwendung von LLM-Anbietern noch nicht vertraut sind, empfehlen wir die Verwendung von [Ihren konfigurierten Anbieter](/docs/providers).
-Es handelt sich um eine kuratierte Liste von Modellen, die vom OpenCtrlC Team getestet und verifiziert wurden.
-
-1. Führen Sie den Befehl `/connect` in TUI aus, wählen Sie OpenCtrlC aus und gehen Sie zu [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers).
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. Melden Sie sich an, geben Sie Ihre Rechnungsdaten ein und kopieren Sie Ihren API-Schlüssel.
-
-3. Fügen Sie Ihren API-Schlüssel ein.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-Alternativ können Sie auch einen der anderen Anbieter auswählen. [Mehr erfahren](/docs/providers#directory).
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -207,8 +103,8 @@ Sie können OpenCtrlC bitten, Ihnen die Codebasis zu erklären.
 Verwenden Sie die Taste `@`, um eine Fuzzy-Suche nach Dateien im Projekt durchzuführen.
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 Dies ist hilfreich, wenn es einen Teil der Codebasis gibt, an dem Sie nicht gearbeitet haben.
@@ -284,10 +180,10 @@ Sie können OpenCtrlC bitten, Ihrem Projekt neue Funktionen hinzuzufügen. Wir e
 Für einfachere Änderungen können Sie OpenCtrlC bitten, es direkt zu erstellen
 ohne den Plan vorher überprüfen zu müssen.
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 Sie möchten sicherstellen, dass Sie viele Details bereitstellen, damit OpenCtrlC die richtigen
@@ -299,8 +195,8 @@ Sie möchten sicherstellen, dass Sie viele Details bereitstellen, damit OpenCtrl
 
 Nehmen wir an, Sie bitten OpenCtrlC, einige Änderungen vorzunehmen.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Aber Sie erkennen, dass es nicht das ist, was Sie wollten. Sie können die Änderungen **rückgängig machen**
@@ -313,8 +209,8 @@ mit dem Befehl `/undo`.
 OpenCtrlC macht nun die von Ihnen vorgenommenen Änderungen rückgängig und zeigt Ihre ursprüngliche Nachricht
 wieder an.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Von hier aus können Sie die Eingabeaufforderung anpassen und OpenCtrlC bitten, es erneut zu versuchen.

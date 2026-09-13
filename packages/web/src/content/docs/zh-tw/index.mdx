@@ -3,7 +3,6 @@ title: 簡介
 description: 開始使用 OpenCtrlC。
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,129 +30,27 @@ export const console = config.console
 
 ## 安裝
 
-安裝 OpenCtrlC 最簡單的方法是透過安裝指令碼。
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-您也可以使用以下方式安裝：
-
-- **使用 Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **在 macOS 和 Linux 上使用 Homebrew**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > 我們推薦使用 OpenCtrlC tap 以取得最新版本。官方的 `brew install openctrlc` formula 由 Homebrew 團隊維護，更新頻率較低。
-
-- **在 Arch Linux 上安裝**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[推薦：使用 WSL]
-為了在 Windows 上獲得最佳體驗，我們推薦使用 [Windows Subsystem for Linux (WSL)](/docs/windows-wsl)。它提供更好的效能，並完全相容 OpenCtrlC 的所有功能。
-:::
-
-- **使用 Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **使用 Scoop**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **使用 NPM**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **使用 Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **使用 Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-在 Windows 上透過 Bun 安裝 OpenCtrlC 的支援目前正在開發中。
-
-您也可以從 [Releases](https://github.com/ponponon/openctrlc/releases) 頁面直接下載二進位檔案。
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## 設定
 
-透過 OpenCtrlC，您可以設定 API 金鑰來使用任意 LLM 供應商。
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-如果您剛開始接觸 LLM 供應商，我們推薦使用 [您設定的供應商](/docs/providers)。這是一組經過 OpenCtrlC 團隊測試和驗證的精選模型。
-
-1. 在 TUI 中執行 `/connect` 指令，選擇 openctrlc，然後前往 [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers)。
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. 登入並新增帳單資訊，然後複製您的 API 金鑰。
-
-3. 貼上您的 API 金鑰。
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-您也可以選擇其他供應商。[了解更多](/docs/providers#directory)。
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -203,8 +100,8 @@ OpenCtrlC 會分析您的專案並在專案根目錄建立一個 `AGENTS.md` 檔
 使用 `@` 鍵可以模糊搜尋專案中的檔案。
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 當您遇到不熟悉的程式碼時，這個功能非常有用。
@@ -274,10 +171,10 @@ How is authentication handled in @packages/functions/src/api/index.ts
 
 對於比較簡單的修改，您可以直接讓 OpenCtrlC 實施，無需先審查計畫。
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 請確保提供足夠的細節，以便 OpenCtrlC 做出正確的修改。
@@ -288,8 +185,8 @@ the same logic in @packages/functions/src/settings.ts
 
 假設您讓 OpenCtrlC 做了一些修改。
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 但您發現結果不是您想要的。您**可以使用** `/undo` 指令來復原修改。
@@ -300,8 +197,8 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 
 OpenCtrlC 會還原所做的修改，並重新顯示您之前的訊息。
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 您可以調整提示詞，讓 OpenCtrlC 重新嘗試。

@@ -3,7 +3,6 @@ title: はじめに
 description: OpenCtrlC を始めましょう。
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,130 +30,27 @@ export const console = config.console
 
 ## インストール
 
-OpenCtrlC をインストールする最も簡単な方法は、インストールスクリプトを使用することです。
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-次のコマンドを使用してインストールすることもできます。
-
-- **Node.js の使用**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **macOS および Linux での Homebrew の使用**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > 最新のリリースには OpenCtrlC タップを使用することをお勧めします。公式の `brew install openctrlc` 式は Homebrew チームによって維持されており、更新頻度は低くなります。
-
-- **Arch Linux での Paru の使用**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[推奨: WSL を使用する]
-Windows で最高のエクスペリエンスを得るには、[Windows Subsystem for Linux (WSL)](/docs/windows-wsl) を使用することをお勧めします。これにより、パフォーマンスが向上し、OpenCtrlC の機能との完全な互換性が提供されます。
-:::
-
-- **Chocolatey の使用**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **Scoop の使用**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **npm の使用**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **Mise の使用**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **Docker の使用**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-Bun を使用して Windows に OpenCtrlC をインストールするためのサポートは現在進行中です。
-
-[Releases](https://github.com/ponponon/openctrlc/releases).
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## 設定
 
-OpenCtrlC を使用すると、API キーを構成することで任意の LLM プロバイダーを使用できます。
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-LLM プロバイダーを初めて使用する場合は、[設定したプロバイダー](/docs/providers) をお勧めします。
-これは、OpenCtrlC チームによってテストおよび検証されたモデルの厳選されたリストです。
-
-1. TUI で `/connect` コマンドを実行し、openctrlc を選択して、[openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers) で認証します。
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. サインインし、お支払いの詳細を追加し、API キーをコピーします。
-
-3. API キーを貼り付けます。
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-あるいは、他のプロバイダーのいずれかを選択することもできます。 [詳細はこちら](/docs/providers#directory)。
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -204,8 +100,8 @@ OpenCtrlC にコードベースの説明を依頼できます。
 プロジェクト内のファイルをあいまい検索するには、`@` キーを使用します。
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 これは、コードベースに作業していない部分がある場合に役立ちます。
@@ -280,10 +176,10 @@ OpenCtrlC は、指定された画像をスキャンしてプロンプトに追�
 より単純な変更については、OpenCtrlC に直接ビルドするよう依頼できます。
 最初に計画を見直す必要はありません。
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 OpenCtrlC が適切な変更を行えるように、十分な量の詳細を確実に提供する必要があります。
@@ -294,8 +190,8 @@ OpenCtrlC が適切な変更を行えるように、十分な量の詳細を確�
 
 OpenCtrlC にいくつかの変更を依頼するとします。
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 しかし、それは自分が望んでいたものではないことに気づきます。変更は **元に戻すことができます**
@@ -307,8 +203,8 @@ Can you refactor the function in @packages/functions/src/api/index.ts?
 
 OpenCtrlC は加えた変更を元に戻し、元のメッセージを再度表示します。
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 ここからプロンプトを調整し、OpenCtrlC に再試行を依頼できます。

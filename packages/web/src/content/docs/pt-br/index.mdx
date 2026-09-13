@@ -3,7 +3,6 @@ title: Introdução
 description: Comece a usar o openctrlc.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,130 +30,27 @@ Para usar o openctrlc no seu terminal, você precisará de:
 
 ## Instalação
 
-A maneira mais fácil de instalar o openctrlc é através do script de instalação.
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-Você também pode instalá-lo com os seguintes comandos:
-
-- **Usando Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **Usando Homebrew no macOS e Linux**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > Recomendamos usar o tap do openctrlc para as versões mais atualizadas. A fórmula oficial `brew install openctrlc` é mantida pela equipe do Homebrew e é atualizada com menos frequência.
-
-- **Usando Paru no Arch Linux**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[Recomendado: Use WSL]
-Para a melhor experiência no Windows, recomendamos usar o [Windows Subsystem for Linux (WSL)](/docs/windows-wsl). Ele oferece melhor desempenho e total compatibilidade com os recursos do openctrlc.
-:::
-
-- **Usando Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **Usando Scoop**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **Usando NPM**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **Usando Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **Usando Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-O suporte para instalar o openctrlc no Windows usando Bun está atualmente em andamento.
-
-Você também pode baixar o binário na seção [Releases](https://github.com/ponponon/openctrlc/releases).
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## Configuração
 
-Com o openctrlc, você pode usar qualquer provedor de LLM configurando suas chaves de API.
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-Se você é novo no uso de provedores de LLM, recomendamos usar o [seu provedor configurado](/docs/providers).
-É uma lista selecionada de modelos que foram testados e verificados pela equipe do openctrlc.
-
-1. Execute o comando `/connect` no TUI, selecione openctrlc e acesse [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers).
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. Faça login, adicione seus dados de cobrança e copie sua chave de API.
-
-3. Cole sua chave de API.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-Alternativamente, você pode selecionar um dos outros provedores. [Saiba mais](/docs/providers#directory).
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -204,8 +100,8 @@ Você pode pedir ao openctrlc para explicar a base de código para você.
 Use a tecla `@` para buscar arquivos no projeto.
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 Isso é útil se houver uma parte da base de código na qual você não trabalhou.
@@ -275,10 +171,10 @@ Você pode pedir ao openctrlc para adicionar novos recursos ao seu projeto. Embo
 
 Para alterações mais simples, você pode pedir ao openctrlc para construí-las diretamente sem precisar revisar o plano primeiro.
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 Você quer ter certeza de fornecer uma boa quantidade de detalhes para que o openctrlc faça as alterações corretas.
@@ -289,8 +185,8 @@ Você quer ter certeza de fornecer uma boa quantidade de detalhes para que o ope
 
 Vamos supor que você peça ao openctrlc para fazer algumas alterações.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Mas você percebe que não era isso que você queria. Você **pode desfazer** as alterações usando o comando `/undo`.
@@ -301,8 +197,8 @@ Mas você percebe que não era isso que você queria. Você **pode desfazer** as
 
 O openctrlc agora reverterá as alterações que você fez e mostrará sua mensagem original novamente.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 A partir daqui, você pode ajustar o prompt e pedir ao openctrlc para tentar novamente.

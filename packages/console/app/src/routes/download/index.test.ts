@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test"
 import { detectArch, getDownloadHref, getDownloadPlatform } from "./helpers"
 
-test("uses the published OpenCtrlC AUR package", async () => {
+test("only advertises verified OpenCtrlC download channels", async () => {
   const source = await Bun.file(new URL("./index.tsx", import.meta.url)).text()
-  expect(source).toContain("paru -S openctrlc-bin")
-  expect(source).not.toContain("paru -S openctrlc\n")
+  expect(source).toContain("raw.githubusercontent.com/ponponon/openctrlc/dev/install")
+  for (const command of ["npm i -g", "bun add -g", "brew install", "paru -S", "choco install", "scoop install"]) {
+    expect(source).not.toContain(command)
+  }
 })
 
 test("maps Linux architectures to distinct OpenCtrlC download routes", () => {

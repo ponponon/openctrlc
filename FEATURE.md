@@ -1068,6 +1068,37 @@ OpenCode 的本地标签页数据。
 - 检查中文首页不再出现 `How it fits`、`Built for trust`、`Install once` 等写死文案，
   文档首页不再引用 `packages/functions`、`settings`、`notes` 示例。
 
+## 官网安装渠道与多语言文档真实性收口
+
+### 功能目标
+
+让官网、README 和所有语言的文档首页只展示当前确实可用的安装方式，避免用户复制
+不存在的包管理器命令或误以为 OpenCtrlC 提供托管模型服务。
+
+### 实现范围
+
+- 下载页只保留官方安装脚本和实际存在的桌面版下载入口。
+- README 与多语言文档首页统一指向官网软件下载页和 GitHub Releases；稳定下载说明
+  保留 R2 镜像及 GitHub 回退关系。
+- 清理多语言文档中遗留的 `packages/functions`、SST v3 和不存在的 npm/Homebrew/AUR/
+  Chocolatey/Scoop/Mise/Docker 安装示例。
+- GitLab CI 示例改用官方安装脚本；第三方 GitLab 组件仍明确保留为外部依赖。
+- 发行版契约检查公开安装入口，防止未验证的渠道再次进入官网和 README。
+
+### 代码位置
+
+- `packages/console/app/src/routes/download/index.tsx`
+- `packages/web/src/content/docs/*/index.mdx`
+- `packages/web/src/content/docs/*/rules.mdx`
+- `packages/web/src/content/docs/*/gitlab.mdx`
+- `script/check-distribution.ts`
+
+### 验证方式
+
+- 对所有公开安装入口执行未验证命令扫描。
+- 执行官网 typecheck、生产构建和文档多语言构建。
+- 部署后抽查英文、简体中文及其他语言的首页、文档和稳定下载重定向。
+
 ## README 对齐官网入口和下载镜像
 
 ### 功能目标

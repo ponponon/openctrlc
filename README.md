@@ -3,7 +3,6 @@
 <p align="center">An open-source AI coding agent for terminal and desktop workflows.</p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/openctrlc-ai"><img alt="npm" src="https://img.shields.io/npm/v/openctrlc-ai?style=flat-square" /></a>
   <a href="https://github.com/ponponon/openctrlc/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/ponponon/openctrlc/publish.yml?style=flat-square&branch=dev" /></a>
   <a href="https://github.com/ponponon/openctrlc/blob/dev/LICENSE"><img alt="License" src="https://img.shields.io/github/license/ponponon/openctrlc?style=flat-square" /></a>
 </p>
@@ -35,13 +34,6 @@ The install script detects the current operating system and architecture:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
-```
-
-You can also install the npm package:
-
-```bash
-npm install --global openctrlc-ai
-# or: bun add --global openctrlc-ai
 ```
 
 The installer respects `OPENCTRLC_INSTALL_DIR` and `XDG_BIN_DIR`. The default

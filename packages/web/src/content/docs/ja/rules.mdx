@@ -25,26 +25,26 @@ description: OpenCtrlC のカスタム命令を設定します。
 このファイルを手動で作成することもできます。以下は、`AGENTS.md` ファイルに含めることができるいくつかの例です。
 
 ```markdown title="AGENTS.md"
-# SST v3 Monorepo Project
+# TypeScript Project
 
-This is an SST v3 monorepo with TypeScript. The project uses bun workspaces for package management.
+This is a TypeScript project. The project uses Bun for package management.
 
 ## Project Structure
 
-- `packages/` - Contains all workspace packages (functions, core, web, etc.)
-- `infra/` - Infrastructure definitions split by service (storage.ts, api.ts, web.ts)
-- `sst.config.ts` - Main SST configuration with dynamic imports
+- `src/` - Application source code
+- `docs/` - Product and engineering documentation
+- `package.json` - Project scripts and dependencies
 
 ## Code Standards
 
 - Use TypeScript with strict mode enabled
-- Shared code goes in `packages/core/` with proper exports configuration
-- Functions go in `packages/functions/`
-- Infrastructure should be split into logical files in `infra/`
+- Shared code should live in named modules under `src/`
+- Keep application code close to the module it serves
+- Add focused tests for new behavior
 
 ## Monorepo Conventions
 
-- Import shared modules using workspace names: `@my-app/core/example`
+- Keep imports relative to the module boundaries already used in the project
 ```
 
 ここにプロジェクト固有の手順を追加します。これはチーム全体で共有されます。

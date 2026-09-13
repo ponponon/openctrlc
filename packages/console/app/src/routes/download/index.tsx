@@ -101,30 +101,6 @@ export default function Download() {
                 </code>
                 <CopyStatus />
               </button>
-              <button data-component="cli-row" onClick={handleCopyClick("npm i -g openctrlc-ai")}>
-                <code>
-                  npm i -g <strong>openctrlc-ai</strong>
-                </code>
-                <CopyStatus />
-              </button>
-              <button data-component="cli-row" onClick={handleCopyClick("bun add -g openctrlc-ai")}>
-                <code>
-                  bun add -g <strong>openctrlc-ai</strong>
-                </code>
-                <CopyStatus />
-              </button>
-              <button data-component="cli-row" onClick={handleCopyClick("brew install openctrlc")}>
-                <code>
-                  brew install <strong>openctrlc</strong>
-                </code>
-                <CopyStatus />
-              </button>
-              <button data-component="cli-row" onClick={handleCopyClick("paru -S openctrlc-bin")}>
-                <code>
-                  paru -S <strong>openctrlc-bin</strong>
-                </code>
-                <CopyStatus />
-              </button>
             </div>
           </section>
 
@@ -133,12 +109,6 @@ export default function Download() {
               <span>[2]</span> {i18n.t("download.section.desktop")}
             </div>
             <div data-component="section-content">
-              <button data-component="cli-row" onClick={handleCopyClick("brew install --cask openctrlc-desktop")}>
-                <code>
-                  brew install --cask <strong>openctrlc-desktop</strong>
-                </code>
-                <CopyStatus />
-              </button>
               <div data-component="download-row">
                 <div data-component="download-info">
                   <span data-slot="icon">

@@ -26,26 +26,26 @@ Mevcut bir `AGENTS.md` dosyanız varsa, bu dosyaya eklemeye çalışacaktır.
 Bu dosyayı manuel olarak da oluşturabilirsiniz. İşte bir `AGENTS.md` dosyasına koyabileceğiniz bazı şeylere bir örnek.
 
 ```markdown title="AGENTS.md"
-# SST v3 Monorepo Project
+# TypeScript Project
 
-This is an SST v3 monorepo with TypeScript. The project uses bun workspaces for package management.
+This is a TypeScript project. The project uses Bun for package management.
 
 ## Project Structure
 
-- `packages/` - Contains all workspace packages (functions, core, web, etc.)
-- `infra/` - Infrastructure definitions split by service (storage.ts, api.ts, web.ts)
-- `sst.config.ts` - Main SST configuration with dynamic imports
+- `src/` - Application source code
+- `docs/` - Product and engineering documentation
+- `package.json` - Project scripts and dependencies
 
 ## Code Standards
 
 - Use TypeScript with strict mode enabled
-- Shared code goes in `packages/core/` with proper exports configuration
-- Functions go in `packages/functions/`
-- Infrastructure should be split into logical files in `infra/`
+- Shared code should live in named modules under `src/`
+- Keep application code close to the module it serves
+- Add focused tests for new behavior
 
 ## Monorepo Conventions
 
-- Import shared modules using workspace names: `@my-app/core/example`
+- Keep imports relative to the module boundaries already used in the project
 ```
 
 Buraya projeye özel talimatlar ekliyoruz ve bu, ekibiniz arasında paylaşılacaktır.
@@ -86,7 +86,7 @@ export OPENCTRLC_DISABLE_CLAUDE_CODE_SKILLS=1 # Disable only .claude/skills
 
 ## Öncelik
 
-Opencode başlatıldığında kural dosyalarını şu sırayla arar:
+OpenCtrlC başlatıldığında kural dosyalarını şu sırayla arar:
 
 1. **Yerel dosyalar** geçerli dizinden yukarıya doğru giderek (`AGENTS.md`, `CLAUDE.md`)
 2. **Global dosya** `~/.config/openctrlc/AGENTS.md` adresinde
@@ -126,7 +126,7 @@ Tüm talimat dosyaları `AGENTS.md` dosyalarınızla birleştirilir.
 
 ## Harici Dosyalara Referans Verme
 
-Opencode, `AGENTS.md`'daki dosya referanslarını otomatik olarak ayrıştırmasa da, benzer işlevleri iki şekilde elde edebilirsiniz:
+OpenCtrlC, `AGENTS.md`'daki dosya referanslarını otomatik olarak ayrıştırmasa da, benzer işlevleri iki şekilde elde edebilirsiniz:
 
 ### openctrlc.json'u kullanma
 

@@ -19,13 +19,6 @@
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-또는 npm / Bun으로 설치할 수 있습니다.
-
-```bash
-npm install --global openctrlc-ai
-# bun add --global openctrlc-ai
-```
-
 ### 데스크톱
 
 최신 설치 파일은 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)에서 다운로드하세요.

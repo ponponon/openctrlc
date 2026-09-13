@@ -50,7 +50,7 @@ const required: Array<[string, string[]]> = [
       "openctrlc-linux-x64.deb",
       "openctrlc-linux-arm64.deb",
       "openctrlc-win-arm64.exe",
-      "OpenCtrlC",
+      "getR2AssetUrl",
     ],
   ],
   [
@@ -85,7 +85,10 @@ const required: Array<[string, string[]]> = [
   ],
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
   ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
-  ["packages/console/app/src/routes/download/index.tsx", ["paru -S openctrlc-bin"]],
+  [
+    "packages/console/app/src/routes/download/index.tsx",
+    ["raw.githubusercontent.com/ponponon/openctrlc/dev/install"],
+  ],
 ]
 
 const workflows = await Array.fromAsync(new Bun.Glob(".github/workflows/*.{yml,yaml}").scan({ cwd: root }))
@@ -167,7 +170,16 @@ const tracked = (await Bun.$`git ls-files -z`.cwd(root).text()).split("\0").filt
 const readmes = tracked.filter((file) => /(?:^|\/)README[^/]*\.md$/.test(file)).map((file) => path.join(root, file))
 const staleReleaseGuide =
   /(?<!@)opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
-const staleAUR = /paru\s+-S\s+(?!openctrlc-bin\b)[A-Za-z0-9._-]+/
+const unsupportedInstallCommand = /(?:npm\s+(?:i|install)\s+(?:-g|--global)|bun\s+add\s+-g|brew\s+install(?:\s+--cask)?|(?:sudo\s+)?pacman\s+-S|paru\s+-S|choco\s+install|scoop\s+install|mise\s+use\s+-g|docker\s+run[\s\S]*ghcr\.io\/ponponon\/openctrlc)/i
+const publicInstallGuides = [
+  "README.md",
+  "README.zh.md",
+  "README.ja.md",
+  "README.ko.md",
+  "packages/console/app/src/routes/download/index.tsx",
+  ...(await Array.fromAsync(new Bun.Glob("packages/web/src/content/docs/**/index.mdx").scan({ cwd: root }))),
+  ...(await Array.fromAsync(new Bun.Glob("packages/web/src/content/docs/**/gitlab.mdx").scan({ cwd: root }))),
+]
 for (const file of readmes) {
   const source = await Bun.file(file).text()
   const installation =
@@ -176,7 +188,6 @@ for (const file of readmes) {
     )?.[0] ?? source
   if (staleReleaseGuide.test(source))
     failures.push(`${path.relative(root, file)} contains stale product release guidance`)
-  if (staleAUR.test(source)) failures.push(`${path.relative(root, file)} contains a stale AUR package command`)
   if (source.includes("img.shields.io/github/actions/workflow/status/anomalyco/opencode/"))
     failures.push(`${path.relative(root, file)} contains an upstream workflow badge`)
   const fenced = [...source.matchAll(/```(?:yaml|yml)\n([\s\S]*?)```/g)].map((match) => match[1])
@@ -189,6 +200,11 @@ for (const file of readmes) {
       failures.push(`${path.relative(root, file)} fence ${index} is invalid YAML: ${String(error)}`)
     }
   }
+}
+
+for (const relative of publicInstallGuides) {
+  const source = await read(relative)
+  if (unsupportedInstallCommand.test(source)) failures.push(`${relative} advertises an unverified installation channel`)
 }
 
 if (failures.length > 0) {

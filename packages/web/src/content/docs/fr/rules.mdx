@@ -26,26 +26,26 @@ Si vous avez un fichier `AGENTS.md` existant, cela tentera de l'ajouter.
 Vous pouvez également simplement créer ce fichier manuellement. Voici un exemple de certaines choses que vous pouvez mettre dans un fichier `AGENTS.md`.
 
 ```markdown title="AGENTS.md"
-# SST v3 Monorepo Project
+# TypeScript Project
 
-This is an SST v3 monorepo with TypeScript. The project uses bun workspaces for package management.
+This is a TypeScript project. The project uses Bun for package management.
 
 ## Project Structure
 
-- `packages/` - Contains all workspace packages (functions, core, web, etc.)
-- `infra/` - Infrastructure definitions split by service (storage.ts, api.ts, web.ts)
-- `sst.config.ts` - Main SST configuration with dynamic imports
+- `src/` - Application source code
+- `docs/` - Product and engineering documentation
+- `package.json` - Project scripts and dependencies
 
 ## Code Standards
 
 - Use TypeScript with strict mode enabled
-- Shared code goes in `packages/core/` with proper exports configuration
-- Functions go in `packages/functions/`
-- Infrastructure should be split into logical files in `infra/`
+- Shared code should live in named modules under `src/`
+- Keep application code close to the module it serves
+- Add focused tests for new behavior
 
 ## Monorepo Conventions
 
-- Import shared modules using workspace names: `@my-app/core/example`
+- Keep imports relative to the module boundaries already used in the project
 ```
 
 Nous ajoutons ici des instructions spécifiques au projet et celles-ci seront partagées au sein de votre équipe.

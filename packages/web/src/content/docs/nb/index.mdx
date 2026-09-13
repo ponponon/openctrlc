@@ -3,7 +3,6 @@ title: Introduksjon
 description: Kom i gang med OpenCtrlC.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components"
 import config from "../../../../config.mjs"
 export const console = config.console
 
@@ -31,130 +30,27 @@ For å bruke OpenCtrlC i terminalen din trenger du:
 
 ## Installasjon
 
-Den enkleste måten å installere OpenCtrlC på er gjennom installasjonsskriptet.
+The installer script detects the current operating system and CPU architecture.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
-Du kan også installere den med følgende kommandoer:
-
-- **Bruke Node.js**
-
-        <Tabs>
-
-      <TabItem label="npm">
-      ```bash
-      npm install -g openctrlc-ai
-      ```
-
-          </TabItem>
-
-        <TabItem label="Bun">
-        ```bash
-        bun install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="pnpm">
-        ```bash
-        pnpm install -g openctrlc-ai
-        ```
-
-          </TabItem>
-
-        <TabItem label="Yarn">
-        ```bash
-        yarn global add openctrlc-ai
-        ```
-
-      </TabItem>
-
-  </Tabs>
-
-- **Bruke Homebrew på macOS og Linux**
-
-  ```bash
-  brew install ponponon/tap/openctrlc
-  ```
-
-  > Vi anbefaler å bruke OpenCtrlC-tappen for de mest oppdaterte utgivelsene. Den offisielle `brew install openctrlc`-formelen vedlikeholdes av Homebrew-teamet og oppdateres sjeldnere.
-
-- **Bruke Paru på Arch Linux**
-
-  ```bash
-  sudo pacman -S openctrlc           # Arch Linux (Stable)
-  paru -S openctrlc-bin              # Arch Linux (Latest from AUR)
-  ```
-
-#### Windows
-
-:::tip[Anbefalt: Bruk WSL]
-For den beste opplevelsen på Windows anbefaler vi å bruke [Windows Subsystem for Linux (WSL)](/docs/windows-wsl). Det gir bedre ytelse og full kompatibilitet med funksjonene i OpenCtrlC.
-:::
-
-- **Bruke Chocolatey**
-
-  ```bash
-  choco install openctrlc
-  ```
-
-- **Bruke Scoop**
-
-  ```bash
-  scoop install openctrlc
-  ```
-
-- **Bruke npm**
-
-  ```bash
-  npm install -g openctrlc-ai
-  ```
-
-- **Bruke Mise**
-
-  ```bash
-  mise use -g github:ponponon/openctrlc
-  ```
-
-- **Bruke Docker**
-
-  ```bash
-  docker run -it --rm ghcr.io/ponponon/openctrlc
-  ```
-
-Støtte for installasjon av OpenCtrlC på Windows med Bun er under arbeid.
-
-Du kan også hente binæren fra [Releases](https://github.com/ponponon/openctrlc/releases).
+For platform-specific packages, use the [OpenCtrlC download page](https://openctrlc.pages.dev/download/) or [GitHub Releases](https://github.com/ponponon/openctrlc/releases). Stable downloads use the project's Cloudflare R2 mirror when available and automatically fall back to GitHub.
 
 ---
 
 ## Konfigurasjon
 
-Med OpenCtrlC kan du bruke hvilken som helst LLM-leverandør ved å konfigurere deres API-nøkler.
+OpenCtrlC is a client application. Configure an LLM provider that you control; OpenCtrlC does not provide a hosted model service.
 
-Hvis du er ukjent med LLM-leverandører, anbefaler vi å bruke [den konfigurerte leverandøren](/docs/providers).
-Det er en kuratert liste over modeller som har blitt testet og verifisert av OpenCtrlC-teamet.
-
-1. Kjør kommandoen `/connect` i TUI, velg OpenCtrlC og gå til [openctrlc.pages.dev/docs/providers](https://openctrlc.pages.dev/docs/providers).
+1. Run `/connect` in the TUI and select a supported provider. See [Providers](/docs/providers).
 
    ```txt
    /connect
    ```
 
-2. Logg på, legg til faktureringsdetaljene dine og kopier API-nøkkelen.
-
-3. Lim inn API-nøkkelen.
-
-   ```txt
-   ┌ API key
-   │
-   │
-   └ enter
-   ```
-
-Alternativt kan du velge en av de andre leverandørene. [Finn ut mer](/docs/providers#directory).
+2. Follow the provider's setup guide and paste its API key when prompted.
 
 ---
 
@@ -209,8 +105,8 @@ Du kan be OpenCtrlC forklare kodebasen for deg.
 Bruk `@`-tasten for uklart søk etter filer i prosjektet.
 :::
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-How is authentication handled in @packages/functions/src/api/index.ts
+```txt frame="none" "@src/api/index.ts"
+How is authentication handled in @src/api/index.ts
 ```
 
 Dette er nyttig hvis det er en del av kodebasen du ikke har jobbet med.
@@ -286,10 +182,10 @@ Du kan be OpenCtrlC legge til nye funksjoner i prosjektet ditt. Selv om vi førs
 For mer enkle endringer kan du be OpenCtrlC om å bygge det direkte
 uten å måtte gjennomgå planen først.
 
-```txt frame="none" "@packages/functions/src/settings.ts" "@packages/functions/src/notes.ts"
+```txt frame="none" "@src/settings.ts" "@src/notes.ts"
 We need to add authentication to the /settings route. Take a look at how this is
-handled in the /notes route in @packages/functions/src/notes.ts and implement
-the same logic in @packages/functions/src/settings.ts
+handled in the /notes route in @src/notes.ts and implement
+the same logic in @src/settings.ts
 ```
 
 Sørg for å gi nok detaljer, slik at OpenCtrlC gjør de rette
@@ -301,8 +197,8 @@ endringene.
 
 La oss si at du ber OpenCtrlC om å gjøre noen endringer.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Men du skjønner at det ikke er det du ønsket. Du **kan angre** endringene
@@ -315,8 +211,8 @@ ved å bruke kommandoen `/undo`.
 OpenCtrlC vil nå tilbakestille endringene du har gjort og vise den opprinnelige meldingen
 igjen.
 
-```txt frame="none" "@packages/functions/src/api/index.ts"
-Can you refactor the function in @packages/functions/src/api/index.ts?
+```txt frame="none" "@src/api/index.ts"
+Can you refactor the function in @src/api/index.ts?
 ```
 
 Herfra kan du justere ledeteksten og be OpenCtrlC om å prøve igjen.
