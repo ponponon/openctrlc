@@ -1,32 +1,26 @@
-# SolidStart
+# OpenCtrlC enterprise package
 
-Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);
+This package contains the enterprise deployment surface for OpenCtrlC,
+including its server-facing routes, shared session UI, and Cloudflare
+deployment entrypoint. It is kept separate from the public marketing site and
+the local desktop client.
 
-## Creating a project
+## Development
 
-```bash
-# create a new project in the current directory
-npm init solid@latest
-
-# create a new project in my-app
-npm init solid@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+From the repository root:
 
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun install
+bun run --cwd packages/enterprise dev
 ```
 
-## Building
+## Checks and builds
 
-Solid apps are built with _presets_, which optimise your project for deployment to different environments.
+```bash
+bun run --cwd packages/enterprise typecheck
+bun run --cwd packages/enterprise build
+bun run --cwd packages/enterprise build:cloudflare
+```
 
-By default, `npm run build` will generate a Node app that you can run with `npm start`. To use a different preset, add it to the `devDependencies` in `package.json` and specify in your `app.config.js`.
-
-## This project was created with the [Solid CLI](https://github.com/solidjs-community/solid-cli)
+The package is an internal deployment target. Public product downloads and
+documentation are maintained by `packages/console/app` and `packages/web`.

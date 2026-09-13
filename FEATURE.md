@@ -1316,7 +1316,7 @@ ARM64 入口清晰可辨。
 
 ### 实现范围
 
-- 更新应用 UI、营销站、桌面端和运行时包的 README，删除 Solid/Bun/Tauri 初始化模板。
+- 更新应用 UI、营销站、桌面端、运行时和企业包的 README，删除 Solid/Bun/Tauri 初始化模板。
 - 将废弃的 Mintlify 文档目录明确标记为历史资料，避免与实际部署的 `packages/web` 混淆。
 - 在桌面图标 README 中记录 PNG、ICO、ICNS、Dock 图标的尺寸、透明边界和校验命令。
 
