@@ -382,7 +382,13 @@ function CopyButton(props: { value: string; label: string; copiedLabel: string; 
   }
 
   return (
-    <button type="button" data-component="copy-button" data-copied={copied()} onClick={copy} aria-label={props.ariaLabel}>
+    <button
+      type="button"
+      data-component="copy-button"
+      data-copied={copied()}
+      onClick={copy}
+      aria-label={props.ariaLabel}
+    >
       <span>{copied() ? props.copiedLabel : props.label}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <path
