@@ -1,15 +1,33 @@
-# js
+# OpenCtrlC runtime
 
-To install dependencies:
+This package contains the OpenCtrlC CLI runtime, server, configuration, and
+TUI entrypoints. The directory name `packages/opencode` is retained as an
+internal compatibility path; the installed command and product name are
+`openctrlc`.
+
+## Development
+
+From the repository root:
 
 ```bash
 bun install
+bun run --cwd packages/opencode dev
 ```
 
-To run:
+Run the headless API server with:
 
 ```bash
-bun run index.ts
+bun run --cwd packages/opencode dev serve
 ```
 
-This project was created using `bun init` in bun v1.2.12. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+## Checks and build
+
+```bash
+bun run --cwd packages/opencode typecheck
+bun run --cwd packages/opencode test
+bun run --cwd packages/opencode build
+```
+
+The standalone build writes platform archives to `packages/opencode/dist/`.
+For the complete cross-platform release process, see
+[`docs/release.md`](../../docs/release.md).

@@ -1,50 +1,39 @@
-## Usage
+# OpenCtrlC application UI
 
-Dependencies for these templates are managed with [pnpm](https://pnpm.io) using `pnpm up -Lri`.
+This package contains the shared SolidJS application UI used by the OpenCtrlC
+desktop client and browser-based development flows. It owns session views,
+review panels, the terminal interface, settings, and the client-side i18n
+resources.
 
-This is the reason you see a `pnpm-lock.yaml`. That said, any package manager will work. This file can safely be removed once you clone a template.
+## Local development
 
-```bash
-$ npm install # or pnpm install or yarn install
-```
-
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
-
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm run dev` or `npm start`
-
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.<br>
-
-### `npm run build`
-
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
-
-## E2E Testing
-
-Playwright starts the Vite dev server automatically via `webServer`, and UI tests expect an opencode backend at `localhost:4096` by default.
+Install dependencies from the repository root, then start the UI and the local
+OpenCtrlC backend in separate terminals:
 
 ```bash
-bunx playwright install chromium
-bun run test:e2e:local
-bun run test:e2e:local -- --grep "settings"
+bun run --cwd packages/opencode dev serve
+bun run --cwd packages/app dev
 ```
 
-Environment options:
+The Vite development server is available at <http://localhost:3000/>. The
+Playwright configuration starts this server automatically for browser tests.
 
-- `PLAYWRIGHT_SERVER_HOST` / `PLAYWRIGHT_SERVER_PORT` (backend address, default: `localhost:4096`)
-- `PLAYWRIGHT_PORT` (Vite dev server port, default: `3000`)
-- `PLAYWRIGHT_BASE_URL` (override base URL, default: `http://localhost:<PLAYWRIGHT_PORT>`)
+## Checks
 
-## Deployment
+```bash
+bun run --cwd packages/app typecheck
+bun run --cwd packages/app test:unit
+bun run --cwd packages/app test:browser
+bun run --cwd packages/app test:e2e:local
+```
 
-You can deploy the `dist` folder to any static host provider (netlify, surge, now, etc.)
+Useful test options include `PLAYWRIGHT_SERVER_HOST`,
+`PLAYWRIGHT_SERVER_PORT`, `PLAYWRIGHT_PORT`, `PLAYWRIGHT_BASE_URL`, and
+`PLAYWRIGHT_WORKERS`.
+
+## Relationship to the desktop client
+
+`packages/desktop` wraps this UI in Electron and supplies native menus,
+window management, updates, and the packaged CLI sidecar. Changes that affect
+both browser and desktop behavior should be checked in the UI package first,
+then validated through the desktop package's typecheck and packaging scripts.
