@@ -1241,3 +1241,26 @@ ARM64 入口清晰可辨。
 
 - 使用 Prettier 校验工作流格式。
 - 在推送后的 GitHub Actions 中分别观察 Linux/Windows unit 和 e2e job 的最终结论。
+
+## v0.2.4 正式发布说明
+
+### 功能目标
+
+把 `v0.2.3` 之后已经落地的会话可靠性、跨平台兼容、官网和下载链路改动收敛成面向
+最终用户的补丁版本，确保 GitHub Release、官网稳定下载和 Cloudflare R2 镜像使用同一
+份资产清单。
+
+### 实现范围
+
+- 新增 `docs/releases/v0.2.4.md`，按 Features、Bug Fixes 和 Downloads 组织最终用户
+  可读的发布说明。
+- Downloads 先按 CLI/Desktop 分类，再按 macOS/Linux/Windows 和 x64/ARM64 架构分类，
+  仅列出发布工作流实际生成的文件名。
+- 发布前复核 `v0.2.3..dev` 的用户可见修复，并保留 Desktop 图标校验、R2 同步和 GitHub
+  回退链路的说明。
+
+### 验证方式
+
+- 对照 `.github/workflows/publish.yml` 核对所有下载链接的资产名和架构。
+- 发布前执行官网构建、发行版契约检查和 staged diff 敏感信息扫描。
+- 发布后检查 GitHub Release、官网 `/download`、R2 清单和稳定下载路由的实际响应。
