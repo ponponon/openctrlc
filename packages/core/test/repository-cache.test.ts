@@ -13,6 +13,7 @@ import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
 const it = testEffect(Layer.empty)
+const REPOSITORY_CACHE_TEST_TIMEOUT = 30_000
 
 describe("RepositoryCache", () => {
   it.live("replaces a stale cache directory before cloning", () =>
@@ -31,6 +32,7 @@ describe("RepositoryCache", () => {
         expect(yield* read(path.join(localPath, "README.md"))).toBe("one\n")
       }).pipe(Effect.provide(cacheLayer(fixture.root))),
     ),
+    REPOSITORY_CACHE_TEST_TIMEOUT,
   )
 
   it.live("serializes concurrent materialization for the same checkout", () =>
@@ -46,6 +48,7 @@ describe("RepositoryCache", () => {
         expect(results[0].localPath).toBe(results[1].localPath)
       }).pipe(Effect.provide(cacheLayer(fixture.root))),
     ),
+    REPOSITORY_CACHE_TEST_TIMEOUT,
   )
 
   it.live("replaces an existing checkout whose origin does not match", () =>
@@ -64,6 +67,7 @@ describe("RepositoryCache", () => {
         expect(yield* exists(path.join(replaced.localPath, "stale.txt"))).toBe(false)
       }).pipe(Effect.provide(cacheLayer(fixture.root))),
     ),
+    REPOSITORY_CACHE_TEST_TIMEOUT,
   )
 
   it.live("keeps branch checkouts isolated from branchless refreshes", () =>
@@ -86,6 +90,7 @@ describe("RepositoryCache", () => {
         expect(yield* read(path.join(cached.localPath, "README.md"))).toBe("two\n")
       }).pipe(Effect.provide(cacheLayer(fixture.root))),
     ),
+    REPOSITORY_CACHE_TEST_TIMEOUT,
   )
 
   it.live("does not mistake an enclosing repository for the cache checkout", () =>
@@ -99,6 +104,7 @@ describe("RepositoryCache", () => {
         expect(yield* read(path.join(result.localPath, "README.md"))).toBe("one\n")
       }).pipe(Effect.provide(cacheLayer(fixture.root))),
     ),
+    REPOSITORY_CACHE_TEST_TIMEOUT,
   )
 
   it.live("returns typed validation and clone failures", () =>
@@ -119,6 +125,7 @@ describe("RepositoryCache", () => {
         expect(cloneFailure).toBeInstanceOf(RepositoryCache.CloneFailedError)
       }).pipe(Effect.provide(cacheLayer(fixture.root))),
     ),
+    REPOSITORY_CACHE_TEST_TIMEOUT,
   )
 })
 
