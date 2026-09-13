@@ -20,16 +20,16 @@ export function detectArch(): Arch {
   return value.includes("arm64") || value.includes("aarch64") || value.includes("armv8") ? "arm64" : "x64"
 }
 
-export function getDownloadPlatform(os: OS, arch: Arch): DownloadPlatform {
+export function getDownloadPlatform(os: OS, arch: Arch): DownloadPlatform | null {
   switch (os) {
     case "macOS":
-      return arch === "arm64" ? "darwin-aarch64-dmg" : "darwin-x64-dmg"
+      return arch === "arm64" ? "darwin-aarch64-dmg" : null
     case "Windows":
       return `windows-${arch}-nsis`
     case "Linux":
       return `linux-${arch}-deb`
     default:
-      return "darwin-aarch64-dmg"
+      return null
   }
 }
 

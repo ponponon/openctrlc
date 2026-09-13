@@ -16,6 +16,12 @@ test("maps Linux architectures to distinct OpenCtrlC download routes", () => {
   expect(getDownloadHref("linux-arm64-deb", "beta")).toBe("/download/beta/linux-arm64-deb")
 })
 
+test("does not advertise an unpublished Intel macOS desktop asset", () => {
+  expect(getDownloadPlatform("macOS", "arm64")).toBe("darwin-aarch64-dmg")
+  expect(getDownloadPlatform("macOS", "x64")).toBeNull()
+  expect(getDownloadPlatform(null, "x64")).toBeNull()
+})
+
 test("maps Windows architectures to distinct OpenCtrlC download routes", () => {
   expect(getDownloadPlatform("Windows", "x64")).toBe("windows-x64-nsis")
   expect(getDownloadPlatform("Windows", "arm64")).toBe("windows-arm64-nsis")

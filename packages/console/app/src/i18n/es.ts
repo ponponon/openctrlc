@@ -740,9 +740,12 @@ export const dict = {
 
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
+  "download.platform.macosIntelNote": "La aplicación de escritorio se publica actualmente solo para Apple Silicon. En los Mac Intel puedes usar la CLI.",
   "download.platform.windowsX64": "Windows (x64)",
+  "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
   "download.platform.linuxRpm": "Linux (.rpm)",
+  "download.platform.linuxAppImage": "Linux (.AppImage)",
 
   "download.faq.a3.beforeLocal":
     "No necesariamente, pero probablemente. Necesitarás una suscripción de IA si quieres conectar OpenCtrlC a un proveedor de pago, aunque puedes trabajar con",

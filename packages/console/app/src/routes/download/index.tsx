@@ -27,6 +27,30 @@ function IconDownload(props: JSX.SvgSVGAttributes<SVGSVGElement>) {
   )
 }
 
+function IconWindows() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M2 2H11.481V11.4769H2V2ZM12.519 2H22V11.4769H12.519V2ZM2 12.519H11.481V22H2V12.519ZM12.519 12.519H22V22H12.519"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function IconLinux() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2.25c-2.5 0-4.25 2.06-4.25 5.25 0 1.45-.65 2.6-1.35 3.85C5.7 12.6 5 13.9 5 15.4c0 2.15 1.25 3.85 3.35 4.8.95.43 1.7.8 2.15 1.55.2.35.58.55 1 .55h1c.42 0 .8-.2 1-.55.45-.75 1.2-1.12 2.15-1.55 2.1-.95 3.35-2.65 3.35-4.8 0-1.5-.7-2.8-1.4-4.05-.7-1.25-1.35-2.4-1.35-3.85 0-3.19-1.75-5.25-4.25-5.25Zm0 1.5c1.65 0 2.75 1.45 2.75 3.75 0 1.85.8 3.25 1.55 4.6.6 1.08 1.2 2.15 1.2 3.3 0 1.5-.82 2.65-2.77 3.55-1.02.47-1.9.88-2.56 1.85h-.34c-.66-.97-1.54-1.38-2.56-1.85-1.95-.9-2.77-2.05-2.77-3.55 0-1.15.6-2.22 1.2-3.3.75-1.35 1.55-2.75 1.55-4.6 0-2.3 1.1-3.75 2.75-3.75Z"
+        fill="currentColor"
+      />
+      <circle cx="10" cy="8" r="0.75" fill="currentColor" />
+      <circle cx="14" cy="8" r="0.75" fill="currentColor" />
+    </svg>
+  )
+}
+
 function CopyStatus() {
   return (
     <span data-component="copy-status">
@@ -46,6 +70,11 @@ export default function Download() {
     setDetectedOS(detectOS())
     setDetectedArch(detectArch())
   })
+
+  const detectedPlatform = () => {
+    const os = detectedOS()
+    return os ? getDownloadPlatform(os, detectedArch()) : null
+  }
 
   const handleCopyClick = (command: string) => (event: Event) => {
     const button = event.currentTarget as HTMLButtonElement
@@ -73,14 +102,19 @@ export default function Download() {
               <p>
                 {i18n.t("home.promo.body")} {i18n.t("home.promo.cta")}
               </p>
-              <Show when={detectedOS()}>
-                <a
-                  href={language.route(getDownloadHref(getDownloadPlatform(detectedOS(), detectedArch())))}
-                  data-component="download-button"
-                >
-                  <IconDownload />
-                  {i18n.t("download.hero.button", { os: detectedOS()! })}
-                </a>
+              <Show when={detectedPlatform()}>
+                {(platform) => (
+                  <a
+                    href={language.route(getDownloadHref(platform()))}
+                    data-component="download-button"
+                  >
+                    <IconDownload />
+                    {i18n.t("download.hero.button", { os: detectedOS()! })}
+                  </a>
+                )}
+              </Show>
+              <Show when={detectedOS() === "macOS" && detectedArch() === "x64"}>
+                <p data-component="download-note">{i18n.t("download.platform.macosIntelNote")}</p>
               </Show>
             </div>
           </section>
@@ -150,7 +184,10 @@ export default function Download() {
               </div>
               <div data-component="download-row">
                 <div data-component="download-info">
-                  <span>Windows (ARM64)</span>
+                  <span data-slot="icon">
+                    <IconWindows />
+                  </span>
+                  <span>{i18n.t("download.platform.windowsArm64")}</span>
                 </div>
                 <a href={language.route(getDownloadHref("windows-arm64-nsis"))} data-component="action-button">
                   {i18n.t("download.action.download")}
@@ -174,6 +211,9 @@ export default function Download() {
               </div>
               <div data-component="download-row">
                 <div data-component="download-info">
+                  <span data-slot="icon">
+                    <IconLinux />
+                  </span>
                   <span>{i18n.t("download.platform.linuxDeb")} (ARM64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-arm64-deb"))} data-component="action-button">
@@ -206,7 +246,7 @@ export default function Download() {
                       />
                     </svg>
                   </span>
-                  <span>Linux (.AppImage) (x64)</span>
+                  <span>{i18n.t("download.platform.linuxAppImage")} (x64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-x64-appimage"))} data-component="action-button">
                   {i18n.t("download.action.download")}
@@ -214,6 +254,9 @@ export default function Download() {
               </div>
               <div data-component="download-row">
                 <div data-component="download-info">
+                  <span data-slot="icon">
+                    <IconLinux />
+                  </span>
                   <span>{i18n.t("download.platform.linuxRpm")} (ARM64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-arm64-rpm"))} data-component="action-button">
@@ -222,7 +265,10 @@ export default function Download() {
               </div>
               <div data-component="download-row">
                 <div data-component="download-info">
-                  <span>Linux (.AppImage) (ARM64)</span>
+                  <span data-slot="icon">
+                    <IconLinux />
+                  </span>
+                  <span>{i18n.t("download.platform.linuxAppImage")} (ARM64)</span>
                 </div>
                 <a href={language.route(getDownloadHref("linux-arm64-appimage"))} data-component="action-button">
                   {i18n.t("download.action.download")}

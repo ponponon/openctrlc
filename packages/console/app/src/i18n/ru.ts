@@ -745,9 +745,12 @@ export const dict = {
 
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
+  "download.platform.macosIntelNote": "Настольное приложение пока выпускается только для Apple Silicon. На Mac с процессором Intel можно использовать CLI.",
   "download.platform.windowsX64": "Windows (x64)",
+  "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
   "download.platform.linuxRpm": "Linux (.rpm)",
+  "download.platform.linuxAppImage": "Linux (.AppImage)",
 
   "download.faq.a3.beforeLocal":
     "Не обязательно, но возможно. Вам понадобится AI подписка, если вы хотите подключить OpenCtrlC к платному провайдеру, хотя вы можете работать с",

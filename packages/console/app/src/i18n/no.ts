@@ -736,9 +736,12 @@ export const dict = {
 
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
+  "download.platform.macosIntelNote": "Skrivebordsappen publiseres for øyeblikket bare for Apple Silicon. På Intel-Mac kan du bruke CLI.",
   "download.platform.windowsX64": "Windows (x64)",
+  "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
   "download.platform.linuxRpm": "Linux (.rpm)",
+  "download.platform.linuxAppImage": "Linux (.AppImage)",
 
   "download.faq.a3.beforeLocal":
     "Ikke nødvendigvis, men sannsynligvis. Du trenger et AI-abonnement hvis du vil koble OpenCtrlC til en betalt leverandør, selv om du kan jobbe med",

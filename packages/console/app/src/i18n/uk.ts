@@ -699,9 +699,12 @@ export const dict = {
 
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
+  "download.platform.macosIntelNote": "Настільний застосунок наразі випускається лише для Apple Silicon. На Mac з Intel можна використовувати CLI.",
   "download.platform.windowsX64": "Windows (x64)",
+  "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
   "download.platform.linuxRpm": "Linux (.rpm)",
+  "download.platform.linuxAppImage": "Linux (.AppImage)",
 
   "download.faq.a3.beforeLocal":
     "Не обов'язково, але ймовірно. Вам знадобиться AI-підписка, якщо ви хочете підключити платного провайдера, хоча ви можете працювати з",

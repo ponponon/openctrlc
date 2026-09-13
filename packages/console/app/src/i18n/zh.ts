@@ -707,9 +707,12 @@ export const dict = {
 
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
+  "download.platform.macosIntelNote": "桌面版目前仅发布 Apple Silicon 版本。Intel Mac 可以使用 CLI 下载。",
   "download.platform.windowsX64": "Windows (x64)",
+  "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
   "download.platform.linuxRpm": "Linux (.rpm)",
+  "download.platform.linuxAppImage": "Linux (.AppImage)",
 
   "download.faq.a3.beforeLocal":
     "不一定，但可能需要。如果您想将 OpenCtrlC 连接到付费提供商，您需要 AI 订阅，尽管您可以配合",

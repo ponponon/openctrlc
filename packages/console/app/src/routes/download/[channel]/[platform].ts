@@ -10,7 +10,6 @@ export const releaseUrl = (channel: "stable" | "beta", assetName: string) =>
 
 const prodAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
-  "darwin-x64-dmg": "openctrlc-mac-x64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
   "windows-arm64-nsis": "openctrlc-win-arm64.exe",
   "linux-x64-deb": "openctrlc-linux-x64.deb",
@@ -23,7 +22,6 @@ const prodAssetNames: Record<string, string> = {
 
 const betaAssetNames: Record<string, string> = {
   "darwin-aarch64-dmg": "openctrlc-mac-arm64.dmg",
-  "darwin-x64-dmg": "openctrlc-mac-x64.dmg",
   "windows-x64-nsis": "openctrlc-win-x64.exe",
   "windows-arm64-nsis": "openctrlc-win-arm64.exe",
   "linux-x64-deb": "openctrlc-linux-x64.deb",

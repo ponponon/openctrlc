@@ -1165,3 +1165,32 @@ OpenCode 的本地标签页数据。
 - 对英文和简体中文重点入口执行关键词审计，确认没有不存在的上游示例或 ZenMux
   产品说明。
 - 执行文档生产构建，确认 18 种语言和 Pagefind 索引仍然完整生成。
+
+## 下载页按已发布资产提供平台入口
+
+### 功能目标
+
+让下载页的自动识别按钮、平台列表和多语言提示严格对应当前 Release 实际发布的
+安装包，避免 Intel Mac 被引导到不存在的桌面 DMG，同时让 Windows/Linux 的 x64 和
+ARM64 入口清晰可辨。
+
+### 实现范围
+
+- macOS 桌面自动下载仅保留已发布的 Apple Silicon DMG；Intel Mac 不再生成死链，
+  改为显示当前桌面包支持范围和 CLI 替代方案提示。
+- Windows ARM64、Linux ARM64 和 Linux AppImage 行补齐平台图标与本地化文案。
+- 下载路由清单删除未发布的 `openctrlc-mac-x64.dmg` 映射，并增加 Intel Mac 与未知
+  平台的回归测试。
+
+### 代码位置
+
+- `packages/console/app/src/routes/download/helpers.ts`
+- `packages/console/app/src/routes/download/[channel]/[platform].ts`
+- `packages/console/app/src/routes/download/index.tsx`
+- `packages/console/app/src/i18n/*.ts`
+
+### 验证方式
+
+- 执行下载页定向测试和 `bun typecheck`。
+- 对照正式 Release 资产确认所有页面入口都有对应文件，特别检查 Intel Mac 不再指向
+  `openctrlc-mac-x64.dmg`。
