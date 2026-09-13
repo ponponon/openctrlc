@@ -42,7 +42,8 @@ export async function GET({ params: { platform, channel } }: APIEvent) {
 
   const targetUrl =
     channel === "stable"
-      ? ((await getR2AssetUrl(assetName)) ?? `https://github.com/ponponon/openctrlc/releases/latest/download/${assetName}`)
+      ? ((await getR2AssetUrl(assetName)) ??
+        `https://github.com/ponponon/openctrlc/releases/latest/download/${assetName}`)
       : `https://github.com/ponponon/openctrlc/releases/download/beta/${assetName}`
 
   return Response.redirect(targetUrl, 302)
