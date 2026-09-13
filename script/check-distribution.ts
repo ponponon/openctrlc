@@ -88,7 +88,7 @@ const required: Array<[string, string[]]> = [
   ["packages/console/app/src/routes/download/index.tsx", ["raw.githubusercontent.com/ponponon/openctrlc/dev/install"]],
   [
     "packages/web/src/assets/lander/terminal-preview.svg",
-    ["<title id=\"title\">OpenCtrlC terminal preview</title>", "<desc id=\"desc\">"]
+    ['<title id="title">OpenCtrlC terminal preview</title>', '<desc id="desc">'],
   ],
 ]
 
@@ -209,7 +209,9 @@ for (const relative of publicInstallGuides) {
   if (unsupportedInstallCommand.test(source)) failures.push(`${relative} advertises an unverified installation channel`)
 }
 
-const docsIndexes = await Array.fromAsync(new Bun.Glob("packages/web/src/content/docs/**/index.mdx").scan({ cwd: root }))
+const docsIndexes = await Array.fromAsync(
+  new Bun.Glob("packages/web/src/content/docs/**/index.mdx").scan({ cwd: root }),
+)
 for (const relative of docsIndexes) {
   const source = await read(relative)
   if (source.includes("assets/lander/screenshot.png")) {

@@ -110,7 +110,12 @@ export function Header(props: { zen?: boolean; go?: boolean; hideGetStarted?: bo
                   <A href={language.route("/")}>{i18n.t("nav.home")}</A>
                 </li>
                 <li>
-                  <a href={config.github.repoUrl} target="_blank" rel="noopener noreferrer" style="white-space: nowrap;">
+                  <a
+                    href={config.github.repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="white-space: nowrap;"
+                  >
                     {i18n.t("nav.github")}
                   </a>
                 </li>
