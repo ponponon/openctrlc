@@ -1065,3 +1065,21 @@ OpenCode 的本地标签页数据。
 - 执行文档站 `SST_STAGE=production bun run build`，确认 18 种语言和 Pagefind 索引正常。
 - 检查中文首页不再出现 `How it fits`、`Built for trust`、`Install once` 等写死文案，
   文档首页不再引用 `packages/functions`、`settings`、`notes` 示例。
+
+## README 对齐官网入口和下载镜像
+
+### 功能目标
+
+让新用户从 GitHub 仓库首页就能找到官网、文档和按平台下载入口，并明确稳定版下载
+会优先使用 R2、失败自动回退 GitHub，减少用户误以为只有 GitHub 下载这一条路径。
+
+### 实现范围
+
+- 英文和简体中文 README 的快速入口统一指向 `openctrlc.pages.dev/download`。
+- 桌面版安装说明明确列出 macOS、Windows、Linux 的 x64/arm64 支持和实际格式。
+- 说明官网下载页的 R2 镜像与 GitHub Release 回退关系，不承诺不存在的托管模型服务。
+
+### 验证方式
+
+- 检查 README 链接与官网实际路由一致。
+- 对照发布工作流、Release 资产和下载页确认平台/架构列表一致。

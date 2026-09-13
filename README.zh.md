@@ -21,7 +21,7 @@ OpenCtrlC 帮助你探索代码仓库、理解陌生代码、编辑文件、运�
 
 - 官网：[openctrlc.pages.dev](https://openctrlc.pages.dev/)
 - 文档：[openctrlc.pages.dev/docs](https://openctrlc.pages.dev/docs/)
-- 下载：[GitHub Releases](https://github.com/ponponon/openctrlc/releases)
+- 下载：[官网软件下载页](https://openctrlc.pages.dev/download/) · [GitHub Releases](https://github.com/ponponon/openctrlc/releases)
 - 讨论区：[GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
 
 ## 安装
@@ -45,7 +45,8 @@ npm install --global openctrlc-ai
 
 ### 桌面版
 
-从 [GitHub Releases](https://github.com/ponponon/openctrlc/releases) 下载最新桌面安装包：
+从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新桌面安装包。稳定版在
+可用时优先通过项目的 Cloudflare R2 镜像提供，失败时会自动回退到 GitHub Release：
 
 | 平台    | 架构          | 格式               |
 | ------- | ------------- | ------------------ |

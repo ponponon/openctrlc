@@ -24,7 +24,7 @@ their terminal, project files, and existing tools.
 
 - Website: [openctrlc.pages.dev](https://openctrlc.pages.dev/)
 - Documentation: [openctrlc.pages.dev/docs](https://openctrlc.pages.dev/docs/)
-- Downloads: [GitHub Releases](https://github.com/ponponon/openctrlc/releases)
+- Downloads: [openctrlc.pages.dev/download](https://openctrlc.pages.dev/download/) · [GitHub Releases](https://github.com/ponponon/openctrlc/releases)
 - Discussions: [GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
 
 ## Installation
@@ -49,8 +49,10 @@ fallback is `$HOME/.openctrlc/bin`.
 
 ### Desktop
 
-Download the latest desktop installer from [GitHub
-Releases](https://github.com/ponponon/openctrlc/releases):
+Download the latest desktop installer from the [OpenCtrlC download
+page](https://openctrlc.pages.dev/download/). Stable assets are served through the
+project's Cloudflare R2 mirror when available, with an automatic GitHub Release
+fallback.
 
 | Platform | Architectures | Formats            |
 | -------- | ------------- | ------------------ |
