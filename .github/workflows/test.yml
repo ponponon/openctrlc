@@ -23,6 +23,7 @@ env:
 jobs:
   unit:
     name: unit (${{ matrix.settings.name }})
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -48,6 +49,7 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        timeout-minutes: 20
 
       - name: Configure git identity
         run: |
@@ -81,6 +83,7 @@ jobs:
 
   e2e:
     name: e2e (${{ matrix.settings.name }})
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -109,6 +112,7 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        timeout-minutes: 20
 
       - name: Read Playwright version
         id: playwright-version
@@ -132,6 +136,7 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: packages/app
         run: bunx playwright install chromium
+        timeout-minutes: 15
 
       - name: Run app e2e tests
         run: bun --cwd packages/app test:e2e:local
