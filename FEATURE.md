@@ -1036,3 +1036,32 @@ OpenCode 的本地标签页数据。
 - 测试有效 R2 资产、缺失资产和非可信域名均得到正确结果。
 - 发布后检查公开清单包含新版本，并用 `curl -I` 抽查 R2 资产。
 - 检查官网稳定版下载路由优先重定向到 R2；临时不可访问 R2 时仍重定向到 GitHub。
+
+## 官网首页和文档首页的产品化多语言内容
+
+### 功能目标
+
+让官网首页在中文和繁体中文环境下保持完整一致的语言体验，并让文档首页的示例
+真正对应 OpenCtrlC 的代码结构，避免用户看到上游项目残留或无法复现的示例。
+
+### 实现范围
+
+- 首页安装卡片、工作流/可靠性/FAQ 眉标题、终端预览、复制按钮和无障碍标签全部
+  使用当前语言的文案，不再混入写死的英文。
+- 英文与中文文档 SEO 标题改为 OpenCtrlC 自身的产品定位。
+- 文档首页的提问、计划、修改和撤销示例改用 `packages/opencode/src/session` 的
+  实际路径和“持久化提示 admission / session processor”主题。
+- 保留 `opencode` 作为代码包和兼容协议的内部名称，不把它当作官网产品品牌展示。
+
+### 代码位置
+
+- `packages/console/app/src/routes/index.tsx`：首页 Copy 数据和多语言 UI 渲染。
+- `packages/web/src/content/docs/index.mdx`：文档首页安装与使用示例。
+- `packages/web/src/content/i18n/en.json`、`zh-CN.json`：文档 SEO 文案。
+
+### 验证方式
+
+- 执行官网 `typecheck` 和生产 `build`。
+- 执行文档站 `SST_STAGE=production bun run build`，确认 18 种语言和 Pagefind 索引正常。
+- 检查中文首页不再出现 `How it fits`、`Built for trust`、`Install once` 等写死文案，
+  文档首页不再引用 `packages/functions`、`settings`、`notes` 示例。

@@ -22,23 +22,40 @@ type Copy = {
   heroEyebrow: string
   heroTitle: string
   heroBody: string
+  platformNote: string
+  heroArtLabel: string
+  terminalStatus: string
+  terminalUserLabel: string
+  terminalReady: string
+  terminalPrompt: string
+  terminalResponse: string
+  terminalProgress: string
+  heroArtCaption: string
   primaryCta: string
   secondaryCta: string
   installLabel: string
   installHint: string
+  installTitle: string
   workflowTitle: string
   workflowBody: string
+  workflowEyebrow: string
   workflows: Feature[]
   featuresTitle: string
   featuresBody: string
+  featuresEyebrow: string
   features: Feature[]
   docsCta: string
   downloadCta: string
   faqTitle: string
+  faqEyebrow: string
   faq: Array<{ question: string; answer: string }>
   finalTitle: string
   finalBody: string
+  finalEyebrow: string
   finalCta: string
+  copyLabel: string
+  copiedLabel: string
+  copyCommandLabel: string
 }
 
 const COPY: Record<string, Copy> = {
@@ -52,13 +69,24 @@ const COPY: Record<string, Copy> = {
     heroTitle: "Build with an agent that stays close to your code.",
     heroBody:
       "OpenCtrlC helps you understand a codebase, make changes, run commands, and review the result from one focused workflow. Use the terminal or the desktop app, with the provider you choose.",
+    platformNote: "MIT licensed",
+    heroArtLabel: "OpenCtrlC terminal preview",
+    terminalStatus: "● connected",
+    terminalUserLabel: "you",
+    terminalReady: "Ready to work in your project.",
+    terminalPrompt: "Find the safest place to add this feature.",
+    terminalResponse: "I’ll inspect the project structure and trace the existing pattern first.",
+    terminalProgress: "4 files inspected · context ready",
+    heroArtCaption: "A focused loop from question to change.",
     primaryCta: "Download OpenCtrlC",
     secondaryCta: "Read the docs",
     installLabel: "Start in your terminal",
     installHint: "The install script detects your operating system and architecture.",
+    installTitle: "Install once. Keep your workflow.",
     workflowTitle: "One project context. Two ways to work.",
     workflowBody:
       "Move between a fast terminal loop and a calm desktop workspace without losing the session context that matters.",
+    workflowEyebrow: "How it fits",
     workflows: [
       {
         label: "01 / Terminal",
@@ -79,6 +107,7 @@ const COPY: Record<string, Copy> = {
     featuresTitle: "The useful parts are visible.",
     featuresBody:
       "OpenCtrlC is built around the moments that make an agent dependable: knowing what it sees, keeping history intact, and making the result easy to take away.",
+    featuresEyebrow: "Built for trust",
     features: [
       {
         label: "Context",
@@ -104,6 +133,7 @@ const COPY: Record<string, Copy> = {
     docsCta: "Explore the documentation",
     downloadCta: "View all downloads",
     faqTitle: "A few clear answers.",
+    faqEyebrow: "FAQ",
     faq: [
       {
         question: "What is OpenCtrlC?",
@@ -128,7 +158,11 @@ const COPY: Record<string, Copy> = {
     ],
     finalTitle: "Make your next codebase easier to work with.",
     finalBody: "OpenCtrlC is open source, inspectable, and ready for the workflow you already use.",
+    finalEyebrow: "OpenCtrlC",
     finalCta: "Get started",
+    copyLabel: "Copy",
+    copiedLabel: "Copied",
+    copyCommandLabel: "Copy command",
   },
   zh: {
     title: "OpenCtrlC —— 开源 AI 编程代理",
@@ -139,12 +173,23 @@ const COPY: Record<string, Copy> = {
     heroTitle: "让 AI 代理，始终贴近你的代码。",
     heroBody:
       "OpenCtrlC 帮你理解代码库、修改文件、运行命令并检查结果。你可以在终端或桌面端使用它，并连接自己选择的模型服务商。",
+    platformNote: "MIT 许可",
+    heroArtLabel: "OpenCtrlC 终端预览",
+    terminalStatus: "● 已连接",
+    terminalUserLabel: "你",
+    terminalReady: "已准备好在你的项目中工作。",
+    terminalPrompt: "找出最适合安全添加这个功能的位置。",
+    terminalResponse: "我会先检查项目结构，并追踪现有的实现模式。",
+    terminalProgress: "已检查 4 个文件 · 上下文就绪",
+    heroArtCaption: "从提问到修改，保持专注的工作循环。",
     primaryCta: "下载 OpenCtrlC",
     secondaryCta: "阅读文档",
     installLabel: "从终端开始",
     installHint: "安装脚本会自动识别你的操作系统和 CPU 架构。",
+    installTitle: "安装一次，保留你的工作方式。",
     workflowTitle: "同一份项目上下文，两种工作方式。",
     workflowBody: "在高效的终端循环和清晰的桌面工作区之间切换，不丢失真正重要的会话上下文。",
+    workflowEyebrow: "它如何融入工作流",
     workflows: [
       {
         label: "01 / 终端",
@@ -164,6 +209,7 @@ const COPY: Record<string, Copy> = {
     ],
     featuresTitle: "有用的部分，都应该看得见。",
     featuresBody: "OpenCtrlC 关注让代理变得可靠的细节：知道它看到了什么、保留完整历史、让结果方便带走。",
+    featuresEyebrow: "为可靠性而设计",
     features: [
       {
         label: "上下文",
@@ -189,6 +235,7 @@ const COPY: Record<string, Copy> = {
     docsCta: "浏览完整文档",
     downloadCta: "查看全部下载",
     faqTitle: "几个直接的答案。",
+    faqEyebrow: "常见问题",
     faq: [
       {
         question: "OpenCtrlC 是什么？",
@@ -212,7 +259,11 @@ const COPY: Record<string, Copy> = {
     ],
     finalTitle: "让下一个代码库，更容易开始工作。",
     finalBody: "OpenCtrlC 开源、可检查，也能贴合你已经习惯的开发方式。",
+    finalEyebrow: "OpenCtrlC",
     finalCta: "开始使用",
+    copyLabel: "复制",
+    copiedLabel: "已复制",
+    copyCommandLabel: "复制命令",
   },
   zht: {
     title: "OpenCtrlC —— 開源 AI 編程代理",
@@ -223,12 +274,23 @@ const COPY: Record<string, Copy> = {
     heroTitle: "讓 AI 代理，始終貼近你的程式碼。",
     heroBody:
       "OpenCtrlC 幫你理解程式碼庫、修改檔案、執行命令並檢查結果。你可以在終端或桌面端使用它，並連接自己選擇的模型服務商。",
+    platformNote: "MIT 授權",
+    heroArtLabel: "OpenCtrlC 終端預覽",
+    terminalStatus: "● 已連接",
+    terminalUserLabel: "你",
+    terminalReady: "已準備好在你的專案中工作。",
+    terminalPrompt: "找出最適合安全加入這項功能的位置。",
+    terminalResponse: "我會先檢查專案結構，並追蹤現有的實作模式。",
+    terminalProgress: "已檢查 4 個檔案 · 上下文就緒",
+    heroArtCaption: "從提問到修改，保持專注的工作循環。",
     primaryCta: "下載 OpenCtrlC",
     secondaryCta: "閱讀文件",
     installLabel: "從終端開始",
     installHint: "安裝腳本會自動識別你的作業系統和 CPU 架構。",
+    installTitle: "安裝一次，保留你的工作方式。",
     workflowTitle: "同一份專案上下文，兩種工作方式。",
     workflowBody: "在高效的終端循環和清晰的桌面工作區之間切換，不丟失真正重要的會話上下文。",
+    workflowEyebrow: "它如何融入工作流",
     workflows: [
       {
         label: "01 / 終端",
@@ -248,6 +310,7 @@ const COPY: Record<string, Copy> = {
     ],
     featuresTitle: "有用的部分，都應該看得見。",
     featuresBody: "OpenCtrlC 關注讓代理變得可靠的細節：知道它看到了什麼、保留完整歷史、讓結果方便帶走。",
+    featuresEyebrow: "為可靠性而設計",
     features: [
       {
         label: "上下文",
@@ -273,6 +336,7 @@ const COPY: Record<string, Copy> = {
     docsCta: "瀏覽完整文件",
     downloadCta: "查看全部下載",
     faqTitle: "幾個直接的答案。",
+    faqEyebrow: "常見問題",
     faq: [
       {
         question: "OpenCtrlC 是什麼？",
@@ -296,11 +360,15 @@ const COPY: Record<string, Copy> = {
     ],
     finalTitle: "讓下一個程式碼庫，更容易開始工作。",
     finalBody: "OpenCtrlC 開源、可檢查，也能貼合你已經習慣的開發方式。",
+    finalEyebrow: "OpenCtrlC",
     finalCta: "開始使用",
+    copyLabel: "複製",
+    copiedLabel: "已複製",
+    copyCommandLabel: "複製命令",
   },
 }
 
-function CopyButton(props: { value: string }) {
+function CopyButton(props: { value: string; label: string; copiedLabel: string; ariaLabel: string }) {
   const [copied, setCopied] = createSignal(false)
 
   const copy = async () => {
@@ -314,8 +382,8 @@ function CopyButton(props: { value: string }) {
   }
 
   return (
-    <button type="button" data-component="copy-button" data-copied={copied()} onClick={copy} aria-label="Copy command">
-      <span>{copied() ? "Copied" : "Copy"}</span>
+    <button type="button" data-component="copy-button" data-copied={copied()} onClick={copy} aria-label={props.ariaLabel}>
+      <span>{copied() ? props.copiedLabel : props.label}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <path
           d="M5.5 5.5V3.75C5.5 3.06 6.06 2.5 6.75 2.5H12.25C12.94 2.5 13.5 3.06 13.5 3.75V9.25C13.5 9.94 12.94 10.5 12.25 10.5H10.5"
@@ -374,16 +442,16 @@ export default function Home() {
                   {copy().secondaryCta}
                 </A>
               </div>
-              <div data-slot="platform-note">
+              <div data-slot="platform-note" aria-label={copy().platformNote}>
                 <span>macOS</span>
                 <span>Windows</span>
                 <span>Linux</span>
                 <span>·</span>
-                <span>MIT licensed</span>
+                <span>{copy().platformNote}</span>
               </div>
             </div>
 
-            <div data-slot="hero-art" aria-label="OpenCtrlC terminal preview">
+            <div data-slot="hero-art" aria-label={copy().heroArtLabel}>
               <div data-component="terminal-window">
                 <div data-slot="window-bar">
                   <span data-slot="window-dots">
@@ -392,49 +460,54 @@ export default function Home() {
                     <i></i>
                   </span>
                   <span>openctrlc · ~/project</span>
-                  <span data-slot="window-status">● connected</span>
+                  <span data-slot="window-status">{copy().terminalStatus}</span>
                 </div>
                 <div data-slot="terminal-body">
                   <p>
                     <span data-slot="muted">›</span> <span data-slot="accent">openctrlc</span>
                   </p>
-                  <p data-slot="muted">Ready to work in your project.</p>
+                  <p data-slot="muted">{copy().terminalReady}</p>
                   <p class="terminal-gap">
-                    <span data-slot="prompt">you</span> Find the safest place to add this feature.
+                    <span data-slot="prompt">{copy().terminalUserLabel}</span> {copy().terminalPrompt}
                   </p>
-                  <p data-slot="muted">I’ll inspect the project structure and trace the existing pattern first.</p>
+                  <p data-slot="muted">{copy().terminalResponse}</p>
                   <div data-slot="terminal-progress">
                     <span></span>
                     <span></span>
                     <span></span>
                   </div>
                   <p class="terminal-gap">
-                    <span data-slot="prompt">openctrlc</span> 4 files inspected · context ready
+                    <span data-slot="prompt">openctrlc</span> {copy().terminalProgress}
                   </p>
                   <p data-slot="cursor">
                     <span>▌</span>
                   </p>
                 </div>
               </div>
-              <div data-slot="hero-art-caption">A focused loop from question to change.</div>
+              <div data-slot="hero-art-caption">{copy().heroArtCaption}</div>
             </div>
           </section>
 
           <section data-component="install-card">
             <div data-slot="section-kicker">{copy().installLabel}</div>
             <div data-slot="install-copy">
-              <h2>Install once. Keep your workflow.</h2>
+              <h2>{copy().installTitle}</h2>
               <p>{copy().installHint}</p>
             </div>
             <div data-component="command">
               <code>{installCommand}</code>
-              <CopyButton value={installCommand} />
+              <CopyButton
+                value={installCommand}
+                label={copy().copyLabel}
+                copiedLabel={copy().copiedLabel}
+                ariaLabel={copy().copyCommandLabel}
+              />
             </div>
           </section>
 
           <section data-component="workflow" id="workflow">
             <div data-slot="section-heading">
-              <p data-slot="eyebrow">How it fits</p>
+              <p data-slot="eyebrow">{copy().workflowEyebrow}</p>
               <h2>{copy().workflowTitle}</h2>
               <p>{copy().workflowBody}</p>
             </div>
@@ -454,7 +527,7 @@ export default function Home() {
 
           <section data-component="features" id="features">
             <div data-slot="section-heading">
-              <p data-slot="eyebrow">Built for trust</p>
+              <p data-slot="eyebrow">{copy().featuresEyebrow}</p>
               <h2>{copy().featuresTitle}</h2>
               <p>{copy().featuresBody}</p>
             </div>
@@ -481,7 +554,7 @@ export default function Home() {
 
           <section data-component="faq" id="faq">
             <div data-slot="section-heading">
-              <p data-slot="eyebrow">FAQ</p>
+              <p data-slot="eyebrow">{copy().faqEyebrow}</p>
               <h2>{copy().faqTitle}</h2>
             </div>
             <div data-slot="faq-list">
@@ -500,7 +573,7 @@ export default function Home() {
           </section>
 
           <section data-component="final-cta">
-            <p data-slot="eyebrow">OpenCtrlC</p>
+            <p data-slot="eyebrow">{copy().finalEyebrow}</p>
             <h2>{copy().finalTitle}</h2>
             <p>{copy().finalBody}</p>
             <A href={language.route("/download")} data-slot="primary-button">
