@@ -1324,3 +1324,23 @@ ARM64 入口清晰可辨。
 
 - 对所有修改后的 Markdown 执行 Prettier 检查。
 - 执行 `packages/web` 生产构建，并执行 `packages/desktop` 图标契约检查。
+
+## Windows E2E 并发预算收口
+
+### 功能目标
+
+降低 Windows Runner 上桌面 E2E 的并发资源争用，稳定 review、文件浏览器和时间线相关
+用例，同时保持断言和测试覆盖不变。
+
+### 实现范围
+
+- Windows 的 Playwright 应用 E2E 使用 3 个 worker，Linux 继续使用 5 个 worker。
+- 将应用 E2E 步骤上限调整为 40 分钟，为较低并发下的完整测试留出合理时间。
+- 不改变测试重试、断言或业务代码；失败仍然会阻断 CI。
+
+### 验证方式
+
+- 在 GitHub Actions 中观察 Windows unit、Windows app E2E 和 isolated reproduction 三个
+  job/step 的最终结果。
+- 重点检查 review、文件浏览器、session timeline 和 terminal 相关用例，不以单次“全绿”
+  代替多次稳定性验证。

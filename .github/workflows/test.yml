@@ -142,7 +142,10 @@ jobs:
         run: bun --cwd packages/app test:e2e:local
         env:
           CI: true
-        timeout-minutes: 30
+          # Windows runners show variable review/timeline timeouts at the
+          # default five-worker load; keep Linux at the existing throughput.
+          PLAYWRIGHT_WORKERS: ${{ runner.os == 'Windows' && '3' || '5' }}
+        timeout-minutes: 40
 
       - name: Run isolated reproduction e2e tests
         run: bun --cwd packages/app test:e2e:reproduction
