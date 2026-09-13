@@ -104,10 +104,7 @@ export default function Download() {
               </p>
               <Show when={detectedPlatform()}>
                 {(platform) => (
-                  <a
-                    href={language.route(getDownloadHref(platform()))}
-                    data-component="download-button"
-                  >
+                  <a href={language.route(getDownloadHref(platform()))} data-component="download-button">
                     <IconDownload />
                     {i18n.t("download.hero.button", { os: detectedOS()! })}
                   </a>
