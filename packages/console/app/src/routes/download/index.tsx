@@ -110,7 +110,7 @@ export default function Download() {
                   </a>
                 )}
               </Show>
-              <Show when={detectedOS() === "macOS" && detectedArch() === "x64"}>
+              <Show when={detectedOS() === "macOS"}>
                 <p data-component="download-note">{i18n.t("download.platform.macosIntelNote")}</p>
               </Show>
             </div>

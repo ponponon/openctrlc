@@ -31,6 +31,12 @@ test("does not advertise an unpublished Intel macOS desktop asset", () => {
   expect(getDownloadPlatform(null, "x64")).toBeNull()
 })
 
+test("keeps the macOS limitation visible without trusting browser architecture detection", async () => {
+  const source = await Bun.file(new URL("./index.tsx", import.meta.url)).text()
+  expect(source).toContain('<Show when={detectedOS() === "macOS"}>')
+  expect(source).not.toContain('<Show when={detectedOS() === "macOS" && detectedArch() === "x64"}>')
+})
+
 test("maps Windows architectures to distinct OpenCtrlC download routes", () => {
   expect(getDownloadPlatform("Windows", "x64")).toBe("windows-x64-nsis")
   expect(getDownloadPlatform("Windows", "arm64")).toBe("windows-arm64-nsis")

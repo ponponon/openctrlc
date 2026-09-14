@@ -1385,3 +1385,21 @@ ARM64 入口清晰可辨。
 
 - 检查本地 package script 与 workflow 的参数、超时配置一致。
 - 观察下一轮 Actions 能否在门禁成功或超时时给出明确场景，而不是仅显示启动头。
+
+## 下载页 macOS 架构提示
+
+### 功能目标
+
+让下载页准确说明 macOS 桌面包目前只提供 Apple Silicon，同时不把 Windows 和 Linux
+桌面包误解成只有 Apple Silicon 版本。
+
+### 实现范围
+
+- macOS 限制提示只按操作系统显示，不再依赖浏览器上可能不可靠的 CPU 架构标识。
+- 明确提示文案的适用范围是 macOS；Windows 和 Linux 的 x64、arm64 桌面下载入口保持不变。
+- 为架构检测提示增加源码契约测试，防止旧的 x64 条件回归。
+
+### 验证方式
+
+- 执行下载页单元测试，确认 macOS、Windows 和 Linux 的资产映射不变。
+- 使用 Playwright 检查桌面端下载页真实渲染，确认页面仍列出 Windows/Linux 双架构包且无前端报错。

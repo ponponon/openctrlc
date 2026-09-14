@@ -736,7 +736,7 @@ export const dict = {
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
   "download.platform.macosIntelNote":
-    "Desktopappen udgives i øjeblikket kun til Apple Silicon. På Intel-Mac kan du bruge CLI'en.",
+    "På macOS udgives desktopappen i øjeblikket kun til Apple Silicon. På Intel-Mac kan du bruge CLI'en.",
   "download.platform.windowsX64": "Windows (x64)",
   "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
