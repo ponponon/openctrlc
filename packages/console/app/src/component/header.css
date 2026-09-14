@@ -1,0 +1,27 @@
+[data-slot="site-logo"] {
+  --icon-base: var(--page-muted, var(--color-text-secondary, #656363));
+  --icon-weak-base: var(--page-panel-muted, var(--color-border, #cfcecd));
+  --icon-strong-base: var(--page-ink, var(--color-text, #211e1e));
+  display: block;
+  flex: 0 0 auto;
+}
+
+[data-slot="site-logo"] svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+[data-component="top"] [data-slot="site-logo"] {
+  width: 174px;
+}
+
+@media (max-width: 40rem) {
+  [data-component="top"] [data-slot="site-logo"] {
+    width: 160px;
+  }
+}
+
+[data-page="not-found"] [data-slot="site-logo"] {
+  width: clamp(200px, 85vw, 400px);
+}

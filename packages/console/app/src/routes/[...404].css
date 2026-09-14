@@ -62,24 +62,6 @@
       text-decoration: none;
     }
 
-    img {
-      height: auto;
-      width: clamp(200px, 85vw, 400px);
-    }
-
-    [data-slot="logo dark"] {
-      display: none;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      [data-slot="logo light"] {
-        display: none;
-      }
-      [data-slot="logo dark"] {
-        display: block;
-      }
-    }
-
     [data-slot="title"] {
       line-height: 1.25;
       font-weight: 500;

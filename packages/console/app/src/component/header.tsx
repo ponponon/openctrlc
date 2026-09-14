@@ -1,9 +1,11 @@
 import { A } from "@solidjs/router"
 import { Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
+import { Logo } from "@openctrlc/ui/logo"
 import { config } from "~/config"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
+import "./header.css"
 
 export function Header(props: { hideGetStarted?: boolean }) {
   const i18n = useI18n()
@@ -14,12 +16,9 @@ export function Header(props: { hideGetStarted?: boolean }) {
   return (
     <section data-component="top">
       <A href={language.route("/")} data-slot="brand" aria-label={i18n.t("nav.logoAlt")}>
-        <span data-slot="mark" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
+        <span data-slot="site-logo" aria-hidden="true">
+          <Logo class="site-logo-image" />
         </span>
-        <span data-slot="wordmark">OpenCtrlC</span>
       </A>
       <nav data-component="nav-desktop">
         <ul>

@@ -2,9 +2,9 @@
 import * as mod from "./logo"
 
 const docs = `### Overview
-OpenCode logo assets: mark, splash, and wordmark.
+OpenCtrlC logo assets: mark, splash, and wordmark.
 
-Use Mark for compact spaces, Logo for headers, Splash for hero sections.
+Use Mark for compact spaces, Logo for headers, Splash for hero sections. The Logo wordmark is OpenCtrlC.
 
 ### API
 - \`Mark\`, \`Splash\`, and \`Logo\` components accept standard SVG props.

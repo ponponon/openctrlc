@@ -1,10 +1,10 @@
 import "./[...404].css"
 import { Title } from "@solidjs/meta"
 import { HttpStatusCode } from "@solidjs/start"
-import logoLight from "../asset/logo-ornate-light.svg"
-import logoDark from "../asset/logo-ornate-dark.svg"
+import { Logo } from "@openctrlc/ui/logo"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
+import "../component/header.css"
 
 export default function NotFound() {
   const i18n = useI18n()
@@ -15,9 +15,10 @@ export default function NotFound() {
       <HttpStatusCode code={404} />
       <div data-component="content">
         <section data-component="top">
-          <a href={language.route("/")} data-slot="logo-link">
-            <img data-slot="logo light" src={logoLight} alt={i18n.t("notFound.logoLightAlt")} />
-            <img data-slot="logo dark" src={logoDark} alt={i18n.t("notFound.logoDarkAlt")} />
+          <a href={language.route("/")} data-slot="logo-link" aria-label={i18n.t("nav.logoAlt")}>
+            <span data-slot="site-logo" aria-hidden="true">
+              <Logo class="not-found-logo" />
+            </span>
           </a>
           <h1 data-slot="title">{i18n.t("notFound.heading")}</h1>
         </section>
