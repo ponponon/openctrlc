@@ -6,6 +6,7 @@ import { Footer } from "~/component/footer"
 import { Header } from "~/component/header"
 import { Legal } from "~/component/legal"
 import { LocaleLinks } from "~/component/locale-links"
+import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
 
 type Feature = {
@@ -1983,6 +1984,7 @@ function Arrow() {
 }
 
 export default function Home() {
+  const i18n = useI18n()
   const language = useLanguage()
   const copy = () => {
     const locale = language.locale()
@@ -2152,6 +2154,25 @@ export default function Home() {
                 )}
               </For>
             </div>
+          </section>
+
+          <section data-component="support" id="support">
+            <div data-slot="support-copy">
+              <p data-slot="eyebrow">{i18n.t("home.support.eyebrow")}</p>
+              <h2>{i18n.t("home.support.title")}</h2>
+              <p>{i18n.t("home.support.body")}</p>
+            </div>
+            <figure data-slot="support-figure">
+              <img
+                src="/wechat-appreciate.jpg"
+                alt={i18n.t("home.support.alt")}
+                width="1152"
+                height="1152"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>{i18n.t("home.support.caption")}</figcaption>
+            </figure>
           </section>
 
           <section data-component="final-cta">

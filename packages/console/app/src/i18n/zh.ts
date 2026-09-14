@@ -24,6 +24,7 @@ export const dict = {
   "footer.github": "GitHub",
   "footer.docs": "文档",
   "footer.changelog": "更新日志",
+  "footer.support": "支持开源",
   "footer.feishu": "飞书",
   "footer.discord": "Discord",
   "footer.x": "X",
@@ -85,6 +86,11 @@ export const dict = {
   "app.meta.description": "OpenCtrlC - 开源编程代理。",
 
   "home.title": "OpenCtrlC | 开源 AI 编程代理",
+  "home.support.eyebrow": "支持开源项目",
+  "home.support.title": "如果 OpenCtrlC 帮到了你，可以请作者喝杯咖啡。",
+  "home.support.body": "OpenCtrlC 由个人独立维护并持续开源。你的支持会用于发布、修复问题和完善文档。",
+  "home.support.caption": "微信赞赏码",
+  "home.support.alt": "支持 OpenCtrlC 的微信赞赏码",
 
   "temp.title": "OpenCtrlC | 专为终端打造的 AI 编程代理",
   "temp.hero.title": "专为终端打造的 AI 编程代理",

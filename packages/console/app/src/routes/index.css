@@ -618,6 +618,62 @@
   line-height: 1.7;
 }
 
+[data-page="openctrlc"] [data-component="support"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+  gap: clamp(40px, 8vw, 112px);
+  align-items: center;
+  padding: 72px 0 142px;
+  border-top: 1px solid var(--page-line);
+}
+
+[data-page="openctrlc"] [data-slot="support-copy"] {
+  max-width: 650px;
+}
+
+[data-page="openctrlc"] [data-slot="support-copy"] h2 {
+  max-width: 620px;
+  margin: 0;
+  font-size: clamp(30px, 3.5vw, 52px);
+  font-weight: 620;
+  letter-spacing: -0.065em;
+  line-height: 1.04;
+}
+
+[data-page="openctrlc"] [data-slot="support-copy"] > p:last-child {
+  max-width: 540px;
+  margin: 19px 0 0;
+  color: var(--page-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+[data-page="openctrlc"] [data-slot="support-figure"] {
+  width: min(100%, 260px);
+  justify-self: end;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--page-line);
+  border-radius: 14px;
+  background: var(--page-panel);
+}
+
+[data-page="openctrlc"] [data-slot="support-figure"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 8px;
+}
+
+[data-page="openctrlc"] [data-slot="support-figure"] figcaption {
+  margin-top: 10px;
+  color: var(--page-faint);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  text-align: center;
+}
+
 [data-page="openctrlc"] [data-component="final-cta"] {
   margin: 0 0 100px;
   padding: 86px 24px 92px;
@@ -750,6 +806,15 @@
   [data-page="openctrlc"] [data-component="faq"] {
     grid-template-columns: 1fr;
     gap: 50px;
+  }
+
+  [data-page="openctrlc"] [data-component="support"] {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+
+  [data-page="openctrlc"] [data-slot="support-figure"] {
+    justify-self: start;
   }
 }
 
@@ -895,8 +960,18 @@
 
   [data-page="openctrlc"] [data-component="workflow"],
   [data-page="openctrlc"] [data-component="features"],
-  [data-page="openctrlc"] [data-component="faq"] {
+  [data-page="openctrlc"] [data-component="faq"],
+  [data-page="openctrlc"] [data-component="support"] {
     padding-bottom: 88px;
+  }
+
+  [data-page="openctrlc"] [data-component="support"] {
+    gap: 28px;
+    padding-top: 54px;
+  }
+
+  [data-page="openctrlc"] [data-slot="support-copy"] h2 {
+    font-size: 36px;
   }
 
   [data-page="openctrlc"] [data-slot="section-heading"] h2,

@@ -22,6 +22,7 @@ export const dict = {
   "footer.github": "GitHub",
   "footer.docs": "Docs",
   "footer.changelog": "Changelog",
+  "footer.support": "Support open source",
   "footer.feishu": "Feishu",
   "footer.discord": "Discord",
   "footer.x": "X",
@@ -84,6 +85,12 @@ export const dict = {
   "app.meta.description": "OpenCtrlC - The open source coding agent.",
 
   "home.title": "OpenCtrlC | The open source AI coding agent",
+  "home.support.eyebrow": "Support open source",
+  "home.support.title": "If OpenCtrlC helps, you can keep it moving.",
+  "home.support.body":
+    "OpenCtrlC is maintained independently. Your support helps fund releases, bug fixes, and documentation.",
+  "home.support.caption": "WeChat appreciation code",
+  "home.support.alt": "WeChat appreciation QR code for supporting OpenCtrlC",
 
   "temp.title": "openctrlc | AI coding agent built for the terminal",
   "temp.hero.title": "The AI coding agent built for the terminal",
