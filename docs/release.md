@@ -7,7 +7,7 @@
 
 发布前先把代码、官网、文档和 `docs/releases/v<version>.md` 提交并推送到
 `dev`，然后在 GitHub Actions 中运行 `publish`，填写完整版本号，例如
-`0.2.4`。工作流会创建 draft Release、创建并校验版本 tag、构建所有平台
+`0.2.5`。工作流会创建 draft Release、创建并校验版本 tag、构建所有平台
 资产，最后上传资产并将 Release 发布。Release 发布成功后，工作流会自动把公开
 资产同步到 Cloudflare R2，官网的稳定版下载入口优先使用 R2，R2 不可用时自动
 回退到 GitHub Release。
