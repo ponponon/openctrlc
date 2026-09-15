@@ -3,7 +3,7 @@ import path from "path"
 import { InstanceState } from "@/effect/instance-state"
 import { EffectBridge } from "@/effect/bridge"
 import type { InstanceContext } from "@/project/instance-context"
-import { Effect, Layer, Context, Schema } from "effect"
+import { Cause, Effect, Layer, Context, Schema } from "effect"
 import { Config } from "@/config/config"
 import { MCP } from "../mcp"
 import { Skill } from "../skill"
@@ -102,7 +102,13 @@ const layer = Layer.effect(
         }
       }
 
-      for (const [name, prompt] of Object.entries(yield* mcp.prompts())) {
+      const prompts = yield* Effect.suspend(() => mcp.prompts()).pipe(
+        Effect.catchCause((cause) =>
+          Effect.logError("failed to load MCP commands", { error: Cause.pretty(cause) }).pipe(Effect.as({})),
+        ),
+      )
+
+      for (const [name, prompt] of Object.entries(prompts)) {
         commands[name] = {
           name,
           source: "mcp",

@@ -356,17 +356,25 @@ const layer = Layer.effect(
           ...mcp.environment,
         },
       })
+      const stderr: string[] = []
+      transport.stderr?.on("data", (chunk) => stderr.push(chunk.toString()))
 
       const connectTimeout = mcp.timeout ?? DEFAULT_TIMEOUT
       return yield* connectTransport(transport, connectTimeout).pipe(
-        Effect.map((client): { client: MCPClient | undefined; status: Status } => ({
-          client,
-          status: { status: "connected" },
-        })),
-        Effect.catch((error): Effect.Effect<{ client: MCPClient | undefined; status: Status }> => {
-          const msg = error instanceof Error ? error.message : String(error)
-          return Effect.succeed({ client: undefined, status: { status: "failed", error: msg } })
-        }),
+        Effect.map(
+          (client): { client: MCPClient | undefined; status: Status; stderr: string[] } => ({
+            client,
+            status: { status: "connected" },
+            stderr,
+          }),
+        ),
+        Effect.catch(
+          (error): Effect.Effect<{ client: MCPClient | undefined; status: Status; stderr: string[] }> => {
+            const msg = error instanceof Error ? error.message : String(error)
+            const detail = stderr.join("").trim().slice(-2_000)
+            return Effect.succeed({ client: undefined, status: { status: "failed", error: detail || msg }, stderr })
+          },
+        ),
       )
     })
 
@@ -376,14 +384,20 @@ const layer = Layer.effect(
           return DISABLED_RESULT
         }
 
-        const { client: mcpClient, status } =
+        const connection =
           mcp.type === "remote"
             ? yield* connectRemote(key, mcp as ConfigMCPV1.Info & { type: "remote" })
             : yield* connectLocal(key, mcp as ConfigMCPV1.Info & { type: "local" })
+        const { client: mcpClient, status } = connection
 
         if (!mcpClient) {
           if (status.status !== "connected" && status.status !== "disabled") {
-            yield* Effect.logWarning("server unavailable", { key, type: mcp.type, status: status.status })
+            yield* Effect.logWarning("server unavailable", {
+              key,
+              type: mcp.type,
+              status: status.status,
+              error: status.status === "failed" ? status.error : undefined,
+            })
           }
           return { status } satisfies CreateResult
         }
@@ -400,9 +414,17 @@ const layer = Layer.effect(
             instructions: mcpClient.getInstructions()?.trim(),
           } satisfies CreateResult
         }).pipe(
-          Effect.catchCause((cause) =>
-            Effect.tryPromise(() => mcpClient.close()).pipe(Effect.ignore, Effect.andThen(Effect.failCause(cause))),
-          ),
+          Effect.catchCause((cause) => {
+            const error = Cause.squash(cause)
+            const message = error instanceof Error ? error.message : String(error)
+            const stderr =
+              "stderr" in connection && Array.isArray(connection.stderr) ? connection.stderr.join("").trim() : ""
+            const detail = stderr ? `${message}\n${stderr.slice(-2_000)}` : message
+            return Effect.tryPromise(() => mcpClient.close()).pipe(
+              Effect.ignore,
+              Effect.andThen(Effect.die(new Error(detail))),
+            )
+          }),
         )
       },
       Effect.map((result): CreateResult => result),
