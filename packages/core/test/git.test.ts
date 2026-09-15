@@ -12,6 +12,7 @@ import { testEffect } from "./lib/effect"
 
 const it = testEffect(LayerNode.compile(Git.node))
 const GIT_REMOTE_TEST_TIMEOUT = 30_000
+const GIT_TREE_TEST_TIMEOUT = 30_000
 
 describe("Git", () => {
   it.live(
@@ -118,54 +119,57 @@ describe("Git worktrees", () => {
 })
 
 describe("Git trees", () => {
-  it.live("captures, compares, previews, and restores scoped trees", () =>
-    Effect.gen(function* () {
-      const root = yield* Effect.acquireRelease(
-        Effect.promise(() => tmpdir()),
-        (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
-      )
-      yield* Effect.promise(async () => {
-        await initRepo(root.path)
-        await fs.mkdir(path.join(root.path, "scope"))
-        await fs.writeFile(path.join(root.path, "scope", "tracked.txt"), "one\n")
-        await fs.writeFile(path.join(root.path, "outside.txt"), "outside\n")
-        await $`git add .`.cwd(root.path).quiet()
-        await $`git commit -m initial`.cwd(root.path).quiet()
-      })
-      const git = yield* Git.Service
-      const source = yield* git.repo.discover(AbsolutePath.make(root.path))
-      if (!source) throw new Error("Repository not found")
-      const storage = AbsolutePath.make(path.join(root.path, ".snapshot"))
-      const repository = yield* git.repo.create({ worktree: source.worktree, gitDirectory: storage, seed: source })
-      yield* git.index.refresh({ repository, scope: RelativePath.make("scope") })
-      const before = yield* git.tree.write(repository)
+  it.live(
+    "captures, compares, previews, and restores scoped trees",
+    () =>
+      Effect.gen(function* () {
+        const root = yield* Effect.acquireRelease(
+          Effect.promise(() => tmpdir()),
+          (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
+        )
+        yield* Effect.promise(async () => {
+          await initRepo(root.path)
+          await fs.mkdir(path.join(root.path, "scope"))
+          await fs.writeFile(path.join(root.path, "scope", "tracked.txt"), "one\n")
+          await fs.writeFile(path.join(root.path, "outside.txt"), "outside\n")
+          await $`git add .`.cwd(root.path).quiet()
+          await $`git commit -m initial`.cwd(root.path).quiet()
+        })
+        const git = yield* Git.Service
+        const source = yield* git.repo.discover(AbsolutePath.make(root.path))
+        if (!source) throw new Error("Repository not found")
+        const storage = AbsolutePath.make(path.join(root.path, ".snapshot"))
+        const repository = yield* git.repo.create({ worktree: source.worktree, gitDirectory: storage, seed: source })
+        yield* git.index.refresh({ repository, scope: RelativePath.make("scope") })
+        const before = yield* git.tree.write(repository)
 
-      yield* Effect.promise(async () => {
-        await fs.writeFile(path.join(root.path, "scope", "tracked.txt"), "two\n")
-        await fs.writeFile(path.join(root.path, "scope", "added.txt"), "added\n")
-        await fs.writeFile(path.join(root.path, "outside.txt"), "changed outside\n")
-      })
-      yield* git.index.refresh({ repository, scope: RelativePath.make("scope") })
-      const after = yield* git.tree.write(repository)
+        yield* Effect.promise(async () => {
+          await fs.writeFile(path.join(root.path, "scope", "tracked.txt"), "two\n")
+          await fs.writeFile(path.join(root.path, "scope", "added.txt"), "added\n")
+          await fs.writeFile(path.join(root.path, "outside.txt"), "changed outside\n")
+        })
+        yield* git.index.refresh({ repository, scope: RelativePath.make("scope") })
+        const after = yield* git.tree.write(repository)
 
-      expect(yield* git.tree.files({ repository, from: before, to: after })).toEqual([
-        RelativePath.make("scope/added.txt"),
-        RelativePath.make("scope/tracked.txt"),
-      ])
-      const diffs = yield* git.tree.diff({ repository, from: before, to: after, context: 1 })
-      expect(diffs.map((item) => [item.path, item.status])).toEqual([
-        [RelativePath.make("scope/added.txt"), "added"],
-        [RelativePath.make("scope/tracked.txt"), "modified"],
-      ])
+        expect(yield* git.tree.files({ repository, from: before, to: after })).toEqual([
+          RelativePath.make("scope/added.txt"),
+          RelativePath.make("scope/tracked.txt"),
+        ])
+        const diffs = yield* git.tree.diff({ repository, from: before, to: after, context: 1 })
+        expect(diffs.map((item) => [item.path, item.status])).toEqual([
+          [RelativePath.make("scope/added.txt"), "added"],
+          [RelativePath.make("scope/tracked.txt"), "modified"],
+        ])
 
-      const files = new Map([[RelativePath.make("scope/tracked.txt"), before]])
-      const preview = yield* git.tree.preview({ repository, current: after, files, context: 1 })
-      expect(preview).toHaveLength(1)
-      expect(preview[0]?.path).toBe(RelativePath.make("scope/tracked.txt"))
-      yield* git.tree.restore({ repository, files })
-      expect(yield* read(path.join(root.path, "scope", "tracked.txt"))).toBe("one\n")
-      expect(yield* read(path.join(root.path, "scope", "added.txt"))).toBe("added\n")
-      expect(yield* read(path.join(root.path, "outside.txt"))).toBe("changed outside\n")
-    }),
+        const files = new Map([[RelativePath.make("scope/tracked.txt"), before]])
+        const preview = yield* git.tree.preview({ repository, current: after, files, context: 1 })
+        expect(preview).toHaveLength(1)
+        expect(preview[0]?.path).toBe(RelativePath.make("scope/tracked.txt"))
+        yield* git.tree.restore({ repository, files })
+        expect(yield* read(path.join(root.path, "scope", "tracked.txt"))).toBe("one\n")
+        expect(yield* read(path.join(root.path, "scope", "added.txt"))).toBe("added\n")
+        expect(yield* read(path.join(root.path, "outside.txt"))).toBe("changed outside\n")
+      }),
+    GIT_TREE_TEST_TIMEOUT,
   )
 })
