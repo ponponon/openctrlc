@@ -853,6 +853,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "다시 보지 않기",
   "dialog.releaseNotes.media.alt": "릴리스 미리보기",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",
   "common.moreCountSuffix": " (외 {{count}}개)",
   "common.time.justNow": "방금 전",

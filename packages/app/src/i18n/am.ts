@@ -677,6 +677,7 @@ export const dict = {
   "toast.session.export.failed.description": "ክፍለ-ጊዜውን ወደ ውጭ በመላክ ላይ ስህተት ተፈጥሯል",
   "toast.session.listFailed.title": "ለ{{project}}] ክፍለ-ጊዜዎችን መጫን አልተሳካም",
   "toast.project.reloadFailed.title": "{{project}}ን እንደገና መጫን አልተሳካም",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "ዝማኔ አለ",
   "toast.update.description": "አዲሱ የOpenCtrlC ({{version}}) ስሪት አሁን ለመጫን አለ።",
   "toast.update.action.installRestart": "ጫን እና እንደገና አስጀምር",

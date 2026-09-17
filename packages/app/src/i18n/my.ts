@@ -691,6 +691,7 @@ export const dict = {
   "toast.session.export.failed.description": "စက်ရှင်ကို ထုတ်ယူနေစဉ် အမှားအယွင်းတစ်ခု ဖြစ်ပွားခဲ့သည်။",
   "toast.session.listFailed.title": "{{project}} အတွက် ဆက်ရှင်များကို တင်ရန် မအောင်မြင်ပါ။",
   "toast.project.reloadFailed.title": "{{project}} ကို ပြန်လည်စတင်ရန် မအောင်မြင်ပါ။",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "အပ်ဒိတ် ရနိုင်ပါသည်။",
   "toast.update.description": "OpenCtrlC ({{version}}) ၏ ဗားရှင်းအသစ်ကို ယခု ထည့်သွင်းနိုင်ပါပြီ။",
   "toast.update.action.installRestart": "ထည့်သွင်းပြီး ပြန်လည်စတင်ပါ။",

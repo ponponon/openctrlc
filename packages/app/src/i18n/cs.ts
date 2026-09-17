@@ -686,6 +686,7 @@ export const dict = {
   "toast.session.export.failed.description": "Při exportu relace došlo k chybě",
   "toast.session.listFailed.title": "Nepodařilo se načíst relace pro {{project}}",
   "toast.project.reloadFailed.title": "Nepodařilo se znovu načíst {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Aktualizace k dispozici",
   "toast.update.description": "Nyní je k dispozici k instalaci nová verze OpenCtrlC ({{version}}).",
   "toast.update.action.installRestart": "Nainstalujte a restartujte",

@@ -694,6 +694,7 @@ export const dict: Record<string, string> = {
   "toast.session.export.failed.description": "ལཱ་ཡུན་ཕྱིར་འདྲེན་འབད་བའི་སྐབས་འཛོལ་བ་བྱུང་ཡོདཔ།",
   "toast.session.listFailed.title": "{{project}}གི་དོན་ལུ་ལཱ་ཡུན་ཚུ་མངོན་གསལ་འབད་ནི་ལུ་འཐུས་ཤོར་འབྱུང་ཡོདཔ།",
   "toast.project.reloadFailed.title": "{{project}}ཡང་བསྐྱར་མངོན་གསལ་འབད་ནི་ལུ་འཐུས་ཤོར་འབྱུང་ཡོདཔ།",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "དུས་མཐུན་བཟོ་ཚུགས།",
   "toast.update.description": "OpenCtrlC ({{version}}) གི་ཐོན་རིམ་གསརཔ་ཅིག་ ད་ལྟོ་གཞི་བཙུགས་འབད་ནི་ལུ་འཐོབ་ཚུགས།",
   "toast.update.action.installRestart": "གཞི་བཙུགས་དང་ལོག་འགོ་བཙུགས།",

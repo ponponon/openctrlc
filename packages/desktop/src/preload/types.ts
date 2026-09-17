@@ -131,6 +131,7 @@ export type ElectronAPI = {
   setBackgroundColor: (color: string) => Promise<void>
   getOpenCodeSessionInfo: (input: OpenCodeSessionLookup) => Promise<OpenCodeSessionInfo | null>
   exportDebugLogs: () => Promise<string>
+  openDebugLogs: () => Promise<string>
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   setForceFocus: (enabled: boolean) => Promise<void>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void>

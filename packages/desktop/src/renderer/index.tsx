@@ -257,6 +257,7 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
     },
 
     exportDebugLogs: () => window.api.exportDebugLogs(),
+    openDebugLogs: () => window.api.openDebugLogs(),
 
     setForceFocus: (enabled) => window.api.setForceFocus(enabled),
 

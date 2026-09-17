@@ -1096,6 +1096,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "Vis ikke disse i fremtiden",
   "dialog.releaseNotes.media.alt": "Forhåndsvisning af udgivelse",
   "toast.project.reloadFailed.title": "Kunne ikke genindlæse {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "Ugyldig konfiguration",
   "common.moreCountSuffix": " (+{{count}} mere)",
   "common.time.justNow": "Lige nu",

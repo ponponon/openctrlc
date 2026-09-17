@@ -1147,6 +1147,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "Não mostrar isso no futuro",
   "dialog.releaseNotes.media.alt": "Prévia do lançamento",
   "toast.project.reloadFailed.title": "Falha ao recarregar {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "Configuração inválida",
   "common.moreCountSuffix": " (+{{count}} mais)",
   "common.time.justNow": "Agora mesmo",

@@ -685,6 +685,7 @@ export const dict = {
   "toast.session.export.failed.description": "A apărut o eroare la exportarea sesiunii",
   "toast.session.listFailed.title": "Nu s-au putut încărca sesiunile pentru {{project}}",
   "toast.project.reloadFailed.title": "Nu s-a putut reîncărca {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Actualizare disponibilă",
   "toast.update.description": "O nouă versiune OpenCtrlC ({{version}}) este disponibilă pentru instalare.",
   "toast.update.action.installRestart": "Instalează și repornește",

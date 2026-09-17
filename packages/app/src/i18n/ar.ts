@@ -1139,6 +1139,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "عدم إظهارها مستقبلاً",
   "dialog.releaseNotes.media.alt": "معاينة الإصدار",
   "toast.project.reloadFailed.title": "فشل في إعادة تحميل {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "تكوين غير صالح",
   "common.moreCountSuffix": " (+{{count}} إضافي)",
   "common.time.justNow": "الآن",

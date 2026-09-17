@@ -1201,6 +1201,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "不再顯示",
   "dialog.releaseNotes.media.alt": "版本預覽",
   "toast.project.reloadFailed.title": "無法重新載入 {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無效的設定",
   "common.moreCountSuffix": " (還有 {{count}} 個)",
   "common.time.justNow": "剛剛",

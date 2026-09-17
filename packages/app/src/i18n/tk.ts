@@ -686,6 +686,7 @@ export const dict = {
   "toast.session.export.failed.description": "Sessiýa eksport edilende säwlik ýüze çykdy",
   "toast.session.listFailed.title": "{{project}} üçin sessiýalary ýükläp bilmedi",
   "toast.project.reloadFailed.title": "{{project}} ýükläp bilmedi",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Täzelenme elýeterli",
   "toast.update.description": "Indi gurmak üçin OpenCtrlC ({{version}}) -iň täze wersiýasy bar.",
   "toast.update.action.installRestart": "Guruň we täzeden açyň",

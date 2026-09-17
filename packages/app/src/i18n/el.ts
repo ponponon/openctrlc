@@ -689,6 +689,7 @@ export const dict = {
   "toast.session.export.failed.description": "Παρουσιάστηκε σφάλμα κατά την εξαγωγή της συνεδρίας",
   "toast.session.listFailed.title": "Αποτυχία φόρτωσης συνεδριών για {{project}}",
   "toast.project.reloadFailed.title": "Αποτυχία επαναφόρτωσης του {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Διαθέσιμη ενημέρωση",
   "toast.update.description": "Μια νέα έκδοση του OpenCtrlC ({{version}}) είναι τώρα διαθέσιμη για εγκατάσταση.",
   "toast.update.action.installRestart": "Εγκατάσταση και επανεκκίνηση",

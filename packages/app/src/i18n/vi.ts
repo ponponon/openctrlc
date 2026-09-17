@@ -696,6 +696,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "Không thể tải phiên cho {{project}}",
   "toast.project.reloadFailed.title": "Không thể tải lại {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Đã có bản cập nhật",
   "toast.update.description": "Hiện đã có phiên bản mới của OpenCtrlC ({{version}}) để cài đặt.",
   "toast.update.action.installRestart": "Cài đặt và khởi động lại",

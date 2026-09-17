@@ -1212,6 +1212,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "不再显示",
   "dialog.releaseNotes.media.alt": "版本说明预览",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",
   "common.moreCountSuffix": " (还有 {{count}} 个)",
   "common.time.justNow": "刚刚",

@@ -685,6 +685,7 @@ export const dict = {
   "toast.session.export.failed.description": "هنگام صادر کردن جلسه خطایی روی داد",
   "toast.session.listFailed.title": "جلسات برای {{project}} بارگیری نشد",
   "toast.project.reloadFailed.title": "بارگیری مجدد {{project}} انجام نشد",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "به روز رسانی موجود است",
   "toast.update.description": "نسخه جدیدی از OpenCtrlC ({{version}}) اکنون برای نصب در دسترس است.",
   "toast.update.action.installRestart": "نصب و راه اندازی مجدد",

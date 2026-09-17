@@ -682,6 +682,7 @@ export const dict = {
   "toast.session.export.failed.description": "Seansi eksportimisel ilmnes viga",
   "toast.session.listFailed.title": "{{project}} seansside laadimine ebaõnnestus",
   "toast.project.reloadFailed.title": "{{project}} uuesti laadimine ebaõnnestus",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Värskendus saadaval",
   "toast.update.description": "Rakenduse OpenCtrlC ({{version}}) uus versioon on nüüd installimiseks saadaval.",
   "toast.update.action.installRestart": "Installige ja taaskäivitage",

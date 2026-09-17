@@ -693,6 +693,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "{{project}} üçün sessiyalar yüklənə bilmədi",
   "toast.project.reloadFailed.title": "{{project}} yenidən yüklənə bilmədi",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Yeniləmə mövcuddur",
   "toast.update.description": "OpenCtrlC-un yeni versiyası ({{version}}) quraşdırma üçün mövcuddur.",
   "toast.update.action.installRestart": "Quraşdır və yenidən başlat",

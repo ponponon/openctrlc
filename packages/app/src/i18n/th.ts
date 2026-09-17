@@ -1204,6 +1204,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "ไม่ต้องแสดงสิ่งนี้อีกในอนาคต",
   "dialog.releaseNotes.media.alt": "ตัวอย่างรุ่น",
   "toast.project.reloadFailed.title": "ไม่สามารถโหลด {{project}} ใหม่ได้",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "การกำหนดค่าไม่ถูกต้อง",
   "common.moreCountSuffix": " (เพิ่มอีก {{count}})",
   "common.time.justNow": "เมื่อสักครู่นี้",

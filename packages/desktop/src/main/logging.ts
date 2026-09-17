@@ -73,6 +73,16 @@ export async function exportDebugLogs() {
   }
 }
 
+export async function openDebugLogs() {
+  const target =
+    [...serverLogRoots().map((dir) => join(dir, "openctrlc.log")), join(run, "main.log")].find((path) =>
+      existsSync(path),
+    ) ?? root
+  const error = await shell.openPath(target)
+  if (error) throw new Error(error)
+  return target
+}
+
 export function write(
   name: string,
   message: string,

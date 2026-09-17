@@ -685,6 +685,7 @@ export const dict = {
   "toast.session.export.failed.description": "Ralat berlaku semasa mengeksport sesi",
   "toast.session.listFailed.title": "Gagal memuatkan sesi untuk {{project}}",
   "toast.project.reloadFailed.title": "Gagal memuat semula {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Kemas kini tersedia",
   "toast.update.description": "Versi baharu OpenCtrlC ({{version}}) kini tersedia untuk dipasang.",
   "toast.update.action.installRestart": "Pasang dan mulakan semula",

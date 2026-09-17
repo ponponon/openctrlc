@@ -581,6 +581,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "Projektin {{project}} istuntojen lataaminen epäonnistui",
   "toast.project.reloadFailed.title": "Projektin {{project}} lataaminen uudelleen epäonnistui",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Päivitys saatavilla",
   "toast.update.description": "OpenCtrlCn uusi versio ({{version}}) on nyt saatavana asennettavaksi.",
   "toast.update.action.installRestart": "Asenna ja käynnistä uudelleen",

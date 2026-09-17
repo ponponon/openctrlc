@@ -745,6 +745,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "Не вдалося завантажити сесії для {{project}}",
   "toast.project.reloadFailed.title": "Не вдалося перезавантажити {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
 
   "toast.update.title": "Доступне оновлення",
   "toast.update.description": "Нова версія OpenCtrlC ({{version}}) тепер доступна для встановлення.",

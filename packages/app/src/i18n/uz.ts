@@ -688,6 +688,7 @@ export const dict = {
   "toast.session.export.failed.description": "Seansni eksport qilishda xatolik yuz berdi",
   "toast.session.listFailed.title": "{{project}} uchun seanslar yuklanmadi",
   "toast.project.reloadFailed.title": "{{project}} qayta yuklanmadi",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Yangilanish mavjud",
   "toast.update.description": "OpenCtrlC ({{version}}) yangi versiyasi endi oʻrnatish mumkin.",
   "toast.update.action.installRestart": "O'rnating va qayta ishga tushiring",

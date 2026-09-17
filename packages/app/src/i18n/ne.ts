@@ -686,6 +686,7 @@ export const dict: Record<string, string> = {
   "toast.session.export.failed.description": "सत्र निर्यात गर्दा त्रुटि भयो",
   "toast.session.listFailed.title": "{{project}} का लागि सत्रहरू लोड गर्न असफल भयो",
   "toast.project.reloadFailed.title": "{{project}} पुन: लोड गर्न असफल भयो",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "अपडेट उपलब्ध छ",
   "toast.update.description": "OpenCtrlC ({{version}}) को नयाँ संस्करण अब स्थापना गर्न उपलब्ध छ।",
   "toast.update.action.installRestart": "स्थापना र पुन: सुरु गर्नुहोस्",

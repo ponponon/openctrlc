@@ -691,6 +691,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "Det gick inte att läsa in sessioner för {{project}}",
   "toast.project.reloadFailed.title": "Det gick inte att ladda om {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Uppdatering tillgänglig",
   "toast.update.description": "En ny version av OpenCtrlC ({{version}}) är nu tillgänglig att installera.",
   "toast.update.action.installRestart": "Installera och starta om",

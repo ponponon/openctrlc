@@ -1223,6 +1223,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "Ne prikazuj ovo u budućnosti",
   "dialog.releaseNotes.media.alt": "Pregled izdanja",
   "toast.project.reloadFailed.title": "Nije uspjelo ponovno učitavanje {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "Nevažeća konfiguracija",
   "common.moreCountSuffix": " (+{{count}} više)",
   "common.time.justNow": "Upravo sada",

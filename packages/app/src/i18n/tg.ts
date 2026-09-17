@@ -688,6 +688,7 @@ export const dict = {
   "toast.session.export.failed.description": "Ҳангоми содироти сессия хатогӣ рӯй дод",
   "toast.session.listFailed.title": "Сеансҳо барои {{project}} бор карда нашуд",
   "toast.project.reloadFailed.title": "Аз нав бор кардан муяссар нашуд {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Навсозии дастрас",
   "toast.update.description": "Версияи нави OpenCtrlC ({{version}}) ҳоло барои насб дастрас аст.",
   "toast.update.action.installRestart": "Насб кунед ва аз нав оғоз кунед",

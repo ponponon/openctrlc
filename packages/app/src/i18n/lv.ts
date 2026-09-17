@@ -685,6 +685,7 @@ export const dict = {
   "toast.session.export.failed.description": "Radās kļūda, eksportējot sesiju",
   "toast.session.listFailed.title": "Neizdevās ielādēt sesijas projektam {{project}}",
   "toast.project.reloadFailed.title": "Neizdevās pārlādēt {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Pieejams atjauninājums",
   "toast.update.description": "Pieejama jauna OpenCtrlC versija ({{version}}) instalēšanai.",
   "toast.update.action.installRestart": "Instalēt un restartēt",

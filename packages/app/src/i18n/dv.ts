@@ -693,6 +693,7 @@ export const dict = {
   "toast.session.export.failed.description": "ސެޝަން އެކްސްޕޯޓް ކުރަމުން ދިޔައިރު ގޯހެއް ދިމާވިއެވެ",
   "toast.session.listFailed.title": "{{project}} އަށް ސެޝަންތައް ލޯޑް ނުކުރެވިއްޖެއެވެ",
   "toast.project.reloadFailed.title": "{{project}} ރީލޯޑް ނުކުރެވިއްޖެއެވެ",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "އަޕްޑޭޓް ލިބެން ހުރެއެވެ",
   "toast.update.description": "OpenCtrlC ({{version}}) ގެ އާ ވަރޝަނެއް މިހާރު އިންސްޓޯލް ކުރެވޭނެއެވެ.",
   "toast.update.action.installRestart": "އިންސްޓޯލްކޮށް އަލުން ސްޓާޓްކުރުން",

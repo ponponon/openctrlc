@@ -1050,6 +1050,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "Ikke vis disse igjen",
   "dialog.releaseNotes.media.alt": "Forhåndsvisning av utgivelse",
   "toast.project.reloadFailed.title": "Kunne ikke laste inn {{project}} på nytt",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "Ugyldig konfigurasjon",
   "common.moreCountSuffix": " (+{{count}} mer)",
   "common.time.justNow": "Akkurat nå",

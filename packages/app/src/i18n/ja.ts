@@ -1130,6 +1130,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "今後表示しない",
   "dialog.releaseNotes.media.alt": "リリースのプレビュー",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
   "common.moreCountSuffix": " (他 {{count}} 件)",
   "common.time.justNow": "たった今",

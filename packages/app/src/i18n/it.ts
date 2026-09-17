@@ -600,6 +600,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "Impossibile caricare le sessioni per {{project}}",
   "toast.project.reloadFailed.title": "Impossibile ricaricare {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Aggiornamento disponibile",
   "toast.update.description": "Una nuova versione di OpenCtrlC ({{version}}) è ora disponibile per l'installazione.",
   "toast.update.action.installRestart": "Installa e riavvia",

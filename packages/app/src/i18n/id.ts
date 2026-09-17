@@ -741,6 +741,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "Gagal memuat sesi untuk {{project}}",
   "toast.project.reloadFailed.title": "Gagal memuat ulang {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
 
   "toast.update.title": "Pembaruan tersedia",
   "toast.update.description": "Versi baru OpenCtrlC ({{version}}) sekarang tersedia untuk diinstal.",

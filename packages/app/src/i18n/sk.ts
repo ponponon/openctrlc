@@ -684,6 +684,7 @@ export const dict = {
   "toast.session.export.failed.description": "Pri exporte relácie došlo k chybe",
   "toast.session.listFailed.title": "Nepodarilo sa načítať relácie pre {{project}}",
   "toast.project.reloadFailed.title": "Nepodarilo sa znovu načítať {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Dostupná aktualizácia",
   "toast.update.description": "Je dostupná nová verzia OpenCtrlC ({{version}}) na inštaláciu.",
   "toast.update.action.installRestart": "Nainštalovať a reštartovať",

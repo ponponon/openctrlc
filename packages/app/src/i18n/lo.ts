@@ -682,6 +682,7 @@ export const dict = {
   "toast.session.export.failed.description": "ມີຂໍ້ຜິດພາດເກີດຂຶ້ນໃນຂະນະທີ່ສົ່ງອອກເຊດຊັນ",
   "toast.session.listFailed.title": "ລົ້ມເຫລວໃນການໂຫລດເຊດຊັນສໍາລັບ {{project}}",
   "toast.project.reloadFailed.title": "ໂຫຼດ {{project}} ຄືນໃໝ່ບໍ່ສຳເລັດ",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "ມີອັບເດດ",
   "toast.update.description": "ເວີຊັນໃໝ່ຂອງ OpenCtrlC ({{version}}) ມີໃຫ້ຕິດຕັ້ງແລ້ວ.",
   "toast.update.action.installRestart": "ຕິດຕັ້ງ ແລະປິດເປີດໃໝ່",

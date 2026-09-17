@@ -57,6 +57,7 @@ type Deps = {
   showUpdater: () => Promise<void> | void
   setBackgroundColor: (color: string) => void
   exportDebugLogs: () => Promise<string>
+  openDebugLogs: () => Promise<string>
   getOpenCodeSessionInfo: (input: OpenCodeSessionLookup) => Promise<OpenCodeSessionInfo | null>
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void> | void
@@ -109,6 +110,7 @@ export function registerIpcHandlers(deps: Deps) {
     return deps.getOpenCodeSessionInfo(input)
   })
   ipcMain.handle("export-debug-logs", () => deps.exportDebugLogs())
+  ipcMain.handle("open-debug-logs", () => deps.openDebugLogs())
   ipcMain.handle("import-opencode-session", (_event: IpcMainInvokeEvent, input: OpenCodeSessionImport) => {
     if (!isOpenCodeSessionImport(input)) throw new Error("Invalid OpenCode session import request")
     return deps.importOpenCodeSession(input)

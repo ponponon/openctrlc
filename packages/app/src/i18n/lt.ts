@@ -691,6 +691,7 @@ export const dict = {
   "toast.session.export.failed.description": "Eksportuojant seansą įvyko klaida",
   "toast.session.listFailed.title": "Nepavyko įkelti seansų, skirtų {{project}}",
   "toast.project.reloadFailed.title": "Nepavyko iš naujo įkelti {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Galimas atnaujinimas",
   "toast.update.description": "Dabar galima įdiegti naują OpenCtrlC ({{version}}) versiją.",
   "toast.update.action.installRestart": "Įdiekite ir paleiskite iš naujo",

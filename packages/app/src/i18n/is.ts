@@ -689,6 +689,7 @@ export const dict = {
   "toast.session.export.failed.description": "Villa kom upp við útflutning á lotunni",
   "toast.session.listFailed.title": "Mistókst að hlaða lotum fyrir {{project}}",
   "toast.project.reloadFailed.title": "Mistókst að endurhlaða {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Uppfærsla í boði",
   "toast.update.description": "Ný útgáfa af OpenCtrlC ({{version}}) er nú fáanleg til uppsetningar.",
   "toast.update.action.installRestart": "Settu upp og endurræstu",

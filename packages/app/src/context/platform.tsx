@@ -139,6 +139,9 @@ type PlatformBase = {
   /** Export collected diagnostic logs (desktop only) */
   exportDebugLogs?(): Promise<string>
 
+  /** Open the most relevant diagnostic log in the system's default application (desktop only) */
+  openDebugLogs?(): Promise<string>
+
   /** Force focus styles on interactive elements through desktop devtools (desktop only) */
   setForceFocus?(enabled: boolean): Promise<void>
 

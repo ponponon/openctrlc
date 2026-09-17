@@ -40,6 +40,8 @@ import {
   normalizeProviderList,
 } from "./utils"
 import { formatServerError } from "@/utils/server-errors"
+import type { Platform } from "@/context/platform"
+import { showProjectReloadError } from "@/utils/project-reload-error"
 import { QueryClient, queryOptions } from "@tanstack/solid-query"
 import { loadMcpQuery, loadMcpResourcesQuery } from "../server-sync"
 import { NormalizedProviderListResponse } from "@openctrlc/session-ui/context"
@@ -389,6 +391,8 @@ export async function bootstrapDirectory(input: {
   queryClient: QueryClient
   session?: ServerSession
   protocol?: Promise<ServerProtocol>
+  platform?: Pick<Platform, "openDebugLogs" | "exportDebugLogs">
+  onRetry?: () => void
 }) {
   const loading = input.store.status !== "complete"
   const seededProject = projectID(input.directory, input.global.project)
@@ -570,11 +574,12 @@ export async function bootstrapDirectory(input: {
         input.queryClient
           .fetchQuery(loadProvidersQuery(input.scope, input.directory, input.api, input.sdk, input.protocol))
           .catch((err) => {
-            const project = getFilename(input.directory)
-            showToast({
-              variant: "error",
-              title: input.translate("toast.project.reloadFailed.title", { project }),
-              description: formatServerError(err, input.translate),
+            showProjectReloadError({
+              project: getFilename(input.directory),
+              error: err,
+              translate: input.translate,
+              platform: input.platform ?? {},
+              retry: input.onRetry,
             })
           }),
     ].filter(Boolean) as (() => Promise<any>)[]
@@ -583,11 +588,12 @@ export async function bootstrapDirectory(input: {
     const slowErrs = errors(await runAll(slow))
     if (slowErrs.length > 0) {
       console.error("Failed to finish bootstrap instance", slowErrs[0])
-      const project = getFilename(input.directory)
-      showToast({
-        variant: "error",
-        title: input.translate("toast.project.reloadFailed.title", { project }),
-        description: formatServerError(slowErrs[0], input.translate),
+      showProjectReloadError({
+        project: getFilename(input.directory),
+        error: slowErrs[0],
+        translate: input.translate,
+        platform: input.platform ?? {},
+        retry: input.onRetry,
       })
     }
 

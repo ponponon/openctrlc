@@ -684,6 +684,7 @@ export const dict = {
   "toast.session.export.failed.description": "កំហុសបានកើតឡើងខណៈពេលនាំចេញសម័យ",
   "toast.session.listFailed.title": "បានបរាជ័យក្នុងការផ្ទុកសម័យសម្រាប់ {{project}}",
   "toast.project.reloadFailed.title": "បានបរាជ័យក្នុងការផ្ទុក {{project}} ឡើងវិញ",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "មានបច្ចុប្បន្នភាព",
   "toast.update.description": "កំណែថ្មីនៃ OpenCtrlC ({{version}}) ឥឡូវនេះមានសម្រាប់ដំឡើងហើយ។",
   "toast.update.action.installRestart": "ដំឡើង និងចាប់ផ្តើមឡើងវិញ",

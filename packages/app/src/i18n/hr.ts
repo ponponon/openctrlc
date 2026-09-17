@@ -691,6 +691,7 @@ export const dict = {
   "toast.session.export.failed.description": "Došlo je do pogreške prilikom izvoza sesije",
   "toast.session.listFailed.title": "Neuspješno učitavanje sesija za {{project}}",
   "toast.project.reloadFailed.title": "Ponovno učitavanje {{project}} nije uspjelo",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Ažuriranje dostupno",
   "toast.update.description": "Nova verzija OpenCtrlC ({{version}}) sada je dostupna za instalaciju.",
   "toast.update.action.installRestart": "Instalirajte i ponovno pokrenite",

@@ -690,6 +690,7 @@ export const dict = {
   "toast.session.export.failed.description": "Hiba történt a munkamenet exportálása közben",
   "toast.session.listFailed.title": "Nem sikerült betölteni a {{project}} munkameneteit",
   "toast.project.reloadFailed.title": "A {{project}} újratöltése nem sikerült",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "Frissítés elérhető",
   "toast.update.description": "A OpenCtrlC ({{version}}) új verziója már telepíthető.",
   "toast.update.action.installRestart": "Telepítse és indítsa újra",

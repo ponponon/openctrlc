@@ -1228,6 +1228,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "Больше не показывать",
   "dialog.releaseNotes.media.alt": "Предварительный просмотр выпуска",
   "toast.project.reloadFailed.title": "Не удалось перезагрузить {{project}}",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "Недопустимая конфигурация",
   "common.moreCountSuffix": " (ещё {{count}})",
   "common.time.justNow": "Только что",

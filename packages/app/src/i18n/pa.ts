@@ -696,6 +696,7 @@ export const dict = {
 
   "toast.session.listFailed.title": "{{project}} لئی سیشن لوڈ کرن چ ناکام رہیا",
   "toast.project.reloadFailed.title": "{{project}} دوبارہ لوڈ نئیں ہو سکیا",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "toast.update.title": "اپ ڈیٹ دستیاب اے",
   "toast.update.description": "OpenCtrlC ({{version}}) دا اک نواں ورژن ہن انسٹال کرن لئی دستیاب اے۔",
   "toast.update.action.installRestart": "انسٹال کرو تے دوبارہ شروع کرو",

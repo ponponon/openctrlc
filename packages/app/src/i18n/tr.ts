@@ -1230,6 +1230,7 @@ export const dict = {
   "dialog.releaseNotes.action.hideFuture": "Bunu gelecekte bir daha gösterme",
   "dialog.releaseNotes.media.alt": "Sürüm önizlemesi",
   "toast.project.reloadFailed.title": "{{project}} yeniden yüklenemedi",
+  "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "Geçersiz yapılandırma",
   "common.moreCountSuffix": " (+{{count}} daha)",
   "common.time.justNow": "Şimdi",
