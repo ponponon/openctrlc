@@ -38,6 +38,16 @@ test("session settings use the remote server context", async ({ page }) => {
     .toBe(true)
   expect(permissionRequests.every((request) => new URL(request).origin === serverB)).toBe(true)
 
+  const followup = dialog.locator('[data-action="settings-followup"]')
+  const followupInput = followup.getByRole("switch")
+  await expect(followupInput).toBeChecked()
+  await expect(followup.locator('[data-slot="switch-label"]')).toHaveText("Queue")
+  await followup.locator('[data-slot="switch-control"]').click()
+  await expect(followupInput).not.toBeChecked()
+  await expect(followup.locator('[data-slot="switch-label"]')).toHaveText("Steer")
+  await followup.locator('[data-slot="switch-control"]').click()
+  await expect(followupInput).toBeChecked()
+
   await dialog.getByRole("tab", { name: "Models" }).click()
   await expect(dialog.getByRole("switch", { name: "Server B Model" })).toBeEnabled()
   await expect(dialog.getByRole("switch", { name: "Server A Model" })).toHaveCount(0)

@@ -28,7 +28,6 @@ import {
 import "./settings-v2.css"
 
 const schemeOptions: ("system" | "light" | "dark")[] = ["system", "light", "dark"]
-const followupOptions: ("queue" | "steer")[] = ["queue", "steer"]
 const fontSettings = {
   ui: {
     action: "settings-ui-font",
@@ -338,16 +337,14 @@ export const SettingsGeneralV2: Component<{
           title={language.t("settings.general.row.followup.title")}
           description={language.t("settings.general.row.followup.description")}
         >
-          <SelectV2
-            appearance="inline"
-            data-action="settings-followup"
-            options={followupOptions}
-            current={settings.general.followup()}
-            placement="bottom-end"
-            gutter={6}
-            label={(option) => language.t(`settings.general.row.followup.option.${option}`)}
-            onSelect={(option) => option && settings.general.setFollowup(option)}
-          />
+          <div data-action="settings-followup">
+            <Switch
+              checked={settings.general.followup() === "queue"}
+              onChange={(checked) => settings.general.setFollowup(checked ? "queue" : "steer")}
+            >
+              {language.t(`settings.general.row.followup.option.${settings.general.followup()}`)}
+            </Switch>
+          </div>
         </SettingsRowV2>
 
         <SettingsRowV2
