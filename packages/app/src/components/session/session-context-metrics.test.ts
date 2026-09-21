@@ -63,14 +63,21 @@ describe("getSessionContext", () => {
   test("summarizes assistant activity and tool names", () => {
     const message = assistant("a1", { input: 10, output: 5, reasoning: 0, read: 0, write: 0 }, 0)
     const parts = [
-      { type: "tool", tool: "read" },
-      { type: "tool", tool: "read" },
-      { type: "tool", tool: "bash" },
+      { type: "tool", tool: "read", state: { status: "completed" } },
+      { type: "tool", tool: "read", state: { status: "completed" } },
+      { type: "tool", tool: "bash", state: { status: "completed" } },
     ] as unknown as Part[]
 
     expect(getMessageActivity(message, parts)).toBe("tool: read, bash")
+    expect(
+      getMessageActivity(
+        message,
+        [{ type: "tool", tool: "read", state: { status: "error" } }] as unknown as Part[],
+      ),
+    ).toBe("tool: read (error)")
     expect(getMessageActivity(message, [{ type: "reasoning" }] as unknown as Part[])).toBe("reasoning")
     expect(getMessageActivity(message, [{ type: "text" }] as unknown as Part[])).toBe("response")
+    expect(getMessageActivity(message, [{ type: "step-finish" }] as unknown as Part[])).toBe("step")
     expect(getMessageActivity(message, [])).toBe("—")
     expect(getMessageActivity(user("u1"), parts)).toBe("—")
   })

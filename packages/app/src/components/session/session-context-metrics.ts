@@ -54,17 +54,24 @@ export const getMessageActivity = (message: Message, parts: Part[]) => {
 
   const tools = parts.filter((part): part is Extract<Part, { type: "tool" }> => part.type === "tool")
   if (tools.length > 0) {
-    return `tool: ${[...new Set(tools.map((part) => part.tool))].join(", ")}`
+    const status = ["error", "running", "pending"].find((status) =>
+      tools.some((part) => part.state.status === status),
+    )
+    return `tool: ${[...new Set(tools.map((part) => part.tool))].join(", ")}${status ? ` (${status})` : ""}`
   }
 
   if (parts.some((part) => part.type === "compaction")) return "compaction"
-  if (parts.some((part) => part.type === "subtask")) return "subtask"
-  if (parts.some((part) => part.type === "retry")) return "retry"
+  const subtask = parts.find((part): part is Extract<Part, { type: "subtask" }> => part.type === "subtask")
+  if (subtask) return `subtask: ${subtask.agent}`
+  const retry = parts.find((part): part is Extract<Part, { type: "retry" }> => part.type === "retry")
+  if (retry) return `retry #${retry.attempt}`
   if (parts.some((part) => part.type === "reasoning")) return "reasoning"
   if (parts.some((part) => part.type === "patch")) return "patch"
   if (parts.some((part) => part.type === "file")) return "attachment"
-  if (parts.some((part) => part.type === "agent")) return "agent"
+  const agent = parts.find((part): part is Extract<Part, { type: "agent" }> => part.type === "agent")
+  if (agent) return `agent: ${agent.name}`
   if (parts.some((part) => part.type === "text")) return "response"
+  if (parts.some((part) => part.type === "step-finish")) return "step"
   return "—"
 }
 

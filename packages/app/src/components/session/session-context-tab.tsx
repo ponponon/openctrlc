@@ -87,7 +87,7 @@ function RawMessage(props: {
         <Accordion.Trigger>
           <div class={RAW_MESSAGE_GRID}>
             <div class="shrink-0 text-left">{props.message.role}</div>
-            <div class="min-w-0 truncate text-center text-text-weak">{props.activity}</div>
+            <div class="min-w-0 truncate text-left text-text-weak" title={props.activity}>{props.activity}</div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
             <div class="flex items-center justify-end gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>
@@ -534,7 +534,7 @@ export function SessionContextTab() {
           </div>
           <div class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}>
             <div>Role</div>
-            <div class="text-center">{language.t("context.stats.lastActivity")}</div>
+            <div class="text-left">{language.t("context.stats.lastActivity")}</div>
             <div class="text-right">{language.t("context.usage.tokens")}</div>
             <div class="text-right">Time</div>
           </div>
