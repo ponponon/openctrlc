@@ -29,13 +29,15 @@
 ### 实现范围
 
 - 以 `7774461bbf7bd0600070cdede4fe8b9d9f301bf4` 作为内容基线，不把上游历史强行改造成 OpenCtrlC 的父提交。
-- 本轮检查至 `95daf90670b7c039c436c85537da5fbfe2205b41`，按单个上游 commit 选择性移植，覆盖 provider/session/runtime、数据库迁移、Home/UI、Azure CLI、GitHub Copilot、ACP 和 Desktop OAuth。
+- 本轮检查至 `c10134729dd2ce00beb18604ec91f10319f59a78`，按单个上游 commit 选择性移植，覆盖 Bedrock 图片工具消息和统计模型名边界；依赖升级、R2 分页重构及 Zen/Go 专属变更继续延期。
+- 适配 `c10134729dd`，仅让 Claude、Nova 和 Llama 4 的 Bedrock 模型保留工具结果图片，其余模型转为独立用户消息；适配 `2e018f70f2`，将超长模型名统一归一化为 `unknown`。
 - 在 `UPSTREAM.md` 中记录已集成与延期的上游 commit，在 `scripts/upstream-sync-report.sh` 中根据游标生成下一轮待审查范围。
 - 对上游生成文件、依赖补丁和 OpenCtrlC 定制边界保留人工审查，避免一次性全量 diff 引入 Go/Console/Zen 等不属于本项目的产品代码。
 
 ### 验证方式
 
-- 在 `packages/opencode`、`packages/core`、`packages/app` 分别执行对应的单元测试和 `bun typecheck`。
+- 在 `packages/opencode`、`packages/core`、`packages/app`、`packages/stats/core` 分别执行对应的单元测试和 `bun typecheck`。
+- 本轮验证 `packages/opencode` 的 `message-v2` 测试 40 项、`packages/stats/core` 的 inference 测试 11 项，并通过两个受影响包的 typecheck。
 - 使用 `git diff --check` 检查空白错误，并在提交前扫描改动文件中的 API key、token、密码和私钥内容。
 - 后续同步先执行 `git fetch upstream dev`，再运行 `bash scripts/upstream-sync-report.sh`，按 `UPSTREAM.md` 的延期清单逐项复核，完成后更新游标和台账。
 

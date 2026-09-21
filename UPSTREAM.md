@@ -9,9 +9,9 @@ source of updates.
 - Local exact tag: `base-opencode-7774461`
 - Published marker: `openctrlc-baseline-7774461`
 - Imported: 2026-08-19
-- Reviewed through upstream commit: `95daf90670b7c039c436c85537da5fbfe2205b41`
-- Last selective sync: 2026-09-13
-- Upstream version at review: `1.18.30`
+- Reviewed through upstream commit: `c10134729dd2ce00beb18604ec91f10319f59a78`
+- Last selective sync: 2026-09-21
+- Upstream version at review: `1.18.31`
 - OpenCtrlC version at sync: `1.18.18`
 
 ## Sync policy
@@ -45,8 +45,8 @@ Do not edit generated client files directly; regenerate them from
 
 ## Integrated upstream commits
 
-The 2026-09-13 sync integrated the following upstream fixes and features while
-preserving OpenCtrlC's independent product code:
+The 2026-09-13 and 2026-09-21 syncs integrated the following upstream fixes and
+features while preserving OpenCtrlC's independent product code:
 
 ### Runtime, provider, and session reliability
 
@@ -69,6 +69,14 @@ preserving OpenCtrlC's independent product code:
 - `7c2199d84a` map GitLab GPT and Claude reasoning variants.
 - `790fb5b86f`, `733562e92a`, `216ba8f05f` add Azure CLI authentication,
   remove its Bun dependency, and keep model discovery quiet.
+- `c10134729dd` restrict Bedrock tool-result image retention to Claude, Nova,
+  and Llama 4 model families, hoisting unsupported images into user messages.
+
+### Statistics hardening
+
+- `2e018f70f2` adapted to OpenCtrlC's statistics normalization: reject model
+  identifiers longer than 256 characters in both in-memory aggregates and R2
+  SQL, preventing oversized dimensions from breaking aggregation.
 
 ### App, UI, ACP, and desktop compatibility
 
@@ -98,3 +106,12 @@ OpenCtrlC-specific adaptation:
   that must be reconciled with OpenCtrlC's config extensions.
 - `15537a41d2`: config snapshot JSON comparison; small but coupled to the
   deferred V2 config boundary work.
+- `199a4cdbea`: Gateway SDK upgrade; the upstream lockfile assumes dependency
+  versions and package patches that do not match OpenCtrlC's current lockfile.
+- `8bf288ecb1`: Together AI SDK upgrade for stream usage; defer with the
+  dependency refresh so the patched AI SDK graph is validated as one unit.
+- `a6183af6f3`: Union Alpha hiding; this is OpenCode Zen/Go-specific and has
+  no corresponding OpenCtrlC provider surface.
+- `45ad8dc38a`, `d870e22c70`: R2 SQL pagination and transient retry changes;
+  the local R2 SQL layer predates the upstream pagination interface and needs
+  an isolated adaptation with its own tests.

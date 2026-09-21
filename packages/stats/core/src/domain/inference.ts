@@ -5,6 +5,7 @@ import type { ModelStatAggregate } from "./model"
 import {
   EXCLUDED_MODELS,
   MODEL_AUTHOR_RULES,
+  MODEL_NAME_MAX_LENGTH,
   RETIRED_STAT_PROVIDERS,
   statModel,
   statProvider,
@@ -293,10 +294,14 @@ function statPeriods(grain: "day" | "week", periodStart: Date, periodEnd: Date) 
 }
 
 function statModelSql(model: string, providerModel: string) {
-  return `COALESCE(NULLIF(regexp_replace(CASE
+  const value = `regexp_replace(CASE
       WHEN lower(${model}) = 'big-pickle' THEN NULLIF(${providerModel}, '')
       ELSE ${model}
-    END, '(-free|:global)+$', ''), ''), 'unknown')`
+    END, '(-free|:global)+$', '')`
+  return `CASE
+      WHEN length(${value}) > ${MODEL_NAME_MAX_LENGTH} THEN 'unknown'
+      ELSE COALESCE(NULLIF(${value}, ''), 'unknown')
+    END`
 }
 
 function statProviderSql(model: string, providerModel: string, provider: string) {
