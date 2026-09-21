@@ -26,7 +26,7 @@ import { usePlatform } from "@/context/platform"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
 import { useSessionLayout } from "@/pages/session/session-layout"
-import { getMessageTokenDelta, getSessionContext } from "./session-context-metrics"
+import { getMessageActivity, getMessageTokenDelta, getSessionContext } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
@@ -39,6 +39,8 @@ const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
   tool: "var(--syntax-warning)",
   other: "var(--syntax-comment)",
 }
+
+const RAW_MESSAGE_GRID = "grid grid-cols-[max-content_minmax(0,1fr)_8rem_auto] items-center gap-3 w-full"
 
 function Stat(props: { label: string; value: JSX.Element }) {
   return (
@@ -76,18 +78,18 @@ function RawMessage(props: {
   getParts: (id: string) => Part[]
   onRendered: () => void
   time: (value: number | undefined) => string
+  activity: string
   tokenDelta: string
 }) {
   return (
     <Accordion.Item value={props.message.id}>
       <StickyAccordionHeader>
         <Accordion.Trigger>
-          <div class="flex items-center justify-between gap-2 w-full">
-            <div class="min-w-0 truncate">
-              {props.message.role}{" "}
-              <span class="inline-block min-w-[8rem] text-right text-text-base tabular-nums">{props.tokenDelta}</span>
-            </div>
-            <div class="flex items-center gap-3">
+          <div class={RAW_MESSAGE_GRID}>
+            <div class="shrink-0">{props.message.role}</div>
+            <div class="min-w-0 truncate text-text-weak">{props.activity}</div>
+            <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
+            <div class="flex items-center justify-end gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>
               <Icon name="chevron-grabber-vertical" size="small" class="shrink-0 text-text-weak" />
             </div>
@@ -157,7 +159,7 @@ export function SessionContextTab() {
   const messageTokenDelta = (messages: Message[], index: number) => {
     const delta = getMessageTokenDelta(messages, index)
     if (delta === undefined) return "—"
-    return `${formatter().number(delta)} ${language.t("context.usage.tokens")}`
+    return formatter().number(delta)
   }
 
   const cost = createMemo(() => {
@@ -530,6 +532,12 @@ export function SessionContextTab() {
               </DropdownMenu.Portal>
             </DropdownMenu>
           </div>
+          <div class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}>
+            <div />
+            <div>{language.t("context.stats.lastActivity")}</div>
+            <div class="text-right">Δ {language.t("context.usage.tokens")}</div>
+            <div />
+          </div>
           <Accordion multiple>
             <For each={messages()}>
               {(message, index) => (
@@ -538,6 +546,7 @@ export function SessionContextTab() {
                   getParts={getParts}
                   onRendered={restoreScroll}
                   time={formatter().time}
+                  activity={getMessageActivity(message, getParts(message.id))}
                   tokenDelta={messageTokenDelta(messages(), index())}
                 />
               )}

@@ -1490,20 +1490,22 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ### 实现范围
 
-- 原始消息行保留角色和时间，角色后显示当前 assistant 记录的输入、输出、推理以及缓存读写 token 总和，相邻 assistant 行显示两者的差值。
+- 原始消息行保留角色和时间，token 列使用当前 assistant 记录的输入、输出、推理以及缓存读写 token 总和，相邻 assistant 行显示两者的差值。
 - token 数值使用固定最小列宽、右对齐和等宽数字，保证不同位数的差值末位对齐，降低长列表扫描成本。
 - 角色与 token 列之间不再使用多余圆点，依靠列间距和对齐关系区分信息层级。
+- 原始消息列表增加活动列：tool 消息显示实际工具名，普通回复、推理、压缩、重试、补丁和附件等消息显示对应活动类型，帮助用户理解 assistant 正在执行的阶段。
+- token 单元格只显示格式化后的数字，使用 `Δ Token` 表头表达这是相邻 assistant 消息之间的增量，避免每行重复显示 `Token` 占用列宽。
 - user 消息没有独立的模型用量字段，显示短横线，避免把整轮上下文 token 错分配给用户消息。
-- 复用上下文面板现有的数字格式化和本地化 `Tokens` 文案，不新增重复翻译。
+- 复用上下文面板现有的数字格式化和本地化 `Tokens` 文案作为 token 列表头，不新增重复翻译。
 - 将消息 token 总量和相邻消息差值计算抽成可测试函数；上下文压缩导致总量下降时，差值显示为 0。
 
 ### 代码位置
 
-- `packages/app/src/components/session/session-context-tab.tsx`：原始消息行的 token 展示。
-- `packages/app/src/components/session/session-context-metrics.ts`：消息 token 总量和相邻差值计算。
-- `packages/app/src/components/session/session-context-metrics.test.ts`：assistant/user 消息和相邻差值测试。
+- `packages/app/src/components/session/session-context-tab.tsx`：原始消息列表的活动、增量 token 和表头布局。
+- `packages/app/src/components/session/session-context-metrics.ts`：消息 token 总量、相邻差值和活动摘要计算。
+- `packages/app/src/components/session/session-context-metrics.test.ts`：assistant/user 消息、相邻差值和工具活动摘要测试。
 
 ### 验证方式
 
 - 在 `packages/app` 执行消息上下文指标单元测试和 typecheck。
-- 打开会话的“上下文”面板，确认原始消息行不再显示 `msg_` ID；assistant 行显示右对齐的相邻回复 token 差值，user 行显示短横线。
+- 打开会话的“上下文”面板，确认原始消息行不再显示 `msg_` ID；活动列能显示工具名或活动类型，`Δ Token` 表头下的数字右对齐，user 行显示短横线。

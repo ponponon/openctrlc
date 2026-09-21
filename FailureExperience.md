@@ -615,3 +615,9 @@ bundle 的同一个弹窗；`bun run dev:desktop` 会另起一个开发实例，
 以后展示“每次回复新增/消耗的 token”时，必须先确认 provider usage 字段的语义，再按同一会话中相邻
 assistant 消息的完整上下文总量计算差值；首条 assistant 使用自身总量。上下文压缩可能让后续总量变小，
 这种情况不能展示负消耗，应将差值归零，并通过测试覆盖 user 消息、首条 assistant、正常增长和压缩回落场景。
+
+## 原始消息列表不能只显示 assistant 和 token
+
+将 token 差值直接拼成每行的 `数字 Token` 后，列表会重复占用列宽；同时只显示 assistant 角色，无法让用户知道这一轮是在调用什么工具、推理、回复还是做上下文压缩。
+
+以后设计上下文原始消息列表时，应把 token 单位放进独立的增量列标题（例如 `Δ Token`），单元格只保留数字并右对齐；活动列应从消息的 Part 数据中提取工具名和活动类型，至少让 tool、reasoning、response、compaction、retry 等阶段可识别。不能把所有 assistant 消息当成同一种行为，也不能用重复单位文本挤压列表布局。

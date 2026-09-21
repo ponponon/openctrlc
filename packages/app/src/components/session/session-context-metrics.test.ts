@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import type { Message } from "@openctrlc/sdk/v2/client"
-import { getMessageTokenDelta, getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
+import type { Message, Part } from "@openctrlc/sdk/v2/client"
+import { getMessageActivity, getMessageTokenDelta, getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
 
 const assistant = (
   id: string,
@@ -58,6 +58,21 @@ describe("getSessionContext", () => {
     expect(getMessageTokenDelta(messages, 1)).toBe(1000)
     expect(getMessageTokenDelta(messages, 3)).toBe(500)
     expect(getMessageTokenDelta(messages, 4)).toBe(0)
+  })
+
+  test("summarizes assistant activity and tool names", () => {
+    const message = assistant("a1", { input: 10, output: 5, reasoning: 0, read: 0, write: 0 }, 0)
+    const parts = [
+      { type: "tool", tool: "read" },
+      { type: "tool", tool: "read" },
+      { type: "tool", tool: "bash" },
+    ] as unknown as Part[]
+
+    expect(getMessageActivity(message, parts)).toBe("tool: read, bash")
+    expect(getMessageActivity(message, [{ type: "reasoning" }] as unknown as Part[])).toBe("reasoning")
+    expect(getMessageActivity(message, [{ type: "text" }] as unknown as Part[])).toBe("response")
+    expect(getMessageActivity(message, [])).toBe("—")
+    expect(getMessageActivity(user("u1"), parts)).toBe("—")
   })
 
   test("computes token totals and usage from latest assistant with tokens", () => {

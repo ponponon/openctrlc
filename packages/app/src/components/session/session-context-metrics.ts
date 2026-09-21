@@ -1,4 +1,4 @@
-import type { AssistantMessage, Message } from "@openctrlc/sdk/v2/client"
+import type { AssistantMessage, Message, Part } from "@openctrlc/sdk/v2/client"
 
 type Provider = {
   id: string
@@ -47,6 +47,25 @@ export const getMessageTokenDelta = (messages: Message[], index: number) => {
 
   // Context compaction can make the next recorded total smaller; it is not negative consumption.
   return Math.max(0, current - previousTotal)
+}
+
+export const getMessageActivity = (message: Message, parts: Part[]) => {
+  if (message.role !== "assistant") return "—"
+
+  const tools = parts.filter((part): part is Extract<Part, { type: "tool" }> => part.type === "tool")
+  if (tools.length > 0) {
+    return `tool: ${[...new Set(tools.map((part) => part.tool))].join(", ")}`
+  }
+
+  if (parts.some((part) => part.type === "compaction")) return "compaction"
+  if (parts.some((part) => part.type === "subtask")) return "subtask"
+  if (parts.some((part) => part.type === "retry")) return "retry"
+  if (parts.some((part) => part.type === "reasoning")) return "reasoning"
+  if (parts.some((part) => part.type === "patch")) return "patch"
+  if (parts.some((part) => part.type === "file")) return "attachment"
+  if (parts.some((part) => part.type === "agent")) return "agent"
+  if (parts.some((part) => part.type === "text")) return "response"
+  return "—"
 }
 
 const lastAssistantWithTokens = (messages: Message[]) => {
