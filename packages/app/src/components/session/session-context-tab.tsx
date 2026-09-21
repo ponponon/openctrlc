@@ -26,7 +26,7 @@ import { usePlatform } from "@/context/platform"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
 import { useSessionLayout } from "@/pages/session/session-layout"
-import { getMessageActivity, getMessageTokenDelta, getSessionContext } from "./session-context-metrics"
+import { getMessageActivity, getMessageTokenDeltaDisplay, getSessionContext } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
@@ -157,7 +157,7 @@ export function SessionContextTab() {
   const formatter = createMemo(() => createSessionContextFormatter(language.intl()))
 
   const messageTokenDelta = (messages: Message[], index: number) => {
-    const delta = getMessageTokenDelta(messages, index)
+    const delta = getMessageTokenDeltaDisplay(messages, index)
     if (delta === undefined) return "—"
     return formatter().number(delta)
   }

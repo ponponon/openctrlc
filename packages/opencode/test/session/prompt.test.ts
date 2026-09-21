@@ -1146,6 +1146,36 @@ it.instance(
   3_000,
 )
 
+it.instance(
+  "does not recover an active session turn during polling",
+  () =>
+    Effect.gen(function* () {
+      const { llm } = yield* useServerConfig(providerCfg)
+      const { prompt, sessions, chat } = yield* boot()
+
+      yield* llm.hang
+      yield* user(chat.id, "hello")
+
+      const fiber = yield* prompt.loop({ sessionID: chat.id }).pipe(Effect.forkChild)
+      yield* llm.wait(1)
+      yield* waitForBusy(chat.id)
+      yield* prompt.recover(chat.id)
+
+      const messages = yield* sessions.messages({ sessionID: chat.id })
+      const assistant = messages.findLast((message) => message.info.role === "assistant")
+      expect(assistant?.info.role).toBe("assistant")
+      if (assistant?.info.role === "assistant") {
+        expect(assistant.info.error).toBeUndefined()
+        expect(assistant.info.time.completed).toBeUndefined()
+      }
+
+      yield* prompt.cancel(chat.id)
+      yield* Fiber.await(fiber)
+    }),
+  { config: cfg },
+  3_000,
+)
+
 // Cancel semantics
 
 it.instance("cancel interrupts loop and resolves with an assistant message", () =>

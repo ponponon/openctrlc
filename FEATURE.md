@@ -1559,3 +1559,20 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 在 `packages/app` 执行权限自动授权单元测试和 `bun typecheck`。
 - 模拟事件流断开后重连，确认服务端仍有 pending 权限时会自动回复，工具状态可以继续推进。
+
+## 活跃会话中断误报防护与 token 占位
+
+### 功能目标
+
+避免会话在正常运行期间因前端轮询、重连或打开上下文面板而被错误标记为“已中断”，并让尚未产生可确认用量的最新 assistant 消息显示明确的占位符。
+
+### 实现范围
+
+- 会话 recovery 在检测到本进程内已有 busy runner 时直接跳过，不再捕获 busy 后继续改写持久化消息。
+- 保留真正重启后的孤儿 assistant/tool recovery；活跃 runner 不会被读取接口的恢复逻辑污染。
+- 原始消息列表中，未完成且 token 总量仍为零的 assistant 行显示 `—`；已完成且确实记录为零的消息仍显示 `0`。
+
+### 验证方式
+
+- 在 `packages/opencode` 执行活动会话 recovery 回归测试，确认轮询期间不会写入 `MessageAbortedError`。
+- 在 `packages/app` 执行上下文 token 指标测试，确认未完成消息显示占位符、已完成零用量仍保留数字 0。

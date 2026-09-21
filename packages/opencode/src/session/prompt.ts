@@ -156,8 +156,10 @@ const layer = Layer.effect(
     })
 
     const recover = Effect.fn("SessionPrompt.recover")(function* (sessionID: SessionID) {
-      yield* state.assertNotBusy(sessionID).pipe(Effect.catchTag("SessionBusyError", () => Effect.void))
-      yield* sessions.recover(sessionID)
+      yield* Effect.gen(function* () {
+        yield* state.assertNotBusy(sessionID)
+        yield* sessions.recover(sessionID)
+      }).pipe(Effect.catchTag("SessionBusyError", () => Effect.void))
     })
 
     const resolvePromptParts = Effect.fn("SessionPrompt.resolvePromptParts")(function* (template: string) {

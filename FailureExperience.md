@@ -662,3 +662,20 @@ session 的 pending permission、全局事件断开/重连时间，以及子智�
 permission/question，后者在读取会话或继续执行前，把未完成 assistant 回合和 `pending/running` 工具原子地
 收敛为中断错误，并保留 `interrupted` 元数据供模型上下文和 UI 识别。恢复逻辑必须跳过活跃 runner、可重复执行，
 同时覆盖父级 task 和子会话；不能只修权限卡片或只刷新前端状态。
+
+## Recovery 捕获 busy 后必须终止，不得继续改写活跃会话
+
+本次“已中断”频繁出现不是模型真的频繁取消，而是 recovery 的控制流错误：先调用
+`assertNotBusy`，捕获 `SessionBusyError` 后仍然继续调用 `sessions.recover`。前端读取消息、重连或打开上下文面板
+会触发这条路径，于是正在执行的 assistant/tool 被持久化成 `MessageAbortedError`，父级 task 随后显示
+`Tool execution aborted`，即使子会话最终仍正常 `stop`。
+
+以后 recovery 必须把“检查不忙”和“执行恢复”放在同一个受保护分支中；busy 分支只能直接返回，不能在 catch 后落入
+恢复逻辑。回归测试必须真实启动一个挂起中的 runner，再调用 recovery 并断言 assistant 没有 completed/error 时间戳；不能只测
+纯函数的孤儿消息转换。
+
+## 未完成 token 不能把默认零值当成真实用量
+
+assistant 消息刚创建时 token 字段会初始化为全零，但这不代表 provider 已确认本轮实际用量。上下文原始消息列表如果直接
+显示 `0`，会让用户误以为模型已经消耗了零 token；应在消息尚未完成且总量为零时显示 `—`，只有已完成且确实记录为零时才显示
+`0`，以区分“尚未产生结果”和“真实零用量”。

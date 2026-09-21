@@ -49,6 +49,13 @@ export const getMessageTokenDelta = (messages: Message[], index: number) => {
   return Math.max(0, current - previousTotal)
 }
 
+export const getMessageTokenDeltaDisplay = (messages: Message[], index: number) => {
+  const delta = getMessageTokenDelta(messages, index)
+  const message = messages[index]
+  if (message?.role === "assistant" && message.time.completed === undefined && delta === 0) return undefined
+  return delta
+}
+
 export const getMessageActivity = (message: Message, parts: Part[]) => {
   if (message.role !== "assistant") return "—"
 

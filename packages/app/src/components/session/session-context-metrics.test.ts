@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import type { Message, Part } from "@openctrlc/sdk/v2/client"
-import { getMessageActivity, getMessageTokenDelta, getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
+import {
+  getMessageActivity,
+  getMessageTokenDelta,
+  getMessageTokenDeltaDisplay,
+  getMessageTokenTotal,
+  getSessionContext,
+} from "./session-context-metrics"
 
 const assistant = (
   id: string,
@@ -8,6 +14,7 @@ const assistant = (
   cost: number,
   providerID = "openai",
   modelID = "gpt-4.1",
+  completed?: number,
 ) => {
   return {
     id,
@@ -24,7 +31,7 @@ const assistant = (
         write: tokens.write,
       },
     },
-    time: { created: 1 },
+    time: { created: 1, ...(completed === undefined ? {} : { completed }) },
   } as unknown as Message
 }
 
@@ -58,6 +65,21 @@ describe("getSessionContext", () => {
     expect(getMessageTokenDelta(messages, 1)).toBe(1000)
     expect(getMessageTokenDelta(messages, 3)).toBe(500)
     expect(getMessageTokenDelta(messages, 4)).toBe(0)
+  })
+
+  test("uses a placeholder for an incomplete assistant with no recorded usage", () => {
+    const pending = assistant("pending", { input: 0, output: 0, reasoning: 0, read: 0, write: 0 }, 0)
+    const completed = assistant(
+      "completed",
+      { input: 0, output: 0, reasoning: 0, read: 0, write: 0 },
+      0,
+      "openai",
+      "gpt-4.1",
+      2,
+    )
+
+    expect(getMessageTokenDeltaDisplay([pending], 0)).toBeUndefined()
+    expect(getMessageTokenDeltaDisplay([completed], 0)).toBe(0)
   })
 
   test("summarizes assistant activity and tool names", () => {
