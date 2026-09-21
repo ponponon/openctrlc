@@ -565,6 +565,25 @@ export default function Page() {
     review: reviewTab,
     hasReview: canReview,
   })
+
+  createEffect(
+    on(
+      () => [params.id, isDesktop()] as const,
+      ([id, desktop]) => {
+        if (!id || !desktop) return
+
+        const current = tabs()
+        if (current.active() || current.all().length > 0) return
+
+        view().reviewPanel.open("context-button")
+        if (layout.fileTree.opened() && layout.fileTree.tab() !== "all") layout.fileTree.setTab("all")
+        void tabs().open("context")
+        tabs().setActive("context")
+      },
+      { defer: true },
+    ),
+  )
+
   const activeTab = tabState.activeTab
   const activeFileTab = tabState.activeFileTab
   const revertMessageID = createMemo(() => info()?.revert?.messageID)
