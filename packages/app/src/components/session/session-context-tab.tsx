@@ -87,7 +87,7 @@ function RawMessage(props: {
         <Accordion.Trigger>
           <div class={RAW_MESSAGE_GRID}>
             <div class="shrink-0">{props.message.role}</div>
-            <div class="min-w-0 truncate text-text-weak">{props.activity}</div>
+            <div class="min-w-0 truncate text-center text-text-weak">{props.activity}</div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
             <div class="flex items-center justify-end gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>
@@ -533,10 +533,13 @@ export function SessionContextTab() {
             </DropdownMenu>
           </div>
           <div class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}>
-            <div />
-            <div>{language.t("context.stats.lastActivity")}</div>
+            <div class="invisible text-12-regular">assistant</div>
+            <div class="text-center">{language.t("context.stats.lastActivity")}</div>
             <div class="text-right">Δ {language.t("context.usage.tokens")}</div>
-            <div />
+            <div class="invisible flex items-center justify-end gap-3">
+              <div class="shrink-0 text-12-regular">{formatter().time(messages().at(-1)?.time.created)}</div>
+              <Icon name="chevron-grabber-vertical" size="small" />
+            </div>
           </div>
           <Accordion multiple>
             <For each={messages()}>
