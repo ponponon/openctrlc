@@ -85,7 +85,6 @@ function RawMessage(props: {
           <div class="flex items-center justify-between gap-2 w-full">
             <div class="min-w-0 truncate">
               {props.message.role}{" "}
-              <span class="text-text-base">•</span>{" "}
               <span class="inline-block min-w-[8rem] text-right text-text-base tabular-nums">{props.tokenDelta}</span>
             </div>
             <div class="flex items-center gap-3">
