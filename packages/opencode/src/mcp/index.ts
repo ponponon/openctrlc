@@ -361,20 +361,16 @@ const layer = Layer.effect(
 
       const connectTimeout = mcp.timeout ?? DEFAULT_TIMEOUT
       return yield* connectTransport(transport, connectTimeout).pipe(
-        Effect.map(
-          (client): { client: MCPClient | undefined; status: Status; stderr: string[] } => ({
-            client,
-            status: { status: "connected" },
-            stderr,
-          }),
-        ),
-        Effect.catch(
-          (error): Effect.Effect<{ client: MCPClient | undefined; status: Status; stderr: string[] }> => {
-            const msg = error instanceof Error ? error.message : String(error)
-            const detail = stderr.join("").trim().slice(-2_000)
-            return Effect.succeed({ client: undefined, status: { status: "failed", error: detail || msg }, stderr })
-          },
-        ),
+        Effect.map((client): { client: MCPClient | undefined; status: Status; stderr: string[] } => ({
+          client,
+          status: { status: "connected" },
+          stderr,
+        })),
+        Effect.catch((error): Effect.Effect<{ client: MCPClient | undefined; status: Status; stderr: string[] }> => {
+          const msg = error instanceof Error ? error.message : String(error)
+          const detail = stderr.join("").trim().slice(-2_000)
+          return Effect.succeed({ client: undefined, status: { status: "failed", error: detail || msg }, stderr })
+        }),
       )
     })
 
