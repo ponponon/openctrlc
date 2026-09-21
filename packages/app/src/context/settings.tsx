@@ -39,6 +39,7 @@ export interface Settings {
     agentVisibilityInitialized?: boolean
     newInterfaceNoticeDismissed?: boolean
     shouldDisplayTabsToast?: boolean
+    followupModeMigrated?: boolean
   }
   appearance: {
     fontSize: number
@@ -184,7 +185,7 @@ const defaultSettings: Settings = {
   general: {
     autoSave: true,
     releaseNotes: true,
-    followup: "steer",
+    followup: "queue",
     showFileTree: false,
     showNavigation: false,
     showSearch: false,
@@ -351,8 +352,11 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
     })
 
     createEffect(() => {
-      if (store.general?.followup !== "queue") return
-      setStore("general", "followup", "steer")
+      if (!ready() || store.general?.followupModeMigrated === true) return
+      batch(() => {
+        setStore("general", "followup", "queue")
+        setStore("general", "followupModeMigrated", true)
+      })
     })
 
     return {
@@ -370,11 +374,11 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
           setStore("general", "releaseNotes", value)
         },
         followup: withFallback(
-          () => (store.general?.followup === "queue" ? "steer" : store.general?.followup),
+          () => (store.general?.followupModeMigrated === true ? store.general?.followup : undefined),
           defaultSettings.general.followup,
         ),
         setFollowup(value: "queue" | "steer") {
-          setStore("general", "followup", value === "queue" ? "steer" : value)
+          setStore("general", "followup", value)
         },
         showFileTree,
         setShowFileTree(value: boolean) {

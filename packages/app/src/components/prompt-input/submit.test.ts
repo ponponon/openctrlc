@@ -487,11 +487,40 @@ describe("prompt submit worktree selection", () => {
       text: "ls",
       files: [],
       agents: [],
+      delivery: "queue",
     })
     expect((promptInputs[0] as { id?: string }).id).toStartWith("msg_")
     expect((promptInputs[0] as { legacyParts?: { id: string; type: string; text?: string }[] }).legacyParts).toEqual([
       { id: expect.stringMatching(/^prt_/), type: "text", text: "ls" },
     ])
+  })
+
+  test("preserves an explicit steer mode for an in-flight follow-up", async () => {
+    params = { id: "session-1" }
+
+    const submit = createPromptSubmit({
+      prompt,
+      info: () => ({ id: "session-1" }),
+      imageAttachments: () => [],
+      commentCount: () => 0,
+      autoAccept: () => false,
+      mode: () => "normal",
+      working: () => false,
+      editor: () => undefined,
+      queueScroll: () => undefined,
+      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
+      addToHistory: () => undefined,
+      resetHistoryNavigation: () => undefined,
+      setMode: () => undefined,
+      setPopover: () => undefined,
+      followup: () => "steer",
+      onSubmit: () => undefined,
+    })
+
+    await submit.handleSubmit({ preventDefault: () => undefined } as unknown as Event)
+    await Bun.sleep(0)
+
+    expect((promptInputs[0] as { delivery?: string }).delivery).toBe("steer")
   })
 
   test("submits slash commands through the current session API", async () => {

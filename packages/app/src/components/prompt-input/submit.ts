@@ -39,6 +39,7 @@ export type FollowupDraft = {
   agent: string
   model: { providerID: string; modelID: string }
   variant?: string
+  delivery?: "queue" | "steer"
 }
 
 type FollowupSendInput = {
@@ -48,6 +49,7 @@ type FollowupSendInput = {
   draft: FollowupDraft
   messageID?: string
   optimisticBusy?: boolean
+  delivery?: "queue" | "steer"
   before?: () => Promise<boolean> | boolean
 }
 
@@ -171,6 +173,7 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
       agent: input.draft.agent,
       model: input.draft.model,
       variant: input.draft.variant,
+      delivery: input.delivery ?? input.draft.delivery ?? "queue",
       legacyParts: requestParts,
       text: requestParts.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("\n"),
       files: requestParts.flatMap((part) => {
@@ -224,6 +227,7 @@ type PromptSubmitInput = {
   setPopover: (popover: "at" | "slash" | null) => void
   newSessionWorktree?: Accessor<string | undefined>
   onNewSessionWorktreeReset?: () => void
+  followup?: Accessor<"queue" | "steer">
   shouldQueue?: Accessor<boolean>
   onQueue?: (draft: FollowupDraft) => void
   onAbort?: () => void
@@ -454,6 +458,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       agent,
       model,
       variant,
+      delivery: input.followup?.() ?? "queue",
     }
 
     const clearInput = () => {

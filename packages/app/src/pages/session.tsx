@@ -1959,6 +1959,7 @@ export default function Page() {
         sync: sync(),
         serverSync: serverSync(),
         draft: item,
+        delivery: input.manual ? "steer" : item.delivery,
         optimisticBusy: item.sessionDirectory === sdk().directory,
       }).catch((err) => {
         setFollowup("failed", input.sessionID, input.id)
@@ -2470,6 +2471,7 @@ export default function Page() {
                       }}
                       newSessionWorktree={newSessionWorktree()}
                       onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
+                      followup={settings.general.followup}
                       onSubmit={() => {
                         comments.clear()
                         resumeScroll()
@@ -2498,6 +2500,7 @@ export default function Page() {
                         return newSessionWorktree()
                       },
                       onNewSessionWorktreeReset: () => setStore("newSessionWorktree", "main"),
+                      followup: settings.general.followup,
                       onSubmit: () => {
                         comments.clear()
                         resumeScroll()
