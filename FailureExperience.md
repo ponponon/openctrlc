@@ -650,3 +650,15 @@ session 的 pending permission、全局事件断开/重连时间，以及子智�
 本次修复补充了自动授权的主动补偿：实时事件之外，在 `server.connected`/`global.disposed` 后以及进入当前目录时，
 根据持久化授权键查询 pending 权限并回复。以后修改权限自动授权时，必须同时验证“事件已送达”和“事件断线后
 通过列表恢复”两条路径；只测事件监听会把这个断线窗口回归问题再次漏掉。
+
+## 进程重启不能留下永久 running 工具
+
+这次进一步复现发现，自动授权补偿只能解决 sidecar 仍然存活时的权限等待；如果用户执行
+`bun run dev:desktop` 让后端进程整体重启，权限 Deferred、工具 runner 和子任务执行 fiber 都会被销毁，
+但数据库里的 assistant 消息和工具 Part 仍可能停留在没有结束时间的 `running`。父级 task 因此继续显示进行中，
+重新打开会话也无法凭空恢复已经消失的文件读取或补丁进程。
+
+以后处理“重启后一直思考”时，必须把“内存等待恢复”和“持久化孤儿状态恢复”分成两条链路：前者恢复 pending
+permission/question，后者在读取会话或继续执行前，把未完成 assistant 回合和 `pending/running` 工具原子地
+收敛为中断错误，并保留 `interrupted` 元数据供模型上下文和 UI 识别。恢复逻辑必须跳过活跃 runner、可重复执行，
+同时覆盖父级 task 和子会话；不能只修权限卡片或只刷新前端状态。

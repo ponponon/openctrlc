@@ -282,4 +282,62 @@ describe("Session", () => {
       expect(saved.metadata).toBeUndefined()
     }),
   )
+
+  it.instance("persists interrupted tool recovery", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionNs.Service
+      const created = yield* Effect.acquireRelease(session.create({ title: "interrupted" }), (info) =>
+        session.remove(info.id).pipe(Effect.ignore),
+      )
+      const userID = MessageID.ascending()
+      yield* session.updateMessage({
+        id: userID,
+        sessionID: created.id,
+        role: "user",
+        time: { created: 100 },
+        agent: "build",
+        model: { providerID: "test", modelID: "test-model" },
+      } as unknown as SessionV1.User)
+      const assistantID = MessageID.ascending()
+      yield* session.updateMessage({
+        id: assistantID,
+        sessionID: created.id,
+        role: "assistant",
+        parentID: userID,
+        mode: "build",
+        agent: "build",
+        cost: 0,
+        path: { cwd: "/tmp", root: "/tmp" },
+        tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+        modelID: "test-model",
+        providerID: "test",
+        time: { created: 200 },
+      } as unknown as SessionV1.Assistant)
+      yield* session.updatePart({
+        id: PartID.ascending(),
+        messageID: assistantID,
+        sessionID: created.id,
+        type: "tool",
+        callID: "call_recovery",
+        tool: "read",
+        state: {
+          status: "running",
+          input: { filePath: "/tmp/file" },
+          time: { start: 300 },
+        },
+      })
+
+      yield* session.recover(created.id)
+      const recovered = yield* session.messages({ sessionID: created.id })
+      const assistant = recovered.find((message) => message.info.id === assistantID)
+      expect(assistant?.info.role).toBe("assistant")
+      if (assistant?.info.role !== "assistant") return
+      expect(assistant.info.error?.name).toBe("MessageAbortedError")
+      expect(assistant.info.finish).toBe("unknown")
+      expect(assistant.info.time.completed).toBeDefined()
+      const tool = assistant.parts.find((part): part is SessionV1.ToolPart => part.type === "tool")
+      expect(tool?.state.status).toBe("error")
+      if (tool?.state.status === "error") expect(tool.state.metadata?.interrupted).toBe(true)
+    }),
+  )
 })

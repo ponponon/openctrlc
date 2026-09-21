@@ -87,6 +87,32 @@
 - 执行 `session-stall.test.ts`，覆盖权限等待、工具运行、模型回合和已完成回合。
 - 在 `packages/app` 执行 `bun typecheck`，确认周期检查不影响 Server Sync 生命周期。
 
+## 重启后的未完成会话自愈
+
+### 功能目标
+
+避免 Desktop 或 sidecar 重启后，内存中的工具执行器已经消失，但数据库仍保留 `running` 状态，导致父级任务卡和子会话永久显示进行中。
+
+### 实现范围
+
+- 读取会话元数据或消息时，先检查没有完成时间的助手回合及 `pending/running` 工具。
+- 将确认属于进程中断的回合写回 `MessageAbortedError`、`finish: unknown` 和 `interrupted` 工具错误状态。
+- 活跃 runner 跳过恢复，真正点击“继续”时再次执行幂等恢复，避免正常运行中的会话被误收尾。
+- 父级 `task` 与子级工具使用同一套恢复规则，恢复后可从最后一个安全边界继续。
+
+### 代码位置
+
+- `packages/opencode/src/session/recovery.ts`：中断状态转换和幂等规则。
+- `packages/opencode/src/session/session.ts`：持久化恢复事件及消息加载。
+- `packages/opencode/src/session/prompt.ts`：继续执行前的恢复兜底。
+- `packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts`：打开会话和读取消息时触发恢复。
+
+### 验证方式
+
+- 执行 `bun test test/session/recovery.test.ts`。
+- 执行 `bun typecheck`（`packages/opencode`）。
+- 重启 Desktop 后打开一个存在 `assistant.completed` 缺失或工具 `running` 的会话，确认状态变为中断，并可通过“继续”重新进入模型回合。
+
 ## GitHub Actions 定时任务静默时段
 
 ### 功能目标

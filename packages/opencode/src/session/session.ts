@@ -45,6 +45,7 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderV2 } from "@openctrlc/core/provider"
 import { ModelV2 } from "@openctrlc/core/model"
 import { SessionMessage } from "@openctrlc/schema/session-message"
+import { recoverInterruptedMessages } from "./recovery"
 
 const parentTitlePrefix = "New session - "
 const childTitlePrefix = "Child session - "
@@ -446,6 +447,7 @@ export interface Interface {
   readonly setShare: (input: { sessionID: SessionID; share: Info["share"] }) => Effect.Effect<void>
   readonly setWorkspace: (input: { sessionID: SessionID; workspaceID: Info["workspaceID"] }) => Effect.Effect<void>
   readonly diff: (sessionID: SessionID) => Effect.Effect<Snapshot.FileDiff[]>
+  readonly recover: (sessionID: SessionID) => Effect.Effect<void>
   readonly messages: (input: { sessionID: SessionID; limit?: number }) => Effect.Effect<SessionV1.WithParts[], NotFound>
   readonly children: (parentID: SessionID) => Effect.Effect<Info[]>
   readonly remove: (sessionID: SessionID) => Effect.Effect<void, NotFound>
@@ -643,6 +645,44 @@ const layer: Layer.Layer<
         return part
       }).pipe(Effect.withSpan("Session.updatePart"))
 
+    const loadMessages = Effect.fnUntraced(function* (sessionID: SessionID) {
+      const size = 50
+      const result = [] as SessionV1.WithParts[]
+      let before: string | undefined
+      while (true) {
+        const page = yield* MessageV2.page({ sessionID, limit: size, before }).pipe(
+          Effect.provideService(Database.Service, database),
+        )
+        if (page.items.length === 0) break
+        for (let i = page.items.length - 1; i >= 0; i--) {
+          const item = page.items[i]
+          if (item) result.push(item)
+        }
+        if (!page.more || !page.cursor) break
+        before = page.cursor
+      }
+      return result.reverse()
+    })
+
+    const recover = Effect.fn("Session.recover")(function* (sessionID: SessionID) {
+      const messages = yield* loadMessages(sessionID).pipe(Effect.catchTag("NotFoundError", () => Effect.succeed([])))
+      const changes = recoverInterruptedMessages(messages, Date.now())
+      yield* Effect.forEach(
+        changes,
+        (change) =>
+          Effect.gen(function* () {
+            yield* Effect.forEach(change.parts, updatePart, { discard: true })
+            yield* updateMessage(change.message)
+            yield* Effect.logWarning("recovered interrupted session turn", {
+              "session.id": sessionID,
+              messageID: change.message.id,
+              toolCount: change.parts.length,
+            })
+          }),
+        { discard: true },
+      )
+    })
+
     const getPart: Interface["getPart"] = Effect.fn("Session.getPart")(function* (input) {
       const row = yield* db
         .select()
@@ -832,23 +872,7 @@ const layer: Layer.Layer<
           Effect.provideService(Database.Service, database),
         )).items
       }
-
-      const size = 50
-      const result = [] as SessionV1.WithParts[]
-      let before: string | undefined
-      while (true) {
-        const page = yield* MessageV2.page({ sessionID: input.sessionID, limit: size, before }).pipe(
-          Effect.provideService(Database.Service, database),
-        )
-        if (page.items.length === 0) break
-        for (let i = page.items.length - 1; i >= 0; i--) {
-          const item = page.items[i]
-          if (item) result.push(item)
-        }
-        if (!page.more || !page.cursor) break
-        before = page.cursor
-      }
-      return result.reverse()
+      return yield* loadMessages(input.sessionID)
     })
 
     const removeMessage = Effect.fn("Session.removeMessage")(function* (input: {
@@ -922,6 +946,7 @@ const layer: Layer.Layer<
       setShare,
       setWorkspace,
       diff,
+      recover,
       messages,
       children,
       remove,
