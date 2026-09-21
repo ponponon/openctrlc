@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import type { PermissionRequest, Session } from "@openctrlc/sdk/v2/client"
 import { base64Encode } from "@openctrlc/core/util/encode"
-import { autoRespondsPermission, isDirectoryAutoAccepting, sessionAutoAccept } from "./permission-auto-respond"
+import {
+  autoAcceptDirectories,
+  autoRespondsPermission,
+  isDirectoryAutoAccepting,
+  sessionAutoAccept,
+} from "./permission-auto-respond"
 
 const session = (input: { id: string; parentID?: string }) =>
   ({
@@ -127,5 +132,24 @@ describe("isDirectoryAutoAccepting", () => {
     const directory = "/tmp/project"
     const autoAccept = { session: true }
     expect(isDirectoryAutoAccepting(autoAccept, directory)).toBe(false)
+  })
+})
+
+describe("autoAcceptDirectories", () => {
+  test("recovers directories from persisted session and directory keys", () => {
+    const first = "/tmp/first"
+    const second = "/tmp/second"
+    const directories = autoAcceptDirectories({
+      [`${base64Encode(first)}/*`]: true,
+      [`${base64Encode(second)}/session`]: true,
+      [`${base64Encode("/tmp/disabled")}/*`]: false,
+      legacy: true,
+    })
+
+    expect([...directories].sort()).toEqual([first, second].sort())
+  })
+
+  test("ignores malformed persisted keys", () => {
+    expect([...autoAcceptDirectories({ "not-base64/permission": true })]).toEqual([])
   })
 })

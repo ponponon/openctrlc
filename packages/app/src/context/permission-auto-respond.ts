@@ -1,4 +1,4 @@
-import { base64Encode } from "@openctrlc/core/util/encode"
+import { base64Decode, base64Encode } from "@openctrlc/core/util/encode"
 
 export function acceptKey(sessionID: string, directory?: string) {
   if (!directory) return sessionID
@@ -7,6 +7,27 @@ export function acceptKey(sessionID: string, directory?: string) {
 
 export function directoryAcceptKey(directory: string) {
   return `${base64Encode(directory)}/*`
+}
+
+export function autoAcceptDirectories(autoAccept: Record<string, boolean>) {
+  const directories = new Set<string>()
+
+  for (const [key, enabled] of Object.entries(autoAccept)) {
+    if (!enabled) continue
+    const separator = key.indexOf("/")
+    if (separator <= 0) continue
+
+    try {
+      const encoded = key.slice(0, separator)
+      const directory = base64Decode(encoded)
+      if (base64Encode(directory) !== encoded) continue
+      directories.add(directory)
+    } catch {
+      // Ignore legacy or malformed keys. The active directory is reconciled separately.
+    }
+  }
+
+  return directories
 }
 
 function accepted(autoAccept: Record<string, boolean>, sessionID: string, directory?: string) {

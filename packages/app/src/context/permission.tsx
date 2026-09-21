@@ -16,6 +16,7 @@ import type { ServerScope } from "@/utils/server-scope"
 import { normalizePermissionRequest } from "./global-sync/utils"
 import {
   acceptKey,
+  autoAcceptDirectories,
   directoryAcceptKey,
   isDirectoryAutoAccepting,
   autoRespondsPermission,
@@ -140,6 +141,7 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       const directory = activeDirectory()
       if (!directory) return
       selected().enableConfiguredDirectory(directory)
+      selected().reconcileAutoAccept(directory)
     })
 
     const permissionsEnabled = createMemo(() => {
@@ -178,6 +180,9 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       },
       enableAutoAccept(sessionID: string, directory: string) {
         selected().enableAutoAccept(sessionID, directory)
+      },
+      reconcileAutoAccept(directory?: string) {
+        selected().reconcileAutoAccept(directory)
       },
       disableAutoAccept(sessionID: string, directory?: string) {
         selected().disableAutoAccept(sessionID, directory)
@@ -234,7 +239,6 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
   const MAX_RESPONDED = 1000
   const RESPONDED_TTL_MS = 60 * 60 * 1000
   const responded = new Map<string, number>()
-  const enableVersion = new Map<string, number>()
   const meta = { disposed: false }
 
   function pruneResponded(now: number) {
@@ -330,27 +334,56 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     respondOnce(permission, directory)
   }
 
-  function bumpEnableVersion(sessionID: string, directory?: string) {
-    const key = acceptKey(sessionID, directory)
-    const next = (enableVersion.get(key) ?? 0) + 1
-    enableVersion.set(key, next)
-    return next
-  }
-
   const handlePermission = (e: PermissionEvent) => {
     const event = e.details
     if (event?.type !== "permission.asked") return
     void respondPending(event.properties, e.name)
   }
 
-  const unsubscribe = input.sdk.event.listen((event) => {
+  function reconcileDirectory(directory: string) {
+    list(directory)
+      .then((permissions) => {
+        if (meta.disposed) return
+        for (const permission of permissions) void respondPending(permission, directory)
+      })
+      .catch(() => undefined)
+  }
+
+  function reconcileAutoAccept(directory?: string) {
+    if (meta.disposed) return
+    const run = () => {
+      if (meta.disposed) return
+      const directories = directory ? [directory] : autoAcceptDirectories(store.autoAccept)
+      for (const item of directories) reconcileDirectory(item)
+    }
+
     if (ready()) {
+      run()
+      return
+    }
+    void ready.promise?.then(run)
+  }
+
+  const handleServerLifecycle = (e: PermissionEvent) => {
+    const type = e.details?.type
+    if (type !== "server.connected" && type !== "global.disposed") return
+    reconcileAutoAccept(e.name === "global" ? undefined : e.name)
+  }
+
+  reconcileAutoAccept()
+
+  const unsubscribe = input.sdk.event.listen((event) => {
+    const handle = () => {
+      handleServerLifecycle(event)
       handlePermission(event)
+    }
+    if (ready()) {
+      handle()
       return
     }
     void ready.promise?.then(() => {
       if (meta.disposed) return
-      handlePermission(event)
+      handle()
     })
   })
   onCleanup(() => {
@@ -367,15 +400,7 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
       }),
     )
 
-    list(directory)
-      .then((permissions) => {
-        if (meta.disposed) return
-        if (!isAutoAcceptingDirectory(directory)) return
-        for (const permission of permissions) {
-          void respondPending(permission, directory, () => isAutoAcceptingDirectory(directory))
-        }
-      })
-      .catch(() => undefined)
+    reconcileDirectory(directory)
   }
 
   function disableDirectory(directory: string) {
@@ -391,7 +416,6 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
   function enable(sessionID: string, directory: string) {
     if (meta.disposed) return
     const key = acceptKey(sessionID, directory)
-    const version = bumpEnableVersion(sessionID, directory)
     setStore(
       produce((draft) => {
         draft.autoAccept[key] = true
@@ -399,25 +423,11 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
       }),
     )
 
-    list(directory)
-      .then((permissions) => {
-        if (meta.disposed) return
-        if (enableVersion.get(key) !== version) return
-        if (!isAutoAccepting(sessionID, directory)) return
-        for (const permission of permissions) {
-          void respondPending(
-            permission,
-            directory,
-            () => enableVersion.get(key) === version && isAutoAccepting(sessionID, directory),
-          )
-        }
-      })
-      .catch(() => undefined)
+    reconcileDirectory(directory)
   }
 
   function disable(sessionID: string, directory?: string) {
     if (meta.disposed) return
-    bumpEnableVersion(sessionID, directory)
     const key = directory ? acceptKey(sessionID, directory) : sessionID
     setStore(
       produce((draft) => {
@@ -489,6 +499,7 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     api,
     sync: input.sync,
     enableConfiguredDirectory,
+    reconcileAutoAccept,
     permissionsEnabled(directory: string) {
       if (meta.disposed) return false
       const [childStore] = input.sync.child(directory)
