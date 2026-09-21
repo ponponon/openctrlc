@@ -34,6 +34,21 @@ export const getMessageTokenTotal = (msg: Message) => {
   return tokenTotal(msg)
 }
 
+export const getMessageTokenDelta = (messages: Message[], index: number) => {
+  const message = messages[index]
+  if (!message) return undefined
+
+  const current = getMessageTokenTotal(message)
+  if (current === undefined) return undefined
+
+  const previous = messages.slice(0, index).findLast((item) => item.role === "assistant")
+  const previousTotal = previous ? getMessageTokenTotal(previous) : undefined
+  if (previousTotal === undefined) return current
+
+  // Context compaction can make the next recorded total smaller; it is not negative consumption.
+  return Math.max(0, current - previousTotal)
+}
+
 const lastAssistantWithTokens = (messages: Message[]) => {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]

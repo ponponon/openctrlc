@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { Message } from "@openctrlc/sdk/v2/client"
-import { getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
+import { getMessageTokenDelta, getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
 
 const assistant = (
   id: string,
@@ -43,6 +43,21 @@ describe("getSessionContext", () => {
 
     expect(getMessageTokenTotal(message)).toBe(1000)
     expect(getMessageTokenTotal(user("u1"))).toBeUndefined()
+  })
+
+  test("returns the token difference from the previous assistant message", () => {
+    const messages = [
+      user("u1"),
+      assistant("a1", { input: 600, output: 200, reasoning: 100, read: 50, write: 50 }, 0.5),
+      user("u2"),
+      assistant("a2", { input: 900, output: 300, reasoning: 100, read: 100, write: 100 }, 0.75),
+      assistant("a3", { input: 500, output: 100, reasoning: 50, read: 50, write: 50 }, 1),
+    ]
+
+    expect(getMessageTokenDelta(messages, 0)).toBeUndefined()
+    expect(getMessageTokenDelta(messages, 1)).toBe(1000)
+    expect(getMessageTokenDelta(messages, 3)).toBe(500)
+    expect(getMessageTokenDelta(messages, 4)).toBe(0)
   })
 
   test("computes token totals and usage from latest assistant with tokens", () => {

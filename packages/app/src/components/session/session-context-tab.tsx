@@ -26,7 +26,7 @@ import { usePlatform } from "@/context/platform"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
 import { useSessionLayout } from "@/pages/session/session-layout"
-import { getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
+import { getMessageTokenDelta, getSessionContext } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
@@ -76,7 +76,7 @@ function RawMessage(props: {
   getParts: (id: string) => Part[]
   onRendered: () => void
   time: (value: number | undefined) => string
-  tokens: (message: Message) => string
+  tokenDelta: string
 }) {
   return (
     <Accordion.Item value={props.message.id}>
@@ -84,7 +84,7 @@ function RawMessage(props: {
         <Accordion.Trigger>
           <div class="flex items-center justify-between gap-2 w-full">
             <div class="min-w-0 truncate">
-              {props.message.role} <span class="text-text-base">• {props.tokens(props.message)}</span>
+              {props.message.role} <span class="text-text-base">• {props.tokenDelta}</span>
             </div>
             <div class="flex items-center gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>
@@ -153,10 +153,10 @@ export function SessionContextTab() {
   const ctx = createMemo(() => getSessionContext(messages(), [...providers.all().values()]))
   const formatter = createMemo(() => createSessionContextFormatter(language.intl()))
 
-  const messageTokens = (message: Message) => {
-    const total = getMessageTokenTotal(message)
-    if (total === undefined) return "—"
-    return `${formatter().number(total)} ${language.t("context.usage.tokens")}`
+  const messageTokenDelta = (messages: Message[], index: number) => {
+    const delta = getMessageTokenDelta(messages, index)
+    if (delta === undefined) return "—"
+    return `${formatter().number(delta)} ${language.t("context.usage.tokens")}`
   }
 
   const cost = createMemo(() => {
@@ -531,13 +531,13 @@ export function SessionContextTab() {
           </div>
           <Accordion multiple>
             <For each={messages()}>
-              {(message) => (
+              {(message, index) => (
                 <RawMessage
                   message={message}
                   getParts={getParts}
                   onRendered={restoreScroll}
                   time={formatter().time}
-                  tokens={messageTokens}
+                  tokenDelta={messageTokenDelta(messages(), index())}
                 />
               )}
             </For>

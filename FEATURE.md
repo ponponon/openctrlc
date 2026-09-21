@@ -1486,22 +1486,22 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ### 功能目标
 
-让上下文面板的“原始消息”列表展示每条 assistant 消息实际记录的 token 用量，替换对用户价值较低的内部 `msg_` ID。
+让上下文面板的“原始消息”列表展示每次 assistant 回复相对上一轮新增的 token 用量，替换对用户价值较低的内部 `msg_` ID。
 
 ### 实现范围
 
-- 原始消息行保留角色和时间，角色后显示输入、输出、推理以及缓存读写 token 的总和。
+- 原始消息行保留角色和时间，角色后显示当前 assistant 记录的输入、输出、推理以及缓存读写 token 总和，相邻 assistant 行显示两者的差值。
 - user 消息没有独立的模型用量字段，显示短横线，避免把整轮上下文 token 错分配给用户消息。
 - 复用上下文面板现有的数字格式化和本地化 `Tokens` 文案，不新增重复翻译。
-- 将消息 token 总量计算抽成可测试函数，保证列表显示与上下文统计使用相同口径。
+- 将消息 token 总量和相邻消息差值计算抽成可测试函数；上下文压缩导致总量下降时，差值显示为 0。
 
 ### 代码位置
 
 - `packages/app/src/components/session/session-context-tab.tsx`：原始消息行的 token 展示。
-- `packages/app/src/components/session/session-context-metrics.ts`：消息 token 总量计算。
-- `packages/app/src/components/session/session-context-metrics.test.ts`：assistant/user 消息的 token 展示数据测试。
+- `packages/app/src/components/session/session-context-metrics.ts`：消息 token 总量和相邻差值计算。
+- `packages/app/src/components/session/session-context-metrics.test.ts`：assistant/user 消息和相邻差值测试。
 
 ### 验证方式
 
 - 在 `packages/app` 执行消息上下文指标单元测试和 typecheck。
-- 打开会话的“上下文”面板，确认原始消息行不再显示 `msg_` ID；assistant 行显示 token 数量，user 行显示短横线。
+- 打开会话的“上下文”面板，确认原始消息行不再显示 `msg_` ID；assistant 行显示相邻回复的 token 差值，user 行显示短横线。
