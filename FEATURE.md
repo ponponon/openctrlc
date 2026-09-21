@@ -1481,3 +1481,27 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 packages/app 和 packages/desktop 分别执行 typecheck。
 - 执行 App i18n parity 测试，确认新增 Toast 操作文案完整存在。
 - 启动桌面开发环境，制造项目加载失败后点击“查看日志”，确认系统打开服务日志；再点击“导出日志”，确认诊断包生成并定位到下载目录。
+
+## 上下文原始消息显示 token 用量
+
+### 功能目标
+
+让上下文面板的“原始消息”列表展示每条 assistant 消息实际记录的 token 用量，替换对用户价值较低的内部 `msg_` ID。
+
+### 实现范围
+
+- 原始消息行保留角色和时间，角色后显示输入、输出、推理以及缓存读写 token 的总和。
+- user 消息没有独立的模型用量字段，显示短横线，避免把整轮上下文 token 错分配给用户消息。
+- 复用上下文面板现有的数字格式化和本地化 `Tokens` 文案，不新增重复翻译。
+- 将消息 token 总量计算抽成可测试函数，保证列表显示与上下文统计使用相同口径。
+
+### 代码位置
+
+- `packages/app/src/components/session/session-context-tab.tsx`：原始消息行的 token 展示。
+- `packages/app/src/components/session/session-context-metrics.ts`：消息 token 总量计算。
+- `packages/app/src/components/session/session-context-metrics.test.ts`：assistant/user 消息的 token 展示数据测试。
+
+### 验证方式
+
+- 在 `packages/app` 执行消息上下文指标单元测试和 typecheck。
+- 打开会话的“上下文”面板，确认原始消息行不再显示 `msg_` ID；assistant 行显示 token 数量，user 行显示短横线。

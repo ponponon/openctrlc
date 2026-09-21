@@ -29,6 +29,11 @@ const tokenTotal = (msg: AssistantMessage) => {
   return msg.tokens.input + msg.tokens.output + msg.tokens.reasoning + msg.tokens.cache.read + msg.tokens.cache.write
 }
 
+export const getMessageTokenTotal = (msg: Message) => {
+  if (msg.role !== "assistant") return undefined
+  return tokenTotal(msg)
+}
+
 const lastAssistantWithTokens = (messages: Message[]) => {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]

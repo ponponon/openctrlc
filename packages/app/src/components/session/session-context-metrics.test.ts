@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { Message } from "@openctrlc/sdk/v2/client"
-import { getSessionContext } from "./session-context-metrics"
+import { getMessageTokenTotal, getSessionContext } from "./session-context-metrics"
 
 const assistant = (
   id: string,
@@ -38,6 +38,13 @@ const user = (id: string) => {
 }
 
 describe("getSessionContext", () => {
+  test("returns the recorded total for assistant messages and no value for user messages", () => {
+    const message = assistant("a1", { input: 600, output: 200, reasoning: 100, read: 50, write: 50 }, 0.5)
+
+    expect(getMessageTokenTotal(message)).toBe(1000)
+    expect(getMessageTokenTotal(user("u1"))).toBeUndefined()
+  })
+
   test("computes token totals and usage from latest assistant with tokens", () => {
     const messages = [
       user("u1"),
