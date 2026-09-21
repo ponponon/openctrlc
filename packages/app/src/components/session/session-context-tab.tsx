@@ -40,7 +40,7 @@ const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
   other: "var(--syntax-comment)",
 }
 
-const RAW_MESSAGE_GRID = "grid grid-cols-[max-content_minmax(0,1fr)_8rem_auto] items-center gap-3 w-full"
+const RAW_MESSAGE_GRID = "grid grid-cols-[5.5rem_minmax(0,1fr)_8rem_12.5rem] items-center gap-3 w-full"
 
 function Stat(props: { label: string; value: JSX.Element }) {
   return (
@@ -86,7 +86,7 @@ function RawMessage(props: {
       <StickyAccordionHeader>
         <Accordion.Trigger>
           <div class={RAW_MESSAGE_GRID}>
-            <div class="shrink-0">{props.message.role}</div>
+            <div class="shrink-0 text-left">{props.message.role}</div>
             <div class="min-w-0 truncate text-center text-text-weak">{props.activity}</div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
             <div class="flex items-center justify-end gap-3">
@@ -533,13 +533,10 @@ export function SessionContextTab() {
             </DropdownMenu>
           </div>
           <div class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}>
-            <div class="invisible text-12-regular">assistant</div>
+            <div>Role</div>
             <div class="text-center">{language.t("context.stats.lastActivity")}</div>
-            <div class="text-right">Δ {language.t("context.usage.tokens")}</div>
-            <div class="invisible flex items-center justify-end gap-3">
-              <div class="shrink-0 text-12-regular">{formatter().time(messages().at(-1)?.time.created)}</div>
-              <Icon name="chevron-grabber-vertical" size="small" />
-            </div>
+            <div class="text-right">{language.t("context.usage.tokens")}</div>
+            <div class="text-right">Time</div>
           </div>
           <Accordion multiple>
             <For each={messages()}>
