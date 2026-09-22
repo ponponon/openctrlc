@@ -46,6 +46,8 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let backgroundColor: string | undefined
+let appQuitting = false
+let closeToTrayEnabled = false
 let relaunchHandler = () => {
   setAppQuitting()
   app.relaunch()
@@ -71,7 +73,12 @@ export function setRelaunchHandler(handler: () => void) {
 }
 
 export function setAppQuitting(quitting = true) {
+  appQuitting = quitting
   registry.setQuitting(quitting)
+}
+
+export function setCloseToTrayEnabled(enabled: boolean) {
+  closeToTrayEnabled = enabled
 }
 
 export function setBackgroundColor(color: string) {
@@ -155,6 +162,15 @@ export function getLastFocusedWindow() {
   return win
 }
 
+export function showLastFocusedWindow() {
+  const win = getLastFocusedWindow() ?? restoreMainWindows()[0]
+  if (!win || win.isDestroyed()) return
+  if (win.isMinimized()) win.restore()
+  win.show()
+  win.focus()
+  return win
+}
+
 export function restoreMainWindows() {
   const ids = registry.persisted()
   return (ids.length ? ids : [randomUUID()]).map((id) => createMainWindow(id))
@@ -223,6 +239,12 @@ export function createMainWindow(id: string = randomUUID()) {
 
   state.manage(win)
   registerWindow(win, id)
+  win.on("close", (event) => {
+    if (!closeToTrayEnabled || appQuitting) return
+    event.preventDefault()
+    win.hide()
+    writeLog("window", "window hidden to tray", { id })
+  })
   wireFullscreen(win)
   loadWindow(win, "index.html")
   wireZoom(win)

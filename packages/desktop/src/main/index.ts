@@ -56,6 +56,7 @@ import { migrate } from "./migrate"
 import { cleanupStoreFiles } from "./store-cleanup"
 import { getOpenCodeSessionInfo, importOpenCodeSession, startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
+import { createDesktopTray, destroyDesktopTray, updateDesktopTrayMenu } from "./tray"
 import { Brand } from "@openctrlc/identity"
 
 const APP_NAMES: Record<string, string> = {
@@ -319,7 +320,9 @@ const main = Effect.gen(function* () {
     importOpenCodeSession: (input) => importOpenCodeSession(input, logger),
     recordFatalRendererError: (error) => writeLog("renderer", "fatal renderer error", { ...error }, "error"),
     setNativeTranslations: (bundle) => {
-      if (setNativeTranslations(bundle)) createMenu(menuDeps)
+      if (!setNativeTranslations(bundle)) return
+      createMenu(menuDeps)
+      updateDesktopTrayMenu()
     },
   })
   registerWslIpcHandlers(wslServers)
@@ -430,6 +433,17 @@ const main = Effect.gen(function* () {
 
   const windows = restoreMainWindows()
   if (windows.length) createMenu(menuDeps)
+  createDesktopTray({
+    checkForUpdates: () => void showUpdaterDialog(updater, true),
+    quit: () => {
+      setAppQuitting()
+      app.quit()
+    },
+    logger: {
+      warn: (message, error) => logger.warn(message, error),
+    },
+  })
+  app.once("will-quit", destroyDesktopTray)
 })
 
 Effect.runFork(main)
