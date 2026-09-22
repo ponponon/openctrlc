@@ -73,6 +73,18 @@ export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()("MCP
 
 type MCPClient = Client
 
+export function classifyMcpFailure(error: string) {
+  const normalized = error.toLowerCase()
+  if (
+    normalized.includes("eaddrinuse") ||
+    normalized.includes("address already in use") ||
+    /(?:port|端口)\s+\d+\s+(?:is\s+)?already\s+in\s+use/i.test(error)
+  ) {
+    return "port_in_use" as const
+  }
+  return "other" as const
+}
+
 function createClient(directory: string) {
   const client = new Client({ name: Brand.cli, version: InstallationVersion }, CLIENT_OPTIONS)
   client.setRequestHandler(ListRootsRequestSchema, () =>
@@ -388,11 +400,13 @@ const layer = Layer.effect(
 
         if (!mcpClient) {
           if (status.status !== "connected" && status.status !== "disabled") {
+            const error = status.status === "failed" ? status.error : undefined
             yield* Effect.logWarning("server unavailable", {
               key,
               type: mcp.type,
               status: status.status,
-              error: status.status === "failed" ? status.error : undefined,
+              error,
+              failureKind: error ? classifyMcpFailure(error) : undefined,
             })
           }
           return { status } satisfies CreateResult

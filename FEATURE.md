@@ -1702,3 +1702,21 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 在 `packages/sdk/js` 执行错误拦截器测试和类型检查。
 - 在 `packages/app` 执行错误格式化、bootstrap 相关定向测试和类型检查。
+
+## MCP 端口冲突分类日志
+
+### 功能目标
+
+在 browser-control 这类需要固定本地端口的 MCP 启动失败时，明确记录“端口占用”而不是把它和普通连接失败混在一起，帮助定位 499 背后的初始化诱因。
+
+### 实现范围
+
+- 识别 `EADDRINUSE`、`address already in use` 和 browser-control 的端口占用文案。
+- 在 MCP `server unavailable` 结构化日志中增加 `failureKind: "port_in_use"` 或 `"other"`。
+- 保留原始错误文本，确保 MCP 设置界面仍能显示具体端口和处理建议。
+
+### 验证方式
+
+- 在 `packages/opencode` 执行 MCP lifecycle 定向测试。
+- 使用 `lsof -nP -iTCP:<端口> -sTCP:LISTEN` 核对实际占用进程，不自动杀掉其他项目的 MCP 进程。
+
