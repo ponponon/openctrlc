@@ -697,3 +697,17 @@ assistant 消息刚创建时 token 字段会初始化为全零，但这不代表
 ## 官网 Changelog 不能把 Markdown 当普通字符串
 
 Changelog 原先只按行提取 `##` 和 `-`，再把列表内容作为普通文本渲染，因此 GitHub Release 中的链接、三级标题、粗体和行内代码都会原样显示为 Markdown 标记。以后展示外部 Release 正文时，必须使用真正的 Markdown 解析器或等价的结构化 AST，保留标题与列表层级；同时要禁用原始 HTML、限制链接协议并补齐外链安全属性，不能为了“能显示”直接把未过滤正文塞进 `innerHTML`。
+
+## 499 空响应首先应按客户端中断排查
+
+### 问题现象
+
+桌面端请求本地 sidecar 的 `/command` 或 `/mcp` 时显示 `499 unknown: (empty response body)`。
+
+### 排查结论
+
+OpenCtrlC 使用的 Effect HTTP 层会在 Node 响应连接提前关闭时中断请求 fiber，并将纯客户端中断映射为 HTTP 499。这个状态码不等于业务接口主动返回了一个 499，也不能仅凭空响应判断具体业务失败原因。排查时应同时检查客户端是否取消或重建请求、sidecar 是否发生重启，以及请求触发的 MCP/插件初始化是否卡住或失败。
+
+### 本次实例
+
+本次日志显示 browser-control MCP 想监听 8089，但该端口已经被另一个进程占用；同时还存在插件包 404 和 MCP 初始化被中断的记录。它们可能拖慢或触发 bootstrap 请求重建，是 499 的高概率诱因，但不能把 499 本身当作 browser-control 的直接业务错误。

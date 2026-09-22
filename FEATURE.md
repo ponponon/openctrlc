@@ -1638,3 +1638,18 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 在 `packages/console/app` 执行 Changelog 定向测试和 `bun typecheck`。
 - 访问 `/zh/changelog`，确认 v0.2.5 的 CLI/Desktop、平台和架构下载链接显示为可点击链接，标题层级和列表结构正确。
+
+## SDK 错误提示统一为 OpenCtrlC
+
+### 功能目标
+
+让桌面端和 JavaScript SDK 的 HTTP 错误提示使用 OpenCtrlC 的产品名称，避免向用户显示上游项目名 `opencode server`。
+
+### 实现范围
+
+- 将 SDK 空响应错误的服务名改为 `openctrlc server`。
+- 增加 499 空响应错误提示的回归测试，防止文案回退。
+
+### 验证方式
+
+- 在 `packages/sdk/js` 执行 `bun test test/error-interceptor.test.ts`。
