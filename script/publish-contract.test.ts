@@ -25,6 +25,7 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
     "build-desktop-windows",
     "build-desktop-linux",
     "publish",
+    "sync-downloads",
   ])
 
   for (const name of ["version", "ensure-tag", "build-cli", "publish"]) {
