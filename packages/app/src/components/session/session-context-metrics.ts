@@ -61,9 +61,7 @@ export const getMessageActivity = (message: Message, parts: Part[]) => {
 
   const tools = parts.filter((part): part is Extract<Part, { type: "tool" }> => part.type === "tool")
   if (tools.length > 0) {
-    const status = ["error", "running", "pending"].find((status) =>
-      tools.some((part) => part.state.status === status),
-    )
+    const status = ["error", "running", "pending"].find((status) => tools.some((part) => part.state.status === status))
     return `tool: ${[...new Set(tools.map((part) => part.tool))].join(", ")}${status ? ` (${status})` : ""}`
   }
 

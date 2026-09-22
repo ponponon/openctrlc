@@ -92,10 +92,7 @@ describe("getSessionContext", () => {
 
     expect(getMessageActivity(message, parts)).toBe("tool: read, bash")
     expect(
-      getMessageActivity(
-        message,
-        [{ type: "tool", tool: "read", state: { status: "error" } }] as unknown as Part[],
-      ),
+      getMessageActivity(message, [{ type: "tool", tool: "read", state: { status: "error" } }] as unknown as Part[]),
     ).toBe("tool: read (error)")
     expect(getMessageActivity(message, [{ type: "reasoning" }] as unknown as Part[])).toBe("reasoning")
     expect(getMessageActivity(message, [{ type: "text" }] as unknown as Part[])).toBe("response")

@@ -16,7 +16,14 @@ import { checkAppExists, resolveAppPath } from "./apps"
 import { CHANNEL } from "./constants"
 import { registerIpcHandlers, sendDeepLinks, sendMenuCommand } from "./ipc"
 import { forwardInitializationFailure } from "./initialization"
-import { exportDebugLogs, initCrashReporter, initLogging, openDebugLogs, startNetLog, write as writeLog } from "./logging"
+import {
+  exportDebugLogs,
+  initCrashReporter,
+  initLogging,
+  openDebugLogs,
+  startNetLog,
+  write as writeLog,
+} from "./logging"
 import { createMenu } from "./menu"
 import {
   finishFirstLaunchOnboarding,

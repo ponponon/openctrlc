@@ -87,7 +87,9 @@ function RawMessage(props: {
         <Accordion.Trigger>
           <div class={RAW_MESSAGE_GRID}>
             <div class="shrink-0 text-left">{props.message.role}</div>
-            <div class="min-w-0 truncate text-left text-text-weak" title={props.activity}>{props.activity}</div>
+            <div class="min-w-0 truncate text-left text-text-weak" title={props.activity}>
+              {props.activity}
+            </div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
             <div class="flex items-center justify-end gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>

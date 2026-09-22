@@ -78,7 +78,7 @@ describe("session recovery", () => {
             tool({
               status: "pending",
               input: { filePath: "/tmp/file" },
-              raw: "{\"filePath\":\"/tmp/file\"}",
+              raw: '{"filePath":"/tmp/file"}',
             }),
           ],
         },
@@ -116,11 +116,6 @@ describe("session recovery", () => {
       ],
       500,
     )
-    expect(
-      recoverInterruptedMessages(
-        [{ info: change!.message, parts: change!.parts }],
-        600,
-      ),
-    ).toEqual([])
+    expect(recoverInterruptedMessages([{ info: change!.message, parts: change!.parts }], 600)).toEqual([])
   })
 })
