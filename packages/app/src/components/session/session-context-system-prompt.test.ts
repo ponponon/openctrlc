@@ -18,4 +18,12 @@ describe("getSessionSystemPrompt", () => {
   test("falls back to the user override for older sessions", () => {
     expect(getSessionSystemPrompt([user("u1", { system: "  legacy prompt  " })])).toBe("legacy prompt")
   })
+  test("keeps the first effective prompt when legacy sessions contain duplicates", () => {
+    expect(
+      getSessionSystemPrompt([
+        user("u1", { systemPrompt: "first effective prompt" }),
+        user("u2", { systemPrompt: "duplicate effective prompt" }),
+      ]),
+    ).toBe("first effective prompt")
+  })
 })

@@ -1209,6 +1209,10 @@ const layer = Layer.effect(
           }
           yield* sessions.updateMessage(msg)
 
+          const captureSystemPrompt = !msgs.some(
+            (item) => item.info.role === "user" && Boolean(item.info.systemPrompt?.trim()),
+          )
+
           const finalizeInterruptedAssistant = Effect.gen(function* () {
             if (msg.time.completed) return
             msg.error ??= MessageV2.fromError(new DOMException("Aborted", "AbortError"), {
@@ -1224,6 +1228,7 @@ const layer = Layer.effect(
               assistantMessage: msg,
               sessionID,
               model,
+              captureSystemPrompt,
             })
             .pipe(Effect.onInterrupt(() => finalizeInterruptedAssistant))
 

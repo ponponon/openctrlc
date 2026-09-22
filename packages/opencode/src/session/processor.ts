@@ -51,6 +51,7 @@ type Input = {
   assistantMessage: SessionV1.Assistant
   sessionID: SessionID
   model: Provider.Model
+  captureSystemPrompt?: boolean
 }
 
 export interface Interface {
@@ -681,6 +682,7 @@ const layer = Layer.effect(
             const stream = llm.stream({
               ...streamInput,
               onSystem: (system) => {
+                if (!input.captureSystemPrompt || streamInput.user.systemPrompt) return Effect.void
                 const systemPrompt = system.join("\n")
                 return session.updateMessage({ ...streamInput.user, systemPrompt }).pipe(Effect.asVoid)
               },
