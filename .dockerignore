@@ -10,3 +10,4 @@ node_modules
 **/.turbo
 **/.vite
 **/coverage
+.SECRET_AGENTS.md

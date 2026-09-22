@@ -211,3 +211,7 @@ edit by gpt5.6-luna
 ```txt
 edit by gemini3.7-flash
 ```
+
+---
+
+请配套读取 .SECRET_AGENTS.md 的内容，如果 .SECRET_AGENTS.md 文件不存在，则忽略
