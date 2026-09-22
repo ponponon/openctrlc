@@ -14,9 +14,15 @@ type Store = {
   user: User[]
   recent: ModelKey[]
   variant?: Record<string, string | undefined>
+  providers?: Record<string, boolean>
 }
 
 const RECENT_LIMIT = 5
+export const CLOUDFLARE_AI_GATEWAY_PROVIDER_ID = "cloudflare-ai-gateway"
+
+export function defaultProviderEnabled(providerID: string) {
+  return providerID !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID
+}
 
 function modelKey(model: ModelKey) {
   return `${model.providerID}:${model.modelID}`
@@ -34,10 +40,11 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         user: [],
         recent: [],
         variant: {},
+        providers: {},
       }),
     )
 
-    const available = createMemo(() =>
+    const all = createMemo(() =>
       providers.connected().flatMap((p) =>
         Object.values(p.models).map((m) => ({
           ...m,
@@ -45,6 +52,10 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         })),
       ),
     )
+
+    const providerEnabled = (providerID: string) => store.providers?.[providerID] ?? defaultProviderEnabled(providerID)
+
+    const available = createMemo(() => all().filter((model) => providerEnabled(model.provider.id)))
 
     const release = createMemo(
       () =>
@@ -93,11 +104,21 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
       return map
     })
 
+    const mapModel = (m: ReturnType<typeof all>[number]) => ({
+      ...m,
+      name: m.name.replace("(latest)", "").trim(),
+      latest: m.name.includes("(latest)"),
+    })
+
     const list = createMemo(() =>
       available().map((m) => ({
-        ...m,
-        name: m.name.replace("(latest)", "").trim(),
-        latest: m.name.includes("(latest)"),
+        ...mapModel(m),
+      })),
+    )
+
+    const allList = createMemo(() =>
+      all().map((m) => ({
+        ...mapModel(m),
       })),
     )
 
@@ -113,6 +134,7 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
     }
 
     const visible = (model: ModelKey) => {
+      if (!providerEnabled(model.providerID)) return false
       const key = modelKey(model)
       const state = visibility().get(key)
       if (state === "hide") return false
@@ -125,6 +147,23 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
 
     const setVisibility = (model: ModelKey, state: boolean) => {
       update(model, state ? "show" : "hide")
+    }
+
+    const providerVisible = (providerID: string) => {
+      const models = allList().filter((model) => model.provider.id === providerID)
+      return (
+        (providerID !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID || providerEnabled(providerID)) &&
+        models.every((model) => visible({ modelID: model.id, providerID }))
+      )
+    }
+
+    const setProviderVisibility = (providerID: string, state: boolean) => {
+      if (providerID === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID) {
+        setStore("providers", (current) => ({ ...current, [providerID]: state }))
+      }
+      allList()
+        .filter((model) => model.provider.id === providerID)
+        .forEach((model) => setVisibility({ modelID: model.id, providerID }, state))
     }
 
     const push = (model: ModelKey) => {
@@ -157,9 +196,13 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
     return {
       ready,
       list,
+      all: allList,
       find,
       visible,
       setVisibility,
+      providerEnabled,
+      providerVisible,
+      setProviderVisibility,
       recent: {
         list: () => recentModels()!,
         push,

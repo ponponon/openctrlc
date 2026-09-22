@@ -13,6 +13,7 @@ import { ProviderIcon } from "@openctrlc/ui/provider-icon"
 import { useFilteredList } from "@openctrlc/ui/hooks"
 import { For, Show, type Component } from "solid-js"
 import { useLocal } from "@/context/local"
+import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, useModels } from "@/context/models"
 import { popularProviders } from "@/hooks/use-providers"
 import { useLanguage } from "@/context/language"
 import { useDialog } from "@openctrlc/ui/context/dialog"
@@ -26,6 +27,7 @@ type ModelItem = ReturnType<ReturnType<typeof useLocal>["model"]["list"]>[number
 
 export const DialogManageModels: Component = () => {
   const local = useLocal()
+  const models = useModels()
   const language = useLanguage()
   const dialog = useDialog()
   const directory = () => decode64(local.slug())
@@ -34,14 +36,8 @@ export const DialogManageModels: Component = () => {
     void dialog.show(() => <DialogConnectProvider directory={directory} />)
   }
   const providerRank = (id: string) => popularProviders.indexOf(id)
-  const providerList = (providerID: string) => local.model.list().filter((x) => x.provider.id === providerID)
-  const providerVisible = (providerID: string) =>
-    providerList(providerID).every((x) => local.model.visible({ modelID: x.id, providerID: x.provider.id }))
-  const setProviderVisibility = (providerID: string, checked: boolean) => {
-    providerList(providerID).forEach((x) => {
-      local.model.setVisibility({ modelID: x.id, providerID: x.provider.id }, checked)
-    })
-  }
+  const cloudflareProvider = () =>
+    models.all().find((x) => x.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)?.provider
 
   return (
     <Dialog
@@ -53,6 +49,23 @@ export const DialogManageModels: Component = () => {
         </Button>
       }
     >
+      <Show when={cloudflareProvider()}>
+        {(provider) => (
+          <div class="flex items-center justify-between gap-x-3 border-b border-border-weak-base px-4 py-3">
+            <div class="flex min-w-0 items-center gap-x-3">
+              <ProviderIcon id={provider().id} class="size-5 shrink-0" />
+              <span class="truncate">{provider().name}</span>
+            </div>
+            <Switch
+              checked={models.providerVisible(provider().id)}
+              onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
+              hideLabel
+            >
+              {provider().name}
+            </Switch>
+          </div>
+        )}
+      </Show>
       <List
         class="px-3"
         search={{ placeholder: language.t("dialog.model.search.placeholder"), autofocus: true }}
@@ -67,19 +80,21 @@ export const DialogManageModels: Component = () => {
           return (
             <>
               <span>{provider.name}</span>
-              <Tooltip
-                placement="top"
-                value={language.t("dialog.model.manage.provider.toggle", { provider: provider.name })}
-              >
-                <Switch
-                  class="-mr-1"
-                  checked={providerVisible(provider.id)}
-                  onChange={(checked) => setProviderVisibility(provider.id, checked)}
-                  hideLabel
+              <Show when={provider.id !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID}>
+                <Tooltip
+                  placement="top"
+                  value={language.t("dialog.model.manage.provider.toggle", { provider: provider.name })}
                 >
-                  {provider.name}
-                </Switch>
-              </Tooltip>
+                  <Switch
+                    class="-mr-1"
+                    checked={models.providerVisible(provider.id)}
+                    onChange={(checked) => models.setProviderVisibility(provider.id, checked)}
+                    hideLabel
+                  >
+                    {provider.name}
+                  </Switch>
+                </Tooltip>
+              </Show>
             </>
           )
         }}
@@ -118,6 +133,7 @@ export const DialogManageModels: Component = () => {
 
 export const DialogManageModelsV2: Component = () => {
   const local = useLocal()
+  const models = useModels()
   const language = useLanguage()
   const dialog = useDialog()
   const directory = () => decode64(local.slug())
@@ -125,14 +141,8 @@ export const DialogManageModelsV2: Component = () => {
   const handleConnectProvider = () => {
     void dialog.show(() => <DialogConnectProvider directory={directory} />)
   }
-  const providerList = (providerID: string) => local.model.list().filter((x) => x.provider.id === providerID)
-  const providerVisible = (providerID: string) =>
-    providerList(providerID).every((x) => local.model.visible({ modelID: x.id, providerID: x.provider.id }))
-  const setProviderVisibility = (providerID: string, checked: boolean) => {
-    providerList(providerID).forEach((x) => {
-      local.model.setVisibility({ modelID: x.id, providerID: x.provider.id }, checked)
-    })
-  }
+  const cloudflareProvider = () =>
+    models.all().find((x) => x.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)?.provider
   const setModelVisibility = (item: ModelItem, checked: boolean) => {
     local.model.setVisibility({ modelID: item.id, providerID: item.provider.id }, checked)
   }
@@ -194,6 +204,21 @@ export const DialogManageModelsV2: Component = () => {
             </Show>
           </div>
         </div>
+        <Show when={cloudflareProvider()}>
+          {(provider) => (
+            <div class="settings-v2-section px-4 pb-4">
+              <SettingsRowV2 title={provider().name} description="">
+                <SwitchV2
+                  checked={models.providerVisible(provider().id)}
+                  onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
+                  hideLabel
+                >
+                  {provider().name}
+                </SwitchV2>
+              </SettingsRowV2>
+            </div>
+          )}
+        </Show>
         <div data-slot="manage-models-scroll" class="relative min-h-0 flex-1">
           <div class="settings-v2-panel settings-v2-models h-full px-4 pt-4 pb-4">
             <Show
@@ -224,16 +249,18 @@ export const DialogManageModelsV2: Component = () => {
                           <ProviderIcon id={group.category} width={16} height={16} class="ml-4 shrink-0" />
                           <h3 class="settings-v2-section-title">{group.items[0].provider.name}</h3>
                         </div>
-                        <div>
-                          <SwitchV2
-                            class="mr-6"
-                            checked={providerVisible(group.category)}
-                            onChange={(checked) => setProviderVisibility(group.category, checked)}
-                            hideLabel
-                          >
-                            {group.items[0].provider.name}
-                          </SwitchV2>
-                        </div>
+                        <Show when={group.category !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID}>
+                          <div>
+                            <SwitchV2
+                              class="mr-6"
+                              checked={models.providerVisible(group.category)}
+                              onChange={(checked) => models.setProviderVisibility(group.category, checked)}
+                              hideLabel
+                            >
+                              {group.items[0].provider.name}
+                            </SwitchV2>
+                          </div>
+                        </Show>
                       </div>
                       <SettingsListV2>
                         <For each={group.items}>

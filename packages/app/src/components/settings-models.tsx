@@ -6,7 +6,7 @@ import { IconButton } from "@openctrlc/ui/icon-button"
 import { TextField } from "@openctrlc/ui/text-field"
 import { type Component, For, Show } from "solid-js"
 import { useLanguage } from "@/context/language"
-import { useModels } from "@/context/models"
+import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, useModels } from "@/context/models"
 import { popularProviders } from "@/hooks/use-providers"
 import { SettingsList } from "./settings-list"
 import { SettingsServerPicker, SettingsServerScope } from "./settings-server-picker"
@@ -94,6 +94,24 @@ const SettingsModelsContent: Component = () => {
           </div>
         </div>
       </div>
+
+      <Show when={models.all().find((item) => item.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)}>
+        {(provider) => (
+          <div class="flex items-center justify-between gap-4 max-w-[720px] py-3 border-b border-border-weak-base">
+            <div class="flex min-w-0 items-center gap-3">
+              <ProviderIcon id={provider().id} class="size-5 shrink-0 icon-strong-base" />
+              <span class="text-14-medium text-text-strong truncate">{provider().name}</span>
+            </div>
+            <Switch
+              checked={models.providerVisible(provider().id)}
+              onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
+              hideLabel
+            >
+              {provider().name}
+            </Switch>
+          </div>
+        )}
+      </Show>
 
       <div class="flex flex-col gap-8 max-w-[720px]">
         <Show

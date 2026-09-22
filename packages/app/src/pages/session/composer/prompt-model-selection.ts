@@ -18,7 +18,9 @@ export function createPromptModelSelection(input: { agent: () => { model?: Model
 
   const valid = (model: ModelKey) => {
     const provider = providers.all().get(model.providerID)
-    return !!provider?.models[model.modelID] && connected().has(model.providerID)
+    return (
+      !!provider?.models[model.modelID] && connected().has(model.providerID) && models.providerEnabled(model.providerID)
+    )
   }
 
   const configured = () => {
@@ -31,6 +33,7 @@ export function createPromptModelSelection(input: { agent: () => { model?: Model
   const fallback = () => {
     const defaults = providers.default()
     return providers.connected().flatMap((provider) => {
+      if (!models.providerEnabled(provider.id)) return []
       const modelID = defaults[provider.id] ?? Object.values(provider.models)[0]?.id
       return modelID ? [{ providerID: provider.id, modelID }] : []
     })[0]

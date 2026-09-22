@@ -7,7 +7,7 @@ import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { type Component, For, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
-import { useModels } from "@/context/models"
+import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, useModels } from "@/context/models"
 import { useServerSDK } from "@/context/server-sdk"
 import { popularProviders } from "@/hooks/use-providers"
 import { Persist, persisted } from "@/utils/persist"
@@ -81,6 +81,23 @@ export const SettingsModelsV2: Component = () => {
       </div>
 
       <div class="settings-v2-tab-body settings-v2-models">
+        <Show when={models.all().find((item) => item.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)}>
+          {(provider) => (
+            <div class="settings-v2-section">
+              <SettingsListV2>
+                <SettingsRowV2 title={provider().name} description="">
+                  <Switch
+                    checked={models.providerVisible(provider().id)}
+                    onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
+                    hideLabel
+                  >
+                    {provider().name}
+                  </Switch>
+                </SettingsRowV2>
+              </SettingsListV2>
+            </div>
+          )}
+        </Show>
         <Show
           when={!list.grouped.loading}
           fallback={

@@ -1720,6 +1720,34 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/opencode` 执行 MCP lifecycle 定向测试。
 - 使用 `lsof -nP -iTCP:<端口> -sTCP:LISTEN` 核对实际占用进程，不自动杀掉其他项目的 MCP 进程。
 
+## Cloudflare AI Gateway 模型默认关闭
+
+### 功能目标
+
+避免仅因为运行环境存在 `CLOUDFLARE_ACCOUNT_ID`，就把 Cloudflare AI Gateway 的大量模型默认放进模型选择器，影响只使用 Cloudflare 其他服务的用户。
+
+### 实现范围
+
+- 在模型可见性状态中增加 Cloudflare AI Gateway provider 开关，首次默认关闭，并持久化用户选择。
+- 关闭时从模型选择器、模型管理列表和模型设置页隐藏该 provider 的模型，但保留 Cloudflare provider 的凭据与其他能力。
+- 在旧版和 V2 模型管理界面提供独立的 Cloudflare AI Gateway 开关；打开后可继续按模型控制显示状态。
+- 禁止关闭状态的 Cloudflare 模型参与默认模型、最近模型和新会话模型回退选择。
+
+### 代码位置
+
+- `packages/app/src/context/models.tsx`：provider 开关、默认关闭策略和模型列表过滤。
+- `packages/app/src/components/dialog-manage-models.tsx`：旧版/V2 管理界面开关。
+- `packages/app/src/components/settings-models.tsx`
+- `packages/app/src/components/settings-v2/models.tsx`
+- `packages/app/src/context/local.tsx`
+- `packages/app/src/pages/session/composer/prompt-model-selection.ts`
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 执行 Cloudflare 模型默认状态定向单元测试，确认 Cloudflare 默认关闭且其他 provider 默认行为不变。
+- 手动确认开关关闭时模型选择器不再出现 Cloudflare AI Gateway 大量模型，打开后可恢复显示。
+
 ## 排队消息支持删除
 
 ### 功能目标
