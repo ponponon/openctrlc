@@ -1595,3 +1595,46 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 执行 Prompt submit 单元测试，确认默认请求携带 `delivery: queue`，显式引导携带 `delivery: steer`。
 - 执行 App typecheck，确认旧版兼容 API 与 V2 请求类型均可编译。
 - 手动在运行中的会话连续发送两条消息，确认第一条继续执行，第二条显示为排队消息，并在会话空闲后发送。
+
+## 空回复回合的显式失败收口
+
+### 功能目标
+
+避免模型只返回 reasoning、空白文本或异常空流时被当成成功回合，造成会话显示结束但用户看不到任何答复。
+
+### 实现范围
+
+- V2 runner 只在已开始 assistant 回合且没有非空文本、工具调用或 provider 错误时写入明确的空回复错误。
+- V1 prompt loop 对 reasoning-only、空白文本和没有可见答案的正常返回做同样的失败收口。
+- 空回复错误不会阻止同模型后续回合复用已经确认的 reasoning provider metadata，避免签名或加密推理上下文丢失。
+- 工具调用仍然是合法的中间结果，不会被错误识别为空回复。
+
+### 代码位置
+
+- `packages/core/src/session/runner/publish-llm-event.ts`：跟踪非空文本、工具调用和回合失败状态。
+- `packages/core/src/session/runner/llm.ts`：在写入成功 step 前执行空回复判定。
+- `packages/core/src/session/runner/to-llm-message.ts`：保留空回复回合的 reasoning provider metadata。
+- `packages/opencode/src/session/prompt.ts`：旧 V1 prompt loop 的空回复兜底。
+
+### 验证方式
+
+- 执行 `packages/core` 的 `bun test test/session-runner.test.ts`，确认 reasoning-only 回合显示错误、工具回合和 queue/steer 回合不回归。
+- 执行 `packages/core` 与 `packages/opencode` 的 `bun typecheck`。
+
+## 官网 Changelog Markdown 渲染
+
+### 功能目标
+
+让官网 Changelog 按 GitHub Release 正文的真实 Markdown 语义展示标题、列表、链接、粗体、代码和其他常见格式，避免用户看到原始方括号、圆括号和星号。
+
+### 实现范围
+
+- 使用安全的 Markdown renderer 渲染 Release 正文，不再把 Markdown 行拆成普通字符串。
+- 保留现有 Release 高亮媒体区块，同时从正文中移除自定义高亮标签，避免重复显示。
+- 外链统一限制为 HTTP/HTTPS，并补齐新窗口与安全的 `rel` 属性；原始 HTML 标签不直接注入页面。
+- 为 Changelog 新增标题、嵌套列表、外链、粗体、代码和高亮标签回归测试。
+
+### 验证方式
+
+- 在 `packages/console/app` 执行 Changelog 定向测试和 `bun typecheck`。
+- 访问 `/zh/changelog`，确认 v0.2.5 的 CLI/Desktop、平台和架构下载链接显示为可点击链接，标题层级和列表结构正确。

@@ -70,7 +70,8 @@ const toolResult = (tool: SessionMessage.AssistantTool, providerMetadata: Provid
 const assistant = (message: SessionMessage.Assistant, model: Model) => {
   const sameModel =
     String(message.model.providerID) === String(model.provider) && String(message.model.id) === String(model.id)
-  const reuseProviderMetadata = sameModel && message.error === undefined
+  const reusableEmptyResponse = message.error?.message === "Model returned an empty response"
+  const reuseProviderMetadata = sameModel && (message.error === undefined || reusableEmptyResponse)
   const content = message.content.flatMap((item): ContentPart[] => {
     if (item.type === "text") return [{ type: "text", text: item.text }]
     if (item.type === "reasoning")

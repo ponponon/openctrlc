@@ -446,7 +446,12 @@ const fragmentFixture = (kind: FragmentKind, id: string, chunks: readonly string
           LLMEvent.stepFinish({ index: 0, reason: "stop" }),
           LLMEvent.finish({ reason: "stop" }),
         ],
-        expectedAssistant: { type: "assistant", finish: "stop", content: [expectedContent] },
+        expectedAssistant: {
+          type: "assistant",
+          finish: "error",
+          error: { type: "unknown", message: "Model returned an empty response" },
+          content: [expectedContent],
+        },
         expectedContent,
       }
     }

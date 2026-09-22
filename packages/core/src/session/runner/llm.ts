@@ -321,7 +321,15 @@ const layer = Layer.effect(
             yield* withPublication(publisher.failUnsettledTools(`Tool execution failed: ${message}`))
           }
           const stepSettlement = publisher.stepSettlement()
-          if (stepSettlement && !publisher.hasProviderError()) {
+          if (
+            publisher.hasAssistantStarted() &&
+            !publisher.hasProviderError() &&
+            !publisher.hasFailure() &&
+            !publisher.hasVisibleText() &&
+            !publisher.hasToolCalls()
+          )
+            yield* withPublication(publisher.failAssistant("Model returned an empty response"))
+          if (stepSettlement && !publisher.hasProviderError() && !publisher.hasFailure()) {
             const endSnapshot = yield* snapshots.capture()
             const files =
               startSnapshot && endSnapshot
@@ -349,7 +357,7 @@ const layer = Layer.effect(
           if (stream._tag === "Failure") return yield* Effect.failCause(stream.cause)
           if (settled._tag === "Failure" && Cause.hasInterrupts(settled.cause))
             return yield* Effect.failCause(settled.cause)
-          return { needsContinuation: !publisher.hasProviderError() && needsContinuation, step: currentStep }
+          return { needsContinuation: !publisher.hasProviderError() && !publisher.hasFailure() && needsContinuation, step: currentStep }
         }),
       )
     }, Effect.scoped)

@@ -1325,6 +1325,33 @@ const layer = Layer.effect(
               }
             }
 
+            const currentAssistant = (yield* sessions.messages({ sessionID }).pipe(Effect.orDie)).find(
+              (message) => message.info.id === handle.message.id,
+            )
+            const hasVisibleText =
+              currentAssistant?.parts.some(
+                (part) => part.type === "text" && !part.ignored && part.text.trim().length > 0,
+              ) ?? false
+            const hasToolCalls =
+              currentAssistant?.parts.some(
+                (part) => part.type === "tool" && !isOrphanedInterruptedTool(part),
+              ) ?? false
+            if (
+              !handle.message.error &&
+              format.type !== "json_schema" &&
+              result !== "compact" &&
+              !hasVisibleText &&
+              !hasToolCalls
+            ) {
+              handle.message.finish = "error"
+              handle.message.error = new NamedError.Unknown({
+                message: "Model returned an empty response",
+              }).toObject()
+              yield* sessions.updateMessage(handle.message)
+              yield* events.publish(Session.Event.Error, { sessionID, error: handle.message.error })
+              return "break" as const
+            }
+
             if (result === "stop") return "break" as const
             if (result === "compact") {
               yield* compaction.create({
