@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { createStore } from "solid-js/store"
 import { QueryClient } from "@tanstack/solid-query"
+import { wrapClientError } from "@openctrlc/sdk/error-interceptor"
 import type { Config, OpencodeClient, Project, Session } from "@openctrlc/sdk/v2/client"
 import type { AgentApi, CatalogApi, CommandApi, ReferenceApi } from "@opencode-ai/client/promise"
 import type { NormalizedProviderListResponse } from "@openctrlc/session-ui/context"
@@ -178,6 +179,49 @@ describe("bootstrapDirectory", () => {
     })
 
     expect(store.status).toBe("partial")
+
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
+    expect(store.status).toBe("complete")
+  })
+
+  test("does not fail the directory when optional MCP requests are cancelled", async () => {
+    const [store, setStore] = directoryState()
+    const cancelled = () =>
+      wrapClientError(
+        undefined,
+        new Response(null, { status: 499 }),
+        new Request("http://127.0.0.1:4096/mcp", { method: "GET" }),
+        { throwOnError: true },
+      )
+
+    await bootstrapDirectory({
+      directory: "/project",
+      scope: ServerScope.local,
+      mcp: true,
+      global: {
+        config: {} satisfies Config,
+        path: { state: "", config: "", worktree: "/project", directory: "/project", home: "/home" },
+        project: [{ id: "project", worktree: "/project" } as Project],
+        provider,
+      },
+      sdk: {} as OpencodeClient,
+      api: {
+        ...api,
+        command: { list: async () => Promise.reject(cancelled()) },
+        mcp: {
+          list: async () => Promise.reject(cancelled()),
+          resource: { catalog: async () => Promise.reject(cancelled()) },
+        },
+      } as unknown as ServerApi,
+      store,
+      setStore,
+      vcsCache: { setStore() {} } as unknown as VcsCache,
+      loadSessions() {},
+      translate: (key) => key,
+      queryClient: new QueryClient(),
+      protocol: Promise.resolve("v2"),
+    })
 
     await new Promise((resolve) => setTimeout(resolve, 80))
 

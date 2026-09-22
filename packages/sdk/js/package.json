@@ -12,6 +12,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./error-interceptor": "./src/error-interceptor.ts",
     "./server": "./src/server.ts",
     "./v2": "./src/v2/index.ts",
     "./v2/client": "./src/v2/client.ts",

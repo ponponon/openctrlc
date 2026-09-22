@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { SessionNotFoundError } from "@openctrlc/sdk/v2/client"
+import { wrapClientError } from "@openctrlc/sdk/error-interceptor"
 import type { ConfigInvalidError, ProviderModelNotFoundError } from "./server-errors"
 import { formatServerError, isSessionNotFoundError, parseReadableConfigInvalidError } from "./server-errors"
 
@@ -85,6 +86,17 @@ describe("formatServerError", () => {
     expect(formatServerError(new Error("Request failed with status 503"), language.t)).toBe(
       "Request failed with status 503",
     )
+  })
+
+  test("formats client cancellation without exposing HTTP 499", () => {
+    const error = wrapClientError(
+      undefined,
+      new Response(null, { status: 499 }),
+      new Request("http://127.0.0.1:4096/mcp", { method: "GET" }),
+      { throwOnError: true },
+    )
+
+    expect(formatServerError(error, language.t)).toBe("Request was cancelled")
   })
 
   test("returns provided string errors", () => {

@@ -1,3 +1,15 @@
+export type ClientErrorKind = "cancelled" | "network" | "server"
+
+export type ClientErrorMetadata = {
+  body: unknown
+  status?: number
+  kind: ClientErrorKind
+  request: {
+    method: string
+    url: string
+  }
+}
+
 /**
  * Wrap whatever the generated client decoded from a non-2xx error body
  * into a real `Error` so downstream formatters (TUI, plugins) get a
@@ -28,18 +40,37 @@ export function wrapClientError(
       (typeof obj.message === "string" && obj.message) ||
       (typeof obj.name === "string" && obj.name) ||
       describe(request, response)
-    return new Error(message, { cause: { body: error, status: response?.status } })
+    return new Error(message, { cause: metadata(error, response, request) })
   }
 
   if (typeof error === "string" && error.length > 0) {
-    return new Error(error, { cause: { body: error, status: response?.status } })
+    return new Error(error, { cause: metadata(error, response, request) })
   }
 
   // Empty body / network failure / undefined / null / empty object.
-  const reason = response ? "(empty response body)" : "network error (no response)"
+  const reason =
+    response?.status === 499 ? "request cancelled" : response ? "(empty response body)" : "network error (no response)"
   return new Error(`openctrlc server ${describe(request, response)}: ${reason}`, {
-    cause: { body: error, status: response?.status },
+    cause: metadata(error, response, request),
   })
+}
+
+export function isClientAbortError(error: unknown): boolean {
+  if (!(error instanceof Error) || !error.cause || typeof error.cause !== "object") return false
+  const cause = error.cause as Partial<ClientErrorMetadata>
+  return cause.kind === "cancelled" || cause.status === 499
+}
+
+function metadata(error: unknown, response: Response | undefined, request: Request | undefined): ClientErrorMetadata {
+  return {
+    body: error,
+    status: response?.status,
+    kind: response?.status === 499 ? "cancelled" : response ? "server" : "network",
+    request: {
+      method: request?.method ?? "?",
+      url: request?.url ?? "?",
+    },
+  }
 }
 
 function describe(request: Request | undefined, response: Response | undefined) {

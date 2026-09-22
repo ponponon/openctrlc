@@ -9,6 +9,7 @@ import type {
   ReferenceInfo,
   Session,
 } from "@openctrlc/sdk/v2/client"
+import { isClientAbortError } from "@openctrlc/sdk/error-interceptor"
 import type {
   AgentListInput,
   AgentListOutput,
@@ -91,6 +92,17 @@ export function clearProviderRev(scope: ServerScope, directory: string) {
 
 function runAll(list: Array<() => Promise<unknown>>) {
   return Promise.allSettled(list.map((item) => item()))
+}
+
+function runOptionalMcpTask(input: { directory: string; kind: string; task: () => Promise<unknown> }) {
+  return input.task().catch((error) => {
+    if (isClientAbortError(error)) return
+    console.warn("Failed to load optional MCP bootstrap data", {
+      directory: input.directory,
+      kind: input.kind,
+      error: formatServerError(error),
+    })
+  })
 }
 
 function showErrors(input: {
@@ -407,6 +419,7 @@ export async function bootstrapDirectory(input: {
   const revKey = ScopedKey.from(input.scope, input.directory)
   const rev = (providerRev.get(revKey) ?? 0) + 1
   providerRev.set(revKey, rev)
+  const isCurrent = () => providerRev.get(revKey) === rev
   ;(async () => {
     const slow = [
       () => Promise.resolve(input.loadSessions(input.directory)),
@@ -470,9 +483,14 @@ export async function bootstrapDirectory(input: {
         }),
       input.mcp &&
         (() =>
-          loadCommands(input.directory, input.api.command, input.sdk, input.protocol).then((commands) =>
-            input.setStore("command", commands),
-          )),
+          runOptionalMcpTask({
+            directory: input.directory,
+            kind: "commands",
+            task: () =>
+              loadCommands(input.directory, input.api.command, input.sdk, input.protocol).then((commands) =>
+                input.setStore("command", commands),
+              ),
+          })),
       () =>
         input.queryClient.fetchQuery(
           loadReferencesQuery(input.scope, input.directory, input.api.reference, input.sdk, input.protocol),
@@ -562,18 +580,29 @@ export async function bootstrapDirectory(input: {
       () => Promise.resolve(input.loadSessions(input.directory)),
       input.mcp &&
         (() =>
-          input.queryClient.fetchQuery(
-            loadMcpQuery(input.scope, input.directory, input.api.mcp, input.sdk, input.protocol),
-          )),
+          runOptionalMcpTask({
+            directory: input.directory,
+            kind: "status",
+            task: () =>
+              input.queryClient.fetchQuery(
+                loadMcpQuery(input.scope, input.directory, input.api.mcp, input.sdk, input.protocol),
+              ),
+          })),
       input.mcp &&
         (() =>
-          input.queryClient.fetchQuery(
-            loadMcpResourcesQuery(input.scope, input.directory, input.api.mcp, input.sdk, input.protocol),
-          )),
+          runOptionalMcpTask({
+            directory: input.directory,
+            kind: "resources",
+            task: () =>
+              input.queryClient.fetchQuery(
+                loadMcpResourcesQuery(input.scope, input.directory, input.api.mcp, input.sdk, input.protocol),
+              ),
+          })),
       () =>
         input.queryClient
           .fetchQuery(loadProvidersQuery(input.scope, input.directory, input.api, input.sdk, input.protocol))
           .catch((err) => {
+            if (!isCurrent() || isClientAbortError(err)) return
             showProjectReloadError({
               project: getFilename(input.directory),
               error: err,
@@ -585,7 +614,8 @@ export async function bootstrapDirectory(input: {
     ].filter(Boolean) as (() => Promise<any>)[]
 
     await waitForPaint()
-    const slowErrs = errors(await runAll(slow))
+    const slowErrs = errors(await runAll(slow)).filter((error) => !isClientAbortError(error))
+    if (!isCurrent()) return
     if (slowErrs.length > 0) {
       console.error("Failed to finish bootstrap instance", slowErrs[0])
       showProjectReloadError({

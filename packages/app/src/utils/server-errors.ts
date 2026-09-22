@@ -1,3 +1,5 @@
+import { isClientAbortError } from "@openctrlc/sdk/error-interceptor"
+
 export type ConfigInvalidError = {
   name: "ConfigInvalidError"
   data: {
@@ -26,6 +28,7 @@ function tr(translator: Translator | undefined, key: string, text: string, vars?
 }
 
 export function formatServerError(error: unknown, translate?: Translator, fallback?: string) {
+  if (isClientAbortError(error)) return tr(translate, "error.chain.requestCancelled", "Request was cancelled")
   const unwrapped = unwrapNamedError(error)
   if (isConfigInvalidErrorLike(unwrapped)) return parseReadableConfigInvalidError(unwrapped, translate)
   if (isProviderModelNotFoundErrorLike(unwrapped)) return parseReadableProviderModelNotFoundError(unwrapped, translate)

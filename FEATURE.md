@@ -1678,3 +1678,27 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行权限自动接受单元测试。
 - 进入未配置过权限的目录，确认输入框权限按钮默认显示开启；新建会话后确认权限请求会自动接受。
 - 手动关闭目录自动接受后重新进入目录，确认仍保持关闭。
+
+## 499 客户端中断与 MCP bootstrap 隔离
+
+### 功能目标
+
+避免本地 sidecar 请求被取消时把 HTTP 499 当成项目加载失败，同时避免单个 MCP 的状态、命令或资源查询拖垮整个目录 bootstrap。
+
+### 实现范围
+
+- SDK 将 `499` 空响应标记为结构化的 `cancelled` 客户端错误，并保留请求、状态码和原始响应信息。
+- 错误格式化不再直接暴露 `499 unknown: (empty response body)`，而是显示可读的取消文案。
+- MCP 命令、状态和资源查询按可选 bootstrap 任务处理；取消会静默收敛，其他 MCP 失败只记录结构化警告。
+- 目录 bootstrap 使用 revision 检查，旧 bootstrap 不再弹出项目级错误或把状态标记为完成。
+
+### 代码位置
+
+- `packages/sdk/js/src/error-interceptor.ts`
+- `packages/app/src/context/global-sync/bootstrap.ts`
+- `packages/app/src/utils/server-errors.ts`
+
+### 验证方式
+
+- 在 `packages/sdk/js` 执行错误拦截器测试和类型检查。
+- 在 `packages/app` 执行错误格式化、bootstrap 相关定向测试和类型检查。
