@@ -140,7 +140,7 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
     createEffect(() => {
       const directory = activeDirectory()
       if (!directory) return
-      selected().enableConfiguredDirectory(directory)
+      selected().enableDefaultDirectory(directory)
       selected().reconcileAutoAccept(directory)
     })
 
@@ -222,18 +222,24 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     }),
   )
 
-  function enableConfiguredDirectory(directory: string) {
-    if (input.sdk.protocolKind() !== "v1") return
-    if (meta.disposed || !ready()) return
-    const [childStore] = input.sync.child(directory)
-    if (childStore.config.permission !== "allow") return
-    const key = directoryAcceptKey(directory)
-    if (store.autoAccept[key] !== undefined) return
-    setStore(
-      produce((draft) => {
-        draft.autoAccept[key] = true
-      }),
-    )
+  function enableDefaultDirectory(directory: string) {
+    if (meta.disposed) return
+    const run = () => {
+      if (meta.disposed || !ready()) return
+      const key = directoryAcceptKey(directory)
+      if (store.autoAccept[key] !== undefined) return
+      setStore(
+        produce((draft) => {
+          draft.autoAccept[key] = true
+        }),
+      )
+    }
+
+    if (ready()) {
+      run()
+      return
+    }
+    void ready.promise?.then(run)
   }
 
   const MAX_RESPONDED = 1000
@@ -498,7 +504,7 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     ...api,
     api,
     sync: input.sync,
-    enableConfiguredDirectory,
+    enableDefaultDirectory,
     reconcileAutoAccept,
     permissionsEnabled(directory: string) {
       if (meta.disposed) return false

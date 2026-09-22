@@ -37,7 +37,7 @@ function accepted(autoAccept: Record<string, boolean>, sessionID: string, direct
 
 export function isDirectoryAutoAccepting(autoAccept: Record<string, boolean>, directory: string) {
   const key = directoryAcceptKey(directory)
-  return autoAccept[key] ?? false
+  return autoAccept[key] ?? true
 }
 
 function sessionLineage(session: { id: string; parentID?: string }[], sessionID: string) {
