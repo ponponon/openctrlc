@@ -1,4 +1,5 @@
 import { query } from "@solidjs/router"
+import { parseMarkdown } from "./changelog-markdown"
 
 type Release = {
   tag_name: string
@@ -30,7 +31,7 @@ export type ChangelogRelease = {
   date: string
   url: string
   highlights: HighlightGroup[]
-  sections: { title: string; items: string[] }[]
+  content: string
 }
 
 export type ChangelogData = {
@@ -57,14 +58,14 @@ export async function loadChangelog(): Promise<ChangelogData> {
   if (!Array.isArray(data)) return { ok: false, releases: [] }
 
   const releases = (data as Release[]).map((release) => {
-    const parsed = parseMarkdown(release.body || "")
+    const body = release.body || ""
     return {
       tag: release.tag_name,
       name: release.name,
       date: release.published_at,
       url: release.html_url,
-      highlights: parsed.highlights,
-      sections: parsed.sections,
+      highlights: parseHighlights(body),
+      content: parseMarkdown(body),
     }
   })
 
@@ -117,30 +118,4 @@ function parseHighlights(body: string): HighlightGroup[] {
   }
 
   return Array.from(groups.entries()).map(([source, items]) => ({ source, items }))
-}
-
-function parseMarkdown(body: string) {
-  const lines = body.split("\n")
-  const sections: { title: string; items: string[] }[] = []
-  let current: { title: string; items: string[] } | null = null
-  let skip = false
-
-  for (const line of lines) {
-    if (line.startsWith("## ")) {
-      if (current) sections.push(current)
-      current = { title: line.slice(3).trim(), items: [] }
-      skip = false
-      continue
-    }
-
-    if (line.startsWith("**Thank you")) {
-      skip = true
-      continue
-    }
-
-    if (line.startsWith("- ") && !skip) current?.items.push(line.slice(2).trim())
-  }
-
-  if (current) sections.push(current)
-  return { sections, highlights: parseHighlights(body) }
 }

@@ -6,7 +6,7 @@ import { Footer } from "~/component/footer"
 import { Legal } from "~/component/legal"
 import { changelog } from "~/lib/changelog"
 import type { HighlightGroup } from "~/lib/changelog"
-import { For, Show, createSignal } from "solid-js"
+import { For, Show } from "solid-js"
 import { useI18n } from "~/context/i18n"
 import { useLanguage } from "~/context/language"
 import { LocaleLinks } from "~/component/locale-links"
@@ -18,30 +18,6 @@ function formatDate(dateString: string, locale: string) {
     month: "short",
     day: "numeric",
   })
-}
-
-function ReleaseItem(props: { item: string }) {
-  const parts = () => {
-    const match = props.item.match(/^(.+?)(\s*\(@([\w-]+)\))?$/)
-    if (match) {
-      return {
-        text: match[1],
-        username: match[3],
-      }
-    }
-    return { text: props.item, username: undefined }
-  }
-
-  return (
-    <li>
-      <span>{parts().text}</span>
-      <Show when={parts().username}>
-        <a data-slot="author" href={`https://github.com/${parts().username}`} target="_blank" rel="noopener noreferrer">
-          (@{parts().username})
-        </a>
-      </Show>
-    </li>
-  )
 }
 
 function HighlightSection(props: { group: HighlightGroup }) {
@@ -68,32 +44,6 @@ function HighlightSection(props: { group: HighlightGroup }) {
           </div>
         )}
       </For>
-    </div>
-  )
-}
-
-function CollapsibleSection(props: { section: { title: string; items: string[] } }) {
-  const [open, setOpen] = createSignal(false)
-
-  return (
-    <div data-component="collapsible-section">
-      <button data-slot="toggle" onClick={() => setOpen(!open())}>
-        <span data-slot="icon">{open() ? "▾" : "▸"}</span>
-        <span>{props.section.title}</span>
-      </button>
-      <Show when={open()}>
-        <ul>
-          <For each={props.section.items}>{(item) => <ReleaseItem item={item} />}</For>
-        </ul>
-      </Show>
-    </div>
-  )
-}
-
-function CollapsibleSections(props: { sections: { title: string; items: string[] }[] }) {
-  return (
-    <div data-component="collapsible-sections">
-      <For each={props.sections}>{(section) => <CollapsibleSection section={section} />}</For>
     </div>
   )
 }
@@ -144,20 +94,8 @@ export default function Changelog() {
                           <For each={release.highlights}>{(group) => <HighlightSection group={group} />}</For>
                         </div>
                       </Show>
-                      <Show when={release.highlights.length > 0 && release.sections.length > 0}>
-                        <CollapsibleSections sections={release.sections} />
-                      </Show>
-                      <Show when={release.highlights.length === 0}>
-                        <For each={release.sections}>
-                          {(section) => (
-                            <div data-component="section">
-                              <h3>{section.title}</h3>
-                              <ul>
-                                <For each={section.items}>{(item) => <ReleaseItem item={item} />}</For>
-                              </ul>
-                            </div>
-                          )}
-                        </For>
+                      <Show when={release.content}>
+                        <div data-component="markdown" innerHTML={release.content} />
                       </Show>
                     </div>
                   </article>
