@@ -1333,9 +1333,7 @@ const layer = Layer.effect(
                 (part) => part.type === "text" && !part.ignored && part.text.trim().length > 0,
               ) ?? false
             const hasToolCalls =
-              currentAssistant?.parts.some(
-                (part) => part.type === "tool" && !isOrphanedInterruptedTool(part),
-              ) ?? false
+              currentAssistant?.parts.some((part) => part.type === "tool" && !isOrphanedInterruptedTool(part)) ?? false
             if (
               !handle.message.error &&
               format.type !== "json_schema" &&
