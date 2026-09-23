@@ -24,6 +24,7 @@ import { errorMessage } from "@/util/error"
 import { isRecord } from "@/util/record"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Database } from "@openctrlc/core/database/database"
+import { SessionSystemPromptSnapshot } from "@openctrlc/core/session/system-prompt-snapshot"
 import { Usage, type LLMEvent } from "@openctrlc/llm"
 
 const DOOM_LOOP_THRESHOLD = 3
@@ -682,9 +683,10 @@ const layer = Layer.effect(
             const stream = llm.stream({
               ...streamInput,
               onSystem: (system) => {
-                if (!input.captureSystemPrompt || streamInput.user.systemPrompt) return Effect.void
-                const systemPrompt = system.join("\n")
-                return session.updateMessage({ ...streamInput.user, systemPrompt }).pipe(Effect.asVoid)
+                if (!input.captureSystemPrompt) return Effect.void
+                return SessionSystemPromptSnapshot.captureIfMissing(database.db, input.sessionID, system.join("\n")).pipe(
+                  Effect.flatMap((captured) => (captured ? session.touch(input.sessionID) : Effect.void)),
+                )
               },
             })
 

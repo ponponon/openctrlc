@@ -190,6 +190,7 @@ export default {
           \`title\` text NOT NULL,
           \`version\` text NOT NULL,
           \`share_url\` text,
+          \`system_prompt_snapshot\` text,
           \`summary_additions\` integer,
           \`summary_deletions\` integer,
           \`summary_files\` integer,

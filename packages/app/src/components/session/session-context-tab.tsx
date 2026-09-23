@@ -1,4 +1,4 @@
-import { createMemo, createEffect, on, onCleanup, For, Show } from "solid-js"
+import { createMemo, createEffect, createResource, on, onCleanup, For, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import type { JSX } from "solid-js"
 import { useSync } from "@/context/sync"
@@ -117,8 +117,19 @@ export function SessionContextTab() {
   const sdk = useSDK()
   const providers = useProviders(() => sdk().directory)
   const { params, view } = useSessionLayout()
-
   const info = createMemo(() => (params.id ? sync().session.get(params.id) : undefined))
+
+  const [systemPromptSnapshot] = createResource(
+    () => {
+      const sessionID = params.id
+      if (!sessionID) return undefined
+      return { sessionID, client: sdk().client, revision: info()?.time.updated }
+    },
+    (input) =>
+      input.client.v2.session
+        .systemPromptSnapshot({ sessionID: input.sessionID })
+        .then((result) => result.data?.data?.snapshot, () => undefined),
+  )
 
   const messages = createMemo(
     () => {
@@ -179,7 +190,7 @@ export function SessionContextTab() {
     }
   })
 
-  const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages()))
+  const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages(), systemPromptSnapshot()))
   const [systemPromptState, setSystemPromptState] = createStore({ expanded: false })
 
   const systemPromptNeedsExpansion = createMemo(() => (systemPrompt()?.length ?? 0) > 800)
@@ -454,7 +465,10 @@ export function SessionContextTab() {
           {(prompt) => (
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between gap-2">
-                <div class="text-12-regular text-text-weak">{language.t("context.systemPrompt.title")}</div>
+                <div>
+                  <div class="text-12-regular text-text-weak">{language.t("context.systemPrompt.title")}</div>
+                  <div class="text-11-regular text-text-weaker">{language.t("context.systemPrompt.snapshotNote")}</div>
+                </div>
                 <div class="flex items-center gap-1">
                   <Button
                     size="small"

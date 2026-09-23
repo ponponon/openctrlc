@@ -168,24 +168,28 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 
 ### 实现范围
 
-- 后端在完成系统提示词组装和插件变换后，仅当完整会话历史尚无快照时，才在当前实际请求的用户消息上写入一次 `systemPrompt` 字段；判断基于完整历史而非倒序或压缩后的上下文，避免 compaction、重启或分支过滤后再次复制。后续回合仍动态组装提示词，但不再复制持久化。
+- 后端在完成系统提示词组装和插件变换后，仅当会话级快照尚不存在时，才将有效提示词写入 session 独立字段；不再把它复制到用户消息。后续回合、工具多步和 compaction 后仍动态组装提示词，但不会重复持久化。
 - 保留原有 `system` 字段作为用户输入的系统提示覆盖，避免下一轮请求重复拼接已组装的完整提示词。
-- 上下文面板展示会话首次保存的 `systemPrompt`，旧会话缺少该字段时回退展示原有 `system` 内容；即使历史数据存在重复快照也只读取第一份。
-- 兼容已有重复快照数据，新逻辑只阻止后续继续产生重复数据，不做危险的历史记录批量改写。
+- 上下文面板通过会话级只读端点获取首次请求快照，不依赖当前已加载的消息分页；旧会话缺少 session 快照时读取最早的历史 `systemPrompt`，再回退到原有 `system` 内容。
+- 数据库迁移把历史消息中的最早一份有效 `systemPrompt` 复制到 session 字段，不改写或删除历史消息；新逻辑不再向任何消息写入完整快照。
+- 面板注明这是首次模型请求的快照，后续日期、项目指令、Skills 或 MCP 配置变化不会自动重写它。
 - 系统提示词仍参与上下文细分的 System 统计，保证可读内容与 token 估算使用同一份数据。
 - 长系统提示词默认只显示固定高度预览并提供渐变截断提示，用户点击“展开”后在面板内部滚动查看完整内容，也可以再次收起。
 - 系统提示词标题栏提供复制原始有效提示词的操作，复制失败使用 Toast 反馈；复制内容不受当前预览折叠状态影响。
 
 ### 代码位置
 
-- `packages/schema/src/v1/session.ts`：用户消息的有效 System Prompt 字段。
-- `packages/opencode/src/session/llm.ts`、`packages/opencode/src/session/processor.ts`：捕获并持久化完成请求准备后的提示词。
-- `packages/app/src/components/session/session-context-tab.tsx`、`session-context-system-prompt.ts`：上下文面板展示和旧会话兼容回退。
+- `packages/core/src/session/system-prompt-snapshot.ts`、`packages/core/src/session/sql.ts`：会话级快照的幂等保存、旧数据恢复和数据库字段。
+- `packages/opencode/src/session/prompt.ts`、`packages/opencode/src/session/processor.ts`：检查会话快照并捕获完成请求准备后的提示词。
+- `packages/protocol/src/groups/session.ts`、`packages/server/src/handlers/session.ts`：按需读取会话级快照的 API。
+- `packages/app/src/components/session/session-context-tab.tsx`、`session-context-system-prompt.ts`：上下文面板展示、首次快照说明和旧会话兼容回退。
 
 ### 验证方式
 
 - 运行上下文细分和上下文指标单元测试。
 - 运行 System Prompt 选择逻辑单元测试，确认新字段优先、旧字段回退。
+- 运行回归测试，确认多步工具调用和 compaction 后续聊都只保留一份 session 快照，用户消息不再携带 `systemPrompt`。
+- 运行数据库迁移测试，确认历史消息最早的一份有效快照会迁移到 session，历史消息本身保持不变。
 - 在新会话发送一条消息，打开「上下文」，确认长 System Prompt 默认只显示预览，点击“展开”后可查看完整内容；旧会话仍可正常打开。
 - 点击复制按钮后，将完整有效 System Prompt 粘贴到文本编辑器，确认复制的是原始文本而非截断预览。
 - 执行 `bun run typecheck`，确认 Server API 和 App 使用的生成类型同步。

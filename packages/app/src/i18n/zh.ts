@@ -633,6 +633,7 @@ export const dict = {
   "context.breakdown.tool": "工具调用",
   "context.breakdown.other": "其他",
   "context.systemPrompt.title": "系统提示词",
+  "context.systemPrompt.snapshotNote": "首次请求时的快照；后续设置变化不会同步。旧会话会回退读取消息数据。",
   "context.systemPrompt.copy": "复制系统提示词",
   "context.systemPrompt.copyFailed": "复制系统提示词失败",
   "context.rawMessages.title": "原始消息",

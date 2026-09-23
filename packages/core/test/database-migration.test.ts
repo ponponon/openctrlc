@@ -25,6 +25,7 @@ import { AbsolutePath } from "@openctrlc/core/schema"
 import { SessionSchema } from "@openctrlc/core/session/schema"
 import { SessionTable } from "@openctrlc/core/session/sql"
 import sessionMetadataMigration from "@openctrlc/core/database/migration/20260511173437_session-metadata"
+import sessionSystemPromptSnapshotMigration from "@openctrlc/core/database/migration/20260923094529_session_system_prompt_snapshot"
 import type { SqlClient as SqlClientService } from "effect/unstable/sql/SqlClient"
 import { Database } from "@openctrlc/core/database/database"
 import { SessionProjector } from "@openctrlc/core/session/projector"
@@ -158,6 +159,29 @@ describe("DatabaseMigration", () => {
           { name: "session_message_session_time_created_id_idx" },
           { name: "session_message_session_type_seq_idx" },
         ])
+      }),
+    )
+  })
+
+  test("backfills the earliest effective system prompt into the session snapshot", async () => {
+    await run(
+      Effect.gen(function* () {
+        const db = yield* makeDb
+        yield* db.run(sql`CREATE TABLE session (id text PRIMARY KEY)`)
+        yield* db.run(sql`CREATE TABLE message (id text PRIMARY KEY, session_id text, time_created integer, data text)`)
+        yield* db.run(sql`INSERT INTO session (id) VALUES ('ses_1')`)
+        yield* db.run(sql`
+          INSERT INTO message (id, session_id, time_created, data) VALUES
+            ('msg_1', 'ses_1', 1, ${JSON.stringify({ role: "user", systemPrompt: "  " })}),
+            ('msg_2', 'ses_1', 2, ${JSON.stringify({ role: "user", systemPrompt: "first snapshot" })}),
+            ('msg_3', 'ses_1', 3, ${JSON.stringify({ role: "user", systemPrompt: "duplicate snapshot" })})
+        `)
+
+        yield* DatabaseMigration.applyOnly(db, [sessionSystemPromptSnapshotMigration])
+
+        expect(yield* db.get(sql`SELECT system_prompt_snapshot FROM session WHERE id = 'ses_1'`)).toEqual({
+          system_prompt_snapshot: "first snapshot",
+        })
       }),
     )
   })

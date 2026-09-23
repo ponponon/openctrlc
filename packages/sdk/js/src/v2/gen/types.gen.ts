@@ -11485,6 +11485,47 @@ export type V2SessionGetResponses = {
 
 export type V2SessionGetResponse = V2SessionGetResponses[keyof V2SessionGetResponses]
 
+export type V2SessionSystemPromptSnapshotData = {
+  body?: never
+  path: {
+    sessionID: string
+  }
+  query?: never
+  url: "/api/session/{sessionID}/system-prompt-snapshot"
+}
+
+export type V2SessionSystemPromptSnapshotErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+  /**
+   * SessionNotFoundError
+   */
+  404: SessionNotFoundError
+}
+
+export type V2SessionSystemPromptSnapshotError =
+  V2SessionSystemPromptSnapshotErrors[keyof V2SessionSystemPromptSnapshotErrors]
+
+export type V2SessionSystemPromptSnapshotResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: {
+      snapshot?: string
+    }
+  }
+}
+
+export type V2SessionSystemPromptSnapshotResponse =
+  V2SessionSystemPromptSnapshotResponses[keyof V2SessionSystemPromptSnapshotResponses]
+
 export type V2SessionSwitchAgentData = {
   body: {
     agent: string

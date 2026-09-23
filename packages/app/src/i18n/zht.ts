@@ -639,6 +639,7 @@ export const dict = {
   "context.breakdown.other": "其他",
 
   "context.systemPrompt.title": "系統提示詞",
+  "context.systemPrompt.snapshotNote": "首次請求時的快照；後續設定變更不會同步。舊工作階段會回退讀取訊息資料。",
   "context.systemPrompt.copy": "Copy system prompt",
   "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "原始訊息",

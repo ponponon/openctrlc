@@ -27,6 +27,7 @@ import { Question } from "../../src/question"
 import { Todo } from "../../src/session/todo"
 import { Session } from "@/session/session"
 import { SessionMessageTable } from "@openctrlc/core/session/sql"
+import { SessionSystemPromptSnapshot } from "@openctrlc/core/session/system-prompt-snapshot"
 import { LLM } from "../../src/session/llm"
 import { MessageV2 } from "../../src/session/message-v2"
 import { FSUtil } from "@openctrlc/core/fs-util"
@@ -554,7 +555,7 @@ it.instance("loop calls LLM and returns assistant message", () =>
   }),
 )
 
-it.instance("persists the effective system prompt once after its message leaves the newest page", () =>
+it.instance("keeps the session snapshot when its originating message leaves the newest page", () =>
   Effect.gen(function* () {
     const { llm } = yield* useServerConfig(providerCfg)
     const prompt = yield* SessionPrompt.Service
@@ -586,10 +587,72 @@ it.instance("persists the effective system prompt once after its message leaves 
 
     const firstStored = yield* MessageV2.get({ sessionID: chat.id, messageID: first.info.id })
     const secondStored = yield* MessageV2.get({ sessionID: chat.id, messageID: second.info.id })
+    const { db } = yield* Database.Service
+    const snapshot = yield* SessionSystemPromptSnapshot.get(db, chat.id)
 
-    expect(firstStored.info.role === "user" ? firstStored.info.systemPrompt : undefined).toBeTruthy()
+    expect(snapshot).toBeTruthy()
+    expect(firstStored.info.role === "user" ? firstStored.info.systemPrompt : undefined).toBeUndefined()
     expect(secondStored.info.role === "user" ? secondStored.info.systemPrompt : undefined).toBeUndefined()
     expect(yield* llm.hits).toHaveLength(2)
+  }),
+)
+
+it.instance("keeps the session system prompt snapshot after compaction and a follow-up turn", () =>
+  Effect.gen(function* () {
+    const { llm } = yield* useServerConfig(providerCfg)
+    const prompt = yield* SessionPrompt.Service
+    const compaction = yield* SessionCompaction.Service
+    const sessions = yield* Session.Service
+    const chat = yield* sessions.create({
+      title: "System prompt snapshot after compaction",
+      permission: [{ permission: "*", pattern: "*", action: "allow" }],
+    })
+
+    yield* prompt.prompt({
+      sessionID: chat.id,
+      agent: "build",
+      noReply: true,
+      parts: [{ type: "text", text: "before compaction" }],
+    })
+    yield* llm.text("first response")
+    yield* prompt.loop({ sessionID: chat.id })
+
+    yield* compaction.create({ sessionID: chat.id, agent: "build", model: ref, auto: false })
+    const beforeCompaction = yield* sessions.messages({ sessionID: chat.id })
+    const marker = beforeCompaction.findLast(
+      (message) => message.info.role === "user" && message.parts.some((part) => part.type === "compaction"),
+    )
+    if (!marker) throw new Error("Expected compaction marker")
+    yield* llm.text("summary")
+    expect(
+      yield* compaction.process({
+        parentID: marker.info.id,
+        messages: beforeCompaction,
+        sessionID: chat.id,
+        auto: false,
+      }),
+    ).toBe("continue")
+
+    yield* prompt.prompt({
+      sessionID: chat.id,
+      agent: "build",
+      noReply: true,
+      parts: [{ type: "text", text: "after compaction" }],
+    })
+    yield* llm.text("follow-up response")
+    yield* prompt.loop({ sessionID: chat.id })
+
+    const { db } = yield* Database.Service
+    const snapshot = yield* SessionSystemPromptSnapshot.get(db, chat.id)
+    const messages = yield* sessions.messages({ sessionID: chat.id })
+    expect(snapshot).toBeTruthy()
+    expect(
+      messages
+        .filter((message) => message.info.role === "user")
+        .map((message) => (message.info.role === "user" ? message.info.systemPrompt : undefined))
+        .filter(Boolean),
+    ).toEqual([])
+    expect(yield* llm.hits).toHaveLength(3)
   }),
 )
 
@@ -912,6 +975,15 @@ it.instance("loop continues when finish is tool-calls", () =>
     const result = yield* prompt.loop({ sessionID: session.id })
     expect(yield* llm.calls).toBe(2)
     expect(result.info.role).toBe("assistant")
+    const { db } = yield* Database.Service
+    expect(yield* SessionSystemPromptSnapshot.get(db, session.id)).toBeTruthy()
+    const messages = yield* sessions.messages({ sessionID: session.id })
+    expect(
+      messages
+        .filter((message) => message.info.role === "user")
+        .map((message) => (message.info.role === "user" ? message.info.systemPrompt : undefined))
+        .filter(Boolean),
+    ).toEqual([])
     if (result.info.role === "assistant") {
       expect(result.parts.some((part) => part.type === "text" && part.text === "second")).toBe(true)
       expect(result.info.finish).toBe("stop")

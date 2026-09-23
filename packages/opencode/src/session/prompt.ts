@@ -49,6 +49,7 @@ import { SessionRunState } from "./run-state"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Database } from "@openctrlc/core/database/database"
+import { SessionSystemPromptSnapshot } from "@openctrlc/core/session/system-prompt-snapshot"
 import { ModelV2 } from "@openctrlc/core/model"
 import { ProviderV2 } from "@openctrlc/core/provider"
 import { eq } from "drizzle-orm"
@@ -1102,9 +1103,7 @@ const layer = Layer.effect(
             Effect.provideService(Database.Service, database),
           )
           let msgs = MessageV2.filterCompacted(allMessages)
-          const hasSystemPromptSnapshot = allMessages.some(
-            (item) => item.info.role === "user" && Boolean(item.info.systemPrompt?.trim()),
-          )
+          const hasSystemPromptSnapshot = yield* SessionSystemPromptSnapshot.get(db, sessionID)
 
           const { user: lastUser, assistant: lastAssistant, finished: lastFinished, tasks } = MessageV2.latest(msgs)
 
@@ -1213,7 +1212,7 @@ const layer = Layer.effect(
           }
           yield* sessions.updateMessage(msg)
 
-          const captureSystemPrompt = !hasSystemPromptSnapshot && !lastUser.systemPrompt?.trim()
+          const captureSystemPrompt = !hasSystemPromptSnapshot
 
           const finalizeInterruptedAssistant = Effect.gen(function* () {
             if (msg.time.completed) return

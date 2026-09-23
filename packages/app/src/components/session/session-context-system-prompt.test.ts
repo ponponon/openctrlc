@@ -14,6 +14,11 @@ describe("getSessionSystemPrompt", () => {
       ]),
     ).toBe("effective prompt")
   })
+  test("prefers the session snapshot when older message pages no longer include it", () => {
+    expect(getSessionSystemPrompt([user("u2", { system: "user override" })], "  first turn snapshot  ")).toBe(
+      "first turn snapshot",
+    )
+  })
 
   test("falls back to the user override for older sessions", () => {
     expect(getSessionSystemPrompt([user("u1", { system: "  legacy prompt  " })])).toBe("legacy prompt")

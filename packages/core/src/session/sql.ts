@@ -35,6 +35,7 @@ export const SessionTable = sqliteTable(
     title: text().notNull(),
     version: text().notNull(),
     share_url: text(),
+    system_prompt_snapshot: text(),
     summary_additions: integer(),
     summary_deletions: integer(),
     summary_files: integer(),

@@ -11,6 +11,8 @@ import type {
   SessionsActiveOutput,
   SessionsGetInput,
   SessionsGetOutput,
+  SessionsSystemPromptSnapshotInput,
+  SessionsSystemPromptSnapshotOutput,
   SessionsSwitchAgentInput,
   SessionsSwitchAgentOutput,
   SessionsSwitchModelInput,
@@ -337,6 +339,17 @@ export function make(options: ClientOptions) {
           {
             method: "GET",
             path: `/api/session/${encodeURIComponent(input.sessionID)}`,
+            successStatus: 200,
+            declaredStatuses: [404, 400, 401],
+            empty: false,
+          },
+          requestOptions,
+        ).then((value) => value.data),
+      systemPromptSnapshot: (input: SessionsSystemPromptSnapshotInput, requestOptions?: RequestOptions) =>
+        request<{ readonly data: SessionsSystemPromptSnapshotOutput }>(
+          {
+            method: "GET",
+            path: `/api/session/${encodeURIComponent(input.sessionID)}/system-prompt-snapshot`,
             successStatus: 200,
             declaredStatuses: [404, 400, 401],
             empty: false,

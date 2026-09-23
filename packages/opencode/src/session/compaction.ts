@@ -421,6 +421,7 @@ const layer = Layer.effect(
         assistantMessage: msg,
         sessionID: input.sessionID,
         model,
+        captureSystemPrompt: false,
       })
       const result = yield* processor.process({
         user: userMessage,

@@ -37,6 +37,7 @@ import { SessionRevert } from "./session/revert"
 import { Revert } from "@openctrlc/schema/revert"
 import { FSUtil } from "./fs-util"
 import { SessionDurable } from "@openctrlc/schema/durable-event-manifest"
+import { SessionSystemPromptSnapshot } from "./session/system-prompt-snapshot"
 
 export const RevertState = Revert.State
 export type RevertState = Revert.State
@@ -114,6 +115,7 @@ export interface Interface {
   readonly list: (input?: ListInput) => Effect.Effect<SessionSchema.Info[]>
   readonly create: (input: CreateInput) => Effect.Effect<SessionSchema.Info>
   readonly get: (sessionID: SessionSchema.ID) => Effect.Effect<SessionSchema.Info, NotFoundError>
+  readonly getSystemPromptSnapshot: (sessionID: SessionSchema.ID) => Effect.Effect<string | undefined, NotFoundError>
   readonly messages: (input: {
     sessionID: SessionSchema.ID
     limit?: number
@@ -264,6 +266,11 @@ const layer = Layer.effect(
         const session = yield* store.get(sessionID)
         if (!session) return yield* new NotFoundError({ sessionID })
         return session
+      }),
+      getSystemPromptSnapshot: Effect.fn("V2Session.getSystemPromptSnapshot")(function* (sessionID) {
+        const session = yield* store.get(sessionID)
+        if (!session) return yield* new NotFoundError({ sessionID })
+        return yield* SessionSystemPromptSnapshot.get(db, sessionID)
       }),
       list: Effect.fn("V2Session.list")(function* (input = {}) {
         const direction = input.anchor?.direction ?? "next"

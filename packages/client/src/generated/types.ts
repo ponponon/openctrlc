@@ -365,6 +365,10 @@ export type SessionsGetOutput = {
   }
 }["data"]
 
+export type SessionsSystemPromptSnapshotInput = { readonly sessionID: { readonly sessionID: string }["sessionID"] }
+
+export type SessionsSystemPromptSnapshotOutput = { readonly data: { readonly snapshot?: string | undefined } }["data"]
+
 export type SessionsSwitchAgentInput = {
   readonly sessionID: { readonly sessionID: string }["sessionID"]
   readonly agent: { readonly agent: string }["agent"]

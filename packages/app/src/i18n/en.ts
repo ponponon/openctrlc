@@ -533,6 +533,8 @@ export const dict = {
   "context.breakdown.other": "Other",
 
   "context.systemPrompt.title": "System Prompt",
+  "context.systemPrompt.snapshotNote":
+    "First-request snapshot; later settings changes are not reflected. Older sessions fall back to message data.",
   "context.systemPrompt.copy": "Copy system prompt",
   "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Raw messages",

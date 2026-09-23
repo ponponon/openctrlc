@@ -167,6 +167,21 @@ export const makeSessionGroup = <I extends HttpApiMiddleware.AnyId, S>(sessionLo
             summary: "Get session",
             description: "Retrieve a session by ID.",
           }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.get("session.systemPromptSnapshot", "/api/session/:sessionID/system-prompt-snapshot", {
+        params: { sessionID: Session.ID },
+        success: Schema.Struct({ data: Schema.Struct({ snapshot: Schema.String.pipe(Schema.optional) }) }),
+        error: SessionNotFoundError,
+      })
+        .middleware(sessionLocationMiddleware)
+        .annotateMerge(
+          OpenApi.annotations({
+            identifier: "v2.session.systemPromptSnapshot",
+            summary: "Get session system prompt snapshot",
+            description: "Retrieve the first effective system prompt snapshot stored for a session, if available.",
+          }),
         ),
     )
     .add(

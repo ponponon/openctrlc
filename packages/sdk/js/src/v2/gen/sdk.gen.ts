@@ -381,6 +381,8 @@ import type {
   V2SessionSwitchAgentResponses,
   V2SessionSwitchModelErrors,
   V2SessionSwitchModelResponses,
+  V2SessionSystemPromptSnapshotErrors,
+  V2SessionSystemPromptSnapshotResponses,
   V2SessionWaitErrors,
   V2SessionWaitResponses,
   V2SkillListErrors,
@@ -5531,6 +5533,29 @@ export class Session3 extends HeyApiClient {
     const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "sessionID" }] }])
     return (options?.client ?? this.client).get<V2SessionGetResponses, V2SessionGetErrors, ThrowOnError>({
       url: "/api/session/{sessionID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get session system prompt snapshot
+   *
+   * Retrieve the first effective system prompt snapshot stored for a session, if available.
+   */
+  public systemPromptSnapshot<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "sessionID" }] }])
+    return (options?.client ?? this.client).get<
+      V2SessionSystemPromptSnapshotResponses,
+      V2SessionSystemPromptSnapshotErrors,
+      ThrowOnError
+    >({
+      url: "/api/session/{sessionID}/system-prompt-snapshot",
       ...options,
       ...params,
     })
