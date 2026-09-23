@@ -554,6 +554,45 @@ it.instance("loop calls LLM and returns assistant message", () =>
   }),
 )
 
+it.instance("persists the effective system prompt once after its message leaves the newest page", () =>
+  Effect.gen(function* () {
+    const { llm } = yield* useServerConfig(providerCfg)
+    const prompt = yield* SessionPrompt.Service
+    const sessions = yield* Session.Service
+    const chat = yield* sessions.create({
+      title: "Pinned",
+      permission: [{ permission: "*", pattern: "*", action: "allow" }],
+    })
+
+    const first = yield* prompt.prompt({
+      sessionID: chat.id,
+      agent: "build",
+      noReply: true,
+      parts: [{ type: "text", text: "first turn" }],
+    })
+    yield* llm.text("first reply")
+    yield* prompt.loop({ sessionID: chat.id })
+
+    yield* Effect.forEach(Array.from({ length: 26 }), () => seed(chat.id, { finish: "stop" }))
+
+    const second = yield* prompt.prompt({
+      sessionID: chat.id,
+      agent: "build",
+      noReply: true,
+      parts: [{ type: "text", text: "second turn" }],
+    })
+    yield* llm.text("second reply")
+    yield* prompt.loop({ sessionID: chat.id })
+
+    const firstStored = yield* MessageV2.get({ sessionID: chat.id, messageID: first.info.id })
+    const secondStored = yield* MessageV2.get({ sessionID: chat.id, messageID: second.info.id })
+
+    expect(firstStored.info.role === "user" ? firstStored.info.systemPrompt : undefined).toBeTruthy()
+    expect(secondStored.info.role === "user" ? secondStored.info.systemPrompt : undefined).toBeUndefined()
+    expect(yield* llm.hits).toHaveLength(2)
+  }),
+)
+
 it.instance("loop surfaces reasoning-only responses as empty-response errors", () =>
   Effect.gen(function* () {
     const { llm } = yield* useServerConfig(providerCfg)
