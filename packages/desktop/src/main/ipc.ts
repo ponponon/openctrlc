@@ -13,6 +13,7 @@ import type {
   OpenCodeSessionLookup,
   ServerReadyData,
   TitlebarTheme,
+  DesktopDatabaseFile,
 } from "../preload/types"
 import { runDesktopMenuAction } from "./desktop-menu-actions"
 import { setForceFocus } from "./debug"
@@ -58,6 +59,7 @@ type Deps = {
   setBackgroundColor: (color: string) => void
   exportDebugLogs: () => Promise<string>
   openDebugLogs: () => Promise<string>
+  getDatabaseFiles: () => Promise<DesktopDatabaseFile[]>
   getOpenCodeSessionInfo: (input: OpenCodeSessionLookup) => Promise<OpenCodeSessionInfo | null>
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void> | void
@@ -111,6 +113,7 @@ export function registerIpcHandlers(deps: Deps) {
   })
   ipcMain.handle("export-debug-logs", () => deps.exportDebugLogs())
   ipcMain.handle("open-debug-logs", () => deps.openDebugLogs())
+  ipcMain.handle("get-database-files", () => deps.getDatabaseFiles())
   ipcMain.handle("import-opencode-session", (_event: IpcMainInvokeEvent, input: OpenCodeSessionImport) => {
     if (!isOpenCodeSessionImport(input)) throw new Error("Invalid OpenCode session import request")
     return deps.importOpenCodeSession(input)

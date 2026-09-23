@@ -21,6 +21,11 @@ type SaveFilePickerOptions = { title?: string; defaultPath?: string }
 type PlatformName = "web" | "desktop"
 type DesktopOS = "macos" | "windows" | "linux"
 
+export type DesktopDatabaseFile = {
+  name: string
+  path: string
+}
+
 export type FatalRendererErrorLog = {
   error: string
   url: string
@@ -141,6 +146,9 @@ type PlatformBase = {
 
   /** Open the most relevant diagnostic log in the system's default application (desktop only) */
   openDebugLogs?(): Promise<string>
+
+  /** List local application database files (desktop only) */
+  getDatabaseFiles?(): Promise<DesktopDatabaseFile[]>
 
   /** Force focus styles on interactive elements through desktop devtools (desktop only) */
   setForceFocus?(enabled: boolean): Promise<void>

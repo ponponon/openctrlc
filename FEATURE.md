@@ -1794,3 +1794,29 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun run typecheck`。
 - 执行应用 i18n parity 测试，确认复用已有多语言键不引入字典缺失。
 - 手动确认删除单条、多条及最后一条排队消息后，队列数量和 Dock 显示正确。
+
+## 设置页查看本地数据库
+
+### 功能目标
+
+让用户可以从 Desktop 设置页直接定位 OpenCtrlC、OpenCode 以及草稿等本地数据库文件，减少手动进入隐藏目录查找数据库的成本。
+
+### 实现范围
+
+- 主进程扫描应用约定的数据目录，只返回实际存在的 `.db`、`.sqlite` 和 `.sqlite3` 文件，并忽略 SQLite 的 `-wal`、`-shm` 伴随文件。
+- Renderer 通过 preload 和受控 IPC 获取数据库路径，不直接访问本地文件系统。
+- 旧版和 V2 设置页都按文件名和完整路径列出数据库，并复用现有 Finder/File Explorer 定位能力。
+- 数据目录按当前环境动态解析，兼容不同 Desktop 通道、历史 OpenCode 数据和开发版/正式版路径，不把数据库数量写死。
+
+### 代码位置
+
+- `packages/desktop/src/main/database-files.ts`：数据库文件发现和过滤。
+- `packages/desktop/src/main/ipc.ts`、`packages/desktop/src/preload/*`：受控 IPC 和类型。
+- `packages/app/src/context/platform.tsx`：Desktop 平台能力声明。
+- `packages/app/src/components/settings-general.tsx`、`packages/app/src/components/settings-v2/general.tsx`：设置页入口。
+
+### 验证方式
+
+- 在 `packages/desktop` 执行数据库文件发现单元测试和 `bun typecheck`。
+- 在 `packages/app` 执行 `bun typecheck` 与 i18n parity 测试，确认复用现有定位文案不引入新的翻译键。
+- Desktop 手测设置页的每个数据库按钮，确认 macOS 打开 Finder 并选中文件，Windows/Linux 打开对应文件管理器并选中文件。

@@ -60,6 +60,11 @@ export type OpenCodeSessionLookup = {
   databasePath?: string
 }
 
+export type DesktopDatabaseFile = {
+  name: string
+  path: string
+}
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -132,6 +137,7 @@ export type ElectronAPI = {
   getOpenCodeSessionInfo: (input: OpenCodeSessionLookup) => Promise<OpenCodeSessionInfo | null>
   exportDebugLogs: () => Promise<string>
   openDebugLogs: () => Promise<string>
+  getDatabaseFiles: () => Promise<DesktopDatabaseFile[]>
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   setForceFocus: (enabled: boolean) => Promise<void>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void>

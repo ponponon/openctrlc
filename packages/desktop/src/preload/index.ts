@@ -134,6 +134,7 @@ const api: ElectronAPI = {
   getOpenCodeSessionInfo: (input) => ipcRenderer.invoke("get-opencode-session-info", input),
   exportDebugLogs: () => ipcRenderer.invoke("export-debug-logs"),
   openDebugLogs: () => ipcRenderer.invoke("open-debug-logs"),
+  getDatabaseFiles: () => ipcRenderer.invoke("get-database-files"),
   importOpenCodeSession: (input) => ipcRenderer.invoke("import-opencode-session", input),
   setForceFocus: (enabled) => ipcRenderer.invoke("set-force-focus", enabled),
   recordFatalRendererError: (error) => ipcRenderer.invoke("record-fatal-renderer-error", error),

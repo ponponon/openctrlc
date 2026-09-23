@@ -258,6 +258,8 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
 
     exportDebugLogs: () => window.api.exportDebugLogs(),
     openDebugLogs: () => window.api.openDebugLogs(),
+    getDatabaseFiles:
+      typeof window.api.getDatabaseFiles === "function" ? () => window.api.getDatabaseFiles() : undefined,
 
     setForceFocus: (enabled) => window.api.setForceFocus(enabled),
 

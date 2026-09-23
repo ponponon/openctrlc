@@ -1,4 +1,4 @@
-import { Component, Show, createMemo, createResource } from "solid-js"
+import { Component, For, Show, createMemo, createResource } from "solid-js"
 import { createMediaQuery } from "@solid-primitives/media"
 import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
 import { SelectV2 } from "@openctrlc/ui/v2/select-v2"
@@ -286,6 +286,12 @@ export const SettingsGeneralV2: Component<{
   const sounds = createSoundSettingsController()
   const desktop = createMemo(() => platform.platform === "desktop")
 
+  const [databaseFiles] = createResource(
+    () => (desktop() && platform.getDatabaseFiles ? true : false),
+    () => platform.getDatabaseFiles?.() ?? [],
+    { initialValue: [] },
+  )
+
   const [pinchZoom, { mutate: setPinchZoom }] = createResource(
     () => desktop() && "getPinchZoomEnabled" in platform,
     () => Promise.resolve(platform.getPinchZoomEnabled?.() ?? false).catch(() => false),
@@ -452,6 +458,25 @@ export const SettingsGeneralV2: Component<{
             />
           </div>
         </SettingsRowV2>
+
+        <Show when={databaseFiles.latest.length > 0}>
+          <For each={databaseFiles.latest}>
+            {(database) => (
+              <SettingsRowV2 title={database.name} description={database.path}>
+                <ButtonV2
+                  size="normal"
+                  variant="neutral"
+                  onClick={() => void platform.revealPath?.(database.path)}
+                  disabled={!platform.revealPath}
+                >
+                  {language.t(
+                    platform.os === "macos" ? "session.header.reveal.finder" : "session.header.reveal.fileExplorer",
+                  )}
+                </ButtonV2>
+              </SettingsRowV2>
+            )}
+          </For>
+        </Show>
       </SettingsListV2>
     </div>
   )

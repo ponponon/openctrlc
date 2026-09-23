@@ -1,4 +1,4 @@
-import { Component, Show, createMemo, createResource, onMount, type JSX } from "solid-js"
+import { Component, For, Show, createMemo, createResource, onMount, type JSX } from "solid-js"
 import { Button } from "@openctrlc/ui/button"
 import { Icon } from "@openctrlc/ui/icon"
 import { Select } from "@openctrlc/ui/select"
@@ -120,6 +120,12 @@ export const SettingsGeneral: Component = () => {
     permission.disableAutoAccept(params.id, value)
   }
   const desktop = createMemo(() => platform.platform === "desktop")
+
+  const [databaseFiles] = createResource(
+    () => (desktop() && platform.getDatabaseFiles ? true : false),
+    () => platform.getDatabaseFiles?.() ?? [],
+    { initialValue: [] },
+  )
 
   const themeOptions = createMemo<ThemeOption[]>(() => theme.ids().map((id) => ({ id, name: theme.name(id) })))
 
@@ -450,6 +456,25 @@ export const SettingsGeneral: Component = () => {
             />
           </div>
         </SettingsRow>
+
+        <Show when={databaseFiles.latest.length > 0}>
+          <For each={databaseFiles.latest}>
+            {(database) => (
+              <SettingsRow title={database.name} description={database.path}>
+                <Button
+                  size="small"
+                  variant="secondary"
+                  onClick={() => void platform.revealPath?.(database.path)}
+                  disabled={!platform.revealPath}
+                >
+                  {language.t(
+                    platform.os === "macos" ? "session.header.reveal.finder" : "session.header.reveal.fileExplorer",
+                  )}
+                </Button>
+              </SettingsRow>
+            )}
+          </For>
+        </Show>
       </SettingsList>
     </div>
   )
