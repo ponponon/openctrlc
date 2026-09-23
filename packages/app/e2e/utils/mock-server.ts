@@ -22,6 +22,7 @@ export interface MockServerConfig {
   events?: () => unknown[]
   eventRetry?: number
   todos?: (sessionID: string) => unknown[]
+  systemPromptSnapshot?: (sessionID: string) => string | undefined
   permissions?: unknown[] | (() => unknown[])
   questions?: unknown[] | (() => unknown[])
   fileList?: (path: string) => unknown | Promise<unknown>
@@ -278,6 +279,11 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
     const todoMatch = path.match(/^\/session\/([^/]+)\/todo$/)
     if (todoMatch) return json(route, config.todos?.(todoMatch[1]!) ?? [])
     if (/^\/session\/[^/]+\/(children|diff)$/.test(path)) return json(route, [])
+    const systemPromptSnapshotMatch = path.match(/^\/api\/session\/([^/]+)\/system-prompt-snapshot$/)
+    if (systemPromptSnapshotMatch) {
+      const snapshot = config.systemPromptSnapshot?.(systemPromptSnapshotMatch[1]!)
+      return json(route, { location: location(config), data: snapshot === undefined ? {} : { snapshot } })
+    }
 
     const currentMessagesMatch = path.match(/^\/api\/session\/([^/]+)\/message$/)
     if (currentMessagesMatch) {

@@ -1687,6 +1687,13 @@ export default function Page() {
     working: () => true,
     overflowAnchor: "none",
   })
+  // The session's persisted `follow` flag is the source of truth for "stay pinned to
+  // the newest message". `autoScroll.userScrolled` mirrors it, but it is only synced
+  // once the viewport ref binds and the route effect runs, so it can still read `false`
+  // for a frame after a tab switch. Consulting the stored flag keeps the answer stable
+  // from the very first evaluation during a mount, which is what prevents the restore
+  // from being overwritten by an immediate jump to the bottom.
+  const followBottom = () => !autoScroll.userScrolled() && view().scroll("timeline")?.follow !== false
   const saveTimelineScroll = (el = scroller, follow = !autoScroll.userScrolled()) => {
     if (!el || scrollerOwner !== params.id) return
     view().setScroll("timeline", { x: el.scrollLeft, y: el.scrollTop, follow })
@@ -2254,6 +2261,7 @@ export default function Page() {
         scrollToEnd()
       },
     },
+    shouldFollowBottom: followBottom,
     scroller: () => scroller,
     anchor,
     revealMessage: (id) => revealMessage(id),
@@ -2396,11 +2404,11 @@ export default function Page() {
                     }
                     onNavigateMessage={scrollToMessage}
                     shouldAnchorBottom={() =>
+                      followBottom() &&
                       searchMatches().length === 0 &&
                       !location.hash &&
                       !store.messageId &&
-                      !ui.pendingMessage &&
-                      !autoScroll.userScrolled()
+                      !ui.pendingMessage
                     }
                     centered={centered()}
                     setContentRef={(el) => {

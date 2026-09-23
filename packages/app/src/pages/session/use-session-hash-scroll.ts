@@ -16,6 +16,7 @@ export const useSessionHashScroll = (input: {
   setPendingMessage: (value: string | undefined) => void
   setActiveMessage: (message: UserMessage | undefined) => void
   autoScroll: { pause: () => void; forceScrollToBottom: () => void }
+  shouldFollowBottom: () => boolean
   scroller: () => HTMLDivElement | undefined
   anchor: (id: string) => string
   revealMessage?: (id: string) => void
@@ -98,12 +99,25 @@ export const useSessionHashScroll = (input: {
     updateHash(message.id)
   }
 
+  // A missing or unresolvable hash only means "show the newest message" while the
+  // session is actually following. A session that was left at a historical position
+  // must keep it, otherwise the restore performed on mount is immediately undone.
+  const seekBottom = () => {
+    if (!input.shouldFollowBottom()) {
+      const el = input.scroller()
+      if (el) input.scheduleScrollState(el)
+      return
+    }
+
+    input.autoScroll.forceScrollToBottom()
+    const el = input.scroller()
+    if (el) input.scheduleScrollState(el)
+  }
+
   const applyHash = (behavior: ScrollBehavior) => {
     const hash = location.hash.slice(1)
     if (!hash) {
-      input.autoScroll.forceScrollToBottom()
-      const el = input.scroller()
-      if (el) input.scheduleScrollState(el)
+      seekBottom()
       return
     }
 
@@ -125,9 +139,7 @@ export const useSessionHashScroll = (input: {
       return
     }
 
-    input.autoScroll.forceScrollToBottom()
-    const el = input.scroller()
-    if (el) input.scheduleScrollState(el)
+    seekBottom()
   }
 
   createEffect(() => {

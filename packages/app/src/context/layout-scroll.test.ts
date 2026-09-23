@@ -61,4 +61,43 @@ describe("createScrollPersistence", () => {
     expect(scroll.scroll("session", "review")).toEqual({ x: 12, y: 34 })
     scroll.dispose()
   })
+
+  test("keeps the follow flag across position writes and reloads", () => {
+    vi.useFakeTimers()
+    try {
+      const snapshot = {} as Record<string, Record<string, { x: number; y: number; follow?: boolean }>>
+      const scroll = createScrollPersistence({
+        debounceMs: 10,
+        getSnapshot: (sessionKey) => snapshot[sessionKey],
+        onFlush: (sessionKey, next) => {
+          snapshot[sessionKey] = next
+        },
+      })
+
+      scroll.setScroll("session", "timeline", { x: 0, y: 1200, follow: false })
+      vi.advanceTimersByTime(10)
+
+      expect(snapshot.session?.timeline).toEqual({ x: 0, y: 1200, follow: false })
+      expect(scroll.scroll("session", "timeline")?.follow).toBe(false)
+
+      // A newer persisted snapshot must not override a session that is already cached.
+      const reloaded = createScrollPersistence({
+        getSnapshot: (sessionKey) => snapshot[sessionKey],
+        onFlush: () => {},
+      })
+      expect(reloaded.scroll("session", "timeline")).toEqual({ x: 0, y: 1200, follow: false })
+
+      // `follow` is optional: a position written without the flag keeps it absent, so a
+      // session that never recorded an intent is not mistaken for a paused one.
+      scroll.setScroll("session", "review", { x: 0, y: 5 })
+      vi.advanceTimersByTime(10)
+      expect(snapshot.session?.review).toEqual({ x: 0, y: 5 })
+      expect(scroll.scroll("session", "review")?.follow).toBeUndefined()
+
+      scroll.dispose()
+      reloaded.dispose()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
