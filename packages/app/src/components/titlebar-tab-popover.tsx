@@ -17,6 +17,10 @@ export interface TabPreviewData {
   title?: string
   path?: string
   serverName?: string
+  status?: {
+    tone: "complete" | "error"
+    label: string
+  }
 }
 
 export function TabPreviewPopover(props: {
@@ -80,6 +84,15 @@ export function TabPreviewPopover(props: {
             <div data-slot="row">
               <span data-slot="detail">{props.data.path}</span>
             </div>
+          </Show>
+
+          <Show when={props.data.status}>
+            {(status) => (
+              <div data-slot="status" data-tone={status().tone}>
+                <span data-slot="status-dot" aria-hidden="true" />
+                <span>{status().label}</span>
+              </div>
+            )}
           </Show>
 
           <Show when={props.data.serverName}>

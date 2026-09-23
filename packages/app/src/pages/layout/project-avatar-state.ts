@@ -38,12 +38,14 @@ export function useSessionTabAvatarState(
     if (!connection()) return
     return notification.ensureServerState(server())
   })
-  const unread = createMemo(() => needsAttention() || (notificationState()?.session.unseenCount(sessionId()) ?? 0) > 0)
+  const unseen = createMemo(() => (notificationState()?.session.unseenCount(sessionId()) ?? 0) > 0)
+  const hasError = createMemo(() => notificationState()?.session.unseenHasError(sessionId()) ?? false)
+  const unread = createMemo(() => needsAttention() || unseen())
   const loading = createMemo(() => {
     const serverSync = sync()
     if (!serverSync) return false
     if (needsAttention()) return false
     return serverSync.session.data.session_working(sessionId())
   })
-  return { unread, loading }
+  return { unread, loading, unseen, hasError }
 }

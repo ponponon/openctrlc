@@ -8,10 +8,12 @@ import { useGlobal } from "@/context/global"
 import { useLanguage } from "@/context/language"
 import { ServerConnection, serverName } from "@/context/server"
 import { displayName, projectForSession } from "@/pages/layout/helpers"
-import { SessionTabAvatar } from "@/pages/layout/session-tab-avatar"
+import { SessionTabAvatarView } from "@/pages/layout/session-tab-avatar"
+import { useSessionTabAvatarState } from "@/pages/layout/project-avatar-state"
 import type { Session } from "@openctrlc/sdk/v2"
 import { canOpenTabRename, forwardTabRef } from "./titlebar-tab-gesture"
 import { TabPreviewPopover } from "./titlebar-tab-popover"
+import { titlebarTabStatus } from "./titlebar-tab-status"
 import "./titlebar-tab-nav.css"
 
 // MouseEvent.button uses 1 for the middle/wheel button.
@@ -35,6 +37,7 @@ export function TabNavItem(props: {
 }) {
   const [editing, setEditing] = createSignal(false)
   const [titleOverflowing, setTitleOverflowing] = createSignal(false)
+  const language = useLanguage()
   let tabRoot!: HTMLDivElement
   let titleEl!: HTMLSpanElement
   let measureFrame: number | undefined
@@ -74,6 +77,29 @@ export function TabNavItem(props: {
     const conn = global.servers.list().find((item) => ServerConnection.key(item) === props.server)
     return conn ? serverName(conn) : undefined
   })
+  const avatarState = useSessionTabAvatarState(
+    () => props.server,
+    () => props.session()?.directory ?? "",
+    () => props.session()?.id ?? "",
+  )
+  const tabStatus = createMemo(() => titlebarTabStatus(avatarState.unseen(), avatarState.hasError()))
+  const tabStatusLabel = createMemo(() => {
+    if (tabStatus() === "error") return language.t("notification.session.error.title")
+    if (tabStatus() === "complete") return language.t("notification.session.responseReady.title")
+    return undefined
+  })
+  const accessibleTitle = createMemo(() => {
+    const value = title()
+    const status = tabStatusLabel()
+    if (!status) return value
+    return value ? `${value} — ${status}` : status
+  })
+  const previewStatus = createMemo(() => {
+    const tone = tabStatus()
+    const label = tabStatusLabel()
+    if (!tone || !label) return
+    return { tone, label }
+  })
 
   const [popoverOpen, setPopoverOpen] = createSignal(false)
   const previewBlocked = () => !!props.dragging || editing() || !!props.pressed || !props.session()
@@ -98,6 +124,7 @@ export function TabNavItem(props: {
     title()
     props.forceTruncate
     editing()
+    tabStatus()
     scheduleTitleOverflow()
   })
 
@@ -181,6 +208,7 @@ export function TabNavItem(props: {
       data-slot="titlebar-tab-item"
       data-title-overflow={titleOverflowing()}
       data-editing={editing()}
+      data-tab-status={tabStatus()}
       class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-[6px] px-1.5 [container-type:inline-size]"
       classList={{ invisible: props.hidden }}
       data-active={props.active}
@@ -200,6 +228,7 @@ export function TabNavItem(props: {
         data-slot="tab-link"
         data-titlebar-tab-link
         href={props.href}
+        aria-label={accessibleTitle()}
         draggable={false}
         onDragStart={(event) => {
           event.preventDefault()
@@ -231,11 +260,11 @@ export function TabNavItem(props: {
             }
           >
             {(session) => (
-              <SessionTabAvatar
+              <SessionTabAvatarView
                 project={project()}
                 directory={session.directory}
-                sessionId={session.id}
-                server={props.server}
+                unread={avatarState.unread()}
+                loading={avatarState.loading()}
               />
             )}
           </Show>
@@ -278,6 +307,10 @@ export function TabNavItem(props: {
         />
       </a>
 
+      <Show when={tabStatus()}>
+        {(status) => <span data-slot="tab-status" data-status={status()} aria-hidden="true" />}
+      </Show>
+
       <div data-slot="tab-close">
         <IconButtonV2
           size="small"
@@ -307,6 +340,7 @@ export function TabNavItem(props: {
         title: props.session()?.title,
         path: previewPath(),
         serverName: serverLabel(),
+        status: previewStatus(),
       }}
     />
   )

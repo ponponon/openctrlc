@@ -1820,3 +1820,31 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/desktop` 执行数据库文件发现单元测试和 `bun typecheck`。
 - 在 `packages/app` 执行 `bun typecheck` 与 i18n parity 测试，确认复用现有定位文案不引入新的翻译键。
 - Desktop 手测设置页的每个数据库按钮，确认 macOS 打开 Finder 并选中文件，Windows/Linux 打开对应文件管理器并选中文件。
+
+## 顶部会话 tab 显示完成状态
+
+### 功能目标
+
+当后台会话的 response 完成后，即使用户当前正在查看另一个会话，也能从顶部 tab 快速判断哪个会话已经有结果可查看，不依赖声音或系统通知。
+
+### 实现范围
+
+- 复用现有持久化 notification 状态，在未读 response 对应的顶部 tab 右侧显示蓝色状态点。
+- 未读会话错误显示红色状态点，并在 tab 预览中展示对应状态文案。
+- tab 的可访问名称包含状态文案，悬停预览也展示“Response ready”或错误状态。
+- 用户打开对应会话后沿用既有 `markViewed` 生命周期自动清除状态；页面刷新、切换 tab 或关闭后重新打开不会丢失未读状态。
+- 64px 以下的窄 tab 隐藏额外状态点，避免和项目头像、关闭按钮重叠；仍保留可访问名称和既有头像状态。
+
+### 代码位置
+
+- `packages/app/src/components/titlebar-tab-nav.tsx`：顶部 session tab 状态点、可访问名称和预览数据。
+- `packages/app/src/components/titlebar-tab-nav.css`：状态点定位、错误色和窄 tab 降级样式。
+- `packages/app/src/components/titlebar-tab-popover.tsx`、`packages/app/src/components/titlebar-tab-popover.css`：悬停预览状态行。
+- `packages/app/src/pages/layout/project-avatar-state.ts`：暴露未读通知和错误状态给 tab UI。
+- `packages/app/src/components/titlebar-tab-status.ts`：状态优先级纯函数。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/components/titlebar-tab-status.test.ts ./src/components/titlebar-tab-order.test.ts`。
+- 在 `packages/app` 执行 `bun typecheck` 和 `bun run build`。
+- 手动验证多个后台 session 并行完成时，只有未查看的 tab 显示状态点；打开 tab 后状态点消失；错误状态使用红点；窄 tab 不与关闭按钮冲突。
