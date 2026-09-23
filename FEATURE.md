@@ -168,7 +168,7 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 
 ### 实现范围
 
-- 后端在完成系统提示词组装和插件变换后，仅在会话尚未存在快照时将最终文本写入一条用户消息的 `systemPrompt` 字段；后续回合仍动态组装提示词，但不再复制持久化。
+- 后端在完成系统提示词组装和插件变换后，仅在会话真实的第一条用户消息上写入一次 `systemPrompt` 字段；判断基于完整会话历史，避免 compaction、重启或分支过滤后再次复制。后续回合仍动态组装提示词，但不再复制持久化。
 - 保留原有 `system` 字段作为用户输入的系统提示覆盖，避免下一轮请求重复拼接已组装的完整提示词。
 - 上下文面板展示会话首次保存的 `systemPrompt`，旧会话缺少该字段时回退展示原有 `system` 内容；即使历史数据存在重复快照也只读取第一份。
 - 兼容已有重复快照数据，新逻辑只阻止后续继续产生重复数据，不做危险的历史记录批量改写。
@@ -1829,16 +1829,16 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ### 实现范围
 
-- 复用现有持久化 notification 状态，在未读 response 对应的顶部 tab 右侧显示蓝色状态点。
-- 未读会话错误显示红色状态点，并在 tab 预览中展示对应状态文案。
+- 复用现有持久化 notification 状态，沿用项目头像右上角已有的未读角标作为顶部 tab 的唯一视觉状态点，不再在关闭按钮左侧重复绘制一个状态点。
+- 未读会话错误继续使用头像角标的错误语义，并在 tab 预览中展示对应状态文案。
 - tab 的可访问名称包含状态文案，悬停预览也展示“Response ready”或错误状态。
 - 用户打开对应会话后沿用既有 `markViewed` 生命周期自动清除状态；页面刷新、切换 tab 或关闭后重新打开不会丢失未读状态。
-- 64px 以下的窄 tab 隐藏额外状态点，避免和项目头像、关闭按钮重叠；仍保留可访问名称和既有头像状态。
+- 窄 tab 继续只展示项目头像，避免状态提示和关闭按钮争抢空间；可访问名称和悬停预览仍保留完整状态。
 
 ### 代码位置
 
-- `packages/app/src/components/titlebar-tab-nav.tsx`：顶部 session tab 状态点、可访问名称和预览数据。
-- `packages/app/src/components/titlebar-tab-nav.css`：状态点定位、错误色和窄 tab 降级样式。
+- `packages/app/src/components/titlebar-tab-nav.tsx`：复用头像状态、可访问名称和预览数据。
+- `packages/app/src/pages/layout/session-tab-avatar.tsx`、`packages/ui/src/v2/components/project-avatar-v2.tsx`：统一渲染头像未读角标，并为错误状态使用错误色。
 - `packages/app/src/components/titlebar-tab-popover.tsx`、`packages/app/src/components/titlebar-tab-popover.css`：悬停预览状态行。
 - `packages/app/src/pages/layout/project-avatar-state.ts`：暴露未读通知和错误状态给 tab UI。
 - `packages/app/src/components/titlebar-tab-status.ts`：状态优先级纯函数。
@@ -1847,4 +1847,4 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/components/titlebar-tab-status.test.ts ./src/components/titlebar-tab-order.test.ts`。
 - 在 `packages/app` 执行 `bun typecheck` 和 `bun run build`。
-- 手动验证多个后台 session 并行完成时，只有未查看的 tab 显示状态点；打开 tab 后状态点消失；错误状态使用红点；窄 tab 不与关闭按钮冲突。
+- 手动验证多个后台 session 并行完成时，每个未查看 tab 只显示一个头像角标；打开 tab 后角标消失；错误状态继续使用错误色；悬停预览和辅助技术仍能识别具体状态。

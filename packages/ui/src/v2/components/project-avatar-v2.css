@@ -121,6 +121,10 @@
   pointer-events: none;
 }
 
+[data-component="project-avatar-v2"][data-unread-tone="error"] [data-slot="project-avatar-unread-dot"] {
+  background: var(--v2-state-fg-danger);
+}
+
 [data-slot="project-avatar-slot"] {
   display: flex;
   flex-shrink: 0;

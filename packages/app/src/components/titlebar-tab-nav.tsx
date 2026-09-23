@@ -124,7 +124,6 @@ export function TabNavItem(props: {
     title()
     props.forceTruncate
     editing()
-    tabStatus()
     scheduleTitleOverflow()
   })
 
@@ -208,7 +207,6 @@ export function TabNavItem(props: {
       data-slot="titlebar-tab-item"
       data-title-overflow={titleOverflowing()}
       data-editing={editing()}
-      data-tab-status={tabStatus()}
       class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-[6px] px-1.5 [container-type:inline-size]"
       classList={{ invisible: props.hidden }}
       data-active={props.active}
@@ -264,6 +262,7 @@ export function TabNavItem(props: {
                 project={project()}
                 directory={session.directory}
                 unread={avatarState.unread()}
+                unreadTone={avatarState.hasError() ? "error" : undefined}
                 loading={avatarState.loading()}
               />
             )}
@@ -306,10 +305,6 @@ export function TabNavItem(props: {
           }}
         />
       </a>
-
-      <Show when={tabStatus()}>
-        {(status) => <span data-slot="tab-status" data-status={status()} aria-hidden="true" />}
-      </Show>
 
       <div data-slot="tab-close">
         <IconButtonV2

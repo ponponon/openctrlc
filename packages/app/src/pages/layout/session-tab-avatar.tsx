@@ -25,6 +25,7 @@ export function SessionTabAvatar(props: {
       directory={props.directory}
       revealProjectOnHover={props.revealProjectOnHover}
       unread={state.unread()}
+      unreadTone={state.hasError() ? "error" : undefined}
       loading={state.loading()}
     />
   )
@@ -35,6 +36,7 @@ export function SessionTabAvatarView(props: {
   directory: string
   revealProjectOnHover?: boolean
   unread: boolean
+  unreadTone?: "default" | "error"
   loading: boolean
 }) {
   const projectAvatar = () => (
@@ -43,6 +45,7 @@ export function SessionTabAvatarView(props: {
       src={getProjectAvatarSource(props.project?.id, props.project?.icon)}
       variant={getProjectAvatarVariant(props.project?.icon?.color)}
       unread={props.unread}
+      unreadTone={props.unreadTone}
     />
   )
   return (
