@@ -1098,9 +1098,11 @@ const layer = Layer.effect(
           yield* status.set(sessionID, { type: "busy" })
           yield* Effect.logInfo("loop", { "session.id": sessionID, step })
 
-          let msgs = yield* MessageV2.filterCompactedEffect(sessionID).pipe(
+          const allMessages = yield* MessageV2.stream(sessionID).pipe(
             Effect.provideService(Database.Service, database),
           )
+          let msgs = MessageV2.filterCompacted(allMessages)
+          const firstUserMessageID = allMessages.find((item) => item.info.role === "user")?.info.id
 
           const { user: lastUser, assistant: lastAssistant, finished: lastFinished, tasks } = MessageV2.latest(msgs)
 
@@ -1209,9 +1211,7 @@ const layer = Layer.effect(
           }
           yield* sessions.updateMessage(msg)
 
-          const captureSystemPrompt = !msgs.some(
-            (item) => item.info.role === "user" && Boolean(item.info.systemPrompt?.trim()),
-          )
+          const captureSystemPrompt = firstUserMessageID === lastUser.id && !lastUser.systemPrompt?.trim()
 
           const finalizeInterruptedAssistant = Effect.gen(function* () {
             if (msg.time.completed) return
