@@ -87,6 +87,7 @@ import {
 import { includeUserMessageRow } from "./user-message-row-index"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
+import { useLayout } from "@/context/layout"
 import { notifySessionTabsRemoved } from "@/components/titlebar-session-events"
 import { sessionDisplayTitle, sessionTitle } from "@/utils/session-title"
 import { displayName, projectForSession } from "@/pages/layout/helpers"
@@ -303,6 +304,8 @@ export function MessageTimeline(props: {
   onUserScroll: () => void
   onHistoryScroll: () => void
   onAutoScrollInteraction: (event: MouseEvent) => void
+  autoScrollPaused: () => boolean
+  hasExplicitAnchor: () => boolean
   onNavigateMessage: (message: UserMessage) => void
   shouldAnchorBottom: () => boolean
   centered: boolean
@@ -324,12 +327,14 @@ export function MessageTimeline(props: {
   const serverSDK = useServerSDK()
   const sdk = useSDK()
   const sync = useSync()
+  const layout = useLayout()
   const settings = useSettings()
   const tabs = useTabs()
   const dialog = useDialog()
   const language = useLanguage()
   const { params, sessionKey } = useSessionKey()
   const ownerSessionKey = sessionKey()
+  const view = layout.view(ownerSessionKey)
   const cached = timelineCache.get(ownerSessionKey)
   const initialMeasurements = cached?.measurements
   const coldBottomMount = !initialMeasurements?.length && props.shouldAnchorBottom()
@@ -498,7 +503,12 @@ export function MessageTimeline(props: {
     },
     getScrollElement: () => listRoot() ?? null,
     observeElementOffset: observeElementOffsetReconnectAware,
-    initialOffset: () => (props.shouldAnchorBottom() ? Number.MAX_SAFE_INTEGER : 0),
+    initialOffset: () => {
+      if (props.hasExplicitAnchor()) return 0
+      const position = view.scroll("timeline")
+      if (position?.follow === false) return position.y
+      return Number.MAX_SAFE_INTEGER
+    },
     initialMeasurementsCache: initialMeasurements,
     estimateSize: () => timelineFallbackItemSize,
     scrollToFn: (offset, options, instance) => {
@@ -741,12 +751,19 @@ export function MessageTimeline(props: {
 
   const handleListScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
     if (anchorRegistry.hasPending()) anchorRegistry.updatePending()
-    props.onScheduleScrollState(event.currentTarget)
+    const root = event.currentTarget
+    props.onScheduleScrollState(root)
     props.onHistoryScroll()
-    if (!props.hasScrollGesture()) return
-    props.onUserScroll()
-    props.onAutoScrollHandleScroll()
-    props.onMarkScrollGesture(event.currentTarget)
+    if (props.hasScrollGesture()) {
+      props.onUserScroll()
+      props.onAutoScrollHandleScroll()
+      props.onMarkScrollGesture(root)
+    }
+    view.setScroll("timeline", {
+      x: root.scrollLeft,
+      y: root.scrollTop,
+      follow: !props.autoScrollPaused(),
+    })
   }
 
   onCleanup(() => {

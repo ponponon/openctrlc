@@ -1054,6 +1054,7 @@ export default function Page() {
   let promptDock: HTMLDivElement | undefined
   let dockHeight = 0
   let scroller: HTMLDivElement | undefined
+  let scrollerOwner: string | undefined
   let content: HTMLDivElement | undefined
   let revealMessage = (_id: string) => {}
   let scrollToEnd = () => {}
@@ -1686,13 +1687,16 @@ export default function Page() {
     working: () => true,
     overflowAnchor: "none",
   })
+  const saveTimelineScroll = (el = scroller, follow = !autoScroll.userScrolled()) => {
+    if (!el || scrollerOwner !== params.id) return
+    view().setScroll("timeline", { x: el.scrollLeft, y: el.scrollTop, follow })
+  }
   createEffect(
     on(
       () => params.id,
-      (id, previous) => {
-        if (!id || !previous || id === previous) return
-        if (location.hash || store.messageId || ui.pendingMessage) return
-        autoScroll.resume()
+      (id) => {
+        if (!id) return
+        autoScroll.setUserScrolled(view().scroll("timeline")?.follow === false)
       },
     ),
   )
@@ -1733,6 +1737,7 @@ export default function Page() {
     setStore("messageId", undefined)
     autoScroll.resume()
     scrollToEnd()
+    saveTimelineScroll(scroller, true)
     clearMessageHash()
 
     const el = scroller
@@ -1756,8 +1761,10 @@ export default function Page() {
 
   const setScrollRef = (el: HTMLDivElement | undefined) => {
     scroller = el
+    scrollerOwner = el ? params.id : undefined
     autoScroll.scrollRef(el)
     if (!el) return
+    autoScroll.setUserScrolled(view().scroll("timeline")?.follow === false)
     scheduleScrollState(el)
     fill()
   }
@@ -2380,6 +2387,13 @@ export default function Page() {
                     onUserScroll={markUserScroll}
                     onHistoryScroll={onHistoryScroll}
                     onAutoScrollInteraction={autoScroll.handleInteraction}
+                    autoScrollPaused={autoScroll.userScrolled}
+                    hasExplicitAnchor={() =>
+                      !!location.hash ||
+                      [store.messageId, ui.pendingMessage].some(
+                        (id) => !!id && visibleUserMessages().some((message) => message.id === id),
+                      )
+                    }
                     onNavigateMessage={scrollToMessage}
                     shouldAnchorBottom={() =>
                       searchMatches().length === 0 &&

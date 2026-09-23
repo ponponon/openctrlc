@@ -226,6 +226,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
     handleScroll,
     handleInteraction,
     pause: stop,
+    setUserScrolled: (value: boolean) => setStore("userScrolled", value),
     resume: () => {
       if (store.userScrolled) setStore("userScrolled", false)
       scrollToBottom(true)
