@@ -10,6 +10,7 @@ import { usePlatform } from "@/context/platform"
 import { useUpdaterAction } from "../updater-action"
 import { useSettings } from "@/context/settings"
 import { ExternalLink } from "../external-link"
+import { databasePurposeDescription } from "@/utils/database-files"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
 import { LayoutRetirementNotice, LayoutTransitionToggle } from "./interface-transition"
@@ -462,16 +463,23 @@ export const SettingsGeneralV2: Component<{
         <Show when={databaseFiles.latest.length > 0}>
           <For each={databaseFiles.latest}>
             {(database) => (
-              <SettingsRowV2 title={database.name} description={database.path}>
+              <SettingsRowV2
+                title={database.name}
+                description={
+                  <>
+                    {language.t(databasePurposeDescription[database.purpose])}
+                    <br />
+                    {database.path}
+                  </>
+                }
+              >
                 <ButtonV2
                   size="normal"
                   variant="neutral"
                   onClick={() => void platform.revealPath?.(database.path)}
                   disabled={!platform.revealPath}
                 >
-                  {language.t(
-                    platform.os === "macos" ? "session.header.reveal.finder" : "session.header.reveal.fileExplorer",
-                  )}
+                  {language.t("session.header.reveal.containingFolder")}
                 </ButtonV2>
               </SettingsRowV2>
             )}

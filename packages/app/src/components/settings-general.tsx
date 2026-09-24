@@ -31,6 +31,7 @@ import { decode64 } from "@/utils/base64"
 import { playSoundById, SOUND_OPTIONS } from "@/utils/sound"
 import { ExternalLink } from "./external-link"
 import { SettingsList } from "./settings-list"
+import { databasePurposeDescription } from "@/utils/database-files"
 
 let demoSoundState = {
   cleanup: undefined as (() => void) | undefined,
@@ -460,16 +461,23 @@ export const SettingsGeneral: Component = () => {
         <Show when={databaseFiles.latest.length > 0}>
           <For each={databaseFiles.latest}>
             {(database) => (
-              <SettingsRow title={database.name} description={database.path}>
+              <SettingsRow
+                title={database.name}
+                description={
+                  <>
+                    {language.t(databasePurposeDescription[database.purpose])}
+                    <br />
+                    {database.path}
+                  </>
+                }
+              >
                 <Button
                   size="small"
                   variant="secondary"
                   onClick={() => void platform.revealPath?.(database.path)}
                   disabled={!platform.revealPath}
                 >
-                  {language.t(
-                    platform.os === "macos" ? "session.header.reveal.finder" : "session.header.reveal.fileExplorer",
-                  )}
+                  {language.t("session.header.reveal.containingFolder")}
                 </Button>
               </SettingsRow>
             )}

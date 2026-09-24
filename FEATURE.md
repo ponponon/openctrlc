@@ -1902,3 +1902,28 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun x playwright test regression/session-timeline-scroll-restore.spec.ts`，覆盖恢复位置、保持跟随和滚回底部后恢复跟随三种情况。
 - 在 `packages/app` 执行 `bun typecheck` 和 `bun run typecheck:e2e`。
 - 手动验证：在长会话向上滚动后切到另一个 Tab 再切回，位置不变且首屏内容是同一段；连续切换多次不产生偏移漂移；滚回底部后再切走切回，仍然停在底部。
+
+## 应用界面仅支持四种语言
+
+将 OpenCtrlC App 与 Desktop 原生界面的运行时语言统一收敛为英文、简体中文、日文、韩文；根目录 README 同样只保留这四种版本。旧 locale 字典可暂留源码中，但不得出现在选择器、系统语言自动匹配、桌面原生字典加载或翻译脚本的目标列表中。
+
+### 实现范围
+
+- 应用语言设置和快捷键循环只暴露 `en`、`zh`、`ja`、`ko`；存储的旧语言值自动回退为英文，系统繁体中文 locale 归到简体中文。
+- App、UI 和 Desktop renderer 只加载这四种语言；未被支持的 locale 字典保持未引用，避免进入运行时包。
+- 翻译脚本只接受 `zh`、`ja`、`ko`，`all` 被限制在这三种非英文语言。
+- 桌面原生菜单翻译包和 IPC 校验使用同一语言清单。
+
+### 代码位置
+
+- `packages/app/src/i18n/desktop-native.ts`：统一 locale 清单、标签、系统语言检测和原生翻译包校验。
+- `packages/app/src/context/language.tsx`：字典动态加载、旧配置回退和语言选择数据。
+- `packages/desktop/src/renderer/i18n/index.ts`：Desktop 原生菜单字典加载。
+- `script/translate-app.ts`：受限的翻译目标和 `all` 展开范围。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/i18n/desktop-native.test.ts ./src/i18n/parity.test.ts ./src/context/language.test.ts`。
+- 在 `packages/opencode` 执行 `bun test ../../script/translate-app.test.ts`。
+- 在 `packages/app` 与 `packages/desktop` 分别执行 `bun typecheck`。
+- 验证系统语言和旧持久化值均只能得到英文、简体中文、日文、韩文之一，设置页下拉选项也只有这四项。

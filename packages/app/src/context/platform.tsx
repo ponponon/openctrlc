@@ -24,6 +24,7 @@ type DesktopOS = "macos" | "windows" | "linux"
 export type DesktopDatabaseFile = {
   name: string
   path: string
+  purpose: "drafts" | "openctrlc" | "opencode" | "unknown"
 }
 
 export type FatalRendererErrorLog = {

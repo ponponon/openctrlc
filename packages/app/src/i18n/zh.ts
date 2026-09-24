@@ -944,6 +944,12 @@ export const dict = {
   "settings.general.section.sounds": "音效",
   "settings.general.section.feed": "动态",
   "settings.general.section.display": "显示",
+  "settings.general.database.description.drafts": "保存输入草稿、草稿历史和附件数据。",
+  "settings.general.database.description.openctrlc":
+    "保存 OpenCtrlC 的会话、消息、项目等核心数据；文件名后缀用于区分运行通道。",
+  "settings.general.database.description.opencode":
+    "OpenCode 的本地数据，可能包含会话和消息；定制文件名可能对应特定实例或功能。",
+  "settings.general.database.description.unknown": "来源暂无法识别；具体内容取决于创建它的应用。",
   "settings.general.row.language.title": "语言",
   "settings.general.row.language.description": "更改 OpenCtrlC 的显示语言",
   "settings.general.row.shell.title": "终端 Shell",

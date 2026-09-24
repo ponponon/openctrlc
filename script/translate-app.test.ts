@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import fs from "fs/promises"
 import path from "path"
 import {
+  APP_TRANSLATION_LOCALES,
   findDrift,
   glossaryFile,
   modelVariants,
@@ -16,9 +17,9 @@ import {
 } from "./translate-app"
 
 describe("translate app", () => {
-  test("defaults to MiMo Token Plan and the provider model variant", () => {
-    expect(parseTranslationArgs(["fr"])).toEqual({
-      target: "fr",
+  test("defaults to MiMo Token Plan for the supported locale set", () => {
+    expect(parseTranslationArgs(["ja"])).toEqual({
+      target: "ja",
       concurrency: 1,
       model: "xiaomi-token-plan-cn/mimo-v2.6-flash",
       variant: undefined,
@@ -51,38 +52,43 @@ describe("translate app", () => {
     })
   })
 
+  test("limits the all target to the three supported non-English locales", () => {
+    expect(APP_TRANSLATION_LOCALES).toEqual(["zh", "ja", "ko"])
+  })
+
   test("rejects unsupported targets and invalid concurrency", () => {
     expect(() => parseTranslationArgs(["en"])).toThrow("Unknown locale")
-    expect(() => parseTranslationArgs(["fr", "de"])).toThrow("one locale")
+    expect(() => parseTranslationArgs(["ja", "ko"])).toThrow("one locale")
+    expect(() => parseTranslationArgs(["de"])).toThrow("Unknown locale")
     expect(() => parseTranslationArgs(["all", "--concurrency", "0"])).toThrow("positive integer")
   })
 
   test("parses fresh-process parity checks without requesting translation", () => {
-    expect(parseTranslationArgs(["fr", "--check"]).check).toBe(true)
+    expect(parseTranslationArgs(["ja", "--check"]).check).toBe(true)
   })
 
   test("limits each locale to its app surfaces", () => {
-    expect(targetFiles("fr")).toEqual([
-      "packages/app/src/i18n/fr.ts",
-      "packages/ui/src/i18n/fr.ts",
-      "packages/desktop/src/renderer/i18n/fr.ts",
+    expect(targetFiles("ja")).toEqual([
+      "packages/app/src/i18n/ja.ts",
+      "packages/ui/src/i18n/ja.ts",
+      "packages/desktop/src/renderer/i18n/ja.ts",
     ])
-    expect(targetFiles("tr")).toEqual([
-      "packages/app/src/i18n/tr.ts",
-      "packages/ui/src/i18n/tr.ts",
-      "packages/desktop/src/renderer/i18n/tr.ts",
+    expect(targetFiles("ko")).toEqual([
+      "packages/app/src/i18n/ko.ts",
+      "packages/ui/src/i18n/ko.ts",
+      "packages/desktop/src/renderer/i18n/ko.ts",
     ])
-    expect(targetFiles("dv")).toEqual([
-      "packages/app/src/i18n/dv.ts",
-      "packages/ui/src/i18n/dv.ts",
-      "packages/desktop/src/renderer/i18n/dv.ts",
+    expect(targetFiles("zh")).toEqual([
+      "packages/app/src/i18n/zh.ts",
+      "packages/ui/src/i18n/zh.ts",
+      "packages/desktop/src/renderer/i18n/zh.ts",
     ])
   })
 
   test("maps product locale codes to their glossaries", () => {
-    expect(glossaryFile("fr")).toBe(".openctrlc/glossary/fr.md")
     expect(glossaryFile("zh")).toBe(".openctrlc/glossary/zh-cn.md")
-    expect(glossaryFile("zht")).toBe(".openctrlc/glossary/zh-tw.md")
+    expect(glossaryFile("ja")).toBe(".openctrlc/glossary/ja.md")
+    expect(glossaryFile("ko")).toBe(".openctrlc/glossary/ko.md")
   })
 
   test("uses the OpenCtrlC project namespace in translation tooling", async () => {
@@ -209,15 +215,15 @@ opencode/next
   })
 
   test("disables side effects and scopes edits for the translation agent", () => {
-    const config = translationConfig("translate-app-fr", "opencode/gpt-5.5", ["packages/app/src/i18n/fr.ts"])
+    const config = translationConfig("translate-app-ja", "opencode/gpt-5.5", ["packages/app/src/i18n/ja.ts"])
     expect(config.share).toBe("disabled")
     expect(config.formatter).toBe(false)
     expect(config.lsp).toBe(false)
-    expect(config.agent["translate-app-fr"].permission.webfetch).toBe("allow")
-    expect(config.agent["translate-app-fr"].permission.websearch).toBe("allow")
-    expect(config.agent["translate-app-fr"].permission.edit).toEqual({
+    expect(config.agent["translate-app-ja"].permission.webfetch).toBe("allow")
+    expect(config.agent["translate-app-ja"].permission.websearch).toBe("allow")
+    expect(config.agent["translate-app-ja"].permission.edit).toEqual({
       "*": "deny",
-      "packages/app/src/i18n/fr.ts": "allow",
+      "packages/app/src/i18n/ja.ts": "allow",
     })
   })
 
@@ -227,10 +233,10 @@ opencode/next
         { "script/translate-app.ts": "before" },
         {
           "script/translate-app.ts": "before",
-          "packages/app/src/i18n/fr.ts": "translated",
+          "packages/app/src/i18n/ja.ts": "translated",
           "packages/app/src/app.tsx": "unexpected",
         },
-        ["packages/app/src/i18n/fr.ts"],
+        ["packages/app/src/i18n/ja.ts"],
       ),
     ).toEqual(["packages/app/src/app.tsx"])
     expect(unexpectedChanges({ "already-dirty.ts": "before" }, { "already-dirty.ts": "after" }, [])).toEqual([

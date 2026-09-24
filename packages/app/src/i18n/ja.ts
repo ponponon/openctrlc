@@ -603,6 +603,8 @@ export const dict = {
   "context.breakdown.tool": "ツール呼び出し",
   "context.breakdown.other": "その他",
   "context.systemPrompt.title": "システムプロンプト",
+  "context.systemPrompt.snapshotNote":
+    "初回リクエスト時点のスナップショットであり、以降の設定変更は反映されません。古いセッションではメッセージデータが使われます。",
   "context.systemPrompt.copy": "Copy system prompt",
   "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "生のメッセージ",
@@ -894,6 +896,13 @@ export const dict = {
   "settings.general.section.sounds": "効果音",
   "settings.general.section.feed": "フィード",
   "settings.general.section.display": "ディスプレイ",
+  "settings.general.database.description.drafts": "プロンプトの下書き、下書き履歴、添付ファイルを保存します。",
+  "settings.general.database.description.openctrlc":
+    "OpenCtrlCのセッション、メッセージ、プロジェクトなどのアプリデータを保存します。ファイル名のサフィックスが実行チャネルを識別します。",
+  "settings.general.database.description.opencode":
+    "OpenCodeのローカルデータで、セッションやメッセージが含まれる場合があります。カスタムのファイル名は、特定のインスタンスや機能ごとのストアを示すことがあります。",
+  "settings.general.database.description.unknown":
+    "ソースは不明です。内容はこのデータベースを作成したアプリケーションによって異なります。",
   "settings.general.row.language.title": "言語",
   "settings.general.row.language.description": "OpenCtrlCの表示言語を変更します",
   "settings.general.row.shell.title": "ターミナルシェル",

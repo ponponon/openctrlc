@@ -19,14 +19,16 @@ describe("database file discovery", () => {
     await Promise.all([
       writeFile(join(root, "openctrlc-dev.db"), ""),
       writeFile(join(root, "drafts.sqlite"), ""),
+      writeFile(join(root, "opencode-feat-presets.db"), ""),
       writeFile(join(root, "openctrlc-dev.db-wal"), ""),
       writeFile(join(root, "settings.json"), ""),
       writeFile(join(nested, "ignored.sqlite"), ""),
     ])
 
     await expect(discoverDatabaseFiles([root])).resolves.toEqual([
-      { name: "drafts.sqlite", path: join(root, "drafts.sqlite") },
-      { name: "openctrlc-dev.db", path: join(root, "openctrlc-dev.db") },
+      { name: "drafts.sqlite", path: join(root, "drafts.sqlite"), purpose: "drafts" },
+      { name: "opencode-feat-presets.db", path: join(root, "opencode-feat-presets.db"), purpose: "opencode" },
+      { name: "openctrlc-dev.db", path: join(root, "openctrlc-dev.db"), purpose: "openctrlc" },
     ])
   })
 
@@ -36,7 +38,19 @@ describe("database file discovery", () => {
     await writeFile(join(root, "openctrlc.db"), "")
 
     await expect(discoverDatabaseFiles([root, root])).resolves.toEqual([
-      { name: "openctrlc.db", path: join(root, "openctrlc.db") },
+      { name: "openctrlc.db", path: join(root, "openctrlc.db"), purpose: "openctrlc" },
     ])
+  })
+
+  test("marks files with no known application naming convention as unknown", async () => {
+    const root = await mkdtemp(join(tmpdir(), "openctrlc-database-files-"))
+    roots.push(root)
+    await writeFile(join(root, "custom.sqlite3"), "")
+
+    await expect(discoverDatabaseFiles([root])).resolves.toContainEqual({
+      name: "custom.sqlite3",
+      path: join(root, "custom.sqlite3"),
+      purpose: "unknown",
+    })
   })
 })

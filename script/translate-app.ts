@@ -3,84 +3,21 @@
 import path from "path"
 import { parseArgs } from "util"
 import { pathToFileURL } from "url"
-import {
-  DESKTOP_NATIVE_LOCALES,
-  desktopNativePluralCategories,
-  type DesktopNativeLocale,
-} from "../packages/app/src/i18n/desktop-native"
+import { DESKTOP_NATIVE_LOCALES, type DesktopNativeLocale } from "../packages/app/src/i18n/desktop-native"
 
 type Locale = Exclude<DesktopNativeLocale, "en">
-const locales = DESKTOP_NATIVE_LOCALES.filter((locale): locale is Locale => locale !== "en")
+export const APP_TRANSLATION_LOCALES = DESKTOP_NATIVE_LOCALES.filter((locale): locale is Locale => locale !== "en")
 
 const languages = {
-  ar: "Arabic",
-  br: "Brazilian Portuguese",
-  bs: "Bosnian",
-  da: "Danish",
-  de: "German",
-  es: "Spanish",
-  fr: "French",
   ja: "Japanese",
   ko: "Korean",
-  no: "Norwegian Bokmal",
-  pl: "Polish",
-  ru: "Russian",
-  uk: "Ukrainian",
-  th: "Thai",
-  tr: "Turkish",
-  hi: "Hindi",
-  nl: "Dutch",
-  id: "Indonesian",
-  vi: "Vietnamese",
-  it: "Italian",
-  ur: "Urdu",
-  pa: "Punjabi (Shahmukhi)",
-  az: "Azerbaijani (Latin)",
-  fi: "Finnish",
-  sv: "Swedish",
-  am: "Amharic",
-  bg: "Bulgarian",
-  bn: "Bengali",
-  ca: "Catalan",
-  cs: "Czech",
-  dv: "Dhivehi",
-  dz: "Dzongkha",
-  el: "Greek",
-  et: "Estonian",
-  fa: "Persian",
-  fo: "Faroese",
-  hr: "Croatian",
-  hu: "Hungarian",
-  hy: "Armenian",
-  is: "Icelandic",
-  ka: "Georgian",
-  km: "Khmer",
-  lo: "Lao",
-  lt: "Lithuanian",
-  lv: "Latvian",
-  mk: "Macedonian",
-  mn: "Mongolian (Cyrillic)",
-  ms: "Malay",
-  my: "Burmese",
-  ne: "Nepali",
-  ro: "Romanian",
-  si: "Sinhala",
-  sk: "Slovak",
-  sl: "Slovenian",
-  sq: "Albanian",
-  sr: "Serbian (Cyrillic)",
-  tg: "Tajik",
-  tk: "Turkmen",
-  uz: "Uzbek (Latin)",
   zh: "Simplified Chinese",
-  zht: "Traditional Chinese",
 } as const satisfies Record<Locale, string>
 
 type Dictionary = Record<string, string>
 type Drift = ReturnType<typeof findDrift>
 type Domain = { name: string; source: string; target: string; drift: Drift }
 
-const desktopLocales = new Set<Locale>(locales)
 const root = path.resolve(import.meta.dir, "..")
 
 export function parseTranslationArgs(args: string[]) {
@@ -118,22 +55,22 @@ export function targetFiles(locale: Locale) {
   return [
     `packages/app/src/i18n/${locale}.ts`,
     `packages/ui/src/i18n/${locale}.ts`,
-    ...(desktopLocales.has(locale) ? [`packages/desktop/src/renderer/i18n/${locale}.ts`] : []),
+    `packages/desktop/src/renderer/i18n/${locale}.ts`,
   ]
 }
 
 export function glossaryFile(locale: Locale) {
   if (locale === "zh") return ".openctrlc/glossary/zh-cn.md"
-  if (locale === "zht") return ".openctrlc/glossary/zh-tw.md"
   return `.openctrlc/glossary/${locale}.md`
 }
 
-export function findDrift(source: Dictionary, target: Dictionary, locale?: Locale) {
+export function findDrift(source: Dictionary, target: Dictionary, locale?: string) {
   const pluralVariants = new Map(
     (locale
       ? pluralFamilies(source).flatMap((key) =>
-          desktopNativePluralCategories(locale)
-            .filter((category) => category !== "one" && category !== "other")
+          new Intl.PluralRules(locale)
+            .resolvedOptions()
+            .pluralCategories.filter((category) => category !== "one" && category !== "other")
             .map((category) => [`${key}.${category}`, `${key}.other`] as const),
         )
       : []) as ReadonlyArray<readonly [string, string]>,
@@ -263,13 +200,13 @@ Options:
   -h, --help                 Show this help message
 
 Examples:
-  bun run translate:app -- fr
+  bun run translate:app -- ja
   bun run translate:app -- all --concurrency 4
 `)
     return
   }
 
-  const selected = options.target === "all" ? locales : [options.target]
+  const selected = options.target === "all" ? APP_TRANSLATION_LOCALES : [options.target]
   const plans = await Promise.all(selected.map((locale) => inspect(locale)))
   plans.forEach(report)
   const pending = plans.filter((plan) => plan.domains.some((domain) => changed(domain.drift)))
@@ -489,9 +426,7 @@ async function translate(
   return {
     locale: plan.locale,
     stdout: `${textFromEvents(result[0])}\nVerified session model: ${actual}\n`,
-    stderr: mismatch
-      ? `Requested ${requested}, but session used ${actual || "no assistant model"}.\n`
-      : result[1],
+    stderr: mismatch ? `Requested ${requested}, but session used ${actual || "no assistant model"}.\n` : result[1],
     code: mismatch ? 1 : 0,
   }
 }

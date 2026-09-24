@@ -20,10 +20,8 @@ import {
 export type Locale = DesktopNativeLocale
 export type Direction = "ltr" | "rtl"
 
-const RTL_LOCALES: ReadonlySet<Locale> = new Set(["ar", "ur", "pa", "fa", "dv"])
-
-function localeDirection(locale: Locale): Direction {
-  return RTL_LOCALES.has(locale) ? "rtl" : "ltr"
+function localeDirection(): Direction {
+  return "ltr"
 }
 
 type RawDictionary = typeof en & typeof uiEn
@@ -51,66 +49,8 @@ const merge = (app: Promise<Source>, ui: Promise<Source>) =>
 
 const loaders: Record<Exclude<Locale, "en">, () => Promise<Dictionary>> = {
   zh: () => merge(import("@/i18n/zh"), import("@openctrlc/ui/i18n/zh")),
-  zht: () => merge(import("@/i18n/zht"), import("@openctrlc/ui/i18n/zht")),
-  ko: () => merge(import("@/i18n/ko"), import("@openctrlc/ui/i18n/ko")),
-  de: () => merge(import("@/i18n/de"), import("@openctrlc/ui/i18n/de")),
-  es: () => merge(import("@/i18n/es"), import("@openctrlc/ui/i18n/es")),
-  fr: () => merge(import("@/i18n/fr"), import("@openctrlc/ui/i18n/fr")),
-  da: () => merge(import("@/i18n/da"), import("@openctrlc/ui/i18n/da")),
   ja: () => merge(import("@/i18n/ja"), import("@openctrlc/ui/i18n/ja")),
-  pl: () => merge(import("@/i18n/pl"), import("@openctrlc/ui/i18n/pl")),
-  ru: () => merge(import("@/i18n/ru"), import("@openctrlc/ui/i18n/ru")),
-  uk: () => merge(import("@/i18n/uk"), import("@openctrlc/ui/i18n/uk")),
-  ar: () => merge(import("@/i18n/ar"), import("@openctrlc/ui/i18n/ar")),
-  no: () => merge(import("@/i18n/no"), import("@openctrlc/ui/i18n/no")),
-  br: () => merge(import("@/i18n/br"), import("@openctrlc/ui/i18n/br")),
-  th: () => merge(import("@/i18n/th"), import("@openctrlc/ui/i18n/th")),
-  bs: () => merge(import("@/i18n/bs"), import("@openctrlc/ui/i18n/bs")),
-  tr: () => merge(import("@/i18n/tr"), import("@openctrlc/ui/i18n/tr")),
-  hi: () => merge(import("@/i18n/hi"), import("@openctrlc/ui/i18n/hi")),
-  nl: () => merge(import("@/i18n/nl"), import("@openctrlc/ui/i18n/nl")),
-  id: () => merge(import("@/i18n/id"), import("@openctrlc/ui/i18n/id")),
-  vi: () => merge(import("@/i18n/vi"), import("@openctrlc/ui/i18n/vi")),
-  it: () => merge(import("@/i18n/it"), import("@openctrlc/ui/i18n/it")),
-  ur: () => merge(import("@/i18n/ur"), import("@openctrlc/ui/i18n/ur")),
-  pa: () => merge(import("@/i18n/pa"), import("@openctrlc/ui/i18n/pa")),
-  az: () => merge(import("@/i18n/az"), import("@openctrlc/ui/i18n/az")),
-  fi: () => merge(import("@/i18n/fi"), import("@openctrlc/ui/i18n/fi")),
-  sv: () => merge(import("@/i18n/sv"), import("@openctrlc/ui/i18n/sv")),
-  am: () => merge(import("@/i18n/am"), import("@openctrlc/ui/i18n/am")),
-  bg: () => merge(import("@/i18n/bg"), import("@openctrlc/ui/i18n/bg")),
-  bn: () => merge(import("@/i18n/bn"), import("@openctrlc/ui/i18n/bn")),
-  ca: () => merge(import("@/i18n/ca"), import("@openctrlc/ui/i18n/ca")),
-  cs: () => merge(import("@/i18n/cs"), import("@openctrlc/ui/i18n/cs")),
-  dv: () => merge(import("@/i18n/dv"), import("@openctrlc/ui/i18n/dv")),
-  dz: () => merge(import("@/i18n/dz"), import("@openctrlc/ui/i18n/dz")),
-  el: () => merge(import("@/i18n/el"), import("@openctrlc/ui/i18n/el")),
-  et: () => merge(import("@/i18n/et"), import("@openctrlc/ui/i18n/et")),
-  fa: () => merge(import("@/i18n/fa"), import("@openctrlc/ui/i18n/fa")),
-  fo: () => merge(import("@/i18n/fo"), import("@openctrlc/ui/i18n/fo")),
-  hr: () => merge(import("@/i18n/hr"), import("@openctrlc/ui/i18n/hr")),
-  hu: () => merge(import("@/i18n/hu"), import("@openctrlc/ui/i18n/hu")),
-  hy: () => merge(import("@/i18n/hy"), import("@openctrlc/ui/i18n/hy")),
-  is: () => merge(import("@/i18n/is"), import("@openctrlc/ui/i18n/is")),
-  ka: () => merge(import("@/i18n/ka"), import("@openctrlc/ui/i18n/ka")),
-  km: () => merge(import("@/i18n/km"), import("@openctrlc/ui/i18n/km")),
-  lo: () => merge(import("@/i18n/lo"), import("@openctrlc/ui/i18n/lo")),
-  lt: () => merge(import("@/i18n/lt"), import("@openctrlc/ui/i18n/lt")),
-  lv: () => merge(import("@/i18n/lv"), import("@openctrlc/ui/i18n/lv")),
-  mk: () => merge(import("@/i18n/mk"), import("@openctrlc/ui/i18n/mk")),
-  mn: () => merge(import("@/i18n/mn"), import("@openctrlc/ui/i18n/mn")),
-  ms: () => merge(import("@/i18n/ms"), import("@openctrlc/ui/i18n/ms")),
-  my: () => merge(import("@/i18n/my"), import("@openctrlc/ui/i18n/my")),
-  ne: () => merge(import("@/i18n/ne"), import("@openctrlc/ui/i18n/ne")),
-  ro: () => merge(import("@/i18n/ro"), import("@openctrlc/ui/i18n/ro")),
-  si: () => merge(import("@/i18n/si"), import("@openctrlc/ui/i18n/si")),
-  sk: () => merge(import("@/i18n/sk"), import("@openctrlc/ui/i18n/sk")),
-  sl: () => merge(import("@/i18n/sl"), import("@openctrlc/ui/i18n/sl")),
-  sq: () => merge(import("@/i18n/sq"), import("@openctrlc/ui/i18n/sq")),
-  sr: () => merge(import("@/i18n/sr"), import("@openctrlc/ui/i18n/sr")),
-  tg: () => merge(import("@/i18n/tg"), import("@openctrlc/ui/i18n/tg")),
-  tk: () => merge(import("@/i18n/tk"), import("@openctrlc/ui/i18n/tk")),
-  uz: () => merge(import("@/i18n/uz"), import("@openctrlc/ui/i18n/uz")),
+  ko: () => merge(import("@/i18n/ko"), import("@openctrlc/ui/i18n/ko")),
 }
 
 function loadDict(locale: Locale) {
@@ -178,7 +118,7 @@ export const { use: useLanguage, provider: LanguageProvider } = createSimpleCont
     const locale = createMemo<Locale>(() => normalizeLocale(store.locale))
     const intl = createMemo(() => INTL[locale()])
     const [layout, setLayout] = createStore({ direction: undefined as Direction | undefined })
-    const direction = createMemo(() => layout.direction ?? localeDirection(locale()))
+    const direction = createMemo(() => layout.direction ?? localeDirection())
     const layoutLocale = createMemo(() => {
       if (!layout.direction) return intl()
       // Kobalte derives menu direction from locale rather than accepting a direction override.
@@ -235,7 +175,7 @@ export const { use: useLanguage, provider: LanguageProvider } = createSimpleCont
         setStore("locale", normalizeLocale(next))
       },
       setDirection(next: Direction) {
-        setLayout("direction", next === localeDirection(locale()) ? undefined : next)
+        setLayout("direction", next === localeDirection() ? undefined : next)
       },
     }
   },

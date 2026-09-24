@@ -215,3 +215,7 @@ edit by gemini3.7-flash
 ---
 
 请配套读取 .SECRET_AGENTS.md 的内容，如果 .SECRET_AGENTS.md 文件不存在，则忽略
+
+## 语言范围
+
+项目对外 README 和应用运行时界面只保留四种目标语言：英文（`README.md`）、简体中文（`README.zh.md`）、日文（`README.ja.md`）和韩文（`README.ko.md`）。设置选项、系统语言检测、应用/桌面文案加载及翻译脚本都必须共用这四种语言范围；翻译脚本的 `all` 只能展开为中文、日文、韩文，不得扫入其他 locale。除非用户明确要求清理，否则不要擅自删除仓库中已有但运行时不再引用的语言资源文件。

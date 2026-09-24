@@ -954,6 +954,13 @@ export const dict = {
   "settings.general.section.sounds": "Sound effects",
   "settings.general.section.feed": "Feed",
   "settings.general.section.display": "Display",
+  "settings.general.database.description.drafts": "Stores prompt drafts, draft history, and attached files.",
+  "settings.general.database.description.openctrlc":
+    "Stores OpenCtrlC sessions, messages, projects, and other app data. The filename suffix identifies the runtime channel.",
+  "settings.general.database.description.opencode":
+    "OpenCode local data, which may include sessions and messages. Custom filenames may indicate an instance- or feature-specific store.",
+  "settings.general.database.description.unknown":
+    "The source is unknown; contents depend on the application that created this database.",
 
   "settings.general.row.language.title": "Language",
   "settings.general.row.language.description": "Change the display language for OpenCtrlC",
