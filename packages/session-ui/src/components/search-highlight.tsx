@@ -55,7 +55,12 @@ function scheduleRebuild() {
   requestAnimationFrame(rebuild)
 }
 
-export function SearchTextHighlight(props: { query?: string; activeOccurrence?: number; children: JSX.Element }) {
+export function SearchTextHighlight(props: {
+  query?: string
+  activeOccurrence?: number
+  onActiveRange?: (range: Range | undefined) => void
+  children: JSX.Element
+}) {
   let root: HTMLDivElement | undefined
   let observer: MutationObserver | undefined
   const key = ++instanceSeq
@@ -63,6 +68,7 @@ export function SearchTextHighlight(props: { query?: string; activeOccurrence?: 
   const scan = () => {
     const normal: Range[] = []
     const active: Range[] = []
+    let activeRange: Range | undefined
     const query = props.query
     if (root && query) {
       const needle = query.toLocaleLowerCase()
@@ -80,8 +86,12 @@ export function SearchTextHighlight(props: { query?: string; activeOccurrence?: 
             const range = document.createRange()
             range.setStart(node, index)
             range.setEnd(node, index + needle.length)
-            if (props.activeOccurrence === occurrence) active.push(range)
-            else normal.push(range)
+            if (props.activeOccurrence === occurrence) {
+              active.push(range)
+              activeRange = range
+            } else {
+              normal.push(range)
+            }
             occurrence += 1
             start = index + needle.length
           }
@@ -90,6 +100,7 @@ export function SearchTextHighlight(props: { query?: string; activeOccurrence?: 
     }
     if (normal.length === 0 && active.length === 0) registry.delete(key)
     else registry.set(key, { normal, active })
+    props.onActiveRange?.(activeRange)
     scheduleRebuild()
   }
 

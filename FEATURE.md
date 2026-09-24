@@ -1966,3 +1966,24 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/console/app` 和 `packages/stats/app` 执行 locale 单测、typecheck 与生产构建；官网运行时菜单和首页只提供四种语言。
 - 在 `packages/web` 执行 locale 单测与生产构建，确认 Starlight 只生成英文、简体中文、日文、韩文文档和索引。
 - 验证系统语言和旧持久化值均只能得到英文、简体中文、日文、韩文之一，设置页下拉选项也只有这四项。
+
+## 会话搜索将当前命中居中显示
+
+使用搜索栏的上下键、前后按钮或 Enter 切换结果时，时间线先滚动到命中所在的消息行，再将当前词级命中放到滚动视口中央，避免长回复中的命中留在底部输入框后方。首条和末条结果受时间线自然滚动边界约束。
+
+### 实现范围
+
+- 搜索导航同时传递命中消息 ID 和所属用户回合 ID；虚拟时间线优先挂载命中所在的用户消息、助手消息或助手步骤行。
+- 用户消息命中通过词级标记测量；助手文本与推理命中通过 Custom Highlight 使用的同一个 DOM Range 测量，并相对实际时间线视口居中。
+- 普通会话导航仍沿用原消息定位方式，不改变搜索范围、结果顺序或高亮样式。
+
+### 代码位置
+
+- `packages/app/src/pages/session.tsx`：将当前搜索结果消息 ID 传给时间线定位。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：定位虚拟行并将当前命中 Range 对齐至视口中央。
+- `packages/session-ui/src/components/search-highlight.tsx`、`packages/session-ui/src/components/message-part.tsx`：向时间线提供助手文本/推理的活动命中 Range。
+
+### 验证方式
+
+- 手动检查用户消息、短助手回复和长助手回复中的当前命中均显示在输入框上方的时间线视口中央。
+- 连续用上下键切换同一条消息中的多个命中；检查会话开头和结尾的结果在滚动边界处仍可见。

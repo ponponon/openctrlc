@@ -699,7 +699,7 @@ export default function Page() {
         ? sync().data.message[params.id]?.find((item) => item.id === match.messageID)
         : undefined
       const userMessageID = message?.role === "assistant" ? message.parentID : match.messageID
-      requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
+      requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID, match.messageID)))
     }
   }
 
@@ -729,11 +729,17 @@ export default function Page() {
         const nextMatch = matches[nextIndex]
         setSearch("activeIndex", nextIndex)
         previousSearchMatch = nextMatch
-        // 只有当命中的消息发生变化时才做 reveal 定位，避免在同一条消息内打字时重复拉扯视口
-        if (nextMatch && (previous === undefined || previous.messageID !== nextMatch.messageID)) {
+        // 只有当前命中发生变化时才定位；同一条消息内换到另一个词也要跟随命中位置。
+        if (
+          nextMatch &&
+          (previous === undefined ||
+            previous.messageID !== nextMatch.messageID ||
+            previous.start !== nextMatch.start ||
+            previous.end !== nextMatch.end)
+        ) {
           const message = sync().data.message[id]?.find((item) => item.id === nextMatch.messageID)
           const userMessageID = message?.role === "assistant" ? message.parentID : nextMatch.messageID
-          requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID)))
+          requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID, nextMatch.messageID)))
         }
       },
       { defer: true },
@@ -1057,7 +1063,7 @@ export default function Page() {
   let scroller: HTMLDivElement | undefined
   let scrollerOwner: string | undefined
   let content: HTMLDivElement | undefined
-  let revealMessage = (_id: string) => {}
+  let revealMessage = (_id: string, _searchMessageID?: string) => {}
   let scrollToEnd = () => {}
   let scrollMark = 0
   let messageMark = 0

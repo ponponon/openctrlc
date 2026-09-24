@@ -312,7 +312,7 @@ export function MessageTimeline(props: {
   setContentRef: (el: HTMLDivElement) => void
   userMessages: UserMessage[]
   anchor: (id: string) => string
-  setRevealMessage?: (fn: (id: string) => void) => void
+  setRevealMessage?: (fn: (id: string, searchMessageID?: string) => void) => void
   activeSearchMessageID?: string
   searchQuery?: string
   searchScope?: SessionSearchScope
@@ -341,6 +341,8 @@ export function MessageTimeline(props: {
   const platform = usePlatform()
 
   const [listRoot, setListRoot] = createSignal<HTMLDivElement>()
+  let activeSearchRange: { messageID: string; range: Range } | undefined
+  let activeSearchReveal: symbol | undefined
   const sessionID = createMemo(() => params.id)
   const sessionStatus = createMemo(() => {
     const id = sessionID()
@@ -615,10 +617,39 @@ export function MessageTimeline(props: {
     }),
   )
   createEffect(() => {
-    props.setRevealMessage?.((id) => {
-      const index = userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
+    props.setRevealMessage?.((id, searchMessageID) => {
+      const searchIndex = searchMessageID
+        ? timelineRows().findIndex((row) => {
+            if (row._tag === "UserMessage") return row.userMessageID === searchMessageID
+            if (row._tag === "AssistantPart")
+              return row.group.type === "part" && row.group.ref.messageID === searchMessageID
+            if (row._tag === "AssistantSteps")
+              return row.groups.some((group) => group.type === "part" && group.ref.messageID === searchMessageID)
+            return false
+          })
+        : -1
+      const index = searchIndex >= 0 ? searchIndex : userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
       if (index === undefined) return
       virtualizer.scrollToIndex(index, { align: "center" })
+
+      if (!searchMessageID) return
+      const token = Symbol()
+      activeSearchReveal = token
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (activeSearchReveal !== token) return
+          const root = listRoot()
+          if (!root) return
+          const hit = root.querySelector<HTMLElement>("[data-search-hit-active]")
+          const range = activeSearchRange?.messageID === searchMessageID ? activeSearchRange.range : undefined
+          const rect = hit?.getBoundingClientRect() ?? range?.getBoundingClientRect()
+          if (rect && rect.height > 0) {
+            const viewport = root.getBoundingClientRect()
+            root.scrollTop += rect.top + rect.height / 2 - (viewport.top + root.clientTop + root.clientHeight / 2)
+          }
+          activeSearchReveal = undefined
+        }),
+      )
     })
     props.setScrollToEnd?.(() => virtualizer.scrollToEnd())
     props.setHistoryAnchor?.({ capture: (kind) => anchorRegistry.capture(kind) })
@@ -1250,6 +1281,14 @@ export function MessageTimeline(props: {
                 onContentRendered={onSizeChange}
                 highlightQuery={highlightQuery()}
                 highlightActiveIndex={highlightActiveIndex()}
+                onSearchActiveRange={
+                  highlightActiveIndex() === undefined
+                    ? undefined
+                    : (range) => {
+                        const messageID = message().id
+                        activeSearchRange = range ? { messageID, range } : undefined
+                      }
+                }
               />
             )}
           </Show>

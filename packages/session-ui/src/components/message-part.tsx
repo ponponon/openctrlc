@@ -218,6 +218,7 @@ export interface MessagePartProps {
   useV2Actions?: boolean
   highlightQuery?: string
   highlightActiveIndex?: number
+  onSearchActiveRange?: (range: Range | undefined) => void
 }
 
 function MessageActionButton(
@@ -1822,7 +1823,11 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     <Show when={text()}>
       <div data-component="text-part" data-timeline-part-id={part().id}>
         <div data-slot="text-part-body">
-          <SearchTextHighlight query={props.highlightQuery} activeOccurrence={props.highlightActiveIndex}>
+          <SearchTextHighlight
+            query={props.highlightQuery}
+            activeOccurrence={props.highlightActiveIndex}
+            onActiveRange={props.onSearchActiveRange}
+          >
             <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
           </SearchTextHighlight>
         </div>
@@ -1876,7 +1881,11 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
   return (
     <Show when={text()}>
       <div data-component="reasoning-part" data-timeline-part-id={part().id}>
-        <SearchTextHighlight query={props.highlightQuery} activeOccurrence={props.highlightActiveIndex}>
+        <SearchTextHighlight
+          query={props.highlightQuery}
+          activeOccurrence={props.highlightActiveIndex}
+          onActiveRange={props.onSearchActiveRange}
+        >
           <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
         </SearchTextHighlight>
       </div>
