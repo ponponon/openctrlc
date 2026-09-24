@@ -19,6 +19,7 @@ import { createVirtualizer, defaultRangeExtractor, elementScroll, type VirtualIt
 import { Accordion } from "@openctrlc/ui/accordion"
 import { Button } from "@openctrlc/ui/button"
 import { Card } from "@openctrlc/ui/card"
+import { AnimatedNumber } from "@openctrlc/ui/animated-number"
 import { Collapsible } from "@openctrlc/ui/collapsible"
 import {
   ContextToolGroup,
@@ -82,6 +83,7 @@ import {
   isActiveSearchMessage,
   sessionSearchMatchPartID,
   sessionSearchPartHits,
+  sessionSearchToolInputHits,
   sessionSearchToolOutputHits,
   sessionSearchUserMessageHits,
   type SessionSearchScope,
@@ -1401,6 +1403,24 @@ export function MessageTimeline(props: {
       }
       return undefined
     })
+    const highlightInputActiveIndex = createMemo(() => {
+      const item = part()
+      const currentMessage = message()
+      const query = props.searchQuery
+      if (!item || item.type !== "tool" || !currentMessage || !query) return undefined
+      if (props.searchScope !== "all") return undefined
+      const active = props.activeSearchMatch?.messageID === currentMessage.id ? props.activeSearchMatch : undefined
+      const hits = sessionSearchToolInputHits({
+        parts: getMsgParts(currentMessage.id),
+        scope: "all",
+        query,
+        partID: item.id,
+        inputKey: "command",
+        active,
+      })
+      const index = hits.findIndex((hit) => hit.active)
+      return index >= 0 ? index : undefined
+    })
 
     return (
       <Show when={message()}>
@@ -1422,9 +1442,10 @@ export function MessageTimeline(props: {
                 onContentRendered={onSizeChange}
                 highlightQuery={highlightQuery()}
                 highlightActiveIndex={highlightActiveIndex()}
+                highlightInputActiveIndex={highlightInputActiveIndex()}
                 onSearchActiveRange={(range) => {
                   // 只有当前活动 part 才允许写入，避免同消息其他 part 的空扫描清掉 Range。
-                  if (highlightActiveIndex() === undefined) return
+                  if (highlightActiveIndex() === undefined && highlightInputActiveIndex() === undefined) return
                   activeSearchRange = range ? { messageID: message().id, range } : undefined
                 }}
               />
@@ -1897,7 +1918,7 @@ export function MessageTimeline(props: {
                 <Icon name="arrow-down-to-line" size="small" />
                 <Show when={pendingOutputCount() > 0}>
                   <span data-slot="jump-latest-count" class="text-12-medium tabular-nums">
-                    {pendingOutputCount()}
+                    <AnimatedNumber value={pendingOutputCount()} />
                   </span>
                 </Show>
               </div>
@@ -1927,7 +1948,7 @@ export function MessageTimeline(props: {
             </svg>
             <Show when={pendingOutputCount() > 0}>
               <span data-slot="jump-latest-count" class="text-12-medium tabular-nums">
-                {pendingOutputCount()}
+                <AnimatedNumber value={pendingOutputCount()} />
               </span>
             </Show>
           </button>

@@ -1942,7 +1942,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - “跳转到最新”按钮在离开底部超过 32px 时显示（原先要超过一屏），方便暂停跟随时随时回底。
 - 距底吸底容差从 80px 收紧到 24px，减少“只上滑一点就被拽回”的边界体感。
 - 暂停跟随时按钮旁显示“新输出”条数：以暂停时刻的行 key 集合与最后内容行高度为水位，统计水位后新出现的 key 或内容行增高；历史 prepend 与 Thinking 等尾部占位不误计。旧版布局跳转按钮同样显示计数。
-- 会话搜索在 `scope=all` 时可把命中映射到 tool part/输出字段，自动展开工具并高亮工具输出中的当前词。
+- 会话搜索在 `scope=all` 时可把命中映射到 tool part 的输入/输出/title 字段，自动展开工具；shell 的 command 与 output 分段高亮，title 与 command 同文时会点亮 command。
+- 新输出计数使用 `AnimatedNumber`，v1/v2 跳转按钮均显示。
 - 会话级 `follow` 持久化意图与 `followBottom()` 判定保持不变。
 
 ### 代码位置
@@ -1950,16 +1951,16 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `packages/app/src/pages/session/timeline/message-timeline.tsx`：动态 `anchorTo`/`followOnAppend`，滚动时始终上报位置状态，暂停时估算新输出条数，工具命中自动展开。
 - `packages/app/src/pages/session/timeline/pending-output.ts`：新输出计数纯函数（可单测）。
 - `packages/app/src/pages/session.tsx`：放宽“跳转到最新”显示阈值。
-- `packages/app/src/pages/session/session-search.ts`：`sessionSearchMatchFragment` / `sessionSearchToolOutputHits` 映射工具命中。
-- `packages/session-ui/src/components/message-part.tsx`：工具输出接入 `SearchTextHighlight`。
+- `packages/app/src/pages/session/session-search.ts`：`sessionSearchMatchFragment` / `sessionSearchToolOutputHits` / `sessionSearchToolInputHits` 映射工具命中。
+- `packages/session-ui/src/components/message-part.tsx`：工具 command/output 接入 `SearchTextHighlight`。
 - `packages/app/src/i18n/{en,zh,ja,ko}.ts`、`packages/app/src/context/language.tsx`：`session.messages.newOutputs` 复数文案。
-- `packages/app/e2e/regression/session-timeline-follow-pause.spec.ts`：回归“上滚后新输出不抢滚动，并可点计数回底”。
+- `packages/app/e2e/regression/session-timeline-follow-pause.spec.ts`、`session-search-tool-hit.spec.ts`：回归暂停跟随与工具命中高亮。
 
 ### 验证方式
 
 - 在 `packages/app` 执行 `bun typecheck`、`bun run typecheck:e2e`、`session-search`/`pending-output` 单测与 i18n parity 测试。
-- 在 `packages/app` 执行 `bun run test:e2e e2e/regression/session-timeline-follow-pause.spec.ts`。
-- 手动验证：长回复流式输出时向上滚到历史区，新 Shell/文本到达后视口不动；按钮出现新输出计数；滚回底部或点“跳转到最新”后恢复跟随；`scope=all` 搜到工具输出时自动展开并高亮当前词。
+- 在 `packages/app` 执行 `bun run test:e2e e2e/regression/session-timeline-follow-pause.spec.ts e2e/regression/session-search-tool-hit.spec.ts`。
+- 手动验证：长回复流式输出时向上滚到历史区，新 Shell/文本到达后视口不动；按钮出现新输出计数；滚回底部或点“跳转到最新”后恢复跟随；`scope=all` 搜到工具 command/output 时自动展开并高亮当前词。
 
 ## 产品界面与公开文档仅支持四种语言
 

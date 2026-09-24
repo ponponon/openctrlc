@@ -56,7 +56,8 @@ test.describe("regression: session timeline follow pause", () => {
 
     const count = page.locator('[data-slot="jump-latest-count"]')
     await expect(count).toBeVisible()
-    await expect(count).toHaveText(/^[1-9]\d*$/)
+    // AnimatedNumber 用 aria-label 暴露真实数值，DOM 文本是滚动数字条。
+    await expect(count.locator('[data-component="animated-number"]')).toHaveAttribute("aria-label", /^[1-9]\d*$/)
 
     await count.locator("xpath=ancestor::button").click()
 

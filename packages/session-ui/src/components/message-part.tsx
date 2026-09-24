@@ -218,6 +218,7 @@ export interface MessagePartProps {
   useV2Actions?: boolean
   highlightQuery?: string
   highlightActiveIndex?: number
+  highlightInputActiveIndex?: number
   onSearchActiveRange?: (range: Range | undefined) => void
 }
 
@@ -1511,6 +1512,7 @@ export function Part(props: MessagePartProps) {
         useV2Actions={props.useV2Actions}
         highlightQuery={props.highlightQuery}
         highlightActiveIndex={props.highlightActiveIndex}
+        highlightInputActiveIndex={props.highlightInputActiveIndex}
         onSearchActiveRange={props.onSearchActiveRange}
       />
     </Show>
@@ -1535,6 +1537,7 @@ export interface ToolProps {
   locked?: boolean
   highlightQuery?: string
   highlightActiveIndex?: number
+  highlightInputActiveIndex?: number
   onSearchActiveRange?: (range: Range | undefined) => void
 }
 
@@ -1719,6 +1722,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
               onContentRendered={props.onContentRendered}
               highlightQuery={props.highlightQuery}
               highlightActiveIndex={props.highlightActiveIndex}
+              highlightInputActiveIndex={props.highlightInputActiveIndex}
               onSearchActiveRange={props.onSearchActiveRange}
             />
           </Match>
@@ -2232,9 +2236,13 @@ ToolRegistry.register({
     const i18n = useI18n()
     const pending = () => props.status === "pending" || props.status === "running"
     const sawPending = pending()
+    const command = createMemo(() => String(props.input.command ?? props.metadata.command ?? ""))
+    const outputText = createMemo(() =>
+      stripAnsi(props.output || props.metadata.output || "").replace(/\r\n?/g, "\n"),
+    )
     const text = createMemo(() => {
-      const cmd = props.input.command ?? props.metadata.command ?? ""
-      const out = stripAnsi(props.output || props.metadata.output || "").replace(/\r\n?/g, "\n")
+      const cmd = command()
+      const out = outputText()
       return `$ ${cmd}${out ? "\n\n" + out : ""}`
     })
     const [copied, setCopied] = createSignal(false)
@@ -2260,7 +2268,15 @@ ToolRegistry.register({
                 <TextShimmer text={i18n.t("ui.tool.shell")} active={pending()} />
               </span>
               <Show when={!open() && props.input.command}>
-                <ShellSubmessage text={props.input.command} animate={sawPending} />
+                <SearchTextHighlight
+                  query={props.highlightQuery}
+                  activeOccurrence={props.highlightInputActiveIndex}
+                  onActiveRange={
+                    props.highlightInputActiveIndex === undefined ? undefined : props.onSearchActiveRange
+                  }
+                >
+                  <ShellSubmessage text={props.input.command} animate={sawPending} />
+                </SearchTextHighlight>
               </Show>
             </div>
           </div>
@@ -2286,15 +2302,28 @@ ToolRegistry.register({
             role="region"
             aria-label={i18n.t("ui.scrollView.ariaLabel")}
           >
-            <SearchTextHighlight
-              query={props.highlightQuery}
-              activeOccurrence={props.highlightActiveIndex}
-              onActiveRange={props.onSearchActiveRange}
-            >
-              <pre data-slot="bash-pre">
-                <code>{text()}</code>
-              </pre>
-            </SearchTextHighlight>
+            <pre data-slot="bash-pre">
+              <code>
+                <SearchTextHighlight
+                  query={props.highlightQuery}
+                  activeOccurrence={props.highlightInputActiveIndex}
+                  onActiveRange={
+                    props.highlightInputActiveIndex === undefined ? undefined : props.onSearchActiveRange
+                  }
+                >
+                  <span>{`$ ${command()}`}</span>
+                </SearchTextHighlight>
+                <Show when={outputText()}>
+                  <SearchTextHighlight
+                    query={props.highlightQuery}
+                    activeOccurrence={props.highlightActiveIndex}
+                    onActiveRange={props.highlightActiveIndex === undefined ? undefined : props.onSearchActiveRange}
+                  >
+                    <span>{`\n\n${outputText()}`}</span>
+                  </SearchTextHighlight>
+                </Show>
+              </code>
+            </pre>
           </div>
         </div>
       </BasicTool>

@@ -21,6 +21,7 @@
     "./regression/new-session-panel-corner.spec.ts",
     "./regression/session-timeline-context-resize.spec.ts",
     "./regression/session-timeline-follow-pause.spec.ts",
+    "./regression/session-search-tool-hit.spec.ts",
     "./utils/**/*.ts"
   ]
 }

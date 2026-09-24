@@ -15,6 +15,7 @@ import {
   sessionSearchMatchFragment,
   sessionSearchMatchPartID,
   sessionSearchPartHits,
+  sessionSearchToolInputHits,
   sessionSearchToolOutputHits,
   sessionSearchUserMessageHits,
 } from "./session-search"
@@ -862,17 +863,90 @@ describe("sessionSearchMatchPartID", () => {
     })
     const match = findSessionSearchMatches(documents, "needle")[0]!
     const fragment = sessionSearchMatchFragment({ parts, scope: "all", match })
-    expect(fragment).toEqual({ partID: "tool-1", field: "tool-output" })
+    expect(fragment).toMatchObject({ partID: "tool-1", field: "tool-output" })
     expect(sessionSearchMatchPartID({ parts, scope: "all", match })).toBe("tool-1")
+  })
+
+  test("maps a title hit that duplicates the command onto command input hits", () => {
+    const parts = [
+      part({
+        type: "tool",
+        id: "tool-1",
+        tool: "bash",
+        state: {
+          status: "completed",
+          input: { command: "echo unique-cmd" },
+          output: "unique-out",
+          title: "echo unique-cmd",
+          metadata: {},
+          time: { start: 1, end: 2 },
+        },
+      }),
+    ]
+    const documents = createSessionSearchDocuments({
+      messages: [assistant("assistant-1")],
+      parts: () => parts,
+      scope: "all",
+    })
+    const matches = findSessionSearchMatches(documents, "unique-cmd")
+    expect(matches).toHaveLength(2)
+    const titleMatch = matches[1]!
+    expect(sessionSearchMatchFragment({ parts, scope: "all", match: titleMatch })?.field).toBe("tool-title")
     expect(
-      sessionSearchToolOutputHits({
+      sessionSearchToolInputHits({
+        parts,
+        scope: "all",
+        query: "unique-cmd",
+        partID: "tool-1",
+        inputKey: "command",
+        active: titleMatch,
+      }),
+    ).toEqual([{ start: 5, end: 15, active: true }])
+  })
+})
+
+describe("sessionSearchToolInputHits", () => {
+  test("marks the active command occurrence", () => {
+    const parts = [
+      part({
+        type: "tool",
+        id: "tool-1",
+        tool: "bash",
+        state: {
+          status: "completed",
+          input: { command: "echo needle && echo needle" },
+          output: "needle",
+          title: "Bash",
+          metadata: {},
+          time: { start: 1, end: 2 },
+        },
+      }),
+    ]
+    const documents = createSessionSearchDocuments({
+      messages: [assistant("assistant-1")],
+      parts: () => parts,
+      scope: "all",
+    })
+    // 文档顺序是 input 字符串在前：第一次 needle 在 command 里
+    const first = findSessionSearchMatches(documents, "needle")[0]!
+    expect(sessionSearchMatchFragment({ parts, scope: "all", match: first })).toMatchObject({
+      partID: "tool-1",
+      field: "tool-input",
+      inputKey: "command",
+    })
+    expect(
+      sessionSearchToolInputHits({
         parts,
         scope: "all",
         query: "needle",
         partID: "tool-1",
-        active: match,
+        inputKey: "command",
+        active: first,
       }),
-    ).toEqual([{ start: 0, end: 6, active: true }])
+    ).toEqual([
+      { start: 5, end: 11, active: true },
+      { start: 20, end: 26, active: false },
+    ])
   })
 })
 

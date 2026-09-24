@@ -837,3 +837,7 @@ macOS 主进程把工作目录切到用户主目录，以避免打包应用从 `
 ## 新输出水位不能落在 Thinking 等尾部占位行上
 
 会话 busy 时时间线末尾常有 `Thinking`/`Retry` 占位行，新工具/文本会插在它们前面。若水位只记“最后一行 key”，占位行一直不变，新增内容会被算成 0。水位应记录完整行 key 集合，并把最后一个非占位内容行的高度作为增高基准；计数看“第一个仍存活水位行之后”的未见过 key。另外 `measurementsCache` 不是响应式数据，行高变化必须靠 virtualizer `onChange` 之类信号拉起重算，否则行内流式增高不会更新计数。
+
+## 工具 title 同文命中必须映射回可见字段
+
+shell 工具的 `title` 常与 `command` 同文，搜索文档里会多出一份不可见片段。若命中落在 `tool-title` 却只高亮 `tool-input`/`tool-output`，当前命中会变成“有结果但界面上没有 active 标记”。映射 fragment 时要带上局部偏移，title 与输入字符串相等时把 active 映射回 command 高亮。另外 AnimatedNumber 的 DOM 文本是滚动数字条，E2E 应断言 `aria-label` 而不是 `toHaveText`。
