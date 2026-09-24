@@ -1930,6 +1930,27 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun typecheck` 和 `bun run typecheck:e2e`。
 - 手动验证：在长会话向上滚动后切到另一个 Tab 再切回，位置不变且首屏内容是同一段；连续切换多次不产生偏移漂移；滚回底部后再切走切回，仍然停在底部。
 
+## 回看历史时新输出不再抢滚动
+
+用户向上翻看历史后，流式 response / 工具输出到达时不应再把视口拽回底部。离开底部即粘性暂停跟随；回到底部或点击“跳转到最新”后恢复吸底。
+
+### 实现范围
+
+- 时间线滚动事件始终同步“是否在底部”，不再要求 250ms 手势窗口；滚动条、触控板惯性、键盘和虚拟列表校正都能暂停/恢复跟随。
+- 虚拟列表的 `anchorTo` / `followOnAppend` 跟随 `shouldAnchorBottom()`：只有仍在底部时才 end 吸底并在 append 时滚到底；离开底部后改为 start 锚定，仅对视口上方的行高变化做阅读位置补偿。
+- “跳转到最新”按钮在离开底部超过 32px 时显示（原先要超过一屏），方便暂停跟随时随时回底。
+- 会话级 `follow` 持久化意图与 `followBottom()` 判定保持不变。
+
+### 代码位置
+
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：动态 `anchorTo`/`followOnAppend`，滚动时始终上报位置状态。
+- `packages/app/src/pages/session.tsx`：放宽“跳转到最新”显示阈值。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun typecheck`。
+- 手动验证：长回复流式输出时向上滚到历史区，新 Shell/文本到达后视口不动；滚回底部或点“跳转到最新”后恢复跟随；在底部附近（<80px）暂停再继续输出时不再被硬拽。
+
 ## 产品界面与公开文档仅支持四种语言
 
 将 OpenCtrlC App、Desktop 原生界面、Console、Stats 与官网文档站的运行时语言统一收敛为英文、简体中文、日文、韩文；根目录 README 同样只保留这四种版本。各产品选择器、系统语言自动匹配、文案加载、公开翻译资源和翻译脚本目标列表都共用这四种语言范围。

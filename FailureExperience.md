@@ -813,3 +813,11 @@ macOS 主进程把工作目录切到用户主目录，以避免打包应用从 `
 ## 搜索命中测量不能全局抓第一个 active 标记
 
 `root.querySelector("[data-search-hit-active]")` 会拿到整条时间线里第一个残留标记，用户消息多段命中也只会取第一段。测量必须限定在当前命中虚拟行内，合并全部 active 片段的矩形；助手 Custom Highlight Range 与 DOM 标记同时存在时，要按消息归属选择，不能无条件优先全局 hit。虚拟行挂载、markdown 渲染和 Highlight 重建都可能晚于双 rAF，测量失败应有限重试而不是静默放弃。命中落在收起的 `AssistantSteps` 时要先展开再测量，否则 DOM 中根本没有命中节点。
+
+## 离开底部后必须停用虚拟列表 end 吸底
+
+时间线用了 `anchorTo: "end"` + `followOnAppend: true` + `scrollEndThreshold: 80`，且滚动处理器只在 250ms 手势窗口内调用 `autoScroll.handleScroll`。用户翻看历史时，新 response 触发行高变化或 append，虚拟列表仍按“距底 ≤80px”判定在底部并 `scrollToEnd`，把手离底部不久的视口拽回去；滚动条/惯性滚动还可能因不在手势窗口而从未把 `userScrolled` 置真。以后凡是“跟随最新”的虚拟列表，吸底策略必须绑定用户意图（`shouldAnchorBottom`/`userScrolled`），不能只靠几何距离；滚动事件要始终同步是否在底部，手势窗口只用于区分谁触发，不能门禁状态更新。离开底部后只允许对视口上方的行高变化做阅读位置补偿。
+
+## 跳转到最新不能要求滚过一屏
+
+“跳到最新”原先在 `distance > max(400, clientHeight)` 才出现，用户只回看几条时看不到回底入口。暂停跟随时的回底控件应在明显离开底部（例如 >32px）就可见，否则用户只能继续往上滚或被抢滚动。

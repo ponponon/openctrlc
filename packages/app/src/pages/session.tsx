@@ -1719,14 +1719,13 @@ export default function Page() {
   let scrollStateTarget: HTMLDivElement | undefined
   let fillFrame: number | undefined
 
-  const jumpThreshold = (el: HTMLDivElement) => Math.max(400, el.clientHeight)
-
   const updateScrollState = (el: HTMLDivElement) => {
     const max = el.scrollHeight - el.clientHeight
     const distance = max - el.scrollTop
     const overflow = max > 1
     const bottom = !overflow || distance <= 2
-    const jump = overflow && distance > jumpThreshold(el)
+    // 只要明显离开底部就显示“跳转到最新”，方便在暂停跟随时随时回底。
+    const jump = overflow && distance > 32
 
     if (ui.scroll.overflow === overflow && ui.scroll.bottom === bottom && ui.scroll.jump === jump) return
     setUi("scroll", { overflow, bottom, jump })

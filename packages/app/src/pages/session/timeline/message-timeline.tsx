@@ -531,8 +531,13 @@ export function MessageTimeline(props: {
         return TimelineRow.key(row)
       }
     },
-    anchorTo: "end",
-    followOnAppend: true,
+    // 离开底部后停用 end 吸底与 append 跟随，避免新输出把正在回看历史的视口拽回底部。
+    get anchorTo() {
+      return props.shouldAnchorBottom() ? ("end" as const) : ("start" as const)
+    },
+    get followOnAppend() {
+      return props.shouldAnchorBottom() ? (true as const) : (false as const)
+    },
     scrollEndThreshold: 80,
     get scrollMargin() {
       return showHeader() ? 64 : 0
@@ -859,9 +864,10 @@ export function MessageTimeline(props: {
     const root = event.currentTarget
     props.onScheduleScrollState(root)
     props.onHistoryScroll()
+    // 始终同步“是否在底部”，滚轮以外的滚动条、触控板惯性、键盘和虚拟列表校正也要能粘性暂停跟随。
+    props.onAutoScrollHandleScroll()
     if (props.hasScrollGesture()) {
       props.onUserScroll()
-      props.onAutoScrollHandleScroll()
       props.onMarkScrollGesture(root)
     }
     view.setScroll("timeline", {
