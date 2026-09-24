@@ -1573,6 +1573,33 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行消息上下文指标单元测试和 typecheck。
 - 打开会话的“上下文”面板，确认原始消息行不再显示 `msg_` ID；活动列能显示工具名或活动类型，`Token` 表头下的数字右对齐，user 行显示短横线。
 
+## 上下文原始消息显示耗时
+
+### 功能目标
+
+让上下文面板的“原始消息”列表在活动列与 Token 列之间展示每条 assistant 消息的处理耗时，便于快速定位慢回合。
+
+### 实现范围
+
+- 耗时列位于“最后活动”和 `Token` 之间，表头使用本地化文案 `耗时(s)` / `Duration (s)`，单位写在列标题中。
+- assistant 消息耗时为 `time.completed - time.created`，换算为秒并保留一位小数；单元格只显示数字，右对齐并使用等宽数字。
+- user 消息和尚未完成的 assistant 消息显示短横线，避免把进行中时长误当成最终耗时。
+- 表头与数据行共用固定五列网格轨道，保证 Role、活动、耗时、Token、Time 对齐。
+- 耗时计算抽成可测试函数，覆盖完成、进行中和 user 消息。
+
+### 代码位置
+
+- `packages/app/src/components/session/session-context-tab.tsx`：耗时列表头与单元格布局。
+- `packages/app/src/components/session/session-context-metrics.ts`：耗时秒数与一位小数展示计算。
+- `packages/app/src/components/session/session-context-metrics.test.ts`：耗时格式化测试。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`：`context.rawMessages.duration` 表头文案。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/components/session/session-context-metrics.test.ts ./src/i18n/parity.test.ts`。
+- 在 `packages/app` 执行 `bun typecheck`。
+- 打开会话“上下文”面板，确认活动与 Token 之间出现耗时列；完成的 assistant 显示如 `12.5`，user/进行中行显示 `—`。
+
 ## 自动授权断线恢复
 
 ### 功能目标

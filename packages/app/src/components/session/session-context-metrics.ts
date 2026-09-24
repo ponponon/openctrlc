@@ -56,6 +56,19 @@ export const getMessageTokenDeltaDisplay = (messages: Message[], index: number) 
   return delta
 }
 
+export const getMessageDurationSeconds = (message: Message) => {
+  if (message.role !== "assistant") return undefined
+  const completed = message.time.completed
+  if (completed === undefined) return undefined
+  return Math.max(0, completed - message.time.created) / 1000
+}
+
+export const getMessageDurationDisplay = (message: Message) => {
+  const seconds = getMessageDurationSeconds(message)
+  if (seconds === undefined) return undefined
+  return seconds.toFixed(1)
+}
+
 export const getMessageActivity = (message: Message, parts: Part[]) => {
   if (message.role !== "assistant") return "—"
 

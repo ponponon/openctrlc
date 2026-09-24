@@ -26,7 +26,12 @@ import { usePlatform } from "@/context/platform"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
 import { useSessionLayout } from "@/pages/session/session-layout"
-import { getMessageActivity, getMessageTokenDeltaDisplay, getSessionContext } from "./session-context-metrics"
+import {
+  getMessageActivity,
+  getMessageDurationDisplay,
+  getMessageTokenDeltaDisplay,
+  getSessionContext,
+} from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
@@ -40,7 +45,7 @@ const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
   other: "var(--syntax-comment)",
 }
 
-const RAW_MESSAGE_GRID = "grid grid-cols-[5.5rem_minmax(0,1fr)_8rem_12.5rem] items-center gap-3 w-full"
+const RAW_MESSAGE_GRID = "grid grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_8rem_12.5rem] items-center gap-3 w-full"
 
 function Stat(props: { label: string; value: JSX.Element }) {
   return (
@@ -79,6 +84,7 @@ function RawMessage(props: {
   onRendered: () => void
   time: (value: number | undefined) => string
   activity: string
+  duration: string
   tokenDelta: string
 }) {
   return (
@@ -90,6 +96,7 @@ function RawMessage(props: {
             <div class="min-w-0 truncate text-left text-text-weak" title={props.activity}>
               {props.activity}
             </div>
+            <div class="min-w-0 text-right text-text-base tabular-nums">{props.duration}</div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
             <div class="flex items-center justify-end gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>
@@ -174,6 +181,10 @@ export function SessionContextTab() {
     const delta = getMessageTokenDeltaDisplay(messages, index)
     if (delta === undefined) return "—"
     return formatter().number(delta)
+  }
+
+  const messageDuration = (message: Message) => {
+    return getMessageDurationDisplay(message) ?? "—"
   }
 
   const cost = createMemo(() => {
@@ -553,6 +564,7 @@ export function SessionContextTab() {
           <div class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}>
             <div>Role</div>
             <div class="text-left">{language.t("context.stats.lastActivity")}</div>
+            <div class="text-right">{language.t("context.rawMessages.duration")}</div>
             <div class="text-right">{language.t("context.usage.tokens")}</div>
             <div class="text-right">Time</div>
           </div>
@@ -565,6 +577,7 @@ export function SessionContextTab() {
                   onRendered={restoreScroll}
                   time={formatter().time}
                   activity={getMessageActivity(message, getParts(message.id))}
+                  duration={messageDuration(message)}
                   tokenDelta={messageTokenDelta(messages(), index())}
                 />
               )}

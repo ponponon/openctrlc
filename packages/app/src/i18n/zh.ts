@@ -637,6 +637,7 @@ export const dict = {
   "context.systemPrompt.copy": "复制系统提示词",
   "context.systemPrompt.copyFailed": "复制系统提示词失败",
   "context.rawMessages.title": "原始消息",
+  "context.rawMessages.duration": "耗时(s)",
   "context.export.session": "导出会话",
 
   "context.stats.session": "会话",

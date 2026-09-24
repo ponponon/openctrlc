@@ -538,6 +538,7 @@ export const dict = {
   "context.systemPrompt.copy": "Copy system prompt",
   "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "Raw messages",
+  "context.rawMessages.duration": "Duration (s)",
   "context.export.session": "Export session",
 
   "context.stats.session": "Session",

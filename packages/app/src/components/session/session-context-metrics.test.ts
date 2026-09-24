@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test"
 import type { Message, Part } from "@openctrlc/sdk/v2/client"
 import {
   getMessageActivity,
+  getMessageDurationDisplay,
+  getMessageDurationSeconds,
   getMessageTokenDelta,
   getMessageTokenDeltaDisplay,
   getMessageTokenTotal,
@@ -80,6 +82,24 @@ describe("getSessionContext", () => {
 
     expect(getMessageTokenDeltaDisplay([pending], 0)).toBeUndefined()
     expect(getMessageTokenDeltaDisplay([completed], 0)).toBe(0)
+  })
+
+  test("formats assistant duration in seconds with one decimal", () => {
+    const completed = assistant(
+      "a1",
+      { input: 0, output: 0, reasoning: 0, read: 0, write: 0 },
+      0,
+      "openai",
+      "gpt-4.1",
+      1 + 12_500,
+    )
+    const pending = assistant("a2", { input: 0, output: 0, reasoning: 0, read: 0, write: 0 }, 0)
+
+    expect(getMessageDurationSeconds(completed)).toBe(12.5)
+    expect(getMessageDurationDisplay(completed)).toBe("12.5")
+    expect(getMessageDurationSeconds(pending)).toBeUndefined()
+    expect(getMessageDurationDisplay(pending)).toBeUndefined()
+    expect(getMessageDurationDisplay(user("u1"))).toBeUndefined()
   })
 
   test("summarizes assistant activity and tool names", () => {

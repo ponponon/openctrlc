@@ -410,6 +410,7 @@ export const dict = {
   "context.systemPrompt.copy": "Copy system prompt",
   "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "원시 메시지",
+  "context.rawMessages.duration": "소요 시간(s)",
   "context.export.session": "세션 내보내기",
 
   "context.stats.session": "세션",
