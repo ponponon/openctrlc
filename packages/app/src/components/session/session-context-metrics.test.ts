@@ -8,6 +8,7 @@ import {
   getMessageTokenDeltaDisplay,
   getMessageTokenTotal,
   getSessionContext,
+  isMessageInFlight,
 } from "./session-context-metrics"
 
 const assistant = (
@@ -100,6 +101,9 @@ describe("getSessionContext", () => {
     expect(getMessageDurationSeconds(pending)).toBeUndefined()
     expect(getMessageDurationDisplay(pending)).toBeUndefined()
     expect(getMessageDurationDisplay(user("u1"))).toBeUndefined()
+    expect(isMessageInFlight(pending)).toBe(true)
+    expect(isMessageInFlight(completed)).toBe(false)
+    expect(isMessageInFlight(user("u1"))).toBe(false)
   })
 
   test("summarizes assistant activity and tool names", () => {
@@ -117,7 +121,14 @@ describe("getSessionContext", () => {
     expect(getMessageActivity(message, [{ type: "reasoning" }] as unknown as Part[])).toBe("reasoning")
     expect(getMessageActivity(message, [{ type: "text" }] as unknown as Part[])).toBe("response")
     expect(getMessageActivity(message, [{ type: "step-finish" }] as unknown as Part[])).toBe("step")
-    expect(getMessageActivity(message, [])).toBe("—")
+    // Empty activity on an unfinished assistant is still in flight, not "no data".
+    expect(getMessageActivity(message, [])).toBe("…")
+    expect(
+      getMessageActivity(
+        assistant("done", { input: 0, output: 0, reasoning: 0, read: 0, write: 0 }, 0, "openai", "gpt-4.1", 2),
+        [],
+      ),
+    ).toBe("—")
     expect(getMessageActivity(user("u1"), parts)).toBe("—")
   })
 

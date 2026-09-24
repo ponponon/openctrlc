@@ -25,6 +25,14 @@ type Context = {
   usage: number | null
 }
 
+/** No value / not applicable (e.g. user rows). Distinct from in-flight work. */
+export const EMPTY_DISPLAY = "—"
+/** Value is still being produced on an in-flight assistant message. */
+export const IN_PROGRESS_DISPLAY = "…"
+
+export const isMessageInFlight = (message: Message) =>
+  message.role === "assistant" && message.time.completed === undefined
+
 const tokenTotal = (msg: AssistantMessage) => {
   return msg.tokens.input + msg.tokens.output + msg.tokens.reasoning + msg.tokens.cache.read + msg.tokens.cache.write
 }
@@ -70,7 +78,7 @@ export const getMessageDurationDisplay = (message: Message) => {
 }
 
 export const getMessageActivity = (message: Message, parts: Part[]) => {
-  if (message.role !== "assistant") return "—"
+  if (message.role !== "assistant") return EMPTY_DISPLAY
 
   const tools = parts.filter((part): part is Extract<Part, { type: "tool" }> => part.type === "tool")
   if (tools.length > 0) {
@@ -90,7 +98,7 @@ export const getMessageActivity = (message: Message, parts: Part[]) => {
   if (agent) return `agent: ${agent.name}`
   if (parts.some((part) => part.type === "text")) return "response"
   if (parts.some((part) => part.type === "step-finish")) return "step"
-  return "—"
+  return isMessageInFlight(message) ? IN_PROGRESS_DISPLAY : EMPTY_DISPLAY
 }
 
 const lastAssistantWithTokens = (messages: Message[]) => {

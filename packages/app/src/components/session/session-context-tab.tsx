@@ -27,10 +27,13 @@ import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import {
+  EMPTY_DISPLAY,
+  IN_PROGRESS_DISPLAY,
   getMessageActivity,
   getMessageDurationDisplay,
   getMessageTokenDeltaDisplay,
   getSessionContext,
+  isMessageInFlight,
 } from "./session-context-metrics"
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
@@ -179,12 +182,17 @@ export function SessionContextTab() {
 
   const messageTokenDelta = (messages: Message[], index: number) => {
     const delta = getMessageTokenDeltaDisplay(messages, index)
-    if (delta === undefined) return "—"
-    return formatter().number(delta)
+    if (delta !== undefined) return formatter().number(delta)
+    const message = messages[index]
+    if (message && isMessageInFlight(message)) return IN_PROGRESS_DISPLAY
+    return EMPTY_DISPLAY
   }
 
   const messageDuration = (message: Message) => {
-    return getMessageDurationDisplay(message) ?? "—"
+    const display = getMessageDurationDisplay(message)
+    if (display !== undefined) return display
+    if (isMessageInFlight(message)) return IN_PROGRESS_DISPLAY
+    return EMPTY_DISPLAY
   }
 
   const cost = createMemo(() => {
