@@ -568,19 +568,20 @@ export default function Page() {
 
   createEffect(
     on(
-      () => [params.id, isDesktop()] as const,
-      ([id, desktop]) => {
-        if (!id || !desktop) return
+      () => [params.id, isDesktop(), layout.ready()] as const,
+      ([id, desktop, layoutReady]) => {
+        if (!id || !desktop || !layoutReady) return
 
         const current = tabs()
-        if (current.active() || current.all().length > 0) return
+        const active = current.active()
+        if (current.all().some((tab) => tab !== "context")) return
+        if (active && active !== "review" && active !== "context") return
 
         view().reviewPanel.open("context-button")
         if (layout.fileTree.opened() && layout.fileTree.tab() !== "all") layout.fileTree.setTab("all")
         void tabs().open("context")
         tabs().setActive("context")
       },
-      { defer: true },
     ),
   )
 
