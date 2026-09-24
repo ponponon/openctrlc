@@ -48,9 +48,15 @@ protocol.registerSchemesAsPrivileged([
 let backgroundColor: string | undefined
 let appQuitting = false
 let closeToTrayEnabled = false
+export function relaunchElectronApp() {
+  // electron-vite starts the dev app with a relative `.` argument, but the main process changes cwd to home.
+  const args = app.isPackaged ? undefined : [app.getAppPath(), ...process.argv.slice(2)]
+  app.relaunch(args ? { args } : undefined)
+}
+
 let relaunchHandler = () => {
   setAppQuitting()
-  app.relaunch()
+  relaunchElectronApp()
   app.exit(0)
 }
 const titlebarThemes = new WeakMap<BrowserWindow, Partial<TitlebarTheme>>()

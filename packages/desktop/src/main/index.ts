@@ -43,6 +43,7 @@ import { safeWebContentsURL } from "./window-state"
 import {
   getLastFocusedWindow,
   registerRendererProtocol,
+  relaunchElectronApp,
   setRelaunchHandler,
   setAppQuitting,
   setBackgroundColor,
@@ -181,7 +182,7 @@ const main = Effect.gen(function* () {
   const relaunch = () => {
     setAppQuitting()
     void stopSidecars().finally(() => {
-      app.relaunch()
+      relaunchElectronApp()
       app.quit()
     })
   }
