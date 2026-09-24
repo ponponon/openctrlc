@@ -357,7 +357,10 @@ const layer = Layer.effect(
           if (stream._tag === "Failure") return yield* Effect.failCause(stream.cause)
           if (settled._tag === "Failure" && Cause.hasInterrupts(settled.cause))
             return yield* Effect.failCause(settled.cause)
-          return { needsContinuation: !publisher.hasProviderError() && !publisher.hasFailure() && needsContinuation, step: currentStep }
+          return {
+            needsContinuation: !publisher.hasProviderError() && !publisher.hasFailure() && needsContinuation,
+            step: currentStep,
+          }
         }),
       )
     }, Effect.scoped)
