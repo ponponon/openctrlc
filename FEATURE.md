@@ -1930,15 +1930,17 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun typecheck` 和 `bun run typecheck:e2e`。
 - 手动验证：在长会话向上滚动后切到另一个 Tab 再切回，位置不变且首屏内容是同一段；连续切换多次不产生偏移漂移；滚回底部后再切走切回，仍然停在底部。
 
-## 应用界面仅支持四种语言
+## 产品界面与公开文档仅支持四种语言
 
-将 OpenCtrlC App 与 Desktop 原生界面的运行时语言统一收敛为英文、简体中文、日文、韩文；根目录 README 同样只保留这四种版本。App、共享 UI 和 Desktop renderer 源码目录也只保留这四种 locale 字典，不得在选择器、系统语言自动匹配、桌面原生字典加载或翻译脚本目标列表中出现其他语言。
+将 OpenCtrlC App、Desktop 原生界面、Console、Stats 与官网文档站的运行时语言统一收敛为英文、简体中文、日文、韩文；根目录 README 同样只保留这四种版本。各产品选择器、系统语言自动匹配、文案加载、公开翻译资源和翻译脚本目标列表都共用这四种语言范围。
 
 ### 实现范围
 
 - 应用语言设置和快捷键循环只暴露 `en`、`zh`、`ja`、`ko`；存储的旧语言值自动回退为英文，系统繁体中文 locale 归到简体中文。
 - App、UI 和 Desktop renderer 只保留并加载这四种语言的字典源码，其他 locale 字典已清理。
 - App、UI 和 Desktop renderer 的 locale 源文件只保留 `en`、`zh`、`ja`、`ko`，由 parity 测试检查三处目录清单一致。
+- Console 与 Stats 共用四项语言清单、语言检测、路由标签和文案加载；官网文档站只配置英文、简体中文、日文、韩文。
+- 清理其他 Console/Stats 字典、官网文档界面翻译 JSON、首页营销翻译，以及不再支持的文档翻译目录；英文根文档与三种目标语言文档保留。
 - 翻译脚本只接受 `zh`、`ja`、`ko`，`all` 被限制在这三种非英文语言。
 - 桌面原生菜单翻译包和 IPC 校验使用同一语言清单。
 
@@ -1948,6 +1950,10 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `packages/app/src/context/language.tsx`：字典动态加载、旧配置回退和语言选择数据。
 - `packages/app/src/i18n/parity.test.ts`：校验 App、UI、Desktop renderer 源字典清单仅含四种语言。
 - `packages/desktop/src/renderer/i18n/index.ts`：Desktop 原生菜单字典加载。
+- `packages/console/app/src/lib/language.ts`、`packages/console/app/src/i18n/index.ts`：Console/Stats 共用 locale、系统语言检测和 Console 字典加载。
+- `packages/console/app/src/routes/index.tsx`、`packages/stats/app/src/i18n.ts`：首页营销文案和 Stats 字典的目标语言。
+- `packages/web/src/i18n/locales.ts`、`packages/web/astro.config.mjs`：文档站支持语言、路由与 Starlight 菜单。
+- `packages/console/app/src/lib/language.test.ts`、`packages/web/src/i18n/locales.test.ts`：验证支持语言清单、检测行为及资源目录。
 - `script/translate-app.ts`：受限的翻译目标和 `all` 展开范围。
 
 ### 验证方式
@@ -1957,4 +1963,6 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 与 `packages/desktop` 分别执行 `bun typecheck`。
 - 在 `packages/app` 执行 `bun run typecheck:e2e` 和 `bun run test:e2e e2e/regression/session-timeline-locale-projection.spec.ts`，验证受支持语言的界面文案仍能渲染。
 - 在 `packages/app` 执行 `bun run build`，确认生产构建只包含所支持语言的翻译 chunk。
+- 在 `packages/console/app` 和 `packages/stats/app` 执行 locale 单测、typecheck 与生产构建；官网运行时菜单和首页只提供四种语言。
+- 在 `packages/web` 执行 locale 单测与生产构建，确认 Starlight 只生成英文、简体中文、日文、韩文文档和索引。
 - 验证系统语言和旧持久化值均只能得到英文、简体中文、日文、韩文之一，设置页下拉选项也只有这四项。
