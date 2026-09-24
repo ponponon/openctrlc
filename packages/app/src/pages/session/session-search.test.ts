@@ -12,8 +12,10 @@ import {
   createSessionSearchHydrator,
   createSessionSearchRunGate,
   searchableText,
+  sessionSearchMatchFragment,
   sessionSearchMatchPartID,
   sessionSearchPartHits,
+  sessionSearchToolOutputHits,
   sessionSearchUserMessageHits,
 } from "./session-search"
 import { createHistoryAnchorRegistry } from "./timeline/history-anchor"
@@ -835,7 +837,7 @@ describe("sessionSearchMatchPartID", () => {
     ).toBe("answer-1")
   })
 
-  test("ignores matches outside text and reasoning parts", () => {
+  test("maps tool output hits to the tool part", () => {
     const parts = [
       part({
         type: "tool",
@@ -844,7 +846,7 @@ describe("sessionSearchMatchPartID", () => {
         state: {
           status: "completed",
           input: { command: "echo hi" },
-          output: "hi",
+          output: "needle in output",
           title: "Bash",
           metadata: {},
           time: { start: 1, end: 2 },
@@ -852,14 +854,25 @@ describe("sessionSearchMatchPartID", () => {
       }),
       part({ type: "text", id: "answer-1", text: "done" }),
     ]
-
+    // 文档串接：input 字符串 + output + title，用查询词定位到 output 字段。
+    const documents = createSessionSearchDocuments({
+      messages: [assistant("assistant-1")],
+      parts: () => parts,
+      scope: "all",
+    })
+    const match = findSessionSearchMatches(documents, "needle")[0]!
+    const fragment = sessionSearchMatchFragment({ parts, scope: "all", match })
+    expect(fragment).toEqual({ partID: "tool-1", field: "tool-output" })
+    expect(sessionSearchMatchPartID({ parts, scope: "all", match })).toBe("tool-1")
     expect(
-      sessionSearchMatchPartID({
+      sessionSearchToolOutputHits({
         parts,
         scope: "all",
-        match: { start: 0, end: 2 },
+        query: "needle",
+        partID: "tool-1",
+        active: match,
       }),
-    ).toBeUndefined()
+    ).toEqual([{ start: 0, end: 6, active: true }])
   })
 })
 

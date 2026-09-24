@@ -82,6 +82,7 @@ import {
   isActiveSearchMessage,
   sessionSearchMatchPartID,
   sessionSearchPartHits,
+  sessionSearchToolOutputHits,
   sessionSearchUserMessageHits,
   type SessionSearchScope,
 } from "@/pages/session/session-search"
@@ -97,6 +98,12 @@ import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
+import {
+  capturePendingOutputMark,
+  pendingOutputCount as countPendingOutput,
+  type PendingOutputMark,
+  type PendingOutputRow,
+} from "./pending-output"
 import { createSessionTimelineNavigatorEntries } from "./session-timeline-navigator-model"
 import { SessionTimelineNavigator } from "./session-timeline-navigator-view"
 import {
@@ -503,6 +510,8 @@ export function MessageTimeline(props: {
   let resizePinnedIndexes: number[] = []
   let resizePinFrame: number | undefined
   let virtualContent: HTMLDivElement | undefined
+  // measurementsCache 不是响应式 store，用 onChange tick 拉起“新输出”重算。
+  const [measureTick, setMeasureTick] = createSignal(0)
   const virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
     get count() {
       return timelineRows().length
@@ -545,6 +554,7 @@ export function MessageTimeline(props: {
     },
     overscan: 50,
     paddingEnd: 64,
+    onChange: () => setMeasureTick((tick) => tick + 1),
     rangeExtractor: (range) => {
       const id = activeMessageID()
       const active = id ? (messageLastRowIndex().get(id) ?? -1) : -1
@@ -574,33 +584,28 @@ export function MessageTimeline(props: {
     previousWorkingMessageID = currentWorkingMessageID
   })
 
-  // 离开底部时记下当时的末行与总高，用来估算“新输出”条数；历史 prepend 不会算进去。
-  const [pausedAt, setPausedAt] = createSignal<{ lastKey?: string; totalSize: number } | undefined>()
+  // 离开底部时记下当时的末行 key/高度，用来估算“新输出”条数；历史 prepend 不会算进去。
+  // 水位只在真正回到跟随时清除，避免 userScrolled 瞬时抖动丢掉计数。
+  const pendingRows = (): PendingOutputRow[] =>
+    timelineRows().map((row, index) => ({
+      key: TimelineRow.key(row),
+      size: virtualizer.measurementsCache[index]?.size ?? 0,
+    }))
+  const [pausedAt, setPausedAt] = createSignal<PendingOutputMark | undefined>()
   const pendingOutputCount = createMemo(() => {
-    const mark = pausedAt()
-    if (!mark) return 0
-    const rows = timelineRows()
-    let rowsAfter = 0
-    if (mark.lastKey) {
-      const index = rows.findIndex((row) => TimelineRow.key(row) === mark.lastKey)
-      rowsAfter = index >= 0 ? Math.max(0, rows.length - 1 - index) : rows.length
-    }
-    const grew = virtualizer.getTotalSize() > mark.totalSize + 24
-    return Math.max(rowsAfter, grew ? 1 : 0)
+    measureTick()
+    return countPendingOutput({
+      mark: pausedAt(),
+      rows: pendingRows(),
+    })
   })
   createEffect(() => {
-    if (!props.autoScrollPaused()) {
+    if (props.shouldAnchorBottom()) {
       setPausedAt(undefined)
       return
     }
-    setPausedAt((previous) => {
-      if (previous) return previous
-      const rows = timelineRows()
-      return {
-        lastKey: rows.length ? TimelineRow.key(rows[rows.length - 1]!) : undefined,
-        totalSize: virtualizer.getTotalSize(),
-      }
-    })
+    if (!props.autoScrollPaused()) return
+    setPausedAt((previous) => previous ?? capturePendingOutputMark({ rows: pendingRows() }))
   })
 
   const resizeItem = virtualizer.resizeItem
@@ -731,6 +736,18 @@ export function MessageTimeline(props: {
           stepsOpen[row.userMessageID] ??
           (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
         if (!open) setStepsOpen(row.userMessageID, true)
+      }
+      // 工具命中默认收起：先展开目标工具，输出区才有可测的命中节点。
+      if (searchMatch) {
+        const partID = sessionSearchMatchPartID({
+          parts: getMsgParts(searchMatch.messageID),
+          scope: props.searchScope ?? "conversation",
+          match: searchMatch,
+        })
+        const part = partID ? getMsgPart(searchMatch.messageID, partID) : undefined
+        if (part?.type === "tool" && partID && !(toolOpen[partID] ?? partDefaultOpen(part))) {
+          setToolOpen(partID, true)
+        }
       }
       virtualizer.scrollToIndex(index, { align: "center" })
 
@@ -1344,13 +1361,14 @@ export function MessageTimeline(props: {
       if (!item) return
       return partDefaultOpen(item, settings.general.shellToolPartsExpanded(), settings.general.editToolPartsExpanded())
     })
-    // 词级命中高亮只挂在会被搜索文档统计的 part 上：text 始终计入，reasoning 仅 scope=all 计入
+    // 词级命中高亮只挂在会被搜索文档统计的 part 上：text 始终计入，reasoning/tool 仅 scope=all 计入
     const highlightQuery = createMemo(() => {
       const item = part()
       const query = props.searchQuery
       if (!query || !item) return undefined
       if (item.type === "text") return query
       if (item.type === "reasoning" && props.searchScope === "all") return query
+      if (item.type === "tool" && props.searchScope === "all") return query
       return undefined
     })
     const highlightActiveIndex = createMemo(() => {
@@ -1358,17 +1376,30 @@ export function MessageTimeline(props: {
       const currentMessage = message()
       const query = props.searchQuery
       if (!item || !currentMessage || !query) return undefined
-      if (item.type !== "text" && item.type !== "reasoning") return undefined
       const active = props.activeSearchMatch?.messageID === currentMessage.id ? props.activeSearchMatch : undefined
-      const hits = sessionSearchPartHits({
-        parts: getMsgParts(currentMessage.id),
-        scope: props.searchScope ?? "conversation",
-        query,
-        partID: item.id,
-        active,
-      })
-      const index = hits.findIndex((hit) => hit.active)
-      return index >= 0 ? index : undefined
+      if (item.type === "text" || item.type === "reasoning") {
+        const hits = sessionSearchPartHits({
+          parts: getMsgParts(currentMessage.id),
+          scope: props.searchScope ?? "conversation",
+          query,
+          partID: item.id,
+          active,
+        })
+        const index = hits.findIndex((hit) => hit.active)
+        return index >= 0 ? index : undefined
+      }
+      if (item.type === "tool") {
+        const hits = sessionSearchToolOutputHits({
+          parts: getMsgParts(currentMessage.id),
+          scope: props.searchScope ?? "conversation",
+          query,
+          partID: item.id,
+          active,
+        })
+        const index = hits.findIndex((hit) => hit.active)
+        return index >= 0 ? index : undefined
+      }
+      return undefined
     })
 
     return (
@@ -1848,18 +1879,27 @@ export function MessageTimeline(props: {
           fallback={
             <button
               type="button"
-              aria-label={language.t("session.messages.jumpToLatest")}
-              class="pointer-events-auto flex items-center justify-center w-10 h-8 bg-transparent border-none cursor-pointer p-0 group"
+              aria-label={
+                pendingOutputCount() > 0
+                  ? language.plural("session.messages.newOutputs", pendingOutputCount())
+                  : language.t("session.messages.jumpToLatest")
+              }
+              class="pointer-events-auto flex items-center justify-center gap-1 h-8 px-1 bg-transparent border-none cursor-pointer p-0 group"
               onClick={props.onResumeScroll}
             >
               <div
-                class="flex items-center justify-center w-8 h-6 rounded-[6px] border border-border-weaker-base bg-[color-mix(in_srgb,var(--surface-raised-stronger-non-alpha)_80%,transparent)] backdrop-blur-[0.75px] transition-colors group-hover:border-[var(--border-weak-base)] group-hover:[--icon-base:var(--icon-hover)]"
+                class="flex items-center justify-center gap-1 min-w-8 h-6 px-1 rounded-[6px] border border-border-weaker-base bg-[color-mix(in_srgb,var(--surface-raised-stronger-non-alpha)_80%,transparent)] backdrop-blur-[0.75px] transition-colors group-hover:border-[var(--border-weak-base)] group-hover:[--icon-base:var(--icon-hover)]"
                 style={{
                   "box-shadow":
                     "0 51px 60px 0 rgba(0,0,0,0.10), 0 15px 18px 0 rgba(0,0,0,0.12), 0 6.386px 7.513px 0 rgba(0,0,0,0.12), 0 2.31px 2.717px 0 rgba(0,0,0,0.20)",
                 }}
               >
                 <Icon name="arrow-down-to-line" size="small" />
+                <Show when={pendingOutputCount() > 0}>
+                  <span data-slot="jump-latest-count" class="text-12-medium tabular-nums">
+                    {pendingOutputCount()}
+                  </span>
+                </Show>
               </div>
             </button>
           }

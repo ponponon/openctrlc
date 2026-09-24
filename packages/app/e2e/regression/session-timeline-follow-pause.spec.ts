@@ -59,6 +59,7 @@ test.describe("regression: session timeline follow pause", () => {
     await expect(count).toHaveText(/^[1-9]\d*$/)
 
     await count.locator("xpath=ancestor::button").click()
+
     await expect
       .poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 })
       .toBeLessThanOrEqual(2)

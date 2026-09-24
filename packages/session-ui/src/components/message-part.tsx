@@ -1533,6 +1533,35 @@ export interface ToolProps {
   onContentRendered?: () => void
   forceOpen?: boolean
   locked?: boolean
+  highlightQuery?: string
+  highlightActiveIndex?: number
+  onSearchActiveRange?: (range: Range | undefined) => void
+}
+
+function ToolOutputBody(props: {
+  text: string
+  highlightQuery?: string
+  highlightActiveIndex?: number
+  onSearchActiveRange?: (range: Range | undefined) => void
+}) {
+  const i18n = useI18n()
+  return (
+    <div
+      data-component="tool-output"
+      data-scrollable
+      tabIndex={0}
+      role="region"
+      aria-label={i18n.t("ui.scrollView.ariaLabel")}
+    >
+      <SearchTextHighlight
+        query={props.highlightQuery}
+        activeOccurrence={props.highlightActiveIndex}
+        onActiveRange={props.onSearchActiveRange}
+      >
+        <Markdown text={props.text} />
+      </SearchTextHighlight>
+    </div>
+  )
 }
 
 export type ToolComponent = Component<ToolProps>
@@ -1688,6 +1717,9 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
               deferContent={props.deferToolContent}
               virtualizeDiff={props.virtualizeDiff}
               onContentRendered={props.onContentRendered}
+              highlightQuery={props.highlightQuery}
+              highlightActiveIndex={props.highlightActiveIndex}
+              onSearchActiveRange={props.onSearchActiveRange}
             />
           </Match>
         </Switch>
@@ -1945,15 +1977,12 @@ ToolRegistry.register({
         trigger={{ title: i18n.t("ui.tool.list"), subtitle: getDirectory(props.input.path || "/") }}
       >
         <Show when={props.output}>
-          <div
-            data-component="tool-output"
-            data-scrollable
-            tabIndex={0}
-            role="region"
-            aria-label={i18n.t("ui.scrollView.ariaLabel")}
-          >
-            <Markdown text={props.output!} />
-          </div>
+          <ToolOutputBody
+            text={props.output!}
+            highlightQuery={props.highlightQuery}
+            highlightActiveIndex={props.highlightActiveIndex}
+            onSearchActiveRange={props.onSearchActiveRange}
+          />
         </Show>
       </BasicTool>
     )
@@ -1975,15 +2004,12 @@ ToolRegistry.register({
         }}
       >
         <Show when={props.output}>
-          <div
-            data-component="tool-output"
-            data-scrollable
-            tabIndex={0}
-            role="region"
-            aria-label={i18n.t("ui.scrollView.ariaLabel")}
-          >
-            <Markdown text={props.output!} />
-          </div>
+          <ToolOutputBody
+            text={props.output!}
+            highlightQuery={props.highlightQuery}
+            highlightActiveIndex={props.highlightActiveIndex}
+            onSearchActiveRange={props.onSearchActiveRange}
+          />
         </Show>
       </BasicTool>
     )
@@ -2008,15 +2034,12 @@ ToolRegistry.register({
         }}
       >
         <Show when={props.output}>
-          <div
-            data-component="tool-output"
-            data-scrollable
-            tabIndex={0}
-            role="region"
-            aria-label={i18n.t("ui.scrollView.ariaLabel")}
-          >
-            <Markdown text={props.output!} />
-          </div>
+          <ToolOutputBody
+            text={props.output!}
+            highlightQuery={props.highlightQuery}
+            highlightActiveIndex={props.highlightActiveIndex}
+            onSearchActiveRange={props.onSearchActiveRange}
+          />
         </Show>
       </BasicTool>
     )
@@ -2263,9 +2286,15 @@ ToolRegistry.register({
             role="region"
             aria-label={i18n.t("ui.scrollView.ariaLabel")}
           >
-            <pre data-slot="bash-pre">
-              <code>{text()}</code>
-            </pre>
+            <SearchTextHighlight
+              query={props.highlightQuery}
+              activeOccurrence={props.highlightActiveIndex}
+              onActiveRange={props.onSearchActiveRange}
+            >
+              <pre data-slot="bash-pre">
+                <code>{text()}</code>
+              </pre>
+            </SearchTextHighlight>
           </div>
         </div>
       </BasicTool>

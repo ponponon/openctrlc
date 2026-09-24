@@ -124,17 +124,151 @@ export function sessionSearchTextPartRange(input: { parts: Part[]; scope: Sessio
 
 export type SessionTextHit = { start: number; end: number; active?: boolean }
 
-// 把文档级命中偏移映射回 text/reasoning part，供时间线定位到真正包含命中的那一行。
+export type SessionSearchMatchField =
+  | { partID: string; field: "text" | "reasoning" }
+  | { partID: string; field: "tool-output" | "tool-error" | "tool-raw" | "tool-title" }
+
+// 把文档级命中偏移映射回具体 part/字段，供时间线定位到真正包含命中的那一行。
 export function sessionSearchMatchPartID(input: {
   parts: Part[]
   scope: SessionSearchScope
   match: { start: number; end: number }
 }): string | undefined {
+  return sessionSearchMatchFragment(input)?.partID
+}
+
+export function sessionSearchMatchFragment(input: {
+  parts: Part[]
+  scope: SessionSearchScope
+  match: { start: number; end: number }
+}): SessionSearchMatchField | undefined {
+  const seen = new WeakSet<object>()
+  const nodes = { value: 0 }
+  let length = 0
+  let first = true
   for (const part of input.parts) {
-    if (part.type !== "text" && part.type !== "reasoning") continue
-    const range = sessionSearchTextPartRange({ parts: input.parts, scope: input.scope, partID: part.id })
-    if (!range || range.end <= range.start) continue
-    if (input.match.start >= range.start && input.match.end <= range.end) return part.id
+    const remaining = () => MAX_SEARCH_DOCUMENT_LENGTH - length - (first ? 0 : 1)
+    for (const value of partText(part, input.scope, remaining, seen, nodes)) {
+      const prefix = first ? 0 : 1
+      const available = MAX_SEARCH_DOCUMENT_LENGTH - length - prefix
+      if (available <= 0) return undefined
+      const appended = value.slice(0, available)
+      const start = length + prefix
+      const end = start + appended.length
+      if (input.match.start >= start && input.match.end <= end) {
+        return matchFragmentField(part, value, appended, input.match.start - start, input.match.end - start)
+      }
+      length = end
+      first = false
+    }
+    if (length >= MAX_SEARCH_DOCUMENT_LENGTH) break
+  }
+  return undefined
+}
+
+function matchFragmentField(
+  part: Part,
+  value: string,
+  appended: string,
+  localStart: number,
+  localEnd: number,
+): SessionSearchMatchField | undefined {
+  if (part.type === "text" || part.type === "reasoning") return { partID: part.id, field: part.type }
+  if (part.type !== "tool") return undefined
+  const state = part.state
+  if (state.status === "completed" && value === state.output) {
+    return { partID: part.id, field: "tool-output" }
+  }
+  if (state.status === "completed" && value === state.title) {
+    return { partID: part.id, field: "tool-title" }
+  }
+  if (state.status === "error" && value === state.error) {
+    return { partID: part.id, field: "tool-error" }
+  }
+  if (state.status === "pending" && value === state.raw) {
+    return { partID: part.id, field: "tool-raw" }
+  }
+  // 输入对象里的字符串没有独立字段名；仍归属该 tool part，便于展开工具行。
+  void appended
+  void localStart
+  void localEnd
+  return { partID: part.id, field: state.status === "completed" ? "tool-output" : "tool-raw" }
+}
+
+// 计算某个工具输出/错误文本里的词级命中；active 标记当前正在查看的那一处。
+export function sessionSearchToolOutputHits(input: {
+  parts: Part[]
+  scope: SessionSearchScope
+  query: string
+  partID: string
+  active?: { start: number; end: number }
+}): SessionTextHit[] {
+  const target = input.parts.find((part) => part.id === input.partID)
+  if (!target || target.type !== "tool" || !input.query) return []
+  const state = target.state
+  const text =
+    state.status === "completed"
+      ? (state.output ?? "")
+      : state.status === "error"
+        ? (state.error ?? "")
+        : state.status === "pending"
+          ? (state.raw ?? "")
+          : ""
+  if (!text) return []
+
+  const fragment = input.active
+    ? sessionSearchMatchFragment({ parts: input.parts, scope: input.scope, match: input.active })
+    : undefined
+  const activeStart =
+    fragment && fragment.partID === input.partID && isToolBodyField(fragment.field) && input.active
+      ? input.active.start - (toolBodyDocumentStart(input) ?? 0)
+      : -1
+  const activeEnd =
+    fragment && fragment.partID === input.partID && isToolBodyField(fragment.field) && input.active
+      ? input.active.end - (toolBodyDocumentStart(input) ?? 0)
+      : -1
+  return findTextMatches(text, input.query.toLocaleLowerCase()).map((hit) => ({
+    ...hit,
+    active: hit.start === activeStart && hit.end === activeEnd,
+  }))
+}
+
+function isToolBodyField(field: SessionSearchMatchField["field"]) {
+  return field === "tool-output" || field === "tool-error" || field === "tool-raw"
+}
+
+function toolBodyDocumentStart(input: { parts: Part[]; scope: SessionSearchScope; partID: string }) {
+  const target = input.parts.find((part) => part.id === input.partID)
+  if (!target || target.type !== "tool") return undefined
+  const state = target.state
+  const text =
+    state.status === "completed"
+      ? (state.output ?? "")
+      : state.status === "error"
+        ? (state.error ?? "")
+        : state.status === "pending"
+          ? (state.raw ?? "")
+          : ""
+  if (!text) return undefined
+
+  const seen = new WeakSet<object>()
+  const nodes = { value: 0 }
+  let length = 0
+  let first = true
+  for (const part of input.parts) {
+    const remaining = () => MAX_SEARCH_DOCUMENT_LENGTH - length - (first ? 0 : 1)
+    for (const value of partText(part, input.scope, remaining, seen, nodes)) {
+      const prefix = first ? 0 : 1
+      const available = MAX_SEARCH_DOCUMENT_LENGTH - length - prefix
+      if (available <= 0) return undefined
+      const appended = value.slice(0, available)
+      const start = length + prefix
+      const end = start + appended.length
+      if (part.id === input.partID && value === text) return start
+      length = end
+      first = false
+    }
+    if (length >= MAX_SEARCH_DOCUMENT_LENGTH) break
   }
   return undefined
 }
