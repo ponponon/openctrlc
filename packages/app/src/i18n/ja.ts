@@ -785,6 +785,8 @@ export const dict = {
   "session.messages.loadEarlier": "以前のメッセージを読み込む",
   "session.messages.loading": "メッセージを読み込み中...",
   "session.messages.jumpToLatest": "最新へジャンプ",
+  "session.messages.newOutputs.one": "新しい出力 {{count}} 件",
+  "session.messages.newOutputs.other": "新しい出力 {{count}} 件",
   "session.context.addToContext": "{{selection}}をコンテキストに追加",
   "session.todo.title": "ToDo",
   "session.todo.collapse": "折りたたむ",

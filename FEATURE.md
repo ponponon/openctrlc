@@ -1939,17 +1939,22 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 时间线滚动事件始终同步“是否在底部”，不再要求 250ms 手势窗口；滚动条、触控板惯性、键盘和虚拟列表校正都能暂停/恢复跟随。
 - 虚拟列表的 `anchorTo` / `followOnAppend` 跟随 `shouldAnchorBottom()`：只有仍在底部时才 end 吸底并在 append 时滚到底；离开底部后改为 start 锚定，仅对视口上方的行高变化做阅读位置补偿。
 - “跳转到最新”按钮在离开底部超过 32px 时显示（原先要超过一屏），方便暂停跟随时随时回底。
+- 距底吸底容差从 80px 收紧到 24px，减少“只上滑一点就被拽回”的边界体感。
+- 暂停跟随时按钮旁显示“新输出”条数：以暂停时刻的末行 key 与总高为基准，统计之后新增的虚拟行或行高增长；历史 prepend 不会误计。
 - 会话级 `follow` 持久化意图与 `followBottom()` 判定保持不变。
 
 ### 代码位置
 
-- `packages/app/src/pages/session/timeline/message-timeline.tsx`：动态 `anchorTo`/`followOnAppend`，滚动时始终上报位置状态。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：动态 `anchorTo`/`followOnAppend`，滚动时始终上报位置状态，暂停时估算新输出条数。
 - `packages/app/src/pages/session.tsx`：放宽“跳转到最新”显示阈值。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`、`packages/app/src/context/language.tsx`：`session.messages.newOutputs` 复数文案。
+- `packages/app/e2e/regression/session-timeline-follow-pause.spec.ts`：回归“上滚后新输出不抢滚动，并可点计数回底”。
 
 ### 验证方式
 
-- 在 `packages/app` 执行 `bun typecheck`。
-- 手动验证：长回复流式输出时向上滚到历史区，新 Shell/文本到达后视口不动；滚回底部或点“跳转到最新”后恢复跟随；在底部附近（<80px）暂停再继续输出时不再被硬拽。
+- 在 `packages/app` 执行 `bun typecheck`、`bun run typecheck:e2e` 与 i18n parity 测试。
+- 在 `packages/app` 执行 `bun run test:e2e e2e/regression/session-timeline-follow-pause.spec.ts`。
+- 手动验证：长回复流式输出时向上滚到历史区，新 Shell/文本到达后视口不动；按钮出现新输出计数；滚回底部或点“跳转到最新”后恢复跟随。
 
 ## 产品界面与公开文档仅支持四种语言
 

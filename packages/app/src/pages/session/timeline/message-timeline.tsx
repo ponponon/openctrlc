@@ -538,7 +538,8 @@ export function MessageTimeline(props: {
     get followOnAppend() {
       return props.shouldAnchorBottom() ? (true as const) : (false as const)
     },
-    scrollEndThreshold: 80,
+    // 距底容差从 80px 收紧到 24px，减少“只上滑一点就被拽回”的边界体感。
+    scrollEndThreshold: 24,
     get scrollMargin() {
       return showHeader() ? 64 : 0
     },
@@ -571,6 +572,35 @@ export function MessageTimeline(props: {
       setStepsOpen(previousWorkingMessageID, false)
     }
     previousWorkingMessageID = currentWorkingMessageID
+  })
+
+  // 离开底部时记下当时的末行与总高，用来估算“新输出”条数；历史 prepend 不会算进去。
+  const [pausedAt, setPausedAt] = createSignal<{ lastKey?: string; totalSize: number } | undefined>()
+  const pendingOutputCount = createMemo(() => {
+    const mark = pausedAt()
+    if (!mark) return 0
+    const rows = timelineRows()
+    let rowsAfter = 0
+    if (mark.lastKey) {
+      const index = rows.findIndex((row) => TimelineRow.key(row) === mark.lastKey)
+      rowsAfter = index >= 0 ? Math.max(0, rows.length - 1 - index) : rows.length
+    }
+    const grew = virtualizer.getTotalSize() > mark.totalSize + 24
+    return Math.max(rowsAfter, grew ? 1 : 0)
+  })
+  createEffect(() => {
+    if (!props.autoScrollPaused()) {
+      setPausedAt(undefined)
+      return
+    }
+    setPausedAt((previous) => {
+      if (previous) return previous
+      const rows = timelineRows()
+      return {
+        lastKey: rows.length ? TimelineRow.key(rows[rows.length - 1]!) : undefined,
+        totalSize: virtualizer.getTotalSize(),
+      }
+    })
   })
 
   const resizeItem = virtualizer.resizeItem
@@ -1836,8 +1866,12 @@ export function MessageTimeline(props: {
         >
           <button
             type="button"
-            aria-label={language.t("session.messages.jumpToLatest")}
-            class="pointer-events-auto flex items-center justify-center w-8 h-7 px-2 py-1.5 rounded-lg border-none cursor-pointer text-v2-text-text-base backdrop-blur-[2px]"
+            aria-label={
+              pendingOutputCount() > 0
+                ? language.plural("session.messages.newOutputs", pendingOutputCount())
+                : language.t("session.messages.jumpToLatest")
+            }
+            class="pointer-events-auto flex items-center justify-center gap-1 h-7 px-2 py-1.5 rounded-lg border-none cursor-pointer text-v2-text-text-base backdrop-blur-[2px]"
             style={{
               background: "color-mix(in srgb, var(--v2-background-bg-base) 92%, transparent)",
               "box-shadow": "var(--v2-elevation-raised), 0px 2px 8px var(--v2-background-bg-base)",
@@ -1851,6 +1885,11 @@ export function MessageTimeline(props: {
                 stroke-linecap="square"
               />
             </svg>
+            <Show when={pendingOutputCount() > 0}>
+              <span data-slot="jump-latest-count" class="text-12-medium tabular-nums">
+                {pendingOutputCount()}
+              </span>
+            </Show>
           </button>
         </Show>
       </div>
