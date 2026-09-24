@@ -1905,12 +1905,13 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ## 应用界面仅支持四种语言
 
-将 OpenCtrlC App 与 Desktop 原生界面的运行时语言统一收敛为英文、简体中文、日文、韩文；根目录 README 同样只保留这四种版本。旧 locale 字典可暂留源码中，但不得出现在选择器、系统语言自动匹配、桌面原生字典加载或翻译脚本的目标列表中。
+将 OpenCtrlC App 与 Desktop 原生界面的运行时语言统一收敛为英文、简体中文、日文、韩文；根目录 README 同样只保留这四种版本。App、共享 UI 和 Desktop renderer 源码目录也只保留这四种 locale 字典，不得在选择器、系统语言自动匹配、桌面原生字典加载或翻译脚本目标列表中出现其他语言。
 
 ### 实现范围
 
 - 应用语言设置和快捷键循环只暴露 `en`、`zh`、`ja`、`ko`；存储的旧语言值自动回退为英文，系统繁体中文 locale 归到简体中文。
-- App、UI 和 Desktop renderer 只加载这四种语言；未被支持的 locale 字典保持未引用，避免进入运行时包。
+- App、UI 和 Desktop renderer 只保留并加载这四种语言的字典源码，其他 locale 字典已清理。
+- App、UI 和 Desktop renderer 的 locale 源文件只保留 `en`、`zh`、`ja`、`ko`，由 parity 测试检查三处目录清单一致。
 - 翻译脚本只接受 `zh`、`ja`、`ko`，`all` 被限制在这三种非英文语言。
 - 桌面原生菜单翻译包和 IPC 校验使用同一语言清单。
 
@@ -1918,6 +1919,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - `packages/app/src/i18n/desktop-native.ts`：统一 locale 清单、标签、系统语言检测和原生翻译包校验。
 - `packages/app/src/context/language.tsx`：字典动态加载、旧配置回退和语言选择数据。
+- `packages/app/src/i18n/parity.test.ts`：校验 App、UI、Desktop renderer 源字典清单仅含四种语言。
 - `packages/desktop/src/renderer/i18n/index.ts`：Desktop 原生菜单字典加载。
 - `script/translate-app.ts`：受限的翻译目标和 `all` 展开范围。
 
@@ -1926,4 +1928,6 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/i18n/desktop-native.test.ts ./src/i18n/parity.test.ts ./src/context/language.test.ts`。
 - 在 `packages/opencode` 执行 `bun test ../../script/translate-app.test.ts`。
 - 在 `packages/app` 与 `packages/desktop` 分别执行 `bun typecheck`。
+- 在 `packages/app` 执行 `bun run typecheck:e2e` 和 `bun run test:e2e e2e/regression/session-timeline-locale-projection.spec.ts`，验证受支持语言的界面文案仍能渲染。
+- 在 `packages/app` 执行 `bun run build`，确认生产构建只包含所支持语言的翻译 chunk。
 - 验证系统语言和旧持久化值均只能得到英文、简体中文、日文、韩文之一，设置页下拉选项也只有这四项。

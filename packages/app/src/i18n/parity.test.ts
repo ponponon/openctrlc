@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { readdir } from "node:fs/promises"
 import { DESKTOP_NATIVE_LOCALES, desktopNativePluralCategories } from "./desktop-native"
 import { dict as english } from "./en"
 import { Brand } from "@openctrlc/identity"
@@ -37,6 +38,19 @@ const domains = [
 ] as const
 
 describe("i18n parity", () => {
+  test("source dictionaries only retain supported product locales", async () => {
+    const directories = [
+      new URL("./", import.meta.url),
+      new URL("../../../ui/src/i18n/", import.meta.url),
+      new URL("../../../desktop/src/renderer/i18n/", import.meta.url),
+    ]
+    const sources = await Promise.all(directories.map((directory) => readdir(directory)))
+    const expected = DESKTOP_NATIVE_LOCALES.map((locale) => `${locale}.ts`).sort()
+    for (const files of sources) {
+      expect(files.filter((file) => /^[a-z]{2,3}\.ts$/.test(file)).sort()).toEqual(expected)
+    }
+  })
+
   test("WSL product-owned values use the OpenCtrlC identity", async () => {
     const keys = Object.keys(english).filter(
       (key) => key.startsWith("wsl.onboarding.") || key.startsWith("desktop.wsl.error."),
