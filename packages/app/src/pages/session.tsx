@@ -699,7 +699,7 @@ export default function Page() {
         ? sync().data.message[params.id]?.find((item) => item.id === match.messageID)
         : undefined
       const userMessageID = message?.role === "assistant" ? message.parentID : match.messageID
-      requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID, match.messageID)))
+      requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID, match)))
     }
   }
 
@@ -739,7 +739,7 @@ export default function Page() {
         ) {
           const message = sync().data.message[id]?.find((item) => item.id === nextMatch.messageID)
           const userMessageID = message?.role === "assistant" ? message.parentID : nextMatch.messageID
-          requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID, nextMatch.messageID)))
+          requestAnimationFrame(() => requestAnimationFrame(() => revealMessage(userMessageID, nextMatch)))
         }
       },
       { defer: true },
@@ -1063,7 +1063,7 @@ export default function Page() {
   let scroller: HTMLDivElement | undefined
   let scrollerOwner: string | undefined
   let content: HTMLDivElement | undefined
-  let revealMessage = (_id: string, _searchMessageID?: string) => {}
+  let revealMessage = (_id: string, _searchMatch?: { messageID: string; start: number; end: number }) => {}
   let scrollToEnd = () => {}
   let scrollMark = 0
   let messageMark = 0
@@ -2272,6 +2272,7 @@ export default function Page() {
     scroller: () => scroller,
     anchor,
     revealMessage: (id) => revealMessage(id),
+
     scheduleScrollState,
     consumePendingMessage: layout.pendingMessage.consume,
   })

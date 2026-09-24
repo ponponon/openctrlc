@@ -80,6 +80,7 @@ import { useTabs } from "@/context/tabs"
 import { legacySessionHref, requireServerKey, sessionHref } from "@/utils/session-route"
 import {
   isActiveSearchMessage,
+  sessionSearchMatchPartID,
   sessionSearchPartHits,
   sessionSearchUserMessageHits,
   type SessionSearchScope,
@@ -312,7 +313,9 @@ export function MessageTimeline(props: {
   setContentRef: (el: HTMLDivElement) => void
   userMessages: UserMessage[]
   anchor: (id: string) => string
-  setRevealMessage?: (fn: (id: string, searchMessageID?: string) => void) => void
+  setRevealMessage?: (
+    fn: (id: string, searchMatch?: { messageID: string; start: number; end: number }) => void,
+  ) => void
   activeSearchMessageID?: string
   searchQuery?: string
   searchScope?: SessionSearchScope
@@ -343,6 +346,7 @@ export function MessageTimeline(props: {
   const [listRoot, setListRoot] = createSignal<HTMLDivElement>()
   let activeSearchRange: { messageID: string; range: Range } | undefined
   let activeSearchReveal: symbol | undefined
+  let searchHitRowIndex = -1
   const sessionID = createMemo(() => params.id)
   const sessionStatus = createMemo(() => {
     const id = sessionID()
@@ -540,9 +544,14 @@ export function MessageTimeline(props: {
       const active = id ? (messageLastRowIndex().get(id) ?? -1) : -1
       const searchID = props.activeSearchMessageID
       const indexes = defaultRangeExtractor({ ...range, overscan: renderOverscan() })
-      const fixed = [...new Set([...resizePinnedIndexes, ...indexes, ...(active < 0 ? [] : [active])])].sort(
-        (a, b) => a - b,
-      )
+      const fixed = [
+        ...new Set([
+          ...resizePinnedIndexes,
+          ...indexes,
+          ...(active < 0 ? [] : [active]),
+          ...(searchHitRowIndex < 0 ? [] : [searchHitRowIndex]),
+        ]),
+      ].sort((a, b) => a - b)
       return filterVirtualIndexes(
         includeUserMessageRow(fixed, searchID, userMessageRowIndex(), range.count),
         range.count,
@@ -616,40 +625,105 @@ export function MessageTimeline(props: {
       },
     }),
   )
+  const rowIncludesSearchMatch = (
+    row: TimelineRow.TimelineRow,
+    messageID: string,
+    partID: string | undefined,
+    exactPart: boolean,
+  ) => {
+    if (row._tag === "UserMessage") return row.userMessageID === messageID
+    if (row._tag === "AssistantPart") {
+      if (row.group.type !== "part" || row.group.ref.messageID !== messageID) return false
+      return !exactPart || !partID || row.group.ref.partID === partID
+    }
+    if (row._tag === "AssistantSteps") {
+      return row.groups.some((group) => {
+        if (group.type === "part") {
+          return group.ref.messageID === messageID && (!exactPart || !partID || group.ref.partID === partID)
+        }
+        return group.refs.some(
+          (ref) => ref.messageID === messageID && (!exactPart || !partID || ref.partID === partID),
+        )
+      })
+    }
+    return false
+  }
+
+  const findSearchRowIndex = (match: { messageID: string; start: number; end: number } | undefined) => {
+    const rows = timelineRows()
+    const messageID = match?.messageID
+    if (!messageID) return -1
+    const partID = match
+      ? sessionSearchMatchPartID({
+          parts: getMsgParts(messageID),
+          scope: props.searchScope ?? "conversation",
+          match,
+        })
+      : undefined
+    const exact = rows.findIndex((row) => rowIncludesSearchMatch(row, messageID, partID, true))
+    if (exact >= 0) return exact
+    return rows.findIndex((row) => rowIncludesSearchMatch(row, messageID, partID, false))
+  }
+
+  const measureSearchHitRect = (root: HTMLElement, searchMessageID: string) => {
+    const range = activeSearchRange?.messageID === searchMessageID ? activeSearchRange.range : undefined
+    const rowEl = searchHitRowIndex >= 0 ? root.querySelector<HTMLElement>(`[data-index="${searchHitRowIndex}"]`) : null
+    const hitScope = rowEl ?? root
+    const hits = [...hitScope.querySelectorAll<HTMLElement>("[data-search-hit-active]")]
+    if (hits.length > 0) {
+      const rects = hits.map((hit) => hit.getBoundingClientRect()).filter((rect) => rect.height > 0)
+      if (rects.length === 0) return range?.getBoundingClientRect()
+      const top = Math.min(...rects.map((rect) => rect.top))
+      const bottom = Math.max(...rects.map((rect) => rect.bottom))
+      const left = Math.min(...rects.map((rect) => rect.left))
+      const right = Math.max(...rects.map((rect) => rect.right))
+      return { top, bottom, left, right, height: bottom - top, width: right - left }
+    }
+    return range?.getBoundingClientRect()
+  }
+
   createEffect(() => {
-    props.setRevealMessage?.((id, searchMessageID) => {
-      const searchIndex = searchMessageID
-        ? timelineRows().findIndex((row) => {
-            if (row._tag === "UserMessage") return row.userMessageID === searchMessageID
-            if (row._tag === "AssistantPart")
-              return row.group.type === "part" && row.group.ref.messageID === searchMessageID
-            if (row._tag === "AssistantSteps")
-              return row.groups.some((group) => group.type === "part" && group.ref.messageID === searchMessageID)
-            return false
-          })
-        : -1
+    props.setRevealMessage?.((id, searchMatch) => {
+      const searchMessageID = searchMatch?.messageID
+      const searchIndex = findSearchRowIndex(searchMatch)
+      searchHitRowIndex = searchIndex
       const index = searchIndex >= 0 ? searchIndex : userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
       if (index === undefined) return
+
+      const row = searchIndex >= 0 ? timelineRows()[searchIndex] : undefined
+      if (row?._tag === "AssistantSteps") {
+        const open =
+          stepsOpen[row.userMessageID] ??
+          (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
+        if (!open) setStepsOpen(row.userMessageID, true)
+      }
       virtualizer.scrollToIndex(index, { align: "center" })
 
       if (!searchMessageID) return
       const token = Symbol()
       activeSearchReveal = token
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          if (activeSearchReveal !== token) return
-          const root = listRoot()
-          if (!root) return
-          const hit = root.querySelector<HTMLElement>("[data-search-hit-active]")
-          const range = activeSearchRange?.messageID === searchMessageID ? activeSearchRange.range : undefined
-          const rect = hit?.getBoundingClientRect() ?? range?.getBoundingClientRect()
-          if (rect && rect.height > 0) {
-            const viewport = root.getBoundingClientRect()
-            root.scrollTop += rect.top + rect.height / 2 - (viewport.top + root.clientTop + root.clientHeight / 2)
+      let attempt = 0
+      const centerActiveHit = () => {
+        if (activeSearchReveal !== token) return
+        const root = listRoot()
+        if (!root) return
+        const rect = measureSearchHitRect(root, searchMessageID)
+        if (!rect || rect.height <= 0) {
+          // 虚拟行挂载、markdown 渲染和 Custom Highlight 重建都可能晚于一帧；
+          // 多等几帧再测量，避免当前命中落在视口底部。
+          attempt += 1
+          if (attempt < 8) {
+            requestAnimationFrame(centerActiveHit)
+            return
           }
           activeSearchReveal = undefined
-        }),
-      )
+          return
+        }
+        const viewport = root.getBoundingClientRect()
+        root.scrollTop += rect.top + rect.height / 2 - (viewport.top + root.clientTop + root.clientHeight / 2)
+        activeSearchReveal = undefined
+      }
+      requestAnimationFrame(() => requestAnimationFrame(centerActiveHit))
     })
     props.setScrollToEnd?.(() => virtualizer.scrollToEnd())
     props.setHistoryAnchor?.({ capture: (kind) => anchorRegistry.capture(kind) })
@@ -1281,14 +1355,11 @@ export function MessageTimeline(props: {
                 onContentRendered={onSizeChange}
                 highlightQuery={highlightQuery()}
                 highlightActiveIndex={highlightActiveIndex()}
-                onSearchActiveRange={
-                  highlightActiveIndex() === undefined
-                    ? undefined
-                    : (range) => {
-                        const messageID = message().id
-                        activeSearchRange = range ? { messageID, range } : undefined
-                      }
-                }
+                onSearchActiveRange={(range) => {
+                  // 只有当前活动 part 才允许写入，避免同消息其他 part 的空扫描清掉 Range。
+                  if (highlightActiveIndex() === undefined) return
+                  activeSearchRange = range ? { messageID: message().id, range } : undefined
+                }}
               />
             )}
           </Show>

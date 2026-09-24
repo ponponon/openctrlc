@@ -124,6 +124,21 @@ export function sessionSearchTextPartRange(input: { parts: Part[]; scope: Sessio
 
 export type SessionTextHit = { start: number; end: number; active?: boolean }
 
+// 把文档级命中偏移映射回 text/reasoning part，供时间线定位到真正包含命中的那一行。
+export function sessionSearchMatchPartID(input: {
+  parts: Part[]
+  scope: SessionSearchScope
+  match: { start: number; end: number }
+}): string | undefined {
+  for (const part of input.parts) {
+    if (part.type !== "text" && part.type !== "reasoning") continue
+    const range = sessionSearchTextPartRange({ parts: input.parts, scope: input.scope, partID: part.id })
+    if (!range || range.end <= range.start) continue
+    if (input.match.start >= range.start && input.match.end <= range.end) return part.id
+  }
+  return undefined
+}
+
 // 计算某个文本 part 里的词级命中；active 标记当前正在查看的那一处命中。
 // 命中偏移来自完整搜索文档，因此这里先换算成 part 内的局部偏移。
 export function sessionSearchPartHits(input: {

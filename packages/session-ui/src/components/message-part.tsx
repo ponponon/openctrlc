@@ -1511,6 +1511,7 @@ export function Part(props: MessagePartProps) {
         useV2Actions={props.useV2Actions}
         highlightQuery={props.highlightQuery}
         highlightActiveIndex={props.highlightActiveIndex}
+        onSearchActiveRange={props.onSearchActiveRange}
       />
     </Show>
   )

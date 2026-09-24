@@ -1969,21 +1969,26 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ## 会话搜索将当前命中居中显示
 
-使用搜索栏的上下键、前后按钮或 Enter 切换结果时，时间线先滚动到命中所在的消息行，再将当前词级命中放到滚动视口中央，避免长回复中的命中留在底部输入框后方。首条和末条结果受时间线自然滚动边界约束。
+使用搜索栏的上下键、前后按钮或 Enter 切换结果时，时间线先滚动到命中所在的虚拟行，再将当前词级命中放到滚动视口中央，避免长回复中的命中留在底部输入框后方。首条和末条结果受时间线自然滚动边界约束。
 
 ### 实现范围
 
-- 搜索导航同时传递命中消息 ID 和所属用户回合 ID；虚拟时间线优先挂载命中所在的用户消息、助手消息或助手步骤行。
-- 用户消息命中通过词级标记测量；助手文本与推理命中通过 Custom Highlight 使用的同一个 DOM Range 测量，并相对实际时间线视口居中。
+- 搜索导航传递完整命中（messageID + start/end）；`sessionSearchMatchPartID` 把文档偏移映射回 text/reasoning part，时间线优先挂载真正包含命中的 UserMessage / AssistantPart / AssistantSteps 行。
+- 命中落在收起的 `AssistantSteps` 时自动展开该步骤区再测量。
+- 用户消息命中在目标行内合并所有 `[data-search-hit-active]` 片段后居中；助手文本与推理命中通过 Custom Highlight 的同一 DOM Range 测量，并相对实际时间线视口居中。
+- 行挂载、markdown 渲染和 Highlight 重建晚于一帧时，最多重试 8 帧再测量；虚拟 rangeExtractor 会钉住当前命中行。
+- `Part` 必须把 `onSearchActiveRange` 透传给具体 part 组件；只有活动 part 可写入 Range，避免同消息其他 part 的空扫描清掉测量值。
 - 普通会话导航仍沿用原消息定位方式，不改变搜索范围、结果顺序或高亮样式。
 
 ### 代码位置
 
-- `packages/app/src/pages/session.tsx`：将当前搜索结果消息 ID 传给时间线定位。
-- `packages/app/src/pages/session/timeline/message-timeline.tsx`：定位虚拟行并将当前命中 Range 对齐至视口中央。
-- `packages/session-ui/src/components/search-highlight.tsx`、`packages/session-ui/src/components/message-part.tsx`：向时间线提供助手文本/推理的活动命中 Range。
+- `packages/app/src/pages/session.tsx`：把当前搜索命中（含偏移）传给时间线定位。
+- `packages/app/src/pages/session/session-search.ts`：`sessionSearchMatchPartID` 映射命中到 part。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：定位虚拟行、展开步骤、测量并居中当前命中。
+- `packages/session-ui/src/components/search-highlight.tsx`、`packages/session-ui/src/components/message-part.tsx`：向时间线提供助手文本/推理的活动命中 Range，并保证 `Part` 透传回调。
 
 ### 验证方式
 
-- 手动检查用户消息、短助手回复和长助手回复中的当前命中均显示在输入框上方的时间线视口中央。
+- 执行 `packages/app` 的 `bun test src/pages/session/session-search.test.ts` 与 `bun typecheck`，以及 `packages/session-ui` 的 `bun typecheck`。
+- 手动检查用户消息、短助手回复、长助手回复、以及收起步骤区内的命中均显示在输入框上方的时间线视口中央。
 - 连续用上下键切换同一条消息中的多个命中；检查会话开头和结尾的结果在滚动边界处仍可见。

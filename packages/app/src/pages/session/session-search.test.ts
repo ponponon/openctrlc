@@ -12,6 +12,7 @@ import {
   createSessionSearchHydrator,
   createSessionSearchRunGate,
   searchableText,
+  sessionSearchMatchPartID,
   sessionSearchPartHits,
   sessionSearchUserMessageHits,
 } from "./session-search"
@@ -808,6 +809,57 @@ describe("sessionSearchUserMessageHits", () => {
         textPartID: "missing",
       }),
     ).toEqual([])
+  })
+})
+
+describe("sessionSearchMatchPartID", () => {
+  test("maps a document hit to the text part that contains it", () => {
+    const parts = [
+      part({ type: "reasoning", id: "reasoning-1", text: "先想一下" }),
+      part({ type: "text", id: "answer-1", text: "你好，你好" }),
+    ]
+
+    expect(
+      sessionSearchMatchPartID({
+        parts,
+        scope: "all",
+        match: { start: 0, end: 2 },
+      }),
+    ).toBe("reasoning-1")
+    expect(
+      sessionSearchMatchPartID({
+        parts,
+        scope: "all",
+        match: { start: 8, end: 10 },
+      }),
+    ).toBe("answer-1")
+  })
+
+  test("ignores matches outside text and reasoning parts", () => {
+    const parts = [
+      part({
+        type: "tool",
+        id: "tool-1",
+        tool: "bash",
+        state: {
+          status: "completed",
+          input: { command: "echo hi" },
+          output: "hi",
+          title: "Bash",
+          metadata: {},
+          time: { start: 1, end: 2 },
+        },
+      }),
+      part({ type: "text", id: "answer-1", text: "done" }),
+    ]
+
+    expect(
+      sessionSearchMatchPartID({
+        parts,
+        scope: "all",
+        match: { start: 0, end: 2 },
+      }),
+    ).toBeUndefined()
   })
 })
 
