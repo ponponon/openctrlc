@@ -119,15 +119,13 @@ export function SessionContextTab() {
   const { params, view } = useSessionLayout()
   const info = createMemo(() => (params.id ? sync().session.get(params.id) : undefined))
 
+  // Snapshot is write-once on the session; do not key off time.updated or any
+  // message-driven revision — that refetches under Suspense and flashes the panel.
   const [systemPromptSnapshot] = createResource(
-    () => {
-      const sessionID = params.id
-      if (!sessionID) return undefined
-      return { sessionID, client: sdk().client, revision: info()?.time.updated }
-    },
-    (input) =>
-      input.client.v2.session
-        .systemPromptSnapshot({ sessionID: input.sessionID })
+    () => params.id,
+    (sessionID) =>
+      sdk().client.v2.session
+        .systemPromptSnapshot({ sessionID })
         .then((result) => result.data?.data?.snapshot, () => undefined),
   )
 
@@ -190,7 +188,10 @@ export function SessionContextTab() {
     }
   })
 
-  const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages(), systemPromptSnapshot()))
+  // Prefer .latest so an in-flight refetch never re-enters Suspense while resolved.
+  const systemPrompt = createMemo(() =>
+    getSessionSystemPrompt(visibleUserMessages(), systemPromptSnapshot.latest),
+  )
   const [systemPromptState, setSystemPromptState] = createStore({ expanded: false })
 
   const systemPromptNeedsExpansion = createMemo(() => (systemPrompt()?.length ?? 0) > 800)

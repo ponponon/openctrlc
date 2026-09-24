@@ -170,7 +170,7 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 
 - 后端在完成系统提示词组装和插件变换后，仅当会话级快照尚不存在时，才将有效提示词写入 session 独立字段；不再把它复制到用户消息。后续回合、工具多步和 compaction 后仍动态组装提示词，但不会重复持久化。
 - 保留原有 `system` 字段作为用户输入的系统提示覆盖，避免下一轮请求重复拼接已组装的完整提示词。
-- 上下文面板通过会话级只读端点获取首次请求快照，不依赖当前已加载的消息分页；旧会话缺少 session 快照时读取最早的历史 `systemPrompt`，再回退到原有 `system` 内容。
+- 上下文面板通过会话级只读端点获取首次请求快照，不依赖当前已加载的消息分页；快照按 `sessionID` 只拉取一次，不把 `session.time.updated` 或其它消息驱动的 revision 绑进 `createResource` source，避免每次新消息都在 Suspense 下重取并整面板闪烁。读取时使用 `resource.latest`，已解析后的刷新不重新挂起 Suspense。旧会话缺少 session 快照时读取最早的历史 `systemPrompt`，再回退到原有 `system` 内容。
 - 数据库迁移把历史消息中的最早一份有效 `systemPrompt` 复制到 session 字段，不改写或删除历史消息；新逻辑不再向任何消息写入完整快照。
 - 面板注明这是首次模型请求的快照，后续日期、项目指令、Skills 或 MCP 配置变化不会自动重写它。
 - 系统提示词仍参与上下文细分的 System 统计，保证可读内容与 token 估算使用同一份数据。
@@ -1809,7 +1809,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 主进程扫描应用约定的数据目录，只返回实际存在的 `.db`、`.sqlite` 和 `.sqlite3` 文件，并忽略 SQLite 的 `-wal`、`-shm` 伴随文件。
 - Renderer 通过 preload 和受控 IPC 获取数据库路径，不直接访问本地文件系统。
-- 旧版和 V2 设置页都按文件名和完整路径列出数据库，并复用现有 Finder/File Explorer 定位能力。
+- 旧版和 V2 设置页都按文件名、用途说明和完整路径列出数据库；数据库用途按草稿、OpenCtrlC、OpenCode 和未知来源分类。
+- 定位按钮使用平台无关的“打开所在文件夹”文案，由系统默认文件管理器定位数据库文件，不暴露 Finder / File Explorer 等特定产品名称。
 - 数据目录按当前环境动态解析，兼容不同 Desktop 通道、历史 OpenCode 数据和开发版/正式版路径，不把数据库数量写死。
 
 ### 代码位置
@@ -1852,3 +1853,29 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/components/titlebar-tab-status.test.ts ./src/components/titlebar-tab-order.test.ts`。
 - 在 `packages/app` 执行 `bun typecheck` 和 `bun run build`。
 - 手动验证多个后台 session 并行完成时，每个未查看 tab 只显示一个头像角标；打开 tab 后角标消失；错误状态继续使用错误色；悬停预览和辅助技术仍能识别具体状态。
+
+## 会话 Tab 切换后恢复时间线滚动位置
+
+同一个工作区内切换会话 Tab 时，每个会话会保留自己的时间线滚动位置；离开前停留在底部（跟随最新消息）的会话，返回后仍然在底部。会话页面实例复用、时间线按会话卸载重建，因此位置必须按会话持久化，而不是依赖组件实例。
+
+### 实现范围
+
+- 会话级滚动状态同时保存偏移和是否跟随最新消息，`follow` 为可选字段：没有记录过意图的会话不会被当成“已暂停”。
+- 时间线挂载时按目标会话的偏移初始化虚拟列表；`follow` 为 `true` 时仍从底部开始。
+- 判断是否应该吸底统一走会话级持久化意图，不再让“URL 没有 `#message`”这类兜底路径强制吸底；否则恢复结果会被随后的强制滚动覆盖，并把 `follow` 回写成 `true`。
+- 锚定底部的判定直接读取持久化标志，不依赖需要若干帧才同步完成的镜像状态，避免挂载早期误判吸底。
+- 用户自己滚回底部后，跟随状态恢复为 `true`，下一次切回仍停留在底部。
+
+### 代码位置
+
+- `packages/app/src/context/layout-scroll.ts`：会话级滚动状态与 `follow` 标志的读写、防抖持久化。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：挂载时按会话偏移初始化虚拟列表，滚动时回写偏移和跟随状态。
+- `packages/app/src/pages/session/use-session-hash-scroll.ts`：仅在持久化意图为“跟随”时才执行无 hash / 找不到目标的兜底吸底。
+- `packages/app/src/pages/session.tsx`：`followBottom()` 统一判断是否应吸底，并据此同步恢复状态。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts ./src/context/layout-scroll.test.ts`。
+- 在 `packages/app` 执行 `bun x playwright test regression/session-timeline-scroll-restore.spec.ts`，覆盖恢复位置、保持跟随和滚回底部后恢复跟随三种情况。
+- 在 `packages/app` 执行 `bun typecheck` 和 `bun run typecheck:e2e`。
+- 手动验证：在长会话向上滚动后切到另一个 Tab 再切回，位置不变且首屏内容是同一段；连续切换多次不产生偏移漂移；滚回底部后再切走切回，仍然停在底部。
