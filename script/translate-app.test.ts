@@ -16,12 +16,12 @@ import {
 } from "./translate-app"
 
 describe("translate app", () => {
-  test("parses one locale with the public model defaults", () => {
+  test("defaults to MiMo Token Plan and the provider model variant", () => {
     expect(parseTranslationArgs(["fr"])).toEqual({
       target: "fr",
       concurrency: 1,
-      model: "opencode/gpt-5.5",
-      variant: "xhigh",
+      model: "xiaomi-token-plan-cn/mimo-v2.6-flash",
+      variant: undefined,
       dryRun: false,
       check: false,
       help: false,
@@ -197,6 +197,15 @@ opencode/next
       high: { reasoningEffort: "high" },
       xhigh: { reasoningEffort: "xhigh" },
     })
+  })
+
+  test("supports models that use their provider default variant", () => {
+    expect(
+      modelVariants(
+        'xiaomi-token-plan-cn/mimo-v2.6-flash\n{"name":"MiMo-V2.6-Flash"}\n',
+        "xiaomi-token-plan-cn/mimo-v2.6-flash",
+      ),
+    ).toEqual({})
   })
 
   test("disables side effects and scopes edits for the translation agent", () => {

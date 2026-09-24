@@ -88,8 +88,8 @@ export function parseTranslationArgs(args: string[]) {
     args,
     options: {
       concurrency: { type: "string", short: "c", default: "4" },
-      model: { type: "string", default: "opencode/gpt-5.5" },
-      variant: { type: "string", default: "xhigh" },
+      model: { type: "string", default: "xiaomi-token-plan-cn/mimo-v2.6-flash" },
+      variant: { type: "string" },
       "dry-run": { type: "boolean", default: false },
       check: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
@@ -190,7 +190,9 @@ export function modelVariants(output: string, model: string) {
   const rest = normalized.slice(start + marker.length)
   const next = rest.search(new RegExp(`^${escapeRegExp(provider)}/`, "m"))
   const metadata: unknown = JSON.parse((next < 0 ? rest : rest.slice(0, next)).trim())
-  if (!isRecord(metadata) || !isRecord(metadata.variants)) throw new Error(`Model variants not found: ${model}`)
+  if (!isRecord(metadata)) throw new Error(`Model metadata not found: ${model}`)
+  if (!Object.hasOwn(metadata, "variants")) return {}
+  if (!isRecord(metadata.variants)) throw new Error(`Model variants not found: ${model}`)
   return metadata.variants
 }
 
@@ -254,8 +256,8 @@ Synchronizes product app translations with the English app, UI, and desktop dict
 
 Options:
   -c, --concurrency <count>  Maximum parallel OpenCode runs for 'all' (default: 4)
-      --model <provider/id>  OpenCode model (default: opencode/gpt-5.5)
-      --variant <name>       Model variant (default: xhigh)
+      --model <provider/id>  OpenCode model (default: xiaomi-token-plan-cn/mimo-v2.6-flash)
+      --variant <name>       Optional model variant (default: provider setting)
       --dry-run              Report drift without running OpenCode
       --check                Exit nonzero when translation drift exists
   -h, --help                 Show this help message
@@ -279,8 +281,12 @@ Examples:
 
   const targets = pending.flatMap((plan) => plan.domains.map((domain) => domain.target))
   const baseline = await worktreeSnapshot()
-  const variant = await resolveModelVariant(options.model, options.variant)
-  console.log(`Resolved ${options.model} (${options.variant}): ${JSON.stringify(variant)}`)
+  const variantConfig = await resolveModelVariant(options.model, options.variant)
+  console.log(
+    options.variant
+      ? `Resolved ${options.model} (${options.variant}): ${JSON.stringify(variantConfig)}`
+      : `Using provider default variant for ${options.model}.`,
+  )
   const template = await commandTemplate()
   const results = await runPool(pending, options.concurrency, (plan) =>
     translate(plan, template, options.model, options.variant).catch((error) => ({
@@ -391,7 +397,7 @@ async function translate(
   plan: { locale: Locale; language: string; domains: Domain[] },
   template: string,
   model: string,
-  variant: string,
+  variant?: string,
 ) {
   const glossary = glossaryFile(plan.locale)
   const glossaryContent = (await Bun.file(path.join(root, glossary)).exists())
@@ -436,8 +442,7 @@ async function translate(
       agent,
       "--model",
       model,
-      "--variant",
-      variant,
+      ...(variant ? ["--variant", variant] : []),
       "--title",
       `Translate app ${plan.locale}`,
       "--format",
@@ -476,13 +481,16 @@ async function translate(
 
   const session: unknown = JSON.parse(exportResult[0])
   const observed = sessionModels(session)
-  const mismatch = observed.length === 0 || observed.some((item) => item.model !== model || item.variant !== variant)
+  const mismatch =
+    observed.length === 0 ||
+    observed.some((item) => item.model !== model || (variant !== undefined && item.variant !== variant))
   const actual = Array.from(new Set(observed.map((item) => `${item.model} (${item.variant ?? "default"})`))).join(", ")
+  const requested = variant ? `${model} (${variant})` : `${model} (provider default variant)`
   return {
     locale: plan.locale,
     stdout: `${textFromEvents(result[0])}\nVerified session model: ${actual}\n`,
     stderr: mismatch
-      ? `Requested ${model} (${variant}), but session used ${actual || "no assistant model"}.\n`
+      ? `Requested ${requested}, but session used ${actual || "no assistant model"}.\n`
       : result[1],
     code: mismatch ? 1 : 0,
   }
@@ -526,7 +534,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-async function resolveModelVariant(model: string, variant: string) {
+async function resolveModelVariant(model: string, variant?: string) {
   const provider = model.split("/")[0]
   if (!provider || !model.includes("/")) throw new Error(`Model must use provider/model syntax: ${model}`)
   const env = isolatedEnvironment()
@@ -541,6 +549,7 @@ async function resolveModelVariant(model: string, variant: string) {
   const result = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited])
   if (result[2] !== 0) throw new Error(result[1] || `Unable to resolve model: ${model}`)
   const variants = modelVariants(result[0], model)
+  if (variant === undefined) return
   if (!Object.hasOwn(variants, variant)) throw new Error(`Variant '${variant}' is not configured for ${model}.`)
   return variants[variant]
 }

@@ -1854,6 +1854,29 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun typecheck` 和 `bun run build`。
 - 手动验证多个后台 session 并行完成时，每个未查看 tab 只显示一个头像角标；打开 tab 后角标消失；错误状态继续使用错误色；悬停预览和辅助技术仍能识别具体状态。
 
+## 应用翻译脚本默认使用 MiMo
+
+### 功能目标
+
+让应用多语言同步脚本默认使用用户已配置的 Xiaomi Token Plan `mimo-v2.6-flash`，同时仍支持通过参数覆盖模型。
+
+### 实现范围
+
+- 默认模型设为 `xiaomi-token-plan-cn/mimo-v2.6-flash`，显式 `--model <provider/id>` 仍可覆盖。
+- 默认不强制指定模型变体，使用 OpenCode provider 对该模型的默认设置；需要时可用 `--variant <name>` 显式指定并验证。
+- 导出会话后继续核验实际使用的模型；只有显式指定变体时才要求变体也完全匹配。
+- 注意：Token Plan 官方条款对自动化脚本和非编程用途有限制；实际使用前需确认调用场景符合套餐范围。
+
+### 代码位置
+
+- `script/translate-app.ts`：默认模型、可选变体和会话模型核验。
+- `script/translate-app.test.ts`：默认参数及 provider 默认变体测试。
+
+### 验证方式
+
+- 在 `packages/opencode` 执行 `bun test ../../script/translate-app.test.ts`。
+- 执行 `git diff --check`；手动检查 OpenCode 中 Xiaomi Token Plan provider 已配置且模型可用。
+
 ## 会话 Tab 切换后恢复时间线滚动位置
 
 同一个工作区内切换会话 Tab 时，每个会话会保留自己的时间线滚动位置；离开前停留在底部（跟随最新消息）的会话，返回后仍然在底部。会话页面实例复用、时间线按会话卸载重建，因此位置必须按会话持久化，而不是依赖组件实例。
