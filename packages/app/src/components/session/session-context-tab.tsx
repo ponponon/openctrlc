@@ -124,9 +124,12 @@ export function SessionContextTab() {
   const [systemPromptSnapshot] = createResource(
     () => params.id,
     (sessionID) =>
-      sdk().client.v2.session
-        .systemPromptSnapshot({ sessionID })
-        .then((result) => result.data?.data?.snapshot, () => undefined),
+      sdk()
+        .client.v2.session.systemPromptSnapshot({ sessionID })
+        .then(
+          (result) => result.data?.data?.snapshot,
+          () => undefined,
+        ),
   )
 
   const messages = createMemo(
@@ -189,9 +192,7 @@ export function SessionContextTab() {
   })
 
   // Prefer .latest so an in-flight refetch never re-enters Suspense while resolved.
-  const systemPrompt = createMemo(() =>
-    getSessionSystemPrompt(visibleUserMessages(), systemPromptSnapshot.latest),
-  )
+  const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages(), systemPromptSnapshot.latest))
   const [systemPromptState, setSystemPromptState] = createStore({ expanded: false })
 
   const systemPromptNeedsExpansion = createMemo(() => (systemPrompt()?.length ?? 0) > 800)

@@ -8,11 +8,7 @@ const DATABASE_EXTENSIONS = new Set([".db", ".sqlite", ".sqlite3"])
 
 export async function getDatabaseFiles(userDataPath: string) {
   const dataHome = process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share")
-  return discoverDatabaseFiles([
-    join(dataHome, Brand.runtimeDirectory),
-    join(dataHome, "opencode"),
-    userDataPath,
-  ])
+  return discoverDatabaseFiles([join(dataHome, Brand.runtimeDirectory), join(dataHome, "opencode"), userDataPath])
 }
 
 export async function discoverDatabaseFiles(directories: readonly string[]): Promise<DesktopDatabaseFile[]> {

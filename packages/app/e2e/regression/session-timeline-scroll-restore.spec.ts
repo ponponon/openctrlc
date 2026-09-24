@@ -24,7 +24,9 @@ test.describe("regression: session tab scroll position", () => {
     await scrollTimelineUp(page, 2_000)
     await waitForStableTimeline(page)
     const before = await snapshot(page)
-    expect(before.distanceFromBottom, `expected a mid-timeline position: ${JSON.stringify(before)}`).toBeGreaterThan(500)
+    expect(before.distanceFromBottom, `expected a mid-timeline position: ${JSON.stringify(before)}`).toBeGreaterThan(
+      500,
+    )
 
     const rounds: TimelineSnapshot[] = []
     for (let round = 0; round < 3; round += 1) {
@@ -38,10 +40,9 @@ test.describe("regression: session tab scroll position", () => {
 
     // The position must survive every switch, not just the first one.
     for (const [index, state] of rounds.entries()) {
-      expect(
-        state.topPartID,
-        `top part changed on switch ${index + 1}\n${JSON.stringify({ before, rounds })}`,
-      ).toBe(before.topPartID)
+      expect(state.topPartID, `top part changed on switch ${index + 1}\n${JSON.stringify({ before, rounds })}`).toBe(
+        before.topPartID,
+      )
       expect(
         state.distanceFromBottom,
         `timeline snapped back to the bottom on switch ${index + 1}\n${JSON.stringify({ before, rounds })}`,
@@ -67,9 +68,7 @@ test.describe("regression: session tab scroll position", () => {
 
     await scrollTimelineDown(page)
     await waitForStableTimeline(page)
-    await expect
-      .poll(() => snapshot(page).then((state) => state.distanceFromBottom))
-      .toBeLessThanOrEqual(1)
+    await expect.poll(() => snapshot(page).then((state) => state.distanceFromBottom)).toBeLessThanOrEqual(1)
 
     await switchTitlebarSession(page, fixture.sourceID, fixture.expected.sourceTitle)
     await expectSessionTitle(page, fixture.expected.sourceTitle)
@@ -77,9 +76,7 @@ test.describe("regression: session tab scroll position", () => {
     await expectSessionTitle(page, fixture.expected.targetTitle)
     await waitForStableTimeline(page)
 
-    await expect
-      .poll(() => snapshot(page).then((state) => state.distanceFromBottom))
-      .toBeLessThanOrEqual(1)
+    await expect.poll(() => snapshot(page).then((state) => state.distanceFromBottom)).toBeLessThanOrEqual(1)
   })
 
   test("resumes following once the user scrolls back to the bottom", async ({ page }) => {

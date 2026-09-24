@@ -684,9 +684,11 @@ const layer = Layer.effect(
               ...streamInput,
               onSystem: (system) => {
                 if (!input.captureSystemPrompt) return Effect.void
-                return SessionSystemPromptSnapshot.captureIfMissing(database.db, input.sessionID, system.join("\n")).pipe(
-                  Effect.flatMap((captured) => (captured ? session.touch(input.sessionID) : Effect.void)),
-                )
+                return SessionSystemPromptSnapshot.captureIfMissing(
+                  database.db,
+                  input.sessionID,
+                  system.join("\n"),
+                ).pipe(Effect.flatMap((captured) => (captured ? session.touch(input.sessionID) : Effect.void)))
               },
             })
 

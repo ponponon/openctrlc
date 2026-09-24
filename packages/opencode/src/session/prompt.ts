@@ -1099,9 +1099,7 @@ const layer = Layer.effect(
           yield* status.set(sessionID, { type: "busy" })
           yield* Effect.logInfo("loop", { "session.id": sessionID, step })
 
-          const allMessages = yield* MessageV2.stream(sessionID).pipe(
-            Effect.provideService(Database.Service, database),
-          )
+          const allMessages = yield* MessageV2.stream(sessionID).pipe(Effect.provideService(Database.Service, database))
           let msgs = MessageV2.filterCompacted(allMessages)
           const hasSystemPromptSnapshot = yield* SessionSystemPromptSnapshot.get(db, sessionID)
 

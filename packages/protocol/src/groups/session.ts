@@ -167,7 +167,7 @@ export const makeSessionGroup = <I extends HttpApiMiddleware.AnyId, S>(sessionLo
             summary: "Get session",
             description: "Retrieve a session by ID.",
           }),
-      ),
+        ),
     )
     .add(
       HttpApiEndpoint.get("session.systemPromptSnapshot", "/api/session/:sessionID/system-prompt-snapshot", {
