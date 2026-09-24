@@ -15,6 +15,7 @@ import { createUnresponsiveSampler } from "./unresponsive"
 import { nativeT } from "./native-translations"
 import { createWindowRegistry } from "./window-registry"
 import { safeWindowURL } from "./window-state"
+import { DEV_RESTART_EXIT_CODE } from "./dev-restart"
 import { resolveExternalURL, resolveLocalFilePath } from "./external-url"
 import { Brand } from "@openctrlc/identity"
 
@@ -49,15 +50,17 @@ let backgroundColor: string | undefined
 let appQuitting = false
 let closeToTrayEnabled = false
 export function relaunchElectronApp() {
-  // electron-vite starts the dev app with a relative `.` argument, but the main process changes cwd to home.
-  const args = app.isPackaged ? undefined : [app.getAppPath(), ...process.argv.slice(2)]
-  app.relaunch(args ? { args } : undefined)
+  if (!app.isPackaged) {
+    app.exit(DEV_RESTART_EXIT_CODE)
+    return
+  }
+  app.relaunch()
+  app.quit()
 }
 
 let relaunchHandler = () => {
   setAppQuitting()
   relaunchElectronApp()
-  app.exit(0)
 }
 const titlebarThemes = new WeakMap<BrowserWindow, Partial<TitlebarTheme>>()
 const pinchZoomEnabled = new WeakMap<BrowserWindow, boolean>()

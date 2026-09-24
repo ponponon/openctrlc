@@ -181,10 +181,7 @@ const main = Effect.gen(function* () {
   }
   const relaunch = () => {
     setAppQuitting()
-    void stopSidecars().finally(() => {
-      relaunchElectronApp()
-      app.quit()
-    })
+    void stopSidecars().finally(relaunchElectronApp)
   }
 
   try {

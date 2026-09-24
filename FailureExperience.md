@@ -796,4 +796,8 @@ README 与应用运行时只支持英文、简体中文、日文、韩文。之�
 
 ## Electron 开发模式重启必须保留绝对应用入口
 
-macOS 主进程把工作目录切到用户主目录，以避免打包应用从 `/` 启动带来的命令问题；但 `electron-vite dev` 的启动入口是相对路径 `.`。Electron 默认重启会复用原命令行和当前工作目录，于是 `.` 被解析为主目录，弹出“找不到 Electron 应用 /Users/...”。开发模式重启时应把入口替换为 `app.getAppPath()` 的绝对路径，并保留入口之后的启动参数；打包模式继续使用 Electron 默认重启参数。不要为了修开发重启而全局移除工作目录处理。
+macOS 主进程把工作目录切到用户主目录，以避免打包应用从 `/` 启动带来的命令问题；但 `electron-vite dev` 的启动入口是相对路径 `.`。Electron 默认重启会复用原命令行和当前工作目录，于是 `.` 被解析为主目录，弹出“找不到 Electron 应用 /Users/...”。将入口改成 `app.getAppPath()` 的绝对路径只能修正第一层错误；开发模式还必须保留 electron-vite 和 renderer Vite 服务，完整处理见下一条经验。不要为了修开发重启而全局移除工作目录处理。
+
+## electron-vite 开发服务器必须由外层进程管理整机重启
+
+`electron-vite dev` 会在 Electron 子进程关闭时退出自身；若开发模式直接调用 `app.relaunch()`，原 electron-vite 进程随即结束并关闭 renderer 的 Vite 服务，新 Electron 即使成功启动也会因 `localhost:5173` 被拒绝而显示加载失败。开发重启应让 Electron 以专用退出码退出，再由仍存活的外层脚本重新启动 electron-vite，等 renderer 服务就绪后再拉起 Electron；打包模式才直接用 `app.relaunch()`。不要只修 Electron 参数或入口路径，那会把“找不到应用”变成“找不到开发服务器”。
