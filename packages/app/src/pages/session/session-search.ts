@@ -234,8 +234,7 @@ export function sessionSearchToolOutputHits(input: {
   const fragment = input.active
     ? sessionSearchMatchFragment({ parts: input.parts, scope: input.scope, match: input.active })
     : undefined
-  const active =
-    fragment && fragment.partID === input.partID && isToolBodyField(fragment.field) ? fragment : undefined
+  const active = fragment && fragment.partID === input.partID && isToolBodyField(fragment.field) ? fragment : undefined
   return findTextMatches(text, input.query.toLocaleLowerCase()).map((hit) => ({
     ...hit,
     active: !!active && hit.start === active.localStart && hit.end === active.localEnd,

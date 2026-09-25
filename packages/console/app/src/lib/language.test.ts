@@ -1,13 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { readdir } from "node:fs/promises"
-import {
-  LOCALES,
-  detectFromAcceptLanguage,
-  detectFromLanguages,
-  docs,
-  fromDocsPathname,
-  parseLocale,
-} from "./language"
+import { LOCALES, detectFromAcceptLanguage, detectFromLanguages, docs, fromDocsPathname, parseLocale } from "./language"
 
 describe("product locales", () => {
   test("Console and Stats load dictionaries only for supported locales", async () => {
@@ -24,11 +17,7 @@ describe("product locales", () => {
       "ko.ts",
       "zh.ts",
     ])
-    expect(files[1].filter((file) => /^[a-z]{2,3}\.ts$/.test(file)).sort()).toEqual([
-      "ja.ts",
-      "ko.ts",
-      "zh.ts",
-    ])
+    expect(files[1].filter((file) => /^[a-z]{2,3}\.ts$/.test(file)).sort()).toEqual(["ja.ts", "ko.ts", "zh.ts"])
   })
 
   test("unsupported stored locales fall back while detection prefers a supported language", () => {

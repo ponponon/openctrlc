@@ -1,8 +1,4 @@
-export const docsLocale = [
-  "ja",
-  "ko",
-  "zh-cn",
-] as const
+export const docsLocale = ["ja", "ko", "zh-cn"] as const
 
 export type DocsLocale = (typeof docsLocale)[number]
 

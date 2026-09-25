@@ -1,9 +1,4 @@
-export const LOCALES = [
-  "en",
-  "zh",
-  "ja",
-  "ko",
-] as const
+export const LOCALES = ["en", "zh", "ja", "ko"] as const
 
 export type Locale = (typeof LOCALES)[number]
 
@@ -36,11 +31,7 @@ const DOCS = {
   ko: "ko",
 } satisfies Record<Locale, string>
 
-const DOCS_SEGMENT = new Set([
-  "ja",
-  "ko",
-  "zh-cn",
-])
+const DOCS_SEGMENT = new Set(["ja", "ko", "zh-cn"])
 
 const DOCS_LOCALE = {
   en: "en",

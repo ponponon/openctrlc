@@ -322,9 +322,7 @@ export function MessageTimeline(props: {
   setContentRef: (el: HTMLDivElement) => void
   userMessages: UserMessage[]
   anchor: (id: string) => string
-  setRevealMessage?: (
-    fn: (id: string, searchMatch?: { messageID: string; start: number; end: number }) => void,
-  ) => void
+  setRevealMessage?: (fn: (id: string, searchMatch?: { messageID: string; start: number; end: number }) => void) => void
   activeSearchMessageID?: string
   searchQuery?: string
   searchScope?: SessionSearchScope
@@ -683,9 +681,7 @@ export function MessageTimeline(props: {
         if (group.type === "part") {
           return group.ref.messageID === messageID && (!exactPart || !partID || group.ref.partID === partID)
         }
-        return group.refs.some(
-          (ref) => ref.messageID === messageID && (!exactPart || !partID || ref.partID === partID),
-        )
+        return group.refs.some((ref) => ref.messageID === messageID && (!exactPart || !partID || ref.partID === partID))
       })
     }
     return false
@@ -729,14 +725,13 @@ export function MessageTimeline(props: {
       const searchMessageID = searchMatch?.messageID
       const searchIndex = findSearchRowIndex(searchMatch)
       searchHitRowIndex = searchIndex
-      const index = searchIndex >= 0 ? searchIndex : userMessageRowIndex().get(id) ?? messageRowIndex().get(id)
+      const index = searchIndex >= 0 ? searchIndex : (userMessageRowIndex().get(id) ?? messageRowIndex().get(id))
       if (index === undefined) return
 
       const row = searchIndex >= 0 ? timelineRows()[searchIndex] : undefined
       if (row?._tag === "AssistantSteps") {
         const open =
-          stepsOpen[row.userMessageID] ??
-          (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
+          stepsOpen[row.userMessageID] ?? (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
         if (!open) setStepsOpen(row.userMessageID, true)
       }
       // 工具命中默认收起：先展开目标工具，输出区才有可测的命中节点。

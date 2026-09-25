@@ -33,13 +33,13 @@ test.describe("regression: session timeline follow pause", () => {
 
     const scroller = timelineScroller(page)
     await expect(scroller.locator("[data-timeline-row]").first()).toBeVisible()
-    await expect
-      .poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 })
-      .toBeLessThanOrEqual(2)
+    await expect.poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 }).toBeLessThanOrEqual(2)
 
     await scrollTimelineUp(page, 600)
     const before = await snapshot(page)
-    expect(before.distanceFromBottom, `expected a mid-timeline position: ${JSON.stringify(before)}`).toBeGreaterThan(500)
+    expect(before.distanceFromBottom, `expected a mid-timeline position: ${JSON.stringify(before)}`).toBeGreaterThan(
+      500,
+    )
 
     // Streaming growth and a brand-new assistant row both count as "new output".
     await timeline.send(partUpdated(shell(shellID, "running", lines(60))))
@@ -61,9 +61,7 @@ test.describe("regression: session timeline follow pause", () => {
 
     await count.locator("xpath=ancestor::button").click()
 
-    await expect
-      .poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 })
-      .toBeLessThanOrEqual(2)
+    await expect.poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 }).toBeLessThanOrEqual(2)
     await expect(count).toBeHidden()
   })
 })

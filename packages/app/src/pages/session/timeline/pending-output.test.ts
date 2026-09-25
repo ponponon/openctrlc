@@ -28,9 +28,9 @@ describe("pendingOutputCount", () => {
 
   test("ignores history prepends before the watermark", () => {
     const mark = capturePendingOutputMark({ rows: rows(["c", 30], ["d", 40], ["thinking:u", 12]) })
-    expect(pendingOutputCount({ mark, rows: rows(["a", 80], ["b", 80], ["c", 30], ["d", 40], ["thinking:u", 12]) })).toBe(
-      0,
-    )
+    expect(
+      pendingOutputCount({ mark, rows: rows(["a", 80], ["b", 80], ["c", 30], ["d", 40], ["thinking:u", 12]) }),
+    ).toBe(0)
   })
 
   test("ignores trailing thinking rows as the watermark content", () => {

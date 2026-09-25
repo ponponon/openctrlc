@@ -2237,9 +2237,7 @@ ToolRegistry.register({
     const pending = () => props.status === "pending" || props.status === "running"
     const sawPending = pending()
     const command = createMemo(() => String(props.input.command ?? props.metadata.command ?? ""))
-    const outputText = createMemo(() =>
-      stripAnsi(props.output || props.metadata.output || "").replace(/\r\n?/g, "\n"),
-    )
+    const outputText = createMemo(() => stripAnsi(props.output || props.metadata.output || "").replace(/\r\n?/g, "\n"))
     const text = createMemo(() => {
       const cmd = command()
       const out = outputText()
@@ -2271,9 +2269,7 @@ ToolRegistry.register({
                 <SearchTextHighlight
                   query={props.highlightQuery}
                   activeOccurrence={props.highlightInputActiveIndex}
-                  onActiveRange={
-                    props.highlightInputActiveIndex === undefined ? undefined : props.onSearchActiveRange
-                  }
+                  onActiveRange={props.highlightInputActiveIndex === undefined ? undefined : props.onSearchActiveRange}
                 >
                   <ShellSubmessage text={props.input.command} animate={sawPending} />
                 </SearchTextHighlight>
@@ -2307,9 +2303,7 @@ ToolRegistry.register({
                 <SearchTextHighlight
                   query={props.highlightQuery}
                   activeOccurrence={props.highlightInputActiveIndex}
-                  onActiveRange={
-                    props.highlightInputActiveIndex === undefined ? undefined : props.onSearchActiveRange
-                  }
+                  onActiveRange={props.highlightInputActiveIndex === undefined ? undefined : props.onSearchActiveRange}
                 >
                   <span>{`$ ${command()}`}</span>
                 </SearchTextHighlight>
