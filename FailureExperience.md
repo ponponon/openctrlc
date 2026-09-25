@@ -841,3 +841,7 @@ macOS 主进程把工作目录切到用户主目录，以避免打包应用从 `
 ## 工具 title 同文命中必须映射回可见字段
 
 shell 工具的 `title` 常与 `command` 同文，搜索文档里会多出一份不可见片段。若命中落在 `tool-title` 却只高亮 `tool-input`/`tool-output`，当前命中会变成“有结果但界面上没有 active 标记”。映射 fragment 时要带上局部偏移，title 与输入字符串相等时把 active 映射回 command 高亮。另外 AnimatedNumber 的 DOM 文本是滚动数字条，E2E 应断言 `aria-label` 而不是 `toHaveText`。
+
+## 不能用 text 类型和尾部位置推断最终答案
+
+时间线曾把最后一个非 `text` 分组之前的所有 assistant parts 一起折入“过程”，并把尾部 `text` 留作结果。真实会话中，assistant 在调用最后一次验证工具之前已经输出了带结论和证据链的长文本，工具验证后 `finish: "stop"` 消息却只补充了一个细节；前缀折叠因此隐藏主结论，只留下补充说明。排查时必须同时核对消息级 `finish` 和 part 的实际先后顺序，不能把 `type: "text"` 等同最终答案，也不能把 `finish: "tool-calls"` 等同纯过程。没有明确语义标记时，应优先保证 assistant 文本仍可见、只折叠明确的工具/思考活动；不要用“最后一条”或固定长度假装能可靠判断文本价值。
