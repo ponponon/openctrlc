@@ -660,8 +660,6 @@ export const dict = {
   "settings.general.database.description.drafts": "프롬프트 초안, 초안 기록 및 첨부 파일을 저장합니다.",
   "settings.general.database.description.openctrlc":
     "OpenCtrlC 세션, 메시지, 프로젝트 및 기타 앱 데이터를 저장합니다. 파일 이름 접미사가 런타임 채널을 식별합니다.",
-  "settings.general.database.description.opencode":
-    "세션 및 메시지가 포함될 수 있는 OpenCode의 로컬 데이터입니다. 사용자 지정 파일 이름은 인스턴스별 또는 기능별 저장소일 수 있습니다.",
   "settings.general.database.description.unknown":
     "출처를 알 수 없습니다. 내용은 이 데이터베이스를 만든 애플리케이션에 따라 달라집니다.",
   "settings.general.row.language.title": "언어",

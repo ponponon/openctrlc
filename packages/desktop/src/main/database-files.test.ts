@@ -2,7 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { discoverDatabaseFiles } from "./database-files"
+import { Brand } from "@openctrlc/identity"
+import { discoverDatabaseFiles, getDatabaseFiles } from "./database-files"
 
 const roots: string[] = []
 
@@ -19,16 +20,37 @@ describe("database file discovery", () => {
     await Promise.all([
       writeFile(join(root, "openctrlc-dev.db"), ""),
       writeFile(join(root, "drafts.sqlite"), ""),
-      writeFile(join(root, "opencode-feat-presets.db"), ""),
+      writeFile(join(root, "custom.sqlite3"), ""),
       writeFile(join(root, "openctrlc-dev.db-wal"), ""),
       writeFile(join(root, "settings.json"), ""),
       writeFile(join(nested, "ignored.sqlite"), ""),
     ])
 
     await expect(discoverDatabaseFiles([root])).resolves.toEqual([
+      { name: "custom.sqlite3", path: join(root, "custom.sqlite3"), purpose: "unknown" },
       { name: "drafts.sqlite", path: join(root, "drafts.sqlite"), purpose: "drafts" },
-      { name: "opencode-feat-presets.db", path: join(root, "opencode-feat-presets.db"), purpose: "opencode" },
       { name: "openctrlc-dev.db", path: join(root, "openctrlc-dev.db"), purpose: "openctrlc" },
+    ])
+  })
+
+  test("only scans OpenCtrlC data and desktop user data, not the OpenCode data directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "openctrlc-database-files-"))
+    roots.push(root)
+    const dataHome = join(root, "data")
+    const openctrlcData = join(dataHome, Brand.runtimeDirectory)
+    const opencodeData = join(dataHome, "opencode")
+    const userData = join(root, "desktop")
+    await mkdir(dataHome)
+    await Promise.all([mkdir(openctrlcData), mkdir(opencodeData), mkdir(userData)])
+    await Promise.all([
+      writeFile(join(openctrlcData, "openctrlc-dev.db"), ""),
+      writeFile(join(opencodeData, "opencode.db"), ""),
+      writeFile(join(userData, "drafts.sqlite"), ""),
+    ])
+
+    await expect(getDatabaseFiles(userData, dataHome)).resolves.toEqual([
+      { name: "drafts.sqlite", path: join(userData, "drafts.sqlite"), purpose: "drafts" },
+      { name: "openctrlc-dev.db", path: join(openctrlcData, "openctrlc-dev.db"), purpose: "openctrlc" },
     ])
   })
 

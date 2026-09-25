@@ -6,9 +6,11 @@ import type { DesktopDatabaseFile } from "../preload/types"
 
 const DATABASE_EXTENSIONS = new Set([".db", ".sqlite", ".sqlite3"])
 
-export async function getDatabaseFiles(userDataPath: string) {
-  const dataHome = process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share")
-  return discoverDatabaseFiles([join(dataHome, Brand.runtimeDirectory), join(dataHome, "opencode"), userDataPath])
+export async function getDatabaseFiles(
+  userDataPath: string,
+  dataHome = process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share"),
+) {
+  return discoverDatabaseFiles([join(dataHome, Brand.runtimeDirectory), userDataPath])
 }
 
 export async function discoverDatabaseFiles(directories: readonly string[]): Promise<DesktopDatabaseFile[]> {
@@ -35,6 +37,5 @@ function databasePurpose(name: string): DesktopDatabaseFile["purpose"] {
   if (stem === "drafts") return "drafts"
   const runtimeDirectory = Brand.runtimeDirectory.toLowerCase()
   if (stem === runtimeDirectory || stem.startsWith(`${runtimeDirectory}-`)) return "openctrlc"
-  if (stem === "opencode" || stem.startsWith("opencode-")) return "opencode"
   return "unknown"
 }

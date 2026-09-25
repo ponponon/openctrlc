@@ -63,7 +63,7 @@ export type OpenCodeSessionLookup = {
 export type DesktopDatabaseFile = {
   name: string
   path: string
-  purpose: "drafts" | "openctrlc" | "opencode" | "unknown"
+  purpose: "drafts" | "openctrlc" | "unknown"
 }
 
 export type ElectronAPI = {

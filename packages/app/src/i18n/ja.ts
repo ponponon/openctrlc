@@ -902,8 +902,6 @@ export const dict = {
   "settings.general.database.description.drafts": "プロンプトの下書き、下書き履歴、添付ファイルを保存します。",
   "settings.general.database.description.openctrlc":
     "OpenCtrlCのセッション、メッセージ、プロジェクトなどのアプリデータを保存します。ファイル名のサフィックスが実行チャネルを識別します。",
-  "settings.general.database.description.opencode":
-    "OpenCodeのローカルデータで、セッションやメッセージが含まれる場合があります。カスタムのファイル名は、特定のインスタンスや機能ごとのストアを示すことがあります。",
   "settings.general.database.description.unknown":
     "ソースは不明です。内容はこのデータベースを作成したアプリケーションによって異なります。",
   "settings.general.row.language.title": "言語",
