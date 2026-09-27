@@ -1,0 +1,12 @@
+{
+  "name": "@openctrlc/remote-relay",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "./protocol": "./src/protocol.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts"
+  }
+}

@@ -1,0 +1,43 @@
+name: openctrlc-remote
+
+services:
+  relay:
+    build:
+      context: packages/remote-relay
+      dockerfile: Dockerfile
+    image: openctrlc/remote-relay:local
+    container_name: openctrlc-remote-relay
+    restart: unless-stopped
+    init: true
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1.0
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4097
+      OPENCTRLC_REMOTE_PUBLIC_URL: https://openctrlc-remote.quniv.cn
+    ports:
+      - "127.0.0.1:4097:4097"
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - "fetch('http://127.0.0.1:4097/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

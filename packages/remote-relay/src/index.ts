@@ -1,0 +1,698 @@
+import {
+  decodeBase64,
+  encodeBase64,
+  randomToken,
+  relayMessage,
+  type RelayHostMessage,
+  type RelayServerMessage,
+} from "./protocol"
+
+type SocketData = {
+  role: "host" | "viewer"
+  sessionID?: string
+  pairID?: string
+  mode?: "pair" | "proxy"
+  id?: string
+  path?: string
+  protocols?: string[]
+  device?: string
+  clientIP?: string
+  ready?: boolean
+  queue?: Array<{ data: string; binary: boolean; size: number }>
+}
+
+type PendingPair = {
+  socket: Bun.ServerWebSocket<SocketData>
+  viewerToken: string
+  expiresAt: number
+}
+
+type PendingResponse = {
+  resolveHeaders: (value: { status: number; headers: Record<string, string> }) => void
+  rejectHeaders: (error: Error) => void
+  controller?: ReadableStreamDefaultController<Uint8Array>
+  closed: boolean
+}
+
+type RelaySession = {
+  id: string
+  hostToken: string
+  joinToken: string
+  host?: Bun.ServerWebSocket<SocketData>
+  expiresAt: number
+  pairingSockets: Set<Bun.ServerWebSocket<SocketData>>
+  pairs: Map<string, PendingPair>
+  viewers: Set<string>
+  responses: Map<string, PendingResponse>
+  sockets: Map<string, Bun.ServerWebSocket<SocketData>>
+}
+
+const port = Number(process.env.PORT ?? 4097)
+const publicURL = new URL(process.env.OPENCTRLC_REMOTE_PUBLIC_URL ?? "https://openctrlc-remote.quniv.cn")
+const maxRequestBytes = 16 * 1024 * 1024
+const maxPendingRequests = 64
+const maxSockets = 32
+const maxSocketQueueBytes = 512 * 1024
+const maxViewers = 3
+const sessionLifetime = 8 * 60 * 60 * 1000
+const pairLifetime = 5 * 60 * 1000
+const sessions = new Map<string, RelaySession>()
+const viewerTokens = new Map<string, RelaySession>()
+const createRates = new Map<string, number[]>()
+
+const server = Bun.serve<SocketData>({
+  hostname: process.env.HOST ?? "0.0.0.0",
+  port,
+  maxRequestBodySize: maxRequestBytes + 1024,
+  fetch(request, server) {
+    const url = new URL(request.url)
+    if (url.pathname === "/healthz") return Response.json({ ok: true, sessions: sessions.size })
+    if (url.pathname === "/v1/host" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+      if (request.headers.has("origin") && !sameOrigin(request)) return new Response("Origin rejected", { status: 403 })
+      if (server.upgrade(request, { data: { role: "host", clientIP: request.headers.get("x-real-ip") ?? "unknown" } }))
+        return
+      return new Response("WebSocket upgrade required", { status: 426 })
+    }
+    if (url.pathname === "/v1/viewer" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+      const sessionID = url.searchParams.get("session")
+      if (!sessionID || !sessions.has(sessionID)) return new Response("Session not found", { status: 404 })
+      if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403 })
+      if (
+        server.upgrade(request, {
+          data: { role: "viewer", sessionID, mode: "pair", device: deviceLabel(request.headers.get("user-agent")) },
+        })
+      )
+        return
+      return new Response("WebSocket upgrade required", { status: 426 })
+    }
+    if (request.method === "GET" && url.pathname.startsWith("/join/")) {
+      const sessionID = url.pathname.slice("/join/".length)
+      if (!sessions.has(sessionID)) return htmlResponse(pairPage("expired"))
+      return htmlResponse(pairPage("pair"))
+    }
+    if (request.method === "POST" && url.pathname === "/_remote/claim") return claimViewer(request)
+    if (request.method === "GET" && url.pathname === "/") {
+      const session = sessionFor(request)
+      if (!session) return htmlResponse(pairPage("home"))
+      return proxyRequest(session, request)
+    }
+
+    const session = sessionFor(request)
+    if (!session) return new Response("Remote session required", { status: 401, headers: noStore })
+    if (request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+      if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
+      if (session.sockets.size >= maxSockets)
+        return new Response("Too many remote connections", { status: 429, headers: noStore })
+      const protocols = (request.headers.get("sec-websocket-protocol") ?? "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+      if (protocols.length)
+        return new Response("WebSocket subprotocols are not supported", { status: 400, headers: noStore })
+      if (
+        server.upgrade(request, {
+          data: {
+            role: "viewer",
+            sessionID: session.id,
+            mode: "proxy",
+            id: randomToken(12),
+            path: url.pathname + url.search,
+            protocols,
+            device: deviceLabel(request.headers.get("user-agent")),
+            ready: false,
+            queue: [],
+          },
+        })
+      )
+        return
+      return new Response("WebSocket upgrade required", { status: 426 })
+    }
+    return proxyRequest(session, request)
+  },
+  websocket: {
+    maxPayloadLength: 2 * 1024 * 1024,
+    idleTimeout: 0,
+    open(socket) {
+      if (socket.data.role === "host") return
+      const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
+      if (!session) return socket.close(4404, "Session not found")
+      if (socket.data.mode === "pair") {
+        if (session.pairingSockets.size >= maxViewers + 2) return socket.close(4429, "Too many pairing attempts")
+        session.pairingSockets.add(socket)
+        return
+      }
+      const id = socket.data.id
+      if (!id || !socket.data.path) return socket.close(4400, "Invalid tunnel")
+      session.sockets.set(id, socket)
+      if (!sendHost(session, { type: "socket.open", id, path: socket.data.path, protocols: [] })) {
+        socket.close(1011, "Desktop is disconnected")
+        session.sockets.delete(id)
+      }
+    },
+    async message(socket, raw) {
+      if (socket.data.role === "host") {
+        const message = relayMessage(raw)
+        if (!message || typeof message.type !== "string") return socket.close(4400, "Invalid message")
+        await handleHostMessage(socket, message)
+        return
+      }
+      const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
+      if (!session) return socket.close(4404, "Session not found")
+      if (socket.data.mode === "proxy") {
+        const id = socket.data.id
+        if (!id) return socket.close(4400, "Invalid tunnel")
+        const binary = typeof raw !== "string"
+        const data =
+          typeof raw === "string"
+            ? raw
+            : encodeBase64(
+                raw instanceof ArrayBuffer
+                  ? new Uint8Array(raw)
+                  : new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength),
+              )
+        if (!socket.data.ready) {
+          const size = typeof raw === "string" ? new TextEncoder().encode(raw).byteLength : raw.byteLength
+          const queue = socket.data.queue ?? (socket.data.queue = [])
+          if (queue.reduce((total, frame) => total + frame.size, 0) + size > maxSocketQueueBytes) {
+            socket.close(1009, "WebSocket buffer limit exceeded")
+            return
+          }
+          queue.push({ data, binary, size })
+          return
+        }
+        if (!sendHost(session, { type: "socket.message", id, data, binary }))
+          socket.close(1011, "Desktop is disconnected")
+        return
+      }
+      const message = relayMessage(raw)
+      if (!message || message.type !== "pair" || typeof message.joinToken !== "string") {
+        return socket.close(4400, "Pairing message required")
+      }
+      if (message.joinToken !== session.joinToken) return socket.close(4403, "Invalid pairing link")
+      if (session.viewers.size + session.pairs.size >= maxViewers) {
+        socket.send(JSON.stringify({ type: "pair.error" }))
+        return socket.close(4429, "Too many devices")
+      }
+      const pairID = randomToken(18)
+      socket.data.pairID = pairID
+      session.pairs.set(pairID, { socket, viewerToken: randomToken(), expiresAt: Date.now() + pairLifetime })
+      if (
+        !sendHost(session, {
+          type: "pair.request",
+          pairID,
+          device: socket.data.device ?? "Browser",
+        })
+      ) {
+        session.pairs.delete(pairID)
+        socket.send(JSON.stringify({ type: "pair.error" }))
+        return socket.close(1011, "Desktop is disconnected")
+      }
+      socket.send(JSON.stringify({ type: "pair.waiting", pairID }))
+    },
+    close(socket) {
+      if (socket.data.role === "host") {
+        const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
+        if (session?.host === socket) deleteSession(session)
+        return
+      }
+      if (!socket.data.sessionID) return
+      const session = sessions.get(socket.data.sessionID)
+      if (!session) return
+      session.pairingSockets.delete(socket)
+      if (socket.data.pairID) {
+        const pair = session.pairs.get(socket.data.pairID)
+        if (pair) {
+          session.pairs.delete(socket.data.pairID)
+          sendHost(session, { type: "pair.deny", pairID: socket.data.pairID })
+        }
+      }
+      if (socket.data.mode === "proxy" && socket.data.id) {
+        session.sockets.delete(socket.data.id)
+        sendHost(session, { type: "socket.close", id: socket.data.id, code: 1000, reason: "Viewer disconnected" })
+      }
+    },
+  },
+})
+
+console.log(`OpenCtrlC Remote Relay listening on ${server.hostname}:${server.port}`)
+
+async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value: Record<string, unknown>) {
+  if (value.type === "session.create") {
+    if (socket.data.sessionID) return socket.close(4400, "Session already exists")
+    const address = socket.data.clientIP ?? "unknown"
+    const attempts = (createRates.get(address) ?? []).filter((time) => Date.now() - time < 60 * 60 * 1000)
+    if (attempts.length >= 60 || sessions.size >= 2000) {
+      socket.send(JSON.stringify({ type: "pair.error" }))
+      return socket.close(4429, "Relay limit reached")
+    }
+    attempts.push(Date.now())
+    createRates.set(address, attempts)
+    const session: RelaySession = {
+      id: randomToken(12),
+      hostToken: randomToken(),
+      joinToken: randomToken(),
+      host: socket,
+      expiresAt: Date.now() + sessionLifetime,
+      pairingSockets: new Set(),
+      pairs: new Map(),
+      viewers: new Set(),
+      responses: new Map(),
+      sockets: new Map(),
+    }
+    socket.data.sessionID = session.id
+    sessions.set(session.id, session)
+    socket.send(
+      JSON.stringify({
+        type: "session.created",
+        sessionID: session.id,
+        hostToken: session.hostToken,
+        joinToken: session.joinToken,
+        url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
+      } satisfies RelayServerMessage),
+    )
+    return
+  }
+
+  const session = typeof value.sessionID === "string" ? sessions.get(value.sessionID) : undefined
+  if (!session || session.host !== socket || value.hostToken !== session.hostToken) {
+    if (value.type === "request.start")
+      socket.send(JSON.stringify({ type: "response.error", id: value.id, message: "Session authorization failed" }))
+    return
+  }
+  if (value.type === "session.stop") {
+    deleteSession(session)
+    socket.send(JSON.stringify({ type: "session.stopped" } satisfies RelayServerMessage))
+    socket.close(1000, "Session stopped")
+    return
+  }
+  if (value.type === "pair.rotate") {
+    session.joinToken = randomToken()
+    for (const [pairID, pair] of session.pairs) {
+      session.pairs.delete(pairID)
+      pair.socket.send(JSON.stringify({ type: "pair.denied", pairID } satisfies RelayServerMessage))
+      pair.socket.close(4403, "Pairing link rotated")
+      socket.send(JSON.stringify({ type: "pair.denied", pairID } satisfies RelayServerMessage))
+    }
+    socket.send(
+      JSON.stringify({
+        type: "pair.rotated",
+        joinToken: session.joinToken,
+        url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
+      } satisfies RelayServerMessage),
+    )
+    return
+  }
+  if ((value.type === "pair.approve" || value.type === "pair.deny") && typeof value.pairID === "string") {
+    const pair = session.pairs.get(value.pairID)
+    if (!pair || pair.expiresAt <= Date.now()) return
+    session.pairs.delete(value.pairID)
+    if (value.type === "pair.deny") {
+      pair.socket.send(JSON.stringify({ type: "pair.denied", pairID: value.pairID } satisfies RelayServerMessage))
+      pair.socket.close(4403, "Request denied")
+      socket.send(JSON.stringify({ type: "pair.denied", pairID: value.pairID } satisfies RelayServerMessage))
+      return
+    }
+    session.viewers.add(pair.viewerToken)
+    viewerTokens.set(pair.viewerToken, session)
+    pair.socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID, viewerToken: pair.viewerToken }))
+    pair.socket.close(1000, "Approved")
+    socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID } satisfies RelayServerMessage))
+    return
+  }
+  if (typeof value.id !== "string") return
+  if (value.type === "socket.opened") {
+    const viewer = session.sockets.get(value.id)
+    if (!viewer) return
+    viewer.data.ready = true
+    for (const frame of viewer.data.queue ?? []) {
+      if (!sendHost(session, { type: "socket.message", id: value.id, data: frame.data, binary: frame.binary })) {
+        viewer.close(1011, "Desktop is disconnected")
+        session.sockets.delete(value.id)
+        return
+      }
+    }
+    viewer.data.queue = []
+    return
+  }
+  if (value.type === "response.start") {
+    const response = session.responses.get(value.id)
+    if (!response || typeof value.status !== "number" || typeof value.headers !== "object" || !value.headers) return
+    response.resolveHeaders({ status: value.status, headers: value.headers as Record<string, string> })
+    return
+  }
+  if (value.type === "response.chunk") {
+    const response = session.responses.get(value.id)
+    if (!response?.controller || typeof value.data !== "string") return
+    response.controller.enqueue(Uint8Array.from(atob(value.data), (character) => character.charCodeAt(0)))
+    return
+  }
+  if (value.type === "response.end") {
+    const response = session.responses.get(value.id)
+    if (!response || response.closed) return
+    response.closed = true
+    response.controller?.close()
+    session.responses.delete(value.id)
+    return
+  }
+  if (value.type === "response.error") {
+    const response = session.responses.get(value.id)
+    if (!response || response.closed) return
+    response.closed = true
+    const error = new Error(typeof value.message === "string" ? value.message : "Remote request failed")
+    response.rejectHeaders(error)
+    response.controller?.error(error)
+    session.responses.delete(value.id)
+    return
+  }
+  if (value.type === "socket.message") {
+    const viewer = session.sockets.get(value.id)
+    if (!viewer || typeof value.data !== "string") return
+    const binary = value.binary === true
+    viewer.send(binary ? decodeBase64(value.data) : value.data, binary)
+    return
+  }
+  if (value.type === "socket.close") {
+    const viewer = session.sockets.get(value.id)
+    if (viewer) viewer.close(closeCode(value.code), closeReason(value.reason))
+    session.sockets.delete(value.id)
+  }
+}
+
+async function proxyRequest(session: RelaySession, request: Request) {
+  if (!session.host || session.host.readyState !== 1) return new Response("Desktop is disconnected", { status: 503 })
+  if (request.headers.get("upgrade")) return new Response("Unsupported upgrade", { status: 400 })
+  if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
+  if (session.responses.size >= maxPendingRequests)
+    return new Response("Too many remote requests", { status: 429, headers: noStore })
+  const contentLength = Number(request.headers.get("content-length") ?? 0)
+  if (contentLength > maxRequestBytes) return new Response("Request body is too large", { status: 413 })
+  const id = randomToken(12)
+  let resolveHeaders!: PendingResponse["resolveHeaders"]
+  let rejectHeaders!: PendingResponse["rejectHeaders"]
+  const headersPromise = new Promise<{ status: number; headers: Record<string, string> }>((resolve, reject) => {
+    resolveHeaders = resolve
+    rejectHeaders = reject
+  })
+  const pending: PendingResponse = {
+    resolveHeaders,
+    rejectHeaders,
+    closed: false,
+  }
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      pending.controller = controller
+    },
+    cancel() {
+      pending.closed = true
+      session.responses.delete(id)
+      sendHost(session, { type: "request.cancel", id })
+    },
+  })
+  session.responses.set(id, pending)
+  const headers = Object.fromEntries(
+    [...request.headers.entries()].filter(
+      ([name]) =>
+        ![
+          "cookie",
+          "authorization",
+          "host",
+          "origin",
+          "referer",
+          "connection",
+          "content-length",
+          "transfer-encoding",
+        ].includes(name.toLowerCase()),
+    ),
+  )
+  const path = new URL(request.url).pathname + new URL(request.url).search
+  if (!sendHost(session, { type: "request.start", id, method: request.method, path, headers })) {
+    session.responses.delete(id)
+    return new Response("Desktop is disconnected", { status: 503 })
+  }
+  void sendRequestBody(session, request, id)
+  request.signal.addEventListener(
+    "abort",
+    () => {
+      pending.closed = true
+      session.responses.delete(id)
+      sendHost(session, { type: "request.cancel", id })
+    },
+    { once: true },
+  )
+  try {
+    const result = await headersPromise
+    return new Response([204, 205, 304].includes(result.status) ? null : body, {
+      status: result.status,
+      headers: sanitizeResponseHeaders(result.headers),
+    })
+  } catch {
+    return new Response("Desktop request failed", { status: 502 })
+  }
+}
+
+async function sendRequestBody(session: RelaySession, request: Request, id: string) {
+  if (!request.body) {
+    sendHost(session, { type: "request.end", id })
+    return
+  }
+  const reader = request.body.getReader()
+  let size = 0
+  try {
+    while (true) {
+      const item = await reader.read()
+      if (item.done) break
+      size += item.value.byteLength
+      if (size > maxRequestBytes) {
+        sendHost(session, { type: "request.cancel", id })
+        const pending = session.responses.get(id)
+        if (pending && !pending.closed) {
+          pending.closed = true
+          const error = new Error("Request body is too large")
+          pending.rejectHeaders(error)
+          pending.controller?.error(error)
+          session.responses.delete(id)
+        }
+        return
+      }
+      for (let start = 0; start < item.value.length; start += 24 * 1024) {
+        const chunk = item.value.subarray(start, start + 24 * 1024)
+        sendHost(session, { type: "request.chunk", id, data: btoa(String.fromCharCode(...chunk)) })
+      }
+    }
+    sendHost(session, { type: "request.end", id })
+  } catch {
+    sendHost(session, { type: "request.cancel", id })
+    const pending = session.responses.get(id)
+    if (pending && !pending.closed) {
+      pending.closed = true
+      const error = new Error("Request body could not be read")
+      pending.rejectHeaders(error)
+      pending.controller?.error(error)
+      session.responses.delete(id)
+    }
+  }
+}
+
+async function claimViewer(request: Request) {
+  if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403 })
+  if (request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !== "application/json") {
+    return new Response("JSON claim required", { status: 415 })
+  }
+  if (Number(request.headers.get("content-length") ?? 0) > 4096)
+    return new Response("Claim is too large", { status: 413 })
+  const content = await request.text().catch(() => "")
+  if (new TextEncoder().encode(content).byteLength > 4096) return new Response("Claim is too large", { status: 413 })
+  let body: unknown
+  try {
+    body = JSON.parse(content)
+  } catch {}
+  if (!body || typeof body !== "object" || !("viewerToken" in body) || typeof body.viewerToken !== "string") {
+    return new Response("Invalid claim", { status: 400 })
+  }
+  const session = viewerTokens.get(body.viewerToken)
+  if (!session || session.expiresAt <= Date.now()) return new Response("Pairing expired", { status: 403 })
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "set-cookie": `__Host-oc_remote=${body.viewerToken}; Path=/; Max-Age=28800; HttpOnly; Secure; SameSite=Strict`,
+      ...noStore,
+    },
+  })
+}
+
+function sessionFor(request: Request) {
+  const token = request.headers
+    .get("cookie")
+    ?.split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith("__Host-oc_remote="))
+    ?.slice("__Host-oc_remote=".length)
+  if (!token) return
+  const session = viewerTokens.get(token)
+  if (!session || !session.viewers.has(token) || session.expiresAt <= Date.now()) return
+  return session
+}
+
+function sendHost(session: RelaySession, message: RelayHostMessage) {
+  if (!session.host || session.host.readyState !== 1) return false
+  session.host.send(
+    JSON.stringify({ ...message, sessionID: session.id, hostToken: session.hostToken } satisfies RelayHostMessage & {
+      sessionID: string
+      hostToken: string
+    }),
+  )
+  return true
+}
+
+function deleteSession(session: RelaySession) {
+  sessions.delete(session.id)
+  for (const [token, value] of viewerTokens) if (value === session) viewerTokens.delete(token)
+  for (const socket of session.pairingSockets) socket.close(4404, "Session ended")
+  for (const socket of session.sockets.values()) socket.close(4404, "Session ended")
+  for (const response of session.responses.values()) {
+    const error = new Error("Remote session ended")
+    response.rejectHeaders(error)
+    response.controller?.error(error)
+  }
+}
+
+function sanitizeResponseHeaders(value: Record<string, string>) {
+  const headers = new Headers(value)
+  for (const name of ["connection", "content-length", "keep-alive", "transfer-encoding", "upgrade"])
+    headers.delete(name)
+  return headers
+}
+
+function closeCode(value: unknown) {
+  if (typeof value !== "number" || value < 1000 || value > 4999 || [1004, 1005, 1006, 1015].includes(value)) return 1000
+  return value
+}
+
+function closeReason(value: unknown) {
+  if (typeof value !== "string") return ""
+  const bytes = new TextEncoder().encode(value)
+  return new TextDecoder().decode(bytes.subarray(0, 123))
+}
+
+function deviceLabel(value: string | null) {
+  const agent = value ?? ""
+  const device = /iPhone/i.test(agent)
+    ? "iPhone"
+    : /iPad/i.test(agent)
+      ? "iPad"
+      : /Android/i.test(agent)
+        ? "Android"
+        : /Macintosh|Mac OS/i.test(agent)
+          ? "Mac"
+          : /Windows/i.test(agent)
+            ? "Windows"
+            : /Linux/i.test(agent)
+              ? "Linux"
+              : "Device"
+  const browser = /Edg\//i.test(agent)
+    ? "Edge"
+    : /Firefox\//i.test(agent)
+      ? "Firefox"
+      : /Chrome\//i.test(agent)
+        ? "Chrome"
+        : /Safari\//i.test(agent)
+          ? "Safari"
+          : "Browser"
+  return `${device} · ${browser}`
+}
+
+function sameOrigin(request: Request) {
+  const origin = request.headers.get("origin")
+  if (!origin) return true
+  try {
+    return new URL(origin).origin === publicURL.origin
+  } catch {
+    return false
+  }
+}
+
+const noStore = {
+  "cache-control": "no-store, max-age=0",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+  "x-frame-options": "DENY",
+}
+
+function htmlResponse(page: ReturnType<typeof pairPage>) {
+  return new Response(page.body, {
+    headers: { ...noStore, "content-type": "text/html; charset=utf-8", "content-security-policy": page.policy },
+  })
+}
+
+function pairPage(mode: "pair" | "expired" | "home") {
+  const copy = {
+    en: {
+      title: "OpenCtrlC Remote",
+      hint: "Open this link by scanning the QR code in the OpenCtrlC desktop app.",
+      waiting: "Waiting for approval on your desktop…",
+      approved: "Connected. Opening your workspace…",
+      denied: "The desktop declined this request.",
+      expired: "This link has expired. Create a new QR code on your desktop.",
+      error: "Could not connect. Check the connection and scan again.",
+    },
+    zh: {
+      title: "OpenCtrlC 远程访问",
+      hint: "请使用 OpenCtrlC 桌面版扫描二维码打开此链接。",
+      waiting: "等待桌面端批准…",
+      approved: "已连接，正在打开工作区…",
+      denied: "桌面端拒绝了此次连接。",
+      expired: "此链接已过期，请在桌面端重新生成二维码。",
+      error: "连接失败，请检查网络后重新扫码。",
+    },
+    ja: {
+      title: "OpenCtrlC リモート",
+      hint: "OpenCtrlC デスクトップアプリの QR コードをスキャンして、このリンクを開いてください。",
+      waiting: "デスクトップでの承認を待っています…",
+      approved: "接続しました。ワークスペースを開いています…",
+      denied: "デスクトップで接続が拒否されました。",
+      expired: "このリンクの有効期限が切れました。デスクトップで新しい QR コードを作成してください。",
+      error: "接続できません。ネットワークを確認して再度スキャンしてください。",
+    },
+    ko: {
+      title: "OpenCtrlC 원격 액세스",
+      hint: "OpenCtrlC 데스크톱 앱에서 QR 코드를 스캔해 이 링크를 여세요.",
+      waiting: "데스크톱 승인을 기다리는 중…",
+      approved: "연결되었습니다. 작업 공간을 여는 중…",
+      denied: "데스크톱에서 연결이 거부되었습니다.",
+      expired: "링크가 만료되었습니다. 데스크톱에서 새 QR 코드를 만드세요.",
+      error: "연결할 수 없습니다. 네트워크를 확인하고 다시 스캔하세요.",
+    },
+  }
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))))
+  const socketOrigin = `${publicURL.protocol === "https:" ? "wss:" : "ws:"}//${publicURL.host}`
+  return {
+    policy: `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'self' ${socketOrigin}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status"></div></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);const token=location.hash.slice(1);history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.waiting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));socket.onopen=()=>socket.send(JSON.stringify({type:"pair",joinToken:token}));socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting")show(t.waiting,true);if(data.type==="pair.approved"){completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){completed=true;show(t.denied)}if(data.type==="pair.error"){completed=true;show(t.error)}};socket.onclose=()=>{if(!completed)show(t.error)};socket.onerror=()=>show(t.error)}}</script></html>`,
+  }
+}
+
+setInterval(() => {
+  const now = Date.now()
+  for (const session of sessions.values()) {
+    if (session.expiresAt <= now || session.host?.readyState !== 1) deleteSession(session)
+    for (const [id, pair] of session.pairs) {
+      if (pair.expiresAt > now) continue
+      session.pairs.delete(id)
+      sendHost(session, { type: "pair.deny", pairID: id })
+      pair.socket.close(4408, "Pairing request expired")
+    }
+  }
+  for (const [address, times] of createRates) {
+    const fresh = times.filter((time) => now - time < 60 * 60 * 1000)
+    if (fresh.length === 0) createRates.delete(address)
+    else createRates.set(address, fresh)
+  }
+}, 60_000)
+
+async function closeServer() {
+  for (const session of sessions.values()) deleteSession(session)
+  server.stop(true)
+}
+
+process.once("SIGTERM", closeServer)
+process.once("SIGINT", closeServer)
