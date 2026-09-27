@@ -865,3 +865,7 @@ Homebrew 的 notability/star 门槛用于 `homebrew/core` 等官方仓库的收�
 ## Bun Shell 的 `.env({})` 会丢失 GitHub CLI 的现有认证环境
 
 发布脚本在用户本机依赖 `gh auth login` 时，不要用只包含单个变量的 Bun Shell `.env(...)` 启动子进程；它会丢失 CLI 原本能从配置/钥匙串读取的认证上下文，造成看似已经登录却提示需要 `gh auth login`。需要设置单个值时优先用 shell 环境变量赋值并保留其余环境；CI 显式提供 tap token 时，再只给 `gh` 命令注入 `GH_TOKEN`。
+
+## HTTP Basic Auth 登录需要说明默认用户名
+
+`OPENCTRLC_SERVER_PASSWORD` 只设置 HTTP Basic Auth 的密码，但服务端会同时校验用户名和密码；用户名默认是 `openctrlc`，也可通过 `OPENCTRLC_SERVER_USERNAME` 修改。浏览器的原生 Basic Auth 对话框会同时显示用户名和密码栏，因此给用户密码启动命令时，也必须明确告诉用户填写默认用户名，不能让人误以为环境变量未生效。
