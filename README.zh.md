@@ -41,6 +41,14 @@ npm install -g openctrlc
 
 如果之前安装的是旧包名，请先运行 `npm uninstall -g openctrlc-ai`，再安装 `openctrlc`。
 
+macOS 和 Linux 用户也可以通过 OpenCtrlC 项目的 Homebrew tap 安装：
+
+```bash
+brew install ponponon/tap/openctrlc
+```
+
+这是项目维护的第三方 tap，不属于 `homebrew/core`，也不会自动进入清华的 Homebrew 官方镜像。
+
 安装器支持通过 `OPENCTRLC_INSTALL_DIR` 或 `XDG_BIN_DIR` 自定义安装路径，默认回退到 `$HOME/.openctrlc/bin`。
 
 ### 桌面版

@@ -45,6 +45,14 @@ npm install -g openctrlc
 To migrate from the former npm package name, run `npm uninstall -g openctrlc-ai`
 before installing `openctrlc`.
 
+On macOS and Linux, you can also install through the project Homebrew tap:
+
+```bash
+brew install ponponon/tap/openctrlc
+```
+
+This formula is maintained in the OpenCtrlC tap and is separate from `homebrew/core`.
+
 The installer respects `OPENCTRLC_INSTALL_DIR` and `XDG_BIN_DIR`. The default
 fallback is `$HOME/.openctrlc/bin`.
 

@@ -27,6 +27,14 @@ npm install -g openctrlc
 
 以前の npm パッケージ名から移行する場合は、先に `npm uninstall -g openctrlc-ai` を実行してください。
 
+macOS と Linux では、OpenCtrlC の Homebrew tap からもインストールできます。
+
+```bash
+brew install ponponon/tap/openctrlc
+```
+
+この Formula は OpenCtrlC の tap で管理されており、`homebrew/core` には含まれません。
+
 ### デスクトップ
 
 最新のインストーラーは [GitHub Releases](https://github.com/ponponon/openctrlc/releases) からダウンロードしてください。
