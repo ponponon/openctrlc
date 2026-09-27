@@ -86,6 +86,9 @@ desktop package includes a matching CLI binary for its target platform.
   results instead of treating the agent as a black box.
 - **Session export and import** — export readable transcripts and import
   compatible OpenCode sessions by ID.
+- **Phone access** — open a desktop workspace from a phone with QR pairing
+  and desktop approval; traffic passes through the public relay, whose operator
+  can inspect it while forwarding.
 - **Cross-platform releases** — CLI and desktop builds are published for
   macOS, Windows, and Linux on both x64 and ARM64 where supported by the
   release workflow.

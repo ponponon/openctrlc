@@ -2044,3 +2044,40 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - tap 内的 `script/update-formula.mjs` 从 GitHub 最新稳定版 Release 读取资产校验和；仓库自带 GitHub Actions 每六小时检查并用 tap 仓库自有的 `GITHUB_TOKEN` 提交变更，无需在主仓库保存跨仓库 PAT。
 - 主仓库仍提供 `packages/opencode/script/publish-homebrew.ts`，用于手动发布时同步 Formula。
 - 该 tap 不属于 `homebrew/core`，没有 core 的 star 门槛或官方审核；清华 TUNA 的 Homebrew 官方索引和 bottles 镜像不会自动覆盖自建 tap。
+
+## 桌面端二维码手机访问
+
+桌面版可创建指向当前本地工作区的远程会话，用户通过手机扫描二维码并在桌面端逐台批准后，用手机浏览器访问。桌面端主动连到公开 Relay，用户电脑无需开放公网入站端口，也无需手动启动 web 服务。
+
+### 实现范围
+
+- Desktop 主进程通过 WSS 建立 Relay 会话，并由主进程把获批浏览器的 HTTP 流和 WebSocket 流转发到本机回环地址；本地 Basic Auth 凭据只在桌面主进程与本地服务器之间使用。WebSocket 本地连接使用 OpenCtrlC 的 `auth_token` 查询参数认证，不把凭据发给手机或 Relay。
+- Relay 提供短时配对链接；配对秘密只放在 URL fragment 中。新设备必须在桌面端批准后才获得 HttpOnly、Secure、SameSite=Strict 的 bearer cookie。单个会话最多允许三台浏览器，八小时或桌面/Relay会话结束时撤销。
+- 刷新二维码会轮换链接并取消待处理请求；停止访问会关闭 Relay 会话并撤销全部获批设备。桌面端退出时自动停止 Relay 会话。
+- App 的旧版侧栏和新版标题栏都有手机入口；对话框显示二维码、待审批设备、已批准设备数量、复制/刷新链接和停止访问操作。
+- Relay 采用内存会话状态和限额，反向代理关闭访问日志；代码和部署示例位于 `packages/remote-relay` 与 `infra/remote-relay`。
+- TLS 覆盖桌面到 Relay 和手机到 Relay 两段链路，不是端到端加密；Relay 在转发时能查看请求内容，但不会主动持久化工作区内容。UI、README 和文档必须明确这个信任边界。
+- 当前公开示例 `openctrlc-remote.quniv.cn` 是单实例、有限容量部署。Relay 重启会中断连接，不具备多区域高可用或横向扩展能力。
+
+### 代码位置
+
+- `packages/remote-relay/src/{index,protocol}.ts`：会话/配对/HTTP 与 WebSocket 中继协议和服务。
+- `packages/desktop/src/main/remote-access.ts`、`main/ipc.ts`、`preload/`：桌面 Relay 会话、本地 HTTP/WebSocket 代理和 IPC。
+- `packages/app/src/components/dialog-remote-access.tsx`、`context/platform.tsx`、`pages/layout.tsx`、`components/titlebar.tsx`：手机访问面板与两个桌面入口。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`：四种运行时语言文案。
+- `packages/web/src/content/docs/{remote-access.mdx,zh-cn/remote-access.mdx,ja/remote-access.mdx,ko/remote-access.mdx}`：使用、安全边界和自建说明。
+- `infra/remote-relay/`：限权容器、OpenResty vhost 与安全部署脚本。
+
+### 验证方式
+
+- 在 `packages/app` 和 `packages/desktop` 分别执行 `bun typecheck`；桌面包若仍出现 `window.api` 全局类型合并错误，需确认是否属于既有问题并单独记录。
+- 用 `git diff --check` 检查补丁格式；通过 relay 健康检查、Nginx 配置校验、公开 HTTPS 页面和 WebSocket 握手验证部署。
+- 手动端到端验证必须覆盖：扫码后桌面批准；桌面拒绝；二维码刷新后旧链接失效；停止后已批准设备失效；手机可加载并通过 WebSocket 与本地桌面工作区交互。
+- 桌面安装包尚未包含此功能时，用户需先使用带有这些改动的开发版或正式版本；正式发版按 `docs/release.md` 的流程另行完成。
+
+## Desktop 更新说明预览
+
+- 标题栏的更新图标打开 OpenCtrlC 官网更新日志中对应版本的更新说明，按 Features、Bug Fixes 等标题展示内容；从预览里的“安装并重启”操作才会触发更新。
+- 更新内容从 `https://openctrlc.pages.dev/changelog.json` 获取，版本号精确匹配；加载失败时仍保留安装入口，并可跳转查看完整更新日志。
+- 更新安装完成后，已有的版本说明弹窗也从 OpenCtrlC 自己的更新源获取说明；若 Release 没有桌面专属 highlight，则从同一版本的更新日志分组生成说明卡片。
+- 新的更新提示文案覆盖英文、简体中文、日文和韩文。

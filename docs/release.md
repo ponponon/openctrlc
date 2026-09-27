@@ -47,6 +47,11 @@ git show-ref --tags
 分类，再按 `macOS/Linux/Windows` 和架构分类。不要在正文中堆积 commit ID。
 如果没有第三方贡献者，不要添加 Contributors 小节。
 
+官网 `/changelog.json` 会把 GitHub Release 正文转换为安全的 HTML，Desktop 在标题栏
+更新提示中按目标版本读取并显示各个二级标题和列表；点击更新提示只打开预览，用户再点
+“安装并重启”才会开始安装。Desktop 升级后也从同一更新源加载本次版本的说明。请保留
+`Features` 与 `Bug Fixes` 标题和列表结构，避免更新前预览及升级后说明失去分组。
+
 ## 官网和文档部署
 
 `.github/workflows/deploy.yml` 会在 `dev` 分支更新时构建并部署两个 Cloudflare

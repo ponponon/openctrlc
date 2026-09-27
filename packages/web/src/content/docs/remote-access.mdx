@@ -1,0 +1,27 @@
+---
+title: Mobile Remote Access
+description: Open your desktop workspace on a phone with QR pairing and approval.
+---
+
+OpenCtrlC Desktop can share its current local workspace with a phone through the OpenCtrlC Remote Relay. The desktop connects outbound, so you do not need to expose a port on your computer or start a web server manually.
+
+## Connect a phone
+
+1. Open the mobile access control from the phone icon in the desktop sidebar or title bar.
+2. Choose **Enable mobile access** and scan the QR code with your phone.
+3. Approve the phone in the desktop app. A QR link by itself does not grant workspace access.
+4. Keep the desktop app running while you use the workspace on your phone.
+
+The pairing link expires with its session. There can be at most three approved browsers at a time. Refreshing the QR code cancels pending approval requests. Choose **Stop mobile access** to revoke every approved browser; closing the desktop also ends the session.
+
+## Network and privacy
+
+The desktop and phone connect to a relay using WSS/HTTPS. The relay forwards HTTP streams and WebSocket traffic to the desktop's loopback server. It does not open an inbound connection to your computer, and this deployment disables request access logs. Workspace content is handled in memory and is not intentionally persisted.
+
+TLS protects each network hop, but it is not end-to-end encryption: the relay decrypts traffic while forwarding it, so the relay operator could technically inspect content in transit. Review and trust the relay operator before enabling access. The desktop keeps its local server credentials on the desktop and does not send them to the phone.
+
+The public relay at `openctrlc-remote.quniv.cn` is a single, limited-capacity deployment. Access speed and availability depend on its region and bandwidth. The relay source and deployment example are in [`packages/remote-relay`](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay); teams can operate a relay in a region they trust.
+
+## Operate a relay
+
+See the [Remote Relay README](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay) for its Docker Compose and OpenResty setup. A deployment needs a public HTTPS hostname, WebSocket upgrades, long-lived streaming timeouts, and a trusted TLS certificate. Relay session state is in memory; restarting a single instance disconnects active desktops and phones.
