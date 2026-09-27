@@ -2036,3 +2036,11 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `openctrlc-ai` 仅保留为迁移兼容别名；升级器识别并清理旧包，卸载命令同时移除新旧名称。
 - 发布流程同步维护兼容包；npm 版本计算和更新检查读取规范包名。
 - npm 发布去重检查会比对 registry 返回的精确版本号，避免把无输出的查询误判为已发布。
+
+## Homebrew CLI 公开 tap
+
+- 新建并维护公开仓库 `ponponon/homebrew-tap`，公式名为 `openctrlc`，用户通过 `brew install ponponon/tap/openctrlc` 安装。
+- Formula 支持 macOS Apple Silicon/Intel 与 Linux ARM64/x64，使用 GitHub Release 的固定资产和 SHA-256 校验。
+- 独立脚本 `packages/opencode/script/publish-homebrew.ts` 从 Release API 取校验和，并通过 GitHub Contents API 更新 `Formula/openctrlc.rb`；正式发布工作流在 Release 和下载镜像同步后调用它。
+- 自动更新使用 `HOMEBREW_TAP_TOKEN` Actions secret，令牌范围限制在 tap 仓库的 Contents 读写权限。
+- 该 tap 不属于 `homebrew/core`，没有 core 的 star 门槛或官方审核；清华 TUNA 的 Homebrew 官方索引和 bottles 镜像不会自动覆盖自建 tap。

@@ -857,3 +857,11 @@ shell 工具的 `title` 常与 `command` 同文，搜索文档里会多出一份
 ## npm 版本查询必须核对返回值，不能只看退出码
 
 在仓库 npm workspaces 中执行 `npm view <包>@<版本> version` 时，查询缺失版本可能以退出码 0 结束但没有输出；仅判断命令成功会把未发布的平台包误判为已发布，导致根包发布后缺少运行时二进制依赖。判断版本是否存在时必须核对 registry 返回的版本字符串是否精确等于目标版本，并在发布后查询所有平台依赖且实际安装验证。
+
+## Homebrew core 和第三方 tap 的门槛不能混为一谈
+
+Homebrew 的 notability/star 门槛用于 `homebrew/core` 等官方仓库的收录审查，不限制任何人创建自己的第三方 tap。为用户解释 Homebrew 发布方式时，必须先区分“官方 core PR”和“项目维护的 tap”：自建 tap 可以直接发布，但没有官方审核，也不会自动进入清华 TUNA 对官方 Homebrew 索引和 bottles 的镜像。不能把 core 的 star 门槛说成 tap 的前置条件，也不能把自建 tap 描述成官方收录。
+
+## Bun Shell 的 `.env({})` 会丢失 GitHub CLI 的现有认证环境
+
+发布脚本在用户本机依赖 `gh auth login` 时，不要用只包含单个变量的 Bun Shell `.env(...)` 启动子进程；它会丢失 CLI 原本能从配置/钥匙串读取的认证上下文，造成看似已经登录却提示需要 `gh auth login`。需要设置单个值时优先用 shell 环境变量赋值并保留其余环境；CI 显式提供 tap token 时，再只给 `gh` 命令注入 `GH_TOKEN`。

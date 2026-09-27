@@ -219,3 +219,12 @@ edit by gemini3.7-flash
 ## 语言范围
 
 项目对外 README 和应用运行时界面只保留四种目标语言：英文（`README.md`）、简体中文（`README.zh.md`）、日文（`README.ja.md`）和韩文（`README.ko.md`）。设置选项、系统语言检测、应用/桌面文案加载及翻译脚本都必须共用这四种语言范围；翻译脚本的 `all` 只能展开为中文、日文、韩文，不得扫入其他 locale。除非用户明确要求清理，否则不要擅自删除仓库中已有但运行时不再引用的语言资源文件。
+
+## Homebrew CLI Distribution
+
+- The public Homebrew tap is `ponponon/homebrew-tap`; the Formula token is `openctrlc`, installed with `brew install ponponon/tap/openctrlc`.
+- The tap is maintained by OpenCtrlC and is not `homebrew/core`. Core notability requirements do not apply to creating or maintaining this tap.
+- Keep the Formula in `Formula/openctrlc.rb`. Update it with `packages/opencode/script/publish-homebrew.ts`, which reads release asset SHA-256 digests from GitHub and writes the formula through the GitHub Contents API.
+- The release workflow can update the tap only when the `HOMEBREW_TAP_TOKEN` Actions secret is set with Contents read/write access scoped to `ponponon/homebrew-tap`.
+- TUNA mirrors Homebrew's official API index and bottles, not this project tap. Do not describe this tap as using TUNA's official Homebrew mirror.
+- A future proposal to `homebrew/core` is a separate distribution path; recheck its current acceptance policy and source-build requirements before preparing one.

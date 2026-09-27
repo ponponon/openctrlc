@@ -129,6 +129,21 @@ bun ./script/publish.ts
 `OPENCTRLC_NPM_ONLY=1` 仅发布 npm 包。Docker、AUR 和 Homebrew 需要各自仓库与凭据，
 不由该命令触发。
 
+## Homebrew tap
+
+CLI 通过公开仓库 `ponponon/homebrew-tap` 分发，Formula 文件为
+`Formula/openctrlc.rb`，安装命令是 `brew install ponponon/tap/openctrlc`。
+该 tap 是 OpenCtrlC 项目维护的第三方 tap，不属于 `homebrew/core`；Homebrew 官方
+core 的星标/关注度收录门槛不适用于自建 tap。清华镜像只镜像官方索引和 bottles，
+不会自动镜像这个 tap。
+
+发布工作流在 Release 资产和官网 R2 同步完成后运行
+`packages/opencode/script/publish-homebrew.ts`。脚本从 GitHub Release API 读取
+资产 SHA-256，生成 macOS Apple Silicon/Intel 与 Linux ARM64/x64 配方，再提交到 tap。
+自动更新需要在 `ponponon/openctrlc` 仓库设置 Actions secret
+`HOMEBREW_TAP_TOKEN`：使用仅授权 `ponponon/homebrew-tap` 的 fine-grained token，权限设为
+`Contents: Read and write`。未配置 secret 时工作流会发出 warning 并跳过 Formula 更新。
+
 不要直接修改 `packages/desktop/scripts/utils.ts` 中的默认 CLI 版本来“发布”新版本。
 
 ## 桌面端验证
