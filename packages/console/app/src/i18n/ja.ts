@@ -726,6 +726,7 @@ export const dict = {
   "download.hero.subtitle": "macOS、Windows、Linux 向けベータ版を利用可能",
   "download.hero.button": "{{os}} 向けダウンロード",
   "download.section.terminal": "OpenCtrlC Terminal",
+  "download.terminal.npmNote": "npm でインストールすることもできます（Node.js と npm が必要です）。",
   "download.section.desktop": "OpenCtrlC Desktop",
   "download.section.extensions": "OpenCtrlC Extensions",
   "download.section.integrations": "OpenCtrlC Integrations",

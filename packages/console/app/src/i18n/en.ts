@@ -734,6 +734,7 @@ export const dict = {
   "download.hero.subtitle": "Available in Beta for macOS, Windows, and Linux",
   "download.hero.button": "Download for {{os}}",
   "download.section.terminal": "OpenCtrlC Terminal",
+  "download.terminal.npmNote": "Or install with npm (Node.js and npm required):",
   "download.section.desktop": "OpenCtrlC Desktop",
   "download.section.extensions": "OpenCtrlC Extensions",
   "download.section.integrations": "OpenCtrlC Integrations",

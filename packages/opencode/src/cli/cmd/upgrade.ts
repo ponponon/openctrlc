@@ -47,6 +47,22 @@ export const UpgradeCommand = {
     const target = args.target ? args.target.replace(/^v/, "") : await Installation.latest()
 
     if (InstallationVersion === target) {
+      if (method === "npm" || method === "pnpm" || method === "bun") {
+        prompts.log.info("Checking npm package-name migration")
+        const spinner = prompts.spinner()
+        spinner.start("Checking package installation...")
+        const err = await Installation.upgrade(method, target).catch((err) => err)
+        if (err) {
+          spinner.stop("Package migration failed", 1)
+          if (err instanceof Installation.UpgradeFailedError) prompts.log.error(err.stderr)
+          else if (err instanceof Error) prompts.log.error(err.message)
+          prompts.outro("Done")
+          return
+        }
+        spinner.stop("Package installation verified")
+        prompts.outro("Done")
+        return
+      }
       prompts.log.warn(`${Brand.name} upgrade skipped: ${target} is already installed`)
       prompts.outro("Done")
       return

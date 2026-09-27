@@ -719,6 +719,7 @@ export const dict = {
   "download.hero.subtitle": "macOS, Windows, Linux용 베타 버전 사용 가능",
   "download.hero.button": "{{os}}용 다운로드",
   "download.section.terminal": "OpenCtrlC 터미널",
+  "download.terminal.npmNote": "npm으로도 설치할 수 있습니다 (Node.js와 npm 필요).",
   "download.section.desktop": "OpenCtrlC 데스크톱",
   "download.section.extensions": "OpenCtrlC 확장 프로그램",
   "download.section.integrations": "OpenCtrlC 통합",

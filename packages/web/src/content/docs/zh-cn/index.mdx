@@ -34,6 +34,14 @@ export const console = config.console
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
+也可以通过 npm 全局安装 CLI（需要 Node.js 和 npm）：
+
+```bash
+npm install -g openctrlc
+```
+
+如果之前安装的是旧包名，请先运行 `npm uninstall -g openctrlc-ai`，再安装 `openctrlc`。
+
 针对不同平台，可以从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新安装包；
 稳定版在可用时优先使用 R2 镜像，失败时自动回退到 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)。
 

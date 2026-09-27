@@ -19,6 +19,14 @@
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
+Node.js와 npm이 설치되어 있다면 npm으로 CLI를 전역 설치할 수도 있습니다.
+
+```bash
+npm install -g openctrlc
+```
+
+이전 npm 패키지 이름에서 마이그레이션하려면 먼저 `npm uninstall -g openctrlc-ai`를 실행하세요.
+
 ### 데스크톱
 
 최신 설치 파일은 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)에서 다운로드하세요.

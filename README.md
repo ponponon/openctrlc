@@ -36,6 +36,15 @@ The install script detects the current operating system and architecture:
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
+You can also install the CLI globally with npm (Node.js and npm required):
+
+```bash
+npm install -g openctrlc
+```
+
+To migrate from the former npm package name, run `npm uninstall -g openctrlc-ai`
+before installing `openctrlc`.
+
 The installer respects `OPENCTRLC_INSTALL_DIR` and `XDG_BIN_DIR`. The default
 fallback is `$HOME/.openctrlc/bin`.
 

@@ -3,7 +3,13 @@ import { $ } from "bun"
 import pkg from "../package.json"
 import { Script } from "@openctrlc/script"
 import { fileURLToPath } from "url"
-import { createProductPackageManifest, npmPublishTag, ProductBinaryName, ProductPackageName } from "./package-contract"
+import {
+  createProductPackageManifest,
+  LegacyProductPackageName,
+  npmPublishTag,
+  ProductBinaryName,
+  ProductPackageName,
+} from "./package-contract"
 
 const dir = fileURLToPath(new URL("..", import.meta.url))
 process.chdir(dir)
@@ -27,45 +33,49 @@ async function publish(dir: string, name: string, version: string) {
 const binaries: Record<string, string> = {}
 for (const filepath of new Bun.Glob("*/package.json").scanSync({ cwd: "./dist" })) {
   const pkg = await Bun.file(`./dist/${filepath}`).json()
-  if (pkg.name !== ProductPackageName) binaries[pkg.name] = pkg.version
+  if (![ProductPackageName, LegacyProductPackageName].includes(pkg.name)) binaries[pkg.name] = pkg.version
 }
 console.log("binaries", binaries)
 const version = Object.values(binaries)[0]
-const rootDirectory = `./dist/${ProductPackageName}`
+async function prepareProductPackage(name: string) {
+  const directory = `./dist/${name}`
+  await $`mkdir -p ${directory}/bin`
+  await $`cp ./script/postinstall.mjs ${directory}/postinstall.mjs`
+  await Bun.file(`${directory}/LICENSE`).write(await Bun.file("../../LICENSE").text())
+  await Bun.file(`${directory}/bin/${ProductBinaryName}`).write(
+    [
+      `echo "Error: ${name}'s postinstall script was not run." >&2`,
+      'echo "" >&2',
+      'echo "This occurs when using --ignore-scripts during installation, or when using a" >&2',
+      'echo "package manager like pnpm that does not run postinstall scripts by default." >&2',
+      'echo "" >&2',
+      'echo "To fix this, run the postinstall script manually:" >&2',
+      `echo "  cd node_modules/${name} && node postinstall.mjs" >&2`,
+      'echo "" >&2',
+      `echo "Or reinstall ${name} without the --ignore-scripts flag." >&2`,
+      "exit 1",
+      "",
+    ].join("\n"),
+  )
+  await Bun.file(`${directory}/package.json`).write(
+    JSON.stringify(
+      createProductPackageManifest({ name, version, license: pkg.license, optionalDependencies: binaries }),
+      null,
+      2,
+    ),
+  )
+  return directory
+}
 
-await $`mkdir -p ${rootDirectory}`
-await $`mkdir -p ${rootDirectory}/bin`
-await $`cp ./script/postinstall.mjs ${rootDirectory}/postinstall.mjs`
-await Bun.file(`${rootDirectory}/LICENSE`).write(await Bun.file("../../LICENSE").text())
-await Bun.file(`${rootDirectory}/bin/${ProductBinaryName}`).write(
-  [
-    `echo "Error: ${ProductPackageName}'s postinstall script was not run." >&2`,
-    'echo "" >&2',
-    'echo "This occurs when using --ignore-scripts during installation, or when using a" >&2',
-    'echo "package manager like pnpm that does not run postinstall scripts by default." >&2',
-    'echo "" >&2',
-    'echo "To fix this, run the postinstall script manually:" >&2',
-    `echo "  cd node_modules/${ProductPackageName} && node postinstall.mjs" >&2`,
-    'echo "" >&2',
-    `echo "Or reinstall ${ProductPackageName} without the --ignore-scripts flag." >&2`,
-    "exit 1",
-    "",
-  ].join("\n"),
-)
-
-await Bun.file(`${rootDirectory}/package.json`).write(
-  JSON.stringify(
-    createProductPackageManifest({ version, license: pkg.license, optionalDependencies: binaries }),
-    null,
-    2,
-  ),
-)
+const rootDirectory = await prepareProductPackage(ProductPackageName)
+const legacyDirectory = await prepareProductPackage(LegacyProductPackageName)
 
 const tasks = Object.entries(binaries).map(async ([name]) => {
   await publish(`./dist/${name}`, name, binaries[name])
 })
 await Promise.all(tasks)
 await publish(rootDirectory, ProductPackageName, version)
+await publish(legacyDirectory, LegacyProductPackageName, version)
 
 if (process.env.OPENCTRLC_NPM_ONLY === "1") process.exit(0)
 

@@ -705,6 +705,7 @@ export const dict = {
   "download.hero.subtitle": "适用于 macOS, Windows, 和 Linux 的 Beta 版",
   "download.hero.button": "下载 {{os}} 版",
   "download.section.terminal": "OpenCtrlC 终端",
+  "download.terminal.npmNote": "也可以通过 npm 安装（需要 Node.js 和 npm）：",
   "download.section.desktop": "OpenCtrlC 桌面版",
   "download.section.extensions": "OpenCtrlC 扩展",
   "download.section.integrations": "OpenCtrlC 集成",

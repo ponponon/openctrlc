@@ -19,6 +19,14 @@
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
+Node.js と npm がある場合は、npm で CLI をグローバルインストールできます。
+
+```bash
+npm install -g openctrlc
+```
+
+以前の npm パッケージ名から移行する場合は、先に `npm uninstall -g openctrlc-ai` を実行してください。
+
 ### デスクトップ
 
 最新のインストーラーは [GitHub Releases](https://github.com/ponponon/openctrlc/releases) からダウンロードしてください。

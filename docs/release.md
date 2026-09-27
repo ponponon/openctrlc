@@ -108,14 +108,26 @@ APPLE_TEAM_ID
 ## npm 包发布
 
 当前 `publish` 工作流主要负责 GitHub Release 和 Desktop 资产，不会自动发布
-npm 包。若需要同步发布 CLI npm 包，使用：
+npm 包。CLI 的正式 npm 包名是 `openctrlc`；`openctrlc-ai` 会在迁移期间保留为
+兼容别名。发布后应弃用旧包名，并在 npm 上确认两个包都已发布：
+
+```bash
+npm view openctrlc version
+npm view openctrlc-ai version
+```
+
+若需要同步发布 CLI npm 包，使用：
 
 ```bash
 OPENCTRLC_VERSION=<version> \
 OPENCTRLC_CHANNEL=prod \
 OPENCTRLC_RELEASE=1 \
+OPENCTRLC_NPM_ONLY=1 \
 bun ./script/publish.ts
 ```
+
+`OPENCTRLC_NPM_ONLY=1` 仅发布 npm 包。Docker、AUR 和 Homebrew 需要各自仓库与凭据，
+不由该命令触发。
 
 不要直接修改 `packages/desktop/scripts/utils.ts` 中的默认 CLI 版本来“发布”新版本。
 

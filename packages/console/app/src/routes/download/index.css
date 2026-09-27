@@ -451,6 +451,13 @@
       flex-direction: column;
       gap: 0;
     }
+
+    [data-component="download-note"] {
+      color: var(--color-text-weak);
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin: 0.5rem 0 0;
+    }
   }
 
   /* CLI Rows */

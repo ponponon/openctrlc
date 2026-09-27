@@ -130,10 +130,10 @@ async function showRemovalSummary(targets: RemovalTargets, method: Installation.
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string> = {
-      npm: "npm uninstall -g openctrlc-ai",
-      pnpm: "pnpm uninstall -g openctrlc-ai",
-      bun: "bun remove -g openctrlc-ai",
-      yarn: "yarn global remove openctrlc-ai",
+      npm: "npm uninstall -g openctrlc openctrlc-ai",
+      pnpm: "pnpm uninstall -g openctrlc openctrlc-ai",
+      bun: "bun remove -g openctrlc openctrlc-ai",
+      yarn: "yarn global remove openctrlc openctrlc-ai",
       brew: "brew uninstall openctrlc",
       choco: "choco uninstall openctrlc",
       scoop: "scoop uninstall openctrlc",
@@ -181,10 +181,10 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
 
   if (method !== "curl" && method !== "unknown") {
     const cmds: Record<string, string[]> = {
-      npm: ["npm", "uninstall", "-g", "openctrlc-ai"],
-      pnpm: ["pnpm", "uninstall", "-g", "openctrlc-ai"],
-      bun: ["bun", "remove", "-g", "openctrlc-ai"],
-      yarn: ["yarn", "global", "remove", "openctrlc-ai"],
+      npm: ["npm", "uninstall", "-g", "openctrlc", "openctrlc-ai"],
+      pnpm: ["pnpm", "uninstall", "-g", "openctrlc", "openctrlc-ai"],
+      bun: ["bun", "remove", "-g", "openctrlc", "openctrlc-ai"],
+      yarn: ["yarn", "global", "remove", "openctrlc", "openctrlc-ai"],
       brew: ["brew", "uninstall", "openctrlc"],
       choco: ["choco", "uninstall", "openctrlc"],
       scoop: ["scoop", "uninstall", "openctrlc"],

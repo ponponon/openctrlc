@@ -132,6 +132,11 @@ export default function Download() {
                 </code>
                 <CopyStatus />
               </button>
+              <p data-component="download-note">{i18n.t("download.terminal.npmNote")}</p>
+              <button data-component="cli-row" onClick={handleCopyClick("npm install -g openctrlc")}>
+                <code>npm install -g openctrlc</code>
+                <CopyStatus />
+              </button>
             </div>
           </section>
 

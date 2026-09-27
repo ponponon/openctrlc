@@ -28,6 +28,7 @@ test("the published root package manifest points to openctrlc", () => {
   })
 
   expect(manifest.name).toBe(ProductPackageName)
+  expect(ProductPackageName).toBe(Brand.cli)
   expect(manifest.bin).toEqual({ [Brand.cli]: `./bin/${ProductBinaryName}` })
   expect(manifest.optionalDependencies).toEqual({
     "openctrlc-darwin-arm64": "1.2.3",

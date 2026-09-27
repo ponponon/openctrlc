@@ -1,6 +1,7 @@
 import { Brand } from "@openctrlc/identity"
 
-export const ProductPackageName = `${Brand.cli}-ai`
+export const ProductPackageName = Brand.cli
+export const LegacyProductPackageName = `${Brand.cli}-ai`
 export const ProductBinaryName = `${Brand.cli}.exe`
 
 export function releaseTag(channel: string, version: string) {
@@ -12,12 +13,13 @@ export function npmPublishTag(channel: string) {
 }
 
 export function createProductPackageManifest(input: {
+  name?: string
   version: string
   license: string
   optionalDependencies: Record<string, string>
 }) {
   return {
-    name: ProductPackageName,
+    name: input.name ?? ProductPackageName,
     bin: { [Brand.cli]: `./bin/${ProductBinaryName}` },
     scripts: {
       postinstall: "node ./postinstall.mjs",

@@ -4,7 +4,7 @@ import path from "node:path"
 import { parse } from "yaml"
 import { Brand } from "@openctrlc/identity"
 
-const ProductPackageName = `${Brand.cli}-ai`
+const ProductPackageName = Brand.cli
 const ProductBinaryName = `${Brand.cli}.exe`
 
 const root = path.resolve(import.meta.dirname, "..")
@@ -22,7 +22,7 @@ if (JSON.stringify(bin) !== JSON.stringify({ [Brand.cli]: `./bin/${Brand.cli}` }
 }
 
 const contract = await read("packages/opencode/script/package-contract.ts")
-if (!contract.includes("ProductPackageName = `${Brand.cli}-ai`")) {
+if (!contract.includes("ProductPackageName = Brand.cli")) {
   failures.push(`the product package must be ${ProductPackageName}`)
 }
 if (!contract.includes("ProductBinaryName = `${Brand.cli}.exe`")) {
@@ -84,7 +84,7 @@ const required: Array<[string, string[]]> = [
     ],
   ],
   ["script/changelog.ts", ['const cmd = ["openctrlc", "run"]']],
-  ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc-ai/latest"]],
+  ["packages/script/src/index.ts", ["registry.npmjs.org/openctrlc/latest"]],
   ["packages/console/app/src/routes/download/index.tsx", ["raw.githubusercontent.com/ponponon/openctrlc/dev/install"]],
   [
     "packages/web/src/assets/lander/terminal-preview.svg",
@@ -172,7 +172,7 @@ const readmes = tracked.filter((file) => /(?:^|\/)README[^/]*\.md$/.test(file)).
 const staleReleaseGuide =
   /(?<!@)opencode-ai|opencode-desktop|opencode-bin|OPENCODE_INSTALL_DIR|\.opencode\/bin|opencode\.ai\/(?:install|download)|nix run nixpkgs#opencode|github:anomalyco\/opencode(?:\/releases|\/actions)|openctrlc-desktop-(?:mac|win|linux)-/
 const unsupportedInstallCommand =
-  /(?:npm\s+(?:i|install)\s+(?:-g|--global)|bun\s+add\s+-g|brew\s+install(?:\s+--cask)?|(?:sudo\s+)?pacman\s+-S|paru\s+-S|choco\s+install|scoop\s+install|mise\s+use\s+-g|docker\s+run[\s\S]*ghcr\.io\/ponponon\/openctrlc)/i
+  /(?:npm\s+(?:i|install)\s+(?:-g|--global)\s+(?!openctrlc(?:[\s'"`<]|$))\S+|bun\s+add\s+-g|brew\s+install(?:\s+--cask)?|(?:sudo\s+)?pacman\s+-S|paru\s+-S|choco\s+install|scoop\s+install|mise\s+use\s+-g|docker\s+run[\s\S]*ghcr\.io\/ponponon\/openctrlc)/i
 const publicInstallGuides = [
   "README.md",
   "README.zh.md",

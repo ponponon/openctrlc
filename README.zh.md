@@ -33,6 +33,14 @@ OpenCtrlC 帮助你探索代码仓库、理解陌生代码、编辑文件、运�
 curl -fsSL https://raw.githubusercontent.com/ponponon/openctrlc/dev/install | bash
 ```
 
+也可以通过 npm 全局安装 CLI（需要 Node.js 和 npm）：
+
+```bash
+npm install -g openctrlc
+```
+
+如果之前安装的是旧包名，请先运行 `npm uninstall -g openctrlc-ai`，再安装 `openctrlc`。
+
 安装器支持通过 `OPENCTRLC_INSTALL_DIR` 或 `XDG_BIN_DIR` 自定义安装路径，默认回退到 `$HOME/.openctrlc/bin`。
 
 ### 桌面版

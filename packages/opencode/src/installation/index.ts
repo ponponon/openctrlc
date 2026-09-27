@@ -18,7 +18,8 @@ import { Brand } from "@openctrlc/identity"
 
 export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "unknown"
 
-const productPackageName = `${Brand.cli}-ai`
+const productPackageName = Brand.cli
+const legacyProductPackageName = `${Brand.cli}-ai`
 
 export type ReleaseType = "patch" | "minor" | "major"
 
@@ -202,9 +203,11 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
 
         for (const check of checks) {
           const output = yield* check.command()
-          const installedName =
-            check.name === "brew" || check.name === "choco" || check.name === "scoop" ? Brand.cli : productPackageName
-          if (output.includes(installedName)) {
+          const installed =
+            check.name === "brew" || check.name === "choco" || check.name === "scoop"
+              ? output.includes(Brand.cli)
+              : output.includes(productPackageName) || output.includes(legacyProductPackageName)
+          if (installed) {
             return check.name
           }
         }
@@ -270,18 +273,31 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
       }, Effect.orDie),
       upgrade: Effect.fn("Installation.upgrade")(function* (m: Method, target: string) {
         let upgradeResult: { code: number; stdout: string; stderr: string } | undefined
+        const upgradeNpmPackage = Effect.fnUntraced(function* (manager: "npm" | "pnpm" | "bun") {
+          const install = yield* run([manager, "install", "-g", `${productPackageName}@${target}`])
+          if (install.code !== 0) return install
+          const listing = yield* text(
+            manager === "bun" ? ["bun", "pm", "ls", "-g"] : [manager, "list", "-g", "--depth=0"],
+          )
+          if (!listing.includes(legacyProductPackageName)) return install
+          return yield* run(
+            manager === "bun"
+              ? ["bun", "remove", "-g", legacyProductPackageName]
+              : [manager, "uninstall", "-g", legacyProductPackageName],
+          )
+        })
         switch (m) {
           case "curl":
             upgradeResult = yield* upgradeCurl(target)
             break
           case "npm":
-            upgradeResult = yield* run(["npm", "install", "-g", `${productPackageName}@${target}`])
+            upgradeResult = yield* upgradeNpmPackage("npm")
             break
           case "pnpm":
-            upgradeResult = yield* run(["pnpm", "install", "-g", `${productPackageName}@${target}`])
+            upgradeResult = yield* upgradeNpmPackage("pnpm")
             break
           case "bun":
-            upgradeResult = yield* run(["bun", "install", "-g", `${productPackageName}@${target}`])
+            upgradeResult = yield* upgradeNpmPackage("bun")
             break
           case "brew": {
             const formula = yield* getBrewFormula()

@@ -2029,3 +2029,9 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 执行 `packages/app` 的 `bun test src/pages/session/session-search.test.ts` 与 `bun typecheck`，以及 `packages/session-ui` 的 `bun typecheck`。
 - 手动检查用户消息、短助手回复、长助手回复、以及收起步骤区内的命中均显示在输入框上方的时间线视口中央。
 - 连续用上下键切换同一条消息中的多个命中；检查会话开头和结尾的结果在滚动边界处仍可见。
+
+## CLI npm 包名统一为 openctrlc
+
+- npm 正式包名与可执行命令统一为 `openctrlc`，官网、下载页、README 和多语言文档提供 `npm install -g openctrlc`。
+- `openctrlc-ai` 仅保留为迁移兼容别名；升级器识别并清理旧包，卸载命令同时移除新旧名称。
+- 发布流程同步维护兼容包；npm 版本计算和更新检查读取规范包名。
