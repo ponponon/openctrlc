@@ -224,7 +224,7 @@ edit by gemini3.7-flash
 
 - The public Homebrew tap is `ponponon/homebrew-tap`; the Formula token is `openctrlc`, installed with `brew install ponponon/tap/openctrlc`.
 - The tap is maintained by OpenCtrlC and is not `homebrew/core`. Core notability requirements do not apply to creating or maintaining this tap.
-- Keep the Formula in `Formula/openctrlc.rb`. Update it with `packages/opencode/script/publish-homebrew.ts`, which reads release asset SHA-256 digests from GitHub and writes the formula through the GitHub Contents API.
-- The release workflow can update the tap only when the `HOMEBREW_TAP_TOKEN` Actions secret is set with Contents read/write access scoped to `ponponon/homebrew-tap`.
+- Keep the Formula in `Formula/openctrlc.rb`. The tap's `script/update-formula.mjs` reads the latest stable release asset SHA-256 digests and regenerates it; the tap's scheduled GitHub Actions workflow commits changes using its own repository-scoped token.
+- `packages/opencode/script/publish-homebrew.ts` remains available for a manually triggered release from the main repository; local runs can use the existing `gh auth login` session, and CI callers must provide a token with write access to the tap.
 - TUNA mirrors Homebrew's official API index and bottles, not this project tap. Do not describe this tap as using TUNA's official Homebrew mirror.
 - A future proposal to `homebrew/core` is a separate distribution path; recheck its current acceptance policy and source-build requirements before preparing one.
