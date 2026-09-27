@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron"
 import type { ElectronAPI, WslServersEvent } from "./types"
 import type { UpdaterState } from "@openctrlc/app/updater"
+import type { RemoteAccessState } from "@openctrlc/app"
 
 const updaterCallbacks = new Set<(state: UpdaterState) => void>()
 let updaterState: UpdaterState | undefined
@@ -8,6 +9,12 @@ let updaterSubscription: Promise<void> | undefined
 const updaterHandler = (_: unknown, state: UpdaterState) => {
   updaterState = state
   updaterCallbacks.forEach((callback) => callback(state))
+}
+
+const remoteAccessCallbacks = new Set<(state: RemoteAccessState) => void>()
+let remoteAccessSubscription: Promise<void> | undefined
+const remoteAccessHandler = (_: unknown, state: RemoteAccessState) => {
+  remoteAccessCallbacks.forEach((callback) => callback(state))
 }
 
 const api: ElectronAPI = {
@@ -55,6 +62,29 @@ const api: ElectronAPI = {
     },
     check: () => ipcRenderer.invoke("updater-check"),
     install: () => ipcRenderer.invoke("updater-install"),
+  },
+  remoteAccess: {
+    getState: () => ipcRenderer.invoke("remote-access-state"),
+    start: () => ipcRenderer.invoke("remote-access-start"),
+    stop: () => ipcRenderer.invoke("remote-access-stop"),
+    rotatePairingLink: () => ipcRenderer.invoke("remote-access-rotate-link"),
+    approve: (pairID) => ipcRenderer.invoke("remote-access-approve", pairID),
+    deny: (pairID) => ipcRenderer.invoke("remote-access-deny", pairID),
+    subscribe: async (callback) => {
+      remoteAccessCallbacks.add(callback)
+      if (!remoteAccessSubscription) {
+        ipcRenderer.on("remote-access-state", remoteAccessHandler)
+        remoteAccessSubscription = ipcRenderer.invoke("remote-access-subscribe")
+      }
+      await remoteAccessSubscription
+      return () => {
+        remoteAccessCallbacks.delete(callback)
+        if (remoteAccessCallbacks.size > 0) return
+        ipcRenderer.removeListener("remote-access-state", remoteAccessHandler)
+        remoteAccessSubscription = undefined
+        void ipcRenderer.invoke("remote-access-unsubscribe")
+      }
+    },
   },
   consumeInitialDeepLinks: () => ipcRenderer.invoke("consume-initial-deep-links"),
   getDefaultServerUrl: () => ipcRenderer.invoke("get-default-server-url"),

@@ -159,6 +159,7 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
     os,
     version: pkg.version,
     windowID: windowState.id,
+    remoteAccess: window.api.remoteAccess,
 
     async openDirectoryPickerDialog(opts) {
       return window.api.openDirectoryPicker({

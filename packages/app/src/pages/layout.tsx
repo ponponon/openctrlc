@@ -82,6 +82,7 @@ import {
 } from "./layout/sidebar-workspace"
 import { ProjectDragOverlay, SortableProject, type ProjectSidebarContext } from "./layout/sidebar-project"
 import { SidebarContent } from "./layout/sidebar-shell"
+import { DialogRemoteAccess } from "@/components/dialog-remote-access"
 
 export default function LegacyLayout(props: ParentProps) {
   const serverSDK = useServerSDK()
@@ -2249,6 +2250,8 @@ export default function LegacyLayout(props: ParentProps) {
       settingsLabel={() => language.t("sidebar.settings")}
       settingsKeybind={() => command.keybind("settings.open")}
       onOpenSettings={openSettings}
+      remoteAccessLabel={platform.remoteAccess ? () => language.t("remoteAccess.title") : undefined}
+      onOpenRemoteAccess={platform.remoteAccess ? () => void dialog.show(() => <DialogRemoteAccess />) : undefined}
       helpLabel={() => language.t("sidebar.help")}
       onOpenHelp={() => platform.openExternal("https://github.com/ponponon/openctrlc/discussions")}
       renderPanel={() =>

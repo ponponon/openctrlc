@@ -60,6 +60,7 @@ import { getDatabaseFiles } from "./database-files"
 import { setNativeTranslations } from "./native-translations"
 import { createDesktopTray, destroyDesktopTray, updateDesktopTrayMenu } from "./tray"
 import { Brand } from "@openctrlc/identity"
+import { RemoteAccessService } from "./remote-access"
 
 const APP_NAMES: Record<string, string> = {
   dev: Brand.name,
@@ -175,7 +176,13 @@ const main = Effect.gen(function* () {
       },
     },
   )
+  const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
+  const remoteAccess = new RemoteAccessService(
+    () => Effect.runPromise(Deferred.await(serverReady)),
+    (error) => logger.error("remote access relay failed", error),
+  )
   const stopSidecars = async () => {
+    await remoteAccess.stop()
     await killSidecar()
     wslServers.stopAll()
   }
@@ -258,8 +265,6 @@ const main = Effect.gen(function* () {
     })
   }
 
-  const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
-
   yield* Effect.promise(() => app.whenReady())
 
   if (!TEST_ONBOARDING) migrate()
@@ -324,6 +329,7 @@ const main = Effect.gen(function* () {
       createMenu(menuDeps)
       updateDesktopTrayMenu()
     },
+    remoteAccess,
   })
   registerWslIpcHandlers(wslServers)
   void updater.start()

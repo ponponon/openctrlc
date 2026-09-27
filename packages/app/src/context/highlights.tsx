@@ -6,8 +6,7 @@ import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { persisted } from "@/utils/persist"
 import { DialogReleaseNotes, type Highlight } from "@/components/dialog-release-notes"
-
-const CHANGELOG_URL = "https://opencode.ai/changelog.json"
+import { CHANGELOG_URL, normalizeReleaseVersion, releaseNoteSections } from "@/utils/changelog"
 
 type Store = {
   version?: string
@@ -16,6 +15,7 @@ type Store = {
 type ParsedRelease = {
   tag?: string
   highlights: Highlight[]
+  content?: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -30,12 +30,6 @@ function getText(value: unknown): string | undefined {
 
   if (typeof value === "number") return String(value)
   return
-}
-
-function normalizeVersion(value: string | undefined) {
-  const text = value?.trim()
-  if (!text) return
-  return text.startsWith("v") || text.startsWith("V") ? text.slice(1) : text
 }
 
 function parseMedia(value: unknown, alt: string): Highlight["media"] | undefined {
@@ -64,9 +58,10 @@ function parseHighlight(value: unknown): Highlight | undefined {
 function parseRelease(value: unknown): ParsedRelease | undefined {
   if (!isRecord(value)) return
   const tag = getText(value.tag) ?? getText(value.tag_name) ?? getText(value.name)
+  const content = getText(value.content)
 
   if (!Array.isArray(value.highlights)) {
-    return { tag, highlights: [] }
+    return { tag, highlights: [], content }
   }
 
   const highlights = value.highlights.flatMap((group) => {
@@ -85,7 +80,7 @@ function parseRelease(value: unknown): ParsedRelease | undefined {
     return [item]
   })
 
-  return { tag, highlights }
+  return { tag, highlights, content }
 }
 
 function parseChangelog(value: unknown): ParsedRelease[] | undefined {
@@ -100,23 +95,28 @@ function parseChangelog(value: unknown): ParsedRelease[] | undefined {
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {
-  const current = normalizeVersion(input.current)
-  const previous = normalizeVersion(input.previous)
+  const current = normalizeReleaseVersion(input.current)
+  const previous = normalizeReleaseVersion(input.previous)
   const releases = input.releases
 
   const start = (() => {
     if (!current) return 0
-    const index = releases.findIndex((release) => normalizeVersion(release.tag) === current)
+    const index = releases.findIndex((release) => normalizeReleaseVersion(release.tag) === current)
     return index === -1 ? 0 : index
   })()
 
   const end = (() => {
     if (!previous) return releases.length
-    const index = releases.findIndex((release, i) => i >= start && normalizeVersion(release.tag) === previous)
+    const index = releases.findIndex((release, i) => i >= start && normalizeReleaseVersion(release.tag) === previous)
     return index === -1 ? releases.length : index
   })()
 
-  const highlights = releases.slice(start, end).flatMap((release) => release.highlights)
+  const highlights = releases.slice(start, end).flatMap((release) => {
+    if (release.highlights.length > 0) return release.highlights
+    return releaseNoteSections(release.content).flatMap((section) =>
+      section.items.map((description) => ({ title: section.title, description })),
+    )
+  })
   const seen = new Set<string>()
   const unique = highlights.filter((highlight) => {
     const key = dedupeKey(highlight)

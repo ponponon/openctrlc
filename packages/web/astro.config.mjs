@@ -123,7 +123,7 @@ export default defineConfig({
             "ko-KR": "사용",
             "zh-CN": "使用",
           },
-          items: ["tui", "cli", "web", "ide", "share", "github", "gitlab"],
+          items: ["tui", "cli", "web", "remote-access", "ide", "share", "github", "gitlab"],
         },
 
         {

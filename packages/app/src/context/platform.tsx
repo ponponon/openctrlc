@@ -21,6 +21,24 @@ type SaveFilePickerOptions = { title?: string; defaultPath?: string }
 type PlatformName = "web" | "desktop"
 type DesktopOS = "macos" | "windows" | "linux"
 
+export type RemoteAccessPairRequest = { id: string; device: string }
+export type RemoteAccessState = {
+  status: "stopped" | "connecting" | "active" | "error"
+  url?: string
+  pendingRequests: RemoteAccessPairRequest[]
+  authorizedDevices: number
+  error?: string
+}
+export type RemoteAccessPlatform = {
+  getState(): Promise<RemoteAccessState>
+  subscribe(callback: (state: RemoteAccessState) => void): Promise<() => void>
+  start(): Promise<RemoteAccessState>
+  stop(): Promise<void>
+  rotatePairingLink(): Promise<void>
+  approve(pairID: string): Promise<void> | void
+  deny(pairID: string): Promise<void> | void
+}
+
 export type DesktopDatabaseFile = {
   name: string
   path: string
@@ -111,6 +129,9 @@ type PlatformBase = {
 
   /** Manage WSL sidecar servers (Electron on Windows only) */
   wslServers?: WslServersPlatform
+
+  /** Create an encrypted desktop-to-relay session and approve browser pairing (desktop only) */
+  remoteAccess?: RemoteAccessPlatform
 
   /** Get the preferred display backend (desktop only) */
   getDisplayBackend?(): Promise<DisplayBackend | null> | DisplayBackend | null

@@ -3,8 +3,10 @@ import {
   createMemo,
   createResource,
   createSignal,
+  For,
   Match,
   on,
+  onCleanup,
   onMount,
   Show,
   Switch,
@@ -39,6 +41,11 @@ import type { PromptSession } from "@/context/prompt"
 import "./titlebar.css"
 import { newTabTooltipKeybind } from "./command-tooltip-keybind"
 import { normalizeSessionInfo } from "@/utils/session"
+import { useDialog } from "@openctrlc/ui/context/dialog"
+import { DialogRemoteAccess } from "@/components/dialog-remote-access"
+import { Popover as KobaltePopover } from "@kobalte/core/popover"
+import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
+import { CHANGELOG_PAGE_URL, CHANGELOG_URL, findReleaseNote, type ReleaseNote } from "@/utils/changelog"
 
 const legacyTitlebarHeight = 40
 const v2TitlebarHeight = 36
@@ -64,6 +71,7 @@ export function useTitlebarRightMount() {
 export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visible: boolean; toggle: () => void } }) {
   const layout = useLayout()
   const platform = usePlatform()
+  const dialog = useDialog()
   const command = useCommand()
   const language = useLanguage()
   const settings = useSettings()
@@ -127,14 +135,30 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
     return {
       visible: version !== undefined || installing,
       installing,
+      version,
       label: language.t("titlebar.update"),
       ariaLabel: language.t("toast.update.action.installRestart"),
       title: version ? language.t("titlebar.updateVersion", { version }) : undefined,
+      installLabel: language.t("titlebar.updateInstall"),
+      installingLabel: language.t("titlebar.updateInstalling"),
+      featuresLabel: language.t("titlebar.updateFeatures"),
+      fixesLabel: language.t("titlebar.updateFixes"),
+      performanceLabel: language.t("titlebar.updatePerformance"),
+      uiLabel: language.t("titlebar.updateUI"),
+      loadingLabel: language.t("titlebar.updateLoading"),
+      unavailableLabel: language.t("titlebar.updateUnavailable"),
+      moreLabel: language.t("titlebar.updateMore"),
       onInstall: () => props.update?.install(),
     }
   })
   const v2RightState = createMemo<TitlebarV2RightState>(() => ({
     update: updateState(),
+    remoteAccess: platform.remoteAccess
+      ? {
+          label: language.t("remoteAccess.title"),
+          open: () => dialog.show(() => <DialogRemoteAccess />),
+        }
+      : undefined,
   }))
 
   const back = () => {
@@ -595,19 +619,44 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
 type TitlebarUpdatePillState = {
   visible: boolean
   installing: boolean
+  version?: string
   label: string
   ariaLabel: string
   title?: string
+  installLabel: string
+  installingLabel: string
+  featuresLabel: string
+  fixesLabel: string
+  performanceLabel: string
+  uiLabel: string
+  loadingLabel: string
+  unavailableLabel: string
+  moreLabel: string
   onInstall: () => void
 }
 
 type TitlebarV2RightState = {
   update: TitlebarUpdatePillState
+  remoteAccess?: { label: string; open: () => void }
 }
 
 function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
   return (
     <div class="relative z-20 flex shrink-0 items-center justify-end gap-0 overflow-visible">
+      <Show when={props.state.remoteAccess}>
+        {(remoteAccess) => (
+          <TooltipV2 placement="bottom" value={remoteAccess().label}>
+            <IconButtonV2
+              type="button"
+              variant="ghost-muted"
+              size="large"
+              icon={<IconV2 name="smartphone" />}
+              onClick={remoteAccess().open}
+              aria-label={remoteAccess().label}
+            />
+          </TooltipV2>
+        )}
+      </Show>
       <Show when={props.state.update.visible}>
         <TitlebarUpdateIconButton state={props.state.update} />
       </Show>
@@ -617,31 +666,170 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
 }
 
 function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
+  const language = useLanguage()
+  const [shown, setShown] = createSignal(false)
+  const [status, setStatus] = createSignal<"idle" | "loading" | "ready" | "unavailable">("idle")
+  const [release, setRelease] = createSignal<ReleaseNote>()
+  let controller: AbortController | undefined
+  let requestedVersion: string | undefined
+  let triggerElement: HTMLElement | undefined
+
+  const loadRelease = async (version: string) => {
+    if ((requestedVersion === version && status() !== "unavailable") || status() === "loading") return
+    controller?.abort()
+    const request = new AbortController()
+    controller = request
+    requestedVersion = version
+    setStatus("loading")
+    setRelease(undefined)
+
+    try {
+      const response = await fetch(CHANGELOG_URL, {
+        signal: request.signal,
+        headers: { Accept: "application/json" },
+      })
+      if (!response.ok) throw new Error("Changelog unavailable")
+      const item = findReleaseNote(await response.json(), version)
+      if (request.signal.aborted) return
+      setRelease(item)
+      setStatus(item ? "ready" : "unavailable")
+    } catch {
+      if (request.signal.aborted) return
+      setStatus("unavailable")
+    }
+  }
+
+  const handleOpenChange = (next: boolean) => {
+    setShown(next)
+    if (next && props.state.version) void loadRelease(props.state.version)
+  }
+
+  createEffect(
+    on(
+      () => props.state.version,
+      (version) => {
+        if (requestedVersion === version) return
+        controller?.abort()
+        requestedVersion = undefined
+        setRelease(undefined)
+        setStatus("idle")
+        if (shown() && version) void loadRelease(version)
+      },
+    ),
+  )
+
+  onCleanup(() => controller?.abort())
+
+  const sectionTitle = (title: string) => {
+    const key = title.trim().toLowerCase()
+    if (key === "features" || key === "new features") return props.state.featuresLabel
+    if (key === "bug fixes" || key === "fixes") return props.state.fixesLabel
+    if (key === "performance and reliability") return props.state.performanceLabel
+    if (key === "ui improvements") return props.state.uiLabel
+    return title
+  }
+
+  const formatDate = (value: string | undefined) => {
+    if (!value) return
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return
+    return new Intl.DateTimeFormat(language.locale(), {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date)
+  }
+
   return (
-    <div class="group relative mr-3 h-5 w-5 shrink-0 rounded-full bg-v2-background-bg-deep transition-[width] duration-150 ease-out hover:z-30 hover:w-[68px] focus-within:z-30 focus-within:w-[68px] motion-reduce:transition-none">
-      <button
-        type="button"
-        class="absolute right-0 top-0 z-10 flex h-5 w-5 items-center justify-end overflow-hidden rounded-full bg-v2-icon-icon-accent/20 text-v2-icon-icon-accent transition-[width,background-color] duration-150 ease-out group-hover:w-[68px] group-hover:bg-[color-mix(in_srgb,var(--v2-icon-icon-accent)_20%,var(--v2-background-bg-deep))] group-focus-within:w-[68px] group-focus-within:bg-[color-mix(in_srgb,var(--v2-icon-icon-accent)_20%,var(--v2-background-bg-deep))] focus-visible:outline-none disabled:opacity-60 motion-reduce:transition-none"
-        onClick={props.state.onInstall}
-        disabled={props.state.installing}
-        aria-busy={props.state.installing}
-        aria-label={props.state.ariaLabel}
-      >
-        <span class="shrink-0 ml-[8px] mr-px text-[11px] text-v2-text-text-accent [font-weight:530] opacity-0 translate-x-2 motion-safe:transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 motion-reduce:translate-x-0">
-          {props.state.label}
-        </span>
-        <span class="flex size-5 shrink-0 items-center justify-center">
-          <Show
-            when={!props.state.installing}
-            fallback={<span data-slot="titlebar-update-loader" aria-hidden="true" />}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M7 11V3M3.5 7.63128L7 11L10.5 7.63128" stroke="currentColor" />
-            </svg>
-          </Show>
-        </span>
-      </button>
-    </div>
+    <KobaltePopover open={shown()} onOpenChange={handleOpenChange} placement="bottom-end" gutter={8}>
+      <div class="group relative mr-3 h-5 w-5 shrink-0 rounded-full bg-v2-background-bg-deep transition-[width] duration-150 ease-out hover:z-30 hover:w-[68px] focus-within:z-30 focus-within:w-[68px] motion-reduce:transition-none">
+        <KobaltePopover.Trigger
+          as="button"
+          ref={(el) => (triggerElement = el)}
+          type="button"
+          class="absolute right-0 top-0 z-10 flex h-5 w-5 items-center justify-end overflow-hidden rounded-full bg-v2-icon-icon-accent/20 text-v2-icon-icon-accent transition-[width,background-color] duration-150 ease-out group-hover:w-[68px] group-hover:bg-[color-mix(in_srgb,var(--v2-icon-icon-accent)_20%,var(--v2-background-bg-deep))] group-focus-within:w-[68px] group-focus-within:bg-[color-mix(in_srgb,var(--v2-icon-icon-accent)_20%,var(--v2-background-bg-deep))] focus-visible:outline-none disabled:opacity-60 motion-reduce:transition-none"
+          disabled={props.state.installing}
+          aria-busy={props.state.installing}
+          aria-label={props.state.ariaLabel}
+          title={props.state.title}
+        >
+          <span class="shrink-0 ml-[8px] mr-px text-[11px] text-v2-text-text-accent [font-weight:530] opacity-0 translate-x-2 motion-safe:transition-all duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 motion-reduce:translate-x-0">
+            {props.state.label}
+          </span>
+          <span class="flex size-5 shrink-0 items-center justify-center">
+            <Show
+              when={!props.state.installing}
+              fallback={<span data-slot="titlebar-update-loader" aria-hidden="true" />}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M7 11V3M3.5 7.63128L7 11L10.5 7.63128" stroke="currentColor" />
+              </svg>
+            </Show>
+          </span>
+        </KobaltePopover.Trigger>
+      </div>
+      <KobaltePopover.Portal>
+        <KobaltePopover.Content
+          ref={(el) => {
+            const theme = triggerElement?.closest("[data-theme]")?.getAttribute("data-theme")
+            if (theme) el.setAttribute("data-theme", theme)
+          }}
+          data-component="titlebar-update-popover"
+          class="z-50 w-[360px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-v2-border-border-base bg-v2-background-bg-base text-v2-text-text-base shadow-[var(--v2-elevation-floating)] outline-none"
+        >
+          <div class="max-h-[min(520px,calc(100vh-56px))] overflow-y-auto p-4">
+            <header class="border-b border-v2-border-border-base pb-3">
+              <h2 class="text-14-medium text-v2-text-text-strong">
+                {props.state.version ? props.state.title : props.state.label}
+              </h2>
+              <Show when={formatDate(release()?.date)}>
+                {(date) => <time class="mt-1 block text-12-regular text-v2-text-text-muted">{date()}</time>}
+              </Show>
+            </header>
+
+            <Show when={status() === "loading"}>
+              <p class="py-4 text-13-regular text-v2-text-text-muted">{props.state.loadingLabel}</p>
+            </Show>
+            <Show when={status() === "unavailable" || (status() === "ready" && !release()?.sections.length)}>
+              <p class="py-4 text-13-regular leading-5 text-v2-text-text-muted">{props.state.unavailableLabel}</p>
+            </Show>
+            <For each={release()?.sections ?? []}>
+              {(section) => (
+                <section class="pt-3">
+                  <h3 class="mb-2 text-13-medium text-v2-text-text-strong">{sectionTitle(section.title)}</h3>
+                  <ul class="list-disc space-y-1.5 pl-5 text-13-regular leading-5 text-v2-text-text-base">
+                    <For each={section.items.slice(0, 6)}>{(item) => <li>{item}</li>}</For>
+                  </ul>
+                </section>
+              )}
+            </For>
+
+            <footer class="mt-4 flex items-center justify-between gap-3 border-t border-v2-border-border-base pt-3">
+              <a
+                href={release()?.url ?? CHANGELOG_PAGE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-12-regular text-v2-text-text-muted underline decoration-v2-border-border-base underline-offset-2 hover:text-v2-text-text-base"
+              >
+                {props.state.moreLabel}
+              </a>
+              <ButtonV2
+                type="button"
+                size="small"
+                variant="neutral"
+                disabled={props.state.installing}
+                onClick={() => {
+                  setShown(false)
+                  props.state.onInstall()
+                }}
+              >
+                {props.state.installing ? props.state.installingLabel : props.state.installLabel}
+              </ButtonV2>
+            </footer>
+          </div>
+        </KobaltePopover.Content>
+      </KobaltePopover.Portal>
+    </KobaltePopover>
   )
 }
 

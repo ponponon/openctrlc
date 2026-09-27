@@ -32,6 +32,7 @@ import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { createDesktopDraftStore } from "./draft-store"
 import { nativeT } from "./native-translations"
+import type { RemoteAccessService } from "./remote-access"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -64,11 +65,13 @@ type Deps = {
   importOpenCodeSession: (input: OpenCodeSessionImport) => Promise<{ sessionID: string }>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void> | void
   setNativeTranslations: (bundle: DesktopNativeBundle) => void
+  remoteAccess: RemoteAccessService
 }
 
 export function registerIpcHandlers(deps: Deps) {
   const drafts = createDesktopDraftStore(join(app.getPath("userData"), "drafts.sqlite"))
   const updaterSubscriptions = createUpdaterSubscriptions()
+  const remoteAccessSubscriptions = new Map<number, () => void>()
   app.once("will-quit", updaterSubscriptions.clear)
   app.on("before-quit", () => drafts.flush())
   app.once("will-quit", () => drafts.close())
@@ -76,6 +79,36 @@ export function registerIpcHandlers(deps: Deps) {
 
   ipcMain.handle("kill-sidecar", () => deps.killSidecar())
   ipcMain.handle("await-initialization", () => deps.awaitInitialization())
+  ipcMain.handle("remote-access-state", () => deps.remoteAccess.getState())
+  ipcMain.handle("remote-access-start", () => deps.remoteAccess.start())
+  ipcMain.handle("remote-access-stop", () => deps.remoteAccess.stop())
+  ipcMain.handle("remote-access-rotate-link", () => deps.remoteAccess.rotatePairingLink())
+  ipcMain.handle("remote-access-approve", (_event: IpcMainInvokeEvent, pairID: unknown) => {
+    if (typeof pairID !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(pairID)) throw new Error("Invalid pairing request")
+    deps.remoteAccess.approve(pairID)
+  })
+  ipcMain.handle("remote-access-deny", (_event: IpcMainInvokeEvent, pairID: unknown) => {
+    if (typeof pairID !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(pairID)) throw new Error("Invalid pairing request")
+    deps.remoteAccess.deny(pairID)
+  })
+  ipcMain.handle("remote-access-subscribe", (event) => {
+    const id = event.sender.id
+    remoteAccessSubscriptions.get(id)?.()
+    const unsubscribe = deps.remoteAccess.subscribe((state) => {
+      if (event.sender.isDestroyed()) return
+      event.sender.send("remote-access-state", state)
+    })
+    remoteAccessSubscriptions.set(id, unsubscribe)
+    event.sender.once("destroyed", () => {
+      if (remoteAccessSubscriptions.get(id) !== unsubscribe) return
+      remoteAccessSubscriptions.delete(id)
+      unsubscribe()
+    })
+  })
+  ipcMain.handle("remote-access-unsubscribe", (event) => {
+    remoteAccessSubscriptions.get(event.sender.id)?.()
+    remoteAccessSubscriptions.delete(event.sender.id)
+  })
   ipcMain.handle("consume-initial-deep-links", () => deps.consumeInitialDeepLinks())
   ipcMain.handle("get-default-server-url", () => deps.getDefaultServerUrl())
   ipcMain.handle("set-default-server-url", (_event: IpcMainInvokeEvent, url: string | null) =>
