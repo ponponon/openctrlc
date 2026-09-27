@@ -15,7 +15,8 @@ const dir = fileURLToPath(new URL("..", import.meta.url))
 process.chdir(dir)
 
 async function published(name: string, version: string) {
-  return (await $`npm view ${name}@${version} version`.nothrow()).exitCode === 0
+  const result = await $`npm view ${name}@${version} version --prefer-online`.nothrow()
+  return result.stdout.toString("utf8").trim() === version
 }
 
 async function publish(dir: string, name: string, version: string) {
