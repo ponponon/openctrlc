@@ -15,11 +15,12 @@ export function createSessionContextFormatter(locale: string) {
     time(value: number | undefined) {
       if (!value) return "—"
       const date = DateTime.fromMillis(value).setLocale(locale)
-      return date.toLocaleString(
-        date.year === DateTime.now().year
-          ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }
-          : DateTime.DATETIME_MED,
-      )
+      const now = DateTime.now()
+      const time = { hour: "numeric", minute: "2-digit", second: "2-digit" } as const
+      if (date.hasSame(now, "day")) return date.toLocaleString(time)
+      if (date.hasSame(now, "month")) return date.toLocaleString({ day: "numeric", ...time })
+      if (date.hasSame(now, "year")) return date.toLocaleString({ month: "short", day: "numeric", ...time })
+      return date.toLocaleString({ year: "numeric", month: "short", day: "numeric", ...time })
     },
   }
 }
