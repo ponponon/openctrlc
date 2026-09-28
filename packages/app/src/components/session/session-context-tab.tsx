@@ -205,8 +205,8 @@ export function SessionContextTab() {
   const rawMessageCost = createMemo(
     () =>
       new Intl.NumberFormat(language.intl(), {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 6,
+        maximumFractionDigits: 6,
       }),
   )
 
@@ -685,7 +685,7 @@ export function SessionContextTab() {
               <div>Role</div>
               <div class="text-left">{language.t("context.stats.lastActivity")}</div>
               <div class="text-right">{language.t("context.rawMessages.duration")}</div>
-              <div class="text-right">{language.t("context.usage.tokens")}</div>
+              <div class="text-right">{language.t("context.rawMessages.tokenDelta")}</div>
               <For each={rawMessageExtraColumns()}>
                 {(column) => <div class="text-right">{language.t(column.label)}</div>}
               </For>

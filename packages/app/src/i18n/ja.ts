@@ -611,6 +611,7 @@ export const dict = {
   "context.rawMessages.columns": "列の表示",
   "context.rawMessages.duration": "所要時間(s)",
   "context.rawMessages.costHeader": "コスト (USD)",
+  "context.rawMessages.tokenDelta": "トークン差分",
   "context.export.session": "セッションをエクスポート",
 
   "context.stats.session": "セッション",

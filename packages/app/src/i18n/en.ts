@@ -541,6 +541,7 @@ export const dict = {
   "context.rawMessages.columns": "Columns",
   "context.rawMessages.duration": "Duration (s)",
   "context.rawMessages.costHeader": "Cost (USD)",
+  "context.rawMessages.tokenDelta": "Token delta",
   "context.export.session": "Export session",
 
   "context.stats.session": "Session",
