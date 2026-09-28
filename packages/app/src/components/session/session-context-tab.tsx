@@ -691,11 +691,7 @@ export function SessionContextTab() {
               </For>
               <div class="text-right">Time</div>
             </div>
-            <Accordion
-              multiple
-              class="w-full"
-              classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
-            >
+            <Accordion multiple class="w-full" classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
               <For each={messages()}>
                 {(message, index) => (
                   <RawMessage

@@ -71,11 +71,7 @@ export function DialogRemoteAccess() {
   }
 
   return (
-    <Dialog
-      size="large"
-      fit
-      containerClass="!w-[min(calc(100vw_-_32px),680px)]"
-    >
+    <Dialog size="large" fit containerClass="!w-[min(calc(100vw_-_32px),680px)]">
       <DialogHeader closeLabel={language.t("common.close")}>
         <DialogTitleGroup
           title={language.t("remoteAccess.title")}
@@ -206,7 +202,9 @@ export function DialogRemoteAccess() {
                               disabled={revokingViewer() === viewer.id}
                               onClick={() => void revokeViewer(viewer.id)}
                             >
-                              {language.t(revokingViewer() === viewer.id ? "remoteAccess.revoking" : "remoteAccess.revoke")}
+                              {language.t(
+                                revokingViewer() === viewer.id ? "remoteAccess.revoking" : "remoteAccess.revoke",
+                              )}
                             </ButtonV2>
                           </div>
                         )}
@@ -298,7 +296,9 @@ export function DialogRemoteAccess() {
                   class="rounded-lg bg-v2-state-bg-danger px-3 py-2 text-12-regular leading-5 text-v2-state-fg-danger"
                   role="alert"
                 >
-                  {language.t(state.error === "reconnect-failed" ? "remoteAccess.reconnectFailed" : "remoteAccess.error")}
+                  {language.t(
+                    state.error === "reconnect-failed" ? "remoteAccess.reconnectFailed" : "remoteAccess.error",
+                  )}
                 </div>
               </Show>
               <ol class="flex flex-col gap-3 border-t border-v2-border-border-base pt-4">

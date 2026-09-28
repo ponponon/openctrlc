@@ -355,10 +355,13 @@ export class RemoteAccessService {
     }
     const delay = reconnectDelays[Math.min(this.#reconnectAttempt, reconnectDelays.length - 1)]
     this.#reconnectAttempt += 1
-    this.#reconnectTimer = setTimeout(() => {
-      this.#reconnectTimer = undefined
-      void this.#resume(generation)
-    }, Math.min(delay, until - Date.now()))
+    this.#reconnectTimer = setTimeout(
+      () => {
+        this.#reconnectTimer = undefined
+        void this.#resume(generation)
+      },
+      Math.min(delay, until - Date.now()),
+    )
   }
 
   async #resume(generation: number) {
@@ -443,7 +446,10 @@ export class RemoteAccessService {
       this.#setState({ ...this.#state, authorizedDevices: Math.min(3, authorizedViewers.length), authorizedViewers })
       return
     }
-    if ((message.type === "viewer.revoked" || message.type === "viewer.revoke.error") && typeof message.viewerID === "string") {
+    if (
+      (message.type === "viewer.revoked" || message.type === "viewer.revoke.error") &&
+      typeof message.viewerID === "string"
+    ) {
       const pending = this.#pendingRevocations.get(message.viewerID)
       if (!pending) return
       clearTimeout(pending.timeout)

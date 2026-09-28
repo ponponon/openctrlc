@@ -1,10 +1,4 @@
-import {
-  decodeBase64,
-  encodeBase64,
-  randomToken,
-  relayMessage,
-  type RelayServerMessage,
-} from "./protocol"
+import { decodeBase64, encodeBase64, randomToken, relayMessage, type RelayServerMessage } from "./protocol"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -276,7 +270,11 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
 
   if (value.type === "session.resume") {
     const session = typeof value.sessionID === "string" ? sessions.get(value.sessionID) : undefined
-    if (!session || value.hostToken !== session.hostToken || (session.resumeUntil && session.resumeUntil <= Date.now())) {
+    if (
+      !session ||
+      value.hostToken !== session.hostToken ||
+      (session.resumeUntil && session.resumeUntil <= Date.now())
+    ) {
       if (session?.resumeUntil && session.resumeUntil <= Date.now()) deleteSession(session)
       socket.send(JSON.stringify({ type: "session.resume.error", reason: "unavailable" } satisfies RelayServerMessage))
       socket.close(4404, "Session unavailable")
@@ -615,7 +613,8 @@ async function claimViewer(request: Request) {
     return new Response("Invalid claim", { status: 400 })
   }
   const grant = viewerTokens.get(body.viewerToken)
-  if (!grant || sessions.get(grant.session.id) !== grant.session) return new Response("Pairing expired", { status: 403 })
+  if (!grant || sessions.get(grant.session.id) !== grant.session)
+    return new Response("Pairing expired", { status: 403 })
   if (grant.expiresAt <= Date.now()) {
     removeViewer(grant.session, body.viewerToken)
     sendViewerState(grant.session)
@@ -829,7 +828,8 @@ function pairPage(mode: "pair" | "expired" | "home") {
       sent: "Request sent. Waiting for your desktop to receive it…",
       waiting: "The request is on your desktop. Waiting for your approval…",
       connectingSlow: "Still connecting to the relay. Check your network and keep this page open.",
-      deliverySlow: "The desktop has not confirmed the request yet. If it is visible there, wait for approval; otherwise check OpenCtrlC and keep this page open.",
+      deliverySlow:
+        "The desktop has not confirmed the request yet. If it is visible there, wait for approval; otherwise check OpenCtrlC and keep this page open.",
       approved: "Connected. Opening your workspace…",
       denied: "The desktop declined this request.",
       expired: "This link has expired. Create a new QR code on your desktop.",
@@ -843,7 +843,8 @@ function pairPage(mode: "pair" | "expired" | "home") {
       sent: "请求已发送，正在等待桌面端接收…",
       waiting: "桌面端已收到请求，等待你批准…",
       connectingSlow: "仍在连接中继。请检查网络，并保持此页面打开。",
-      deliverySlow: "桌面端尚未确认收到请求。如果电脑上已显示请求，请等待批准；否则检查 OpenCtrlC 是否在线，并保持此页面打开。",
+      deliverySlow:
+        "桌面端尚未确认收到请求。如果电脑上已显示请求，请等待批准；否则检查 OpenCtrlC 是否在线，并保持此页面打开。",
       approved: "已连接，正在打开工作区…",
       denied: "桌面端拒绝了此次连接。",
       expired: "此链接已过期，请在桌面端重新生成二维码。",
@@ -857,7 +858,8 @@ function pairPage(mode: "pair" | "expired" | "home") {
       sent: "リクエストを送信しました。デスクトップでの受信を待っています…",
       waiting: "リクエストがデスクトップに届きました。承認を待っています…",
       connectingSlow: "Relay への接続中です。ネットワークを確認し、このページを開いたままにしてください。",
-      deliverySlow: "デスクトップからの確認がありません。画面にリクエストが表示されていれば承認を待ち、表示されていなければ OpenCtrlC の接続を確認してください。",
+      deliverySlow:
+        "デスクトップからの確認がありません。画面にリクエストが表示されていれば承認を待ち、表示されていなければ OpenCtrlC の接続を確認してください。",
       approved: "接続しました。ワークスペースを開いています…",
       denied: "デスクトップで接続が拒否されました。",
       expired: "このリンクの有効期限が切れました。デスクトップで新しい QR コードを作成してください。",
@@ -871,7 +873,8 @@ function pairPage(mode: "pair" | "expired" | "home") {
       sent: "요청을 보냈습니다. 데스크톱에서 수신하기를 기다리는 중…",
       waiting: "요청이 데스크톱에 도착했습니다. 승인을 기다리는 중…",
       connectingSlow: "Relay에 계속 연결 중입니다. 네트워크를 확인하고 이 페이지를 열어 두세요.",
-      deliverySlow: "데스크톱에서 아직 요청을 확인하지 않았습니다. 화면에 요청이 보이면 승인을 기다리고, 보이지 않으면 OpenCtrlC 연결을 확인하세요.",
+      deliverySlow:
+        "데스크톱에서 아직 요청을 확인하지 않았습니다. 화면에 요청이 보이면 승인을 기다리고, 보이지 않으면 OpenCtrlC 연결을 확인하세요.",
       approved: "연결되었습니다. 작업 공간을 여는 중…",
       denied: "데스크톱에서 연결이 거부되었습니다.",
       expired: "링크가 만료되었습니다. 데스크톱에서 새 QR 코드를 만드세요.",

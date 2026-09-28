@@ -16,7 +16,10 @@ let remoteAccessSubscription: Promise<void> | undefined
 const remoteAccessHandler = (_: unknown, state: RemoteAccessState) => {
   remoteAccessCallbacks.forEach((callback) => callback(state))
   if (remoteAccessCallbacks.size > 0 && state.pendingRequests.length > 0) {
-    ipcRenderer.send("remote-access-state-received", state.pendingRequests.map((request) => request.id))
+    ipcRenderer.send(
+      "remote-access-state-received",
+      state.pendingRequests.map((request) => request.id),
+    )
   }
 }
 

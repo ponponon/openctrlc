@@ -910,7 +910,8 @@ export const dict = {
   "sidebar.settings": "Settings",
   "sidebar.help": "Help",
   "remoteAccess.title": "Mobile access",
-  "remoteAccess.description": "Approve each new browser once. It can reconnect while mobile access stays on; after 30 days without use, it needs approval again.",
+  "remoteAccess.description":
+    "Approve each new browser once. It can reconnect while mobile access stays on; after 30 days without use, it needs approval again.",
   "remoteAccess.setupTitle": "Start in three steps",
   "remoteAccess.stepEnable": "Turn on mobile access",
   "remoteAccess.stepScan": "Scan the QR code with your phone",
@@ -918,8 +919,10 @@ export const dict = {
   "remoteAccess.start": "Enable mobile access",
   "remoteAccess.starting": "Connecting…",
   "remoteAccess.reconnecting": "Connection interrupted. Restoring mobile access…",
-  "remoteAccess.reconnectingDescription": "The desktop is reconnecting to the relay. Keep OpenCtrlC running; approved browsers will keep their existing authorization.",
-  "remoteAccess.reconnectFailed": "The previous connection could not be restored. Enable mobile access again and scan the new QR code.",
+  "remoteAccess.reconnectingDescription":
+    "The desktop is reconnecting to the relay. Keep OpenCtrlC running; approved browsers will keep their existing authorization.",
+  "remoteAccess.reconnectFailed":
+    "The previous connection could not be restored. Enable mobile access again and scan the new QR code.",
   "remoteAccess.active": "Mobile access is on",
   "remoteAccess.scan": "Scan this QR code on your phone",
   "remoteAccess.pending": "A new device is asking to connect",

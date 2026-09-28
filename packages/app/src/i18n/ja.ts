@@ -887,12 +887,15 @@ export const dict = {
   "remoteAccess.start": "スマートフォンからのアクセスを有効にする",
   "remoteAccess.starting": "接続中…",
   "remoteAccess.reconnecting": "接続が切れました。モバイルアクセスを復元しています…",
-  "remoteAccess.reconnectingDescription": "デスクトップが Relay に再接続しています。OpenCtrlC を起動したままにしてください。承認済みブラウザーの認証は維持されます。",
-  "remoteAccess.reconnectFailed": "以前の接続を復元できませんでした。モバイルアクセスを再度有効にして、新しい QR コードをスキャンしてください。",
+  "remoteAccess.reconnectingDescription":
+    "デスクトップが Relay に再接続しています。OpenCtrlC を起動したままにしてください。承認済みブラウザーの認証は維持されます。",
+  "remoteAccess.reconnectFailed":
+    "以前の接続を復元できませんでした。モバイルアクセスを再度有効にして、新しい QR コードをスキャンしてください。",
   "remoteAccess.active": "スマートフォンからアクセスできます",
   "remoteAccess.scan": "スマートフォンで QR コードをスキャン",
   "remoteAccess.pending": "新しい端末から接続リクエストがあります",
-  "remoteAccess.pendingDescription": "ブラウザー情報は目安です。今ペアリングしている端末であることを確認して許可してください。",
+  "remoteAccess.pendingDescription":
+    "ブラウザー情報は目安です。今ペアリングしている端末であることを確認して許可してください。",
   "remoteAccess.waitingTitle": "端末の接続を待機中",
   "remoteAccess.waitingDescription": "QR コードをスキャンしてください。新しい端末はここに表示され、承認を待ちます。",
   "remoteAccess.approve": "許可",

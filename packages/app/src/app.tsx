@@ -74,9 +74,11 @@ import { LegacyHome } from "@/pages/home/legacy-home"
 const NewSession = lazy(() => import("@/pages/new-session"))
 
 const setDesktopTitlebar = (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => {
-  const api = (window as Window & {
-    api?: { setTitlebar?: (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => Promise<void> }
-  }).api
+  const api = (
+    window as Window & {
+      api?: { setTitlebar?: (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => Promise<void> }
+    }
+  ).api
   void api?.setTitlebar?.(theme)
 }
 
