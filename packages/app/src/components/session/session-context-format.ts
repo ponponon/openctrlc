@@ -14,7 +14,12 @@ export function createSessionContextFormatter(locale: string) {
     },
     time(value: number | undefined) {
       if (!value) return "—"
-      return DateTime.fromMillis(value).setLocale(locale).toLocaleString(DateTime.DATETIME_MED)
+      const date = DateTime.fromMillis(value).setLocale(locale)
+      return date.toLocaleString(
+        date.year === DateTime.now().year
+          ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }
+          : DateTime.DATETIME_MED,
+      )
     },
   }
 }
