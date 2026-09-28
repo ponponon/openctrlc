@@ -1776,11 +1776,6 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
       reasoning: message.tokens?.reasoning,
       created: message.time?.created,
       completed: message.time?.completed,
-      requestStarted: message.time?.requestStarted,
-      firstGenerated: message.time?.firstGenerated,
-      lastGenerated: message.time?.lastGenerated,
-      generationDuration: message.time?.generationDuration,
-      providerCompleted: message.time?.providerCompleted,
     })
   })
 

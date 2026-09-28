@@ -9,10 +9,11 @@ import { Button } from "@openctrlc/ui/button"
 import { DropdownMenu } from "@openctrlc/ui/dropdown-menu"
 import { Accordion } from "@openctrlc/ui/accordion"
 import { StickyAccordionHeader } from "@openctrlc/ui/sticky-accordion-header"
+import { useDialog } from "@openctrlc/ui/context/dialog"
 import { File } from "@openctrlc/session-ui/file"
 import { Markdown } from "@openctrlc/session-ui/markdown"
 import { ScrollView } from "@openctrlc/ui/scroll-view"
-import type { Message, Part, UserMessage } from "@openctrlc/sdk/v2/client"
+import type { AssistantMessage, Message, Part, UserMessage } from "@openctrlc/sdk/v2/client"
 import { showToast } from "@/utils/toast"
 import {
   downloadSessionExport,
@@ -38,6 +39,7 @@ import {
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
+import { DialogSessionMetricChart, SessionTokenSpeedChart } from "./session-context-chart"
 import { copySessionID, copyText } from "./session-id-copy"
 
 const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
@@ -103,7 +105,7 @@ function RawMessage(props: {
   gridStyle: JSX.CSSProperties
 }) {
   return (
-    <Accordion.Item value={props.message.id}>
+    <Accordion.Item value={props.message.id} id={`session-context-message-${props.message.id}`}>
       <StickyAccordionHeader>
         <Accordion.Trigger>
           <div
@@ -151,6 +153,7 @@ export function SessionContextTab() {
   const language = useLanguage()
   const platform = usePlatform()
   const sdk = useSDK()
+  const dialog = useDialog()
   const providers = useProviders(() => sdk().directory)
   const { params, view } = useSessionLayout()
   const info = createMemo(() => (params.id ? sync().session.get(params.id) : undefined))
@@ -219,6 +222,8 @@ export function SessionContextTab() {
     reasoning: false,
     cache: false,
   })
+  const [rawMessageChartState, setRawMessageChartState] = createStore({ speed: false })
+  const [rawMessageAccordionState, setRawMessageAccordionState] = createStore({ value: [] as string[] })
   const rawMessageExtraColumns = createMemo(() =>
     RAW_MESSAGE_EXTRA_COLUMNS.filter((column) => rawMessageColumnState[column.key]),
   )
@@ -448,6 +453,28 @@ export function SessionContextTab() {
     if (el.scrollLeft !== s.x) el.scrollLeft = s.x
   }
 
+  const selectRawMessage = (messageID: string) => {
+    setRawMessageAccordionState("value", (value) => (value.includes(messageID) ? value : [...value, messageID]))
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`session-context-message-${messageID}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+  }
+
+  const messageModelLabel = (message: AssistantMessage) => {
+    const provider = providers.all().get(message.providerID)
+    return `${provider?.models[message.modelID]?.name ?? message.modelID} · ${provider?.name ?? message.providerID}`
+  }
+  const expandChart = () =>
+    dialog.show(() => (
+      <DialogSessionMetricChart
+        messages={messages()}
+        modelLabel={messageModelLabel}
+        onSelectMessage={selectRawMessage}
+      />
+    ))
+
   const handleScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
     pending = {
       x: event.currentTarget.scrollLeft,
@@ -650,6 +677,16 @@ export function SessionContextTab() {
                   </DropdownMenu.Content>
                 </DropdownMenu.Portal>
               </DropdownMenu>
+              <Button
+                size="small"
+                variant="ghost"
+                class="gap-1.5 px-2 text-text-weak hover:text-text-base"
+                onClick={() => setRawMessageChartState("speed", (value) => !value)}
+                aria-expanded={rawMessageChartState.speed}
+                aria-controls="session-token-speed-chart"
+              >
+                <span>{language.t("context.rawMessages.chart")}</span>
+              </Button>
               <DropdownMenu placement="bottom-end" gutter={4}>
                 <DropdownMenu.Trigger
                   as={Button}
@@ -676,6 +713,16 @@ export function SessionContextTab() {
               </DropdownMenu>
             </div>
           </div>
+          <Show when={rawMessageChartState.speed}>
+            <div id="session-token-speed-chart">
+              <SessionTokenSpeedChart
+                messages={messages()}
+                modelLabel={messageModelLabel}
+                onSelectMessage={selectRawMessage}
+                onExpand={expandChart}
+              />
+            </div>
+          </Show>
           <div classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
             <div
               class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}
@@ -691,7 +738,13 @@ export function SessionContextTab() {
               </For>
               <div class="text-right">Time</div>
             </div>
-            <Accordion multiple class="w-full" classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
+            <Accordion
+              multiple
+              value={rawMessageAccordionState.value}
+              onChange={(value) => setRawMessageAccordionState("value", value)}
+              class="w-full"
+              classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
+            >
               <For each={messages()}>
                 {(message, index) => (
                   <RawMessage

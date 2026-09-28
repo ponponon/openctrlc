@@ -3,11 +3,6 @@ export type AssistantStatisticsInput = {
   reasoning?: number | undefined
   created: number | undefined
   completed: number | undefined
-  requestStarted?: number | undefined
-  firstGenerated?: number | undefined
-  lastGenerated?: number | undefined
-  generationDuration?: number | undefined
-  providerCompleted?: number | undefined
 }
 
 export type AssistantStatistics = {
@@ -23,20 +18,17 @@ export function assistantStatistics(input: AssistantStatisticsInput): AssistantS
   const reasoning =
     typeof input.reasoning === "number" && Number.isFinite(input.reasoning) ? Math.max(0, input.reasoning) : 0
   const total = output + reasoning
-  const start = [input.firstGenerated, input.requestStarted, input.created].find(
-    (value): value is number => typeof value === "number" && Number.isFinite(value),
+  if (
+    total <= 0 ||
+    typeof input.created !== "number" ||
+    !Number.isFinite(input.created) ||
+    typeof input.completed !== "number" ||
+    !Number.isFinite(input.completed) ||
+    input.completed <= input.created
   )
-  const end = [input.lastGenerated, input.providerCompleted, input.completed].find(
-    (value): value is number =>
-      typeof value === "number" && Number.isFinite(value) && start !== undefined && value > start,
-  )
-  if (total <= 0 || start === undefined || end === undefined || end <= start) return
+    return
 
-  const generationDuration =
-    typeof input.generationDuration === "number" && Number.isFinite(input.generationDuration)
-      ? input.generationDuration
-      : undefined
-  const durationMs = generationDuration !== undefined && generationDuration > 0 ? generationDuration : end - start
+  const durationMs = input.completed - input.created
   const tokensPerSecond = (total / durationMs) * 1000
   if (!Number.isFinite(durationMs) || !Number.isFinite(tokensPerSecond)) return
 

@@ -16,45 +16,36 @@ describe("assistantStatistics", () => {
     expect(assistantStatistics({ output: 408, created: 0, completed: 2_600 })?.tokensPerSecond).toBeCloseTo(156.9230769)
   })
 
-  test("includes reasoning tokens and excludes post-generation time from the stream rate", () => {
-    expect(
-      assistantStatistics({
-        output: 300,
-        reasoning: 700,
-        created: 100,
-        completed: 5_000,
-        requestStarted: 200,
-        firstGenerated: 1_000,
-        lastGenerated: 5_000,
-        generationDuration: 2_000,
-        providerCompleted: 6_000,
-      }),
-    ).toEqual({
+  test("uses the full message duration for the rate", () => {
+    const result = assistantStatistics({
       output: 300,
       reasoning: 700,
-      total: 1_000,
-      durationMs: 2_000,
-      tokensPerSecond: 500,
-    })
-  })
-
-  test("keeps the displayed duration aligned with the generation rate", () => {
-    const result = assistantStatistics({
-      output: 462,
-      reasoning: 0,
-      created: 1_000,
-      completed: 25_886,
-      firstGenerated: 8_027,
-      lastGenerated: 9_446,
-      generationDuration: 1_419,
-      providerCompleted: 9_848,
+      created: 100,
+      completed: 5_000,
     })
 
     expect(result).toMatchObject({
-      total: 462,
-      durationMs: 1_419,
+      output: 300,
+      reasoning: 700,
+      total: 1_000,
+      durationMs: 4_900,
     })
-    expect(result?.tokensPerSecond).toBeCloseTo(325.5813953488372)
+    expect(result?.tokensPerSecond).toBeCloseTo(1000 / 4.9)
+  })
+
+  test("matches the rate shown for the same message in the chart and message footer", () => {
+    const result = assistantStatistics({
+      output: 593,
+      reasoning: 0,
+      created: 0,
+      completed: 21_000,
+    })
+
+    expect(result).toMatchObject({
+      total: 593,
+      durationMs: 21_000,
+    })
+    expect(result?.tokensPerSecond).toBeCloseTo(28.2380952381)
   })
 
   test("supports reasoning-only responses", () => {

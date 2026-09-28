@@ -1,0 +1,11 @@
+[data-component="dialog"]:has(.session-context-chart-dialog) [data-slot="dialog-container"] {
+  width: min(calc(100vw - 32px), 1440px);
+  height: min(calc(var(--app-viewport-height) - 40px), 960px);
+}
+
+@media (max-width: 720px) {
+  [data-component="dialog"]:has(.session-context-chart-dialog) [data-slot="dialog-container"] {
+    width: calc(100vw - 20px);
+    height: calc(var(--app-viewport-height) - 24px);
+  }
+}
