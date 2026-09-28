@@ -642,7 +642,8 @@ export const dict = {
   "context.rawMessages.speedChart.title": "单条助手消息平均速率（Token/s）",
   "context.rawMessages.speedChart.description": "输出 Token + 推理 Token ÷ 消息总耗时（含等待和工具执行）",
   "context.rawMessages.speedChart.empty": "暂无已完成消息的 Token 速率数据",
-  "context.rawMessages.speedChart.tooltip": "助手消息 {{index}} · {{time}} · {{speed}} Token/s · {{tokens}} Token · 消息耗时 {{duration}}s",
+  "context.rawMessages.speedChart.tooltip":
+    "助手消息 {{index}} · {{time}} · {{speed}} Token/s · {{tokens}} Token · 消息耗时 {{duration}}s",
   "context.rawMessages.speedChart.axis": "助手消息序号",
   "context.rawMessages.chart.inlineDescription": "按模型区分颜色 · 选择点位查看单条消息",
   "context.rawMessages.chart.expand": "放大分析",

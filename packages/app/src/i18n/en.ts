@@ -541,9 +541,11 @@ export const dict = {
   "context.rawMessages.columns": "Columns",
   "context.rawMessages.chart": "Chart",
   "context.rawMessages.speedChart.title": "Assistant message average rate (tokens/s)",
-  "context.rawMessages.speedChart.description": "Output + reasoning tokens ÷ total message time (including waits and tools)",
+  "context.rawMessages.speedChart.description":
+    "Output + reasoning tokens ÷ total message time (including waits and tools)",
   "context.rawMessages.speedChart.empty": "No completed message token data yet",
-  "context.rawMessages.speedChart.tooltip": "Assistant message {{index}} · {{time}} · {{speed}} tokens/s · {{tokens}} tokens · message time {{duration}}s",
+  "context.rawMessages.speedChart.tooltip":
+    "Assistant message {{index}} · {{time}} · {{speed}} tokens/s · {{tokens}} tokens · message time {{duration}}s",
   "context.rawMessages.speedChart.axis": "Assistant message",
   "context.rawMessages.chart.inlineDescription": "Colors distinguish models · Select a point to inspect its message",
   "context.rawMessages.chart.expand": "Expand analysis",
@@ -560,7 +562,8 @@ export const dict = {
   "context.rawMessages.chart.range.20": "Last 20 assistant messages",
   "context.rawMessages.chart.noModelSelected": "Select at least one model to show the chart",
   "context.rawMessages.chart.noData": "No data is available for this metric and filter selection",
-  "context.rawMessages.chart.pointTooltip": "Assistant message {{index}} · {{time}} · {{model}} · {{metric}}: {{value}}",
+  "context.rawMessages.chart.pointTooltip":
+    "Assistant message {{index}} · {{time}} · {{model}} · {{metric}}: {{value}}",
   "context.rawMessages.chart.summary.samples": "Messages",
   "context.rawMessages.chart.summary.average": "Average",
   "context.rawMessages.chart.summary.median": "Median",

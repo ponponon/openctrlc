@@ -415,7 +415,8 @@ export const dict = {
   "context.rawMessages.speedChart.title": "어시스턴트 메시지 평균 속도（Token/s）",
   "context.rawMessages.speedChart.description": "출력 토큰 + 추론 토큰 ÷ 전체 메시지 시간（대기 및 도구 실행 포함）",
   "context.rawMessages.speedChart.empty": "완료된 메시지의 Token 속도 데이터가 없습니다",
-  "context.rawMessages.speedChart.tooltip": "어시스턴트 메시지 {{index}} · {{time}} · {{speed}} Token/s · {{tokens}} Token · 메시지 시간 {{duration}}s",
+  "context.rawMessages.speedChart.tooltip":
+    "어시스턴트 메시지 {{index}} · {{time}} · {{speed}} Token/s · {{tokens}} Token · 메시지 시간 {{duration}}s",
   "context.rawMessages.speedChart.axis": "어시스턴트 메시지 순서",
   "context.rawMessages.chart.inlineDescription": "색상으로 모델 구분 · 점을 선택해 메시지 확인",
   "context.rawMessages.chart.expand": "크게 보기",
@@ -431,7 +432,8 @@ export const dict = {
   "context.rawMessages.chart.range.20": "최근 어시스턴트 메시지 20개",
   "context.rawMessages.chart.noModelSelected": "차트를 보려면 모델을 하나 이상 선택하세요",
   "context.rawMessages.chart.noData": "현재 지표와 필터 조건에 표시할 데이터가 없습니다",
-  "context.rawMessages.chart.pointTooltip": "어시스턴트 메시지 {{index}} · {{time}} · {{model}} · {{metric}}: {{value}}",
+  "context.rawMessages.chart.pointTooltip":
+    "어시스턴트 메시지 {{index}} · {{time}} · {{model}} · {{metric}}: {{value}}",
   "context.rawMessages.chart.summary.samples": "메시지 수",
   "context.rawMessages.chart.summary.average": "평균",
   "context.rawMessages.chart.summary.median": "중앙값",

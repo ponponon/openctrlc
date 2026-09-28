@@ -258,8 +258,7 @@ function MetricChartPlot(props: {
       index: point.sequence,
     })
     const labelWidth = Math.min(layout().width - 16, Math.max(104, label.length * 7 + 16))
-    const x =
-      point.x + labelWidth + 10 <= layout().left + layout().width ? point.x + 10 : point.x - labelWidth - 10
+    const x = point.x + labelWidth + 10 <= layout().left + layout().width ? point.x + 10 : point.x - labelWidth - 10
     const pointY = layout().top + (1 - point.value / chartMaximum()) * layout().height
     const y = pointY <= layout().top + 32 ? pointY + 11 : pointY - 28
     return {

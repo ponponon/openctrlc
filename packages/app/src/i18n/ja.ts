@@ -611,9 +611,11 @@ export const dict = {
   "context.rawMessages.columns": "列の表示",
   "context.rawMessages.chart": "グラフ",
   "context.rawMessages.speedChart.title": "アシスタントメッセージの平均速度（Token/s）",
-  "context.rawMessages.speedChart.description": "出力トークン + 推論トークン ÷ メッセージ全体の時間（待機とツール実行を含む）",
+  "context.rawMessages.speedChart.description":
+    "出力トークン + 推論トークン ÷ メッセージ全体の時間（待機とツール実行を含む）",
   "context.rawMessages.speedChart.empty": "完了したメッセージのToken速度データはありません",
-  "context.rawMessages.speedChart.tooltip": "アシスタントメッセージ {{index}} · {{time}} · {{speed}} Token/s · {{tokens}} Token · メッセージ時間 {{duration}}s",
+  "context.rawMessages.speedChart.tooltip":
+    "アシスタントメッセージ {{index}} · {{time}} · {{speed}} Token/s · {{tokens}} Token · メッセージ時間 {{duration}}s",
   "context.rawMessages.speedChart.axis": "アシスタントメッセージ番号",
   "context.rawMessages.chart.inlineDescription": "色でモデルを区別 · 点を選択してメッセージを確認",
   "context.rawMessages.chart.expand": "拡大して分析",
@@ -630,7 +632,8 @@ export const dict = {
   "context.rawMessages.chart.range.20": "直近 20 件のアシスタントメッセージ",
   "context.rawMessages.chart.noModelSelected": "グラフを表示するにはモデルを 1 つ以上選択してください",
   "context.rawMessages.chart.noData": "この指標とフィルター条件に該当するデータはありません",
-  "context.rawMessages.chart.pointTooltip": "アシスタントメッセージ {{index}} · {{time}} · {{model}} · {{metric}}: {{value}}",
+  "context.rawMessages.chart.pointTooltip":
+    "アシスタントメッセージ {{index}} · {{time}} · {{model}} · {{metric}}: {{value}}",
   "context.rawMessages.chart.summary.samples": "メッセージ数",
   "context.rawMessages.chart.summary.average": "平均",
   "context.rawMessages.chart.summary.median": "中央値",
