@@ -220,8 +220,10 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     if (keys.length > 0) discoveredPersistence.set(path, keys.sort())
   }
 
-  expect(discoveredPersistence).toEqual(
-    new Map([...expectedPersistence.entries()].map(([path, keys]) => [path, keys.sort()])),
+  const sortByPath = (entries: Map<string, string[]>) =>
+    [...entries].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+  expect(sortByPath(discoveredPersistence)).toEqual(
+    sortByPath(new Map([...expectedPersistence.entries()].map(([path, keys]) => [path, keys.sort()]))),
   )
   expect([...specs].sort()).toEqual(
     [...expectedPersistence.keys(), ...expectedNoPersistence, "e2e/regression/legacy-new-session.spec.ts"].sort(),
