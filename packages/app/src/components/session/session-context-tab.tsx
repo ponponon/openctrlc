@@ -205,8 +205,8 @@ export function SessionContextTab() {
   const rawMessageCost = createMemo(
     () =>
       new Intl.NumberFormat(language.intl(), {
-        minimumFractionDigits: 6,
-        maximumFractionDigits: 6,
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
       }),
   )
 
