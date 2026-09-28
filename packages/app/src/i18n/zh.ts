@@ -663,6 +663,7 @@ export const dict = {
   "context.rawMessages.chart.summary.average": "平均值",
   "context.rawMessages.chart.summary.median": "中位数",
   "context.rawMessages.chart.summary.peak": "峰值",
+  "context.rawMessages.chart.peakAnnotation": "峰值 {{value}} · #{{index}}",
   "context.rawMessages.chart.sampleCount": "{{count}} 个有效数据点",
   "context.rawMessages.chart.pointHint": "悬停、聚焦或选择数据点查看详情；使用“查看原始消息”跳转到列表",
   "context.rawMessages.chart.pointTitle": "助手消息 {{index}}",

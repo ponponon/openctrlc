@@ -565,6 +565,7 @@ export const dict = {
   "context.rawMessages.chart.summary.average": "Average",
   "context.rawMessages.chart.summary.median": "Median",
   "context.rawMessages.chart.summary.peak": "Peak",
+  "context.rawMessages.chart.peakAnnotation": "Peak {{value}} · #{{index}}",
   "context.rawMessages.chart.sampleCount": "{{count}} valid points",
   "context.rawMessages.chart.pointHint":
     "Hover, focus, or select a point to inspect it; use Open raw message to jump to the list",

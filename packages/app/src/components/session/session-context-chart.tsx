@@ -50,6 +50,19 @@ type ChartEntry = {
 }
 
 type PlotPoint = ChartEntry & { x: number; value?: number }
+type ChartSummary = {
+  count: number
+  average: number | undefined
+  median: number | undefined
+  maximum: number | undefined
+  peakMessageID: string | undefined
+}
+type ChartReferenceLine = {
+  value: number
+  label: "average" | "median"
+  color: string
+  dash: string
+}
 
 const modelKey = (message: AssistantMessage) => `${message.providerID}/${message.modelID}`
 const tokenCount = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0)
@@ -139,6 +152,7 @@ function MetricChartPlot(props: {
   selectedModels?: string[]
   expanded?: boolean
   activeMessageID?: string
+  summary?: () => ChartSummary
   onSelectMessage: (messageID: string) => void
   onActivatePoint?: (point: PlotPoint) => void
   onActivePoint?: (point: PlotPoint) => void
@@ -170,7 +184,7 @@ function MetricChartPlot(props: {
   )
   const maximum = createMemo(() => visiblePoints().reduce((value, point) => Math.max(value, point.value ?? 0), 0))
   const chartMaximum = createMemo(() => {
-    const value = maximum() * 1.1
+    const value = maximum() * 1.2
     if (value <= 0) return 1
     const magnitude = 10 ** Math.floor(Math.log10(value))
     return Math.ceil(value / magnitude) * magnitude
@@ -222,6 +236,42 @@ function MetricChartPlot(props: {
           props.metric === "cost" ? 3 : props.metric === "duration" || props.metric === "rate" ? 1 : 0,
       }),
   )
+  const referenceLines = createMemo<ChartReferenceLine[]>(() => {
+    if (!props.expanded || !props.summary) return []
+    const summary = props.summary()
+    const lines: ChartReferenceLine[] = []
+    if (summary.average !== undefined)
+      lines.push({ value: summary.average, label: "average", color: "var(--text-weak)", dash: "7 5" })
+    if (summary.median !== undefined && summary.median !== summary.average)
+      lines.push({ value: summary.median, label: "median", color: "var(--text-weaker)", dash: "2 4" })
+    return lines
+  })
+  const peakPoint = createMemo(() => {
+    const id = props.summary?.().peakMessageID
+    return id ? chartPoints().find((point) => point.message.id === id) : undefined
+  })
+  const peakCallout = createMemo(() => {
+    const point = peakPoint()
+    if (!props.expanded || !point) return
+    const label = language.t("context.rawMessages.chart.peakAnnotation", {
+      value: formatMetric(point.value, props.metric, language.intl()),
+      index: point.sequence,
+    })
+    const labelWidth = Math.min(layout().width - 16, Math.max(104, label.length * 7 + 16))
+    const x =
+      point.x + labelWidth + 10 <= layout().left + layout().width ? point.x + 10 : point.x - labelWidth - 10
+    const pointY = layout().top + (1 - point.value / chartMaximum()) * layout().height
+    const y = pointY <= layout().top + 32 ? pointY + 11 : pointY - 28
+    return {
+      point,
+      label,
+      x,
+      y,
+      width: labelWidth,
+      pointY,
+      color: models().find((model) => model.key === point.modelKey)?.color ?? MODEL_COLORS[0],
+    }
+  })
   const tooltip = (point: PlotPoint) =>
     language.t("context.rawMessages.chart.pointTooltip", {
       index: point.sequence,
@@ -250,7 +300,7 @@ function MetricChartPlot(props: {
         </div>
       }
     >
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto overflow-y-hidden">
         <svg
           viewBox={top()}
           class="block w-full min-w-[560px]"
@@ -275,6 +325,23 @@ function MetricChartPlot(props: {
               </>
             )}
           </For>
+          <For each={referenceLines()}>
+            {(line) => {
+              const y = layout().top + (1 - line.value / chartMaximum()) * layout().height
+              return (
+                <line
+                  x1={layout().left}
+                  y1={y}
+                  x2={layout().left + layout().width}
+                  y2={y}
+                  stroke={line.color}
+                  stroke-dasharray={line.dash}
+                  stroke-width="1.5"
+                  pointer-events="none"
+                />
+              )
+            }}
+          </For>
           <For each={paths()}>
             {(series) => (
               <path
@@ -290,6 +357,17 @@ function MetricChartPlot(props: {
           <For each={chartPoints()}>
             {(point, index) => (
               <>
+                <Show when={props.expanded && peakPoint()?.message.id === point.message.id}>
+                  <circle
+                    cx={point.x}
+                    cy={layout().top + (1 - point.value / chartMaximum()) * layout().height}
+                    r="9"
+                    fill="var(--surface-base)"
+                    stroke={models().find((model) => model.key === point.modelKey)?.color ?? MODEL_COLORS[0]}
+                    stroke-width="2"
+                    pointer-events="none"
+                  />
+                </Show>
                 <Show when={props.expanded && props.activeMessageID === point.message.id}>
                   <circle
                     cx={point.x}
@@ -337,6 +415,39 @@ function MetricChartPlot(props: {
               </>
             )}
           </For>
+          <Show when={peakCallout()}>
+            {(callout) => (
+              <g pointer-events="none" role="img" aria-label={callout().label}>
+                <line
+                  x1={callout().point.x}
+                  y1={callout().pointY}
+                  x2={callout().x < callout().point.x ? callout().x + callout().width : callout().x}
+                  y2={callout().y + 10}
+                  stroke={callout().color}
+                  stroke-width="1"
+                  opacity="0.75"
+                />
+                <rect
+                  x={callout().x}
+                  y={callout().y}
+                  width={callout().width}
+                  height="20"
+                  rx="5"
+                  fill="var(--surface-base)"
+                  stroke="var(--border-weak-base)"
+                />
+                <text
+                  x={callout().x + 8}
+                  y={callout().y + 14}
+                  fill="var(--text-strong)"
+                  font-size="11"
+                  font-weight="600"
+                >
+                  {callout().label}
+                </text>
+              </g>
+            )}
+          </Show>
           <For each={xTicks()}>
             {(tick) => (
               <text
@@ -445,10 +556,10 @@ export function DialogSessionMetricChart(props: {
       }),
   )
   const summary = createMemo(() => {
-    const sorted = selectedPoints()
-      .map((point) => point.value)
-      .sort((a, b) => a - b)
+    const points = selectedPoints()
+    const sorted = points.map((point) => point.value).sort((a, b) => a - b)
     const middle = Math.floor(sorted.length / 2)
+    const maximum = sorted.at(-1)
     return {
       count: sorted.length,
       average: sorted.length ? sorted.reduce((sum, value) => sum + value, 0) / sorted.length : undefined,
@@ -457,7 +568,8 @@ export function DialogSessionMetricChart(props: {
           ? sorted[middle]
           : (sorted[middle - 1] + sorted[middle]) / 2
         : undefined,
-      maximum: sorted.at(-1),
+      maximum,
+      peakMessageID: points.find((point) => point.value === maximum)?.entry.message.id,
     }
   })
   const selectedModelCount = () => state.selectedModels.length
@@ -646,8 +758,26 @@ export function DialogSessionMetricChart(props: {
         <div class="flex min-h-0 flex-1 flex-col rounded-md border border-border-base bg-surface-base p-3">
           <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div class="text-12-medium text-text-base">{metricLabel(language, state.metric)}</div>
-            <div class="text-11-regular text-text-weak">
-              {language.t("context.rawMessages.chart.sampleCount", { count: selectedPoints().length })}
+            <div class="flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-11-regular text-text-weak">
+              <span>{language.t("context.rawMessages.chart.sampleCount", { count: summary().count })}</span>
+              <Show when={summary().average !== undefined}>
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="h-0 w-4 border-t-2 border-dashed border-text-weak" aria-hidden="true" />
+                  <span>
+                    {language.t("context.rawMessages.chart.summary.average")} ·{" "}
+                    {formatMetric(summary().average ?? 0, state.metric, language.intl())}
+                  </span>
+                </span>
+              </Show>
+              <Show when={summary().median !== undefined}>
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="h-0 w-4 border-t-2 border-dotted border-text-weaker" aria-hidden="true" />
+                  <span>
+                    {language.t("context.rawMessages.chart.summary.median")} ·{" "}
+                    {formatMetric(summary().median ?? 0, state.metric, language.intl())}
+                  </span>
+                </span>
+              </Show>
             </div>
           </div>
           <MetricChartPlot
@@ -656,6 +786,7 @@ export function DialogSessionMetricChart(props: {
             range={state.range}
             selectedModels={state.selectedModels}
             expanded
+            summary={summary}
             activeMessageID={activePoint()?.message.id}
             onSelectMessage={selectMessage}
             onActivatePoint={setActivePoint}

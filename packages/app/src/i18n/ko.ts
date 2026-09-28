@@ -436,6 +436,7 @@ export const dict = {
   "context.rawMessages.chart.summary.average": "평균",
   "context.rawMessages.chart.summary.median": "중앙값",
   "context.rawMessages.chart.summary.peak": "최대",
+  "context.rawMessages.chart.peakAnnotation": "최대 {{value}} · #{{index}}",
   "context.rawMessages.chart.sampleCount": "유효한 데이터 점 {{count}}개",
   "context.rawMessages.chart.pointHint":
     "점에 마우스를 올리거나 포커스 또는 선택해 상세 정보를 확인한 뒤, 원본 메시지 열기 버튼으로 이동하세요",

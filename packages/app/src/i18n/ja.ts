@@ -635,6 +635,7 @@ export const dict = {
   "context.rawMessages.chart.summary.average": "平均",
   "context.rawMessages.chart.summary.median": "中央値",
   "context.rawMessages.chart.summary.peak": "最大",
+  "context.rawMessages.chart.peakAnnotation": "最大 {{value}} · #{{index}}",
   "context.rawMessages.chart.sampleCount": "有効なデータ点 {{count}} 件",
   "context.rawMessages.chart.pointHint":
     "点にカーソルを合わせる、フォーカスする、または選択して詳細を確認し、元のメッセージを開いて一覧へ移動します",
