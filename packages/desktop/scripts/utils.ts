@@ -11,6 +11,7 @@ export function resolveCliVersion(env: Record<string, string | undefined>) {
 
 export function resolveChannel(): Channel {
   const raw = Bun.env.OPENCTRLC_CHANNEL
+  if (raw === "latest") return "prod"
   if (raw === "dev" || raw === "beta" || raw === "prod") return raw
   return "dev"
 }

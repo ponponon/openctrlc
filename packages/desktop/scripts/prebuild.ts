@@ -4,6 +4,7 @@ import { $ } from "bun"
 import { downloadCliToResources, resolveChannel } from "./utils"
 
 const channel = resolveChannel()
+process.env.OPENCTRLC_CHANNEL = channel
 await $`bun ./scripts/copy-icons.ts ${channel}`
 await $`bun ./scripts/copy-metainfo.ts ${channel}`
 
