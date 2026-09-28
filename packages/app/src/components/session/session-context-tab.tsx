@@ -50,7 +50,7 @@ const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
 
 const RAW_MESSAGE_GRID = "grid items-center gap-3 w-full"
 const RAW_MESSAGE_EXTRA_COLUMNS = [
-  { key: "cost", label: "context.usage.cost", width: "6rem" },
+  { key: "cost", label: "context.rawMessages.costHeader", width: "7rem" },
   { key: "input", label: "context.stats.inputTokens", width: "8rem" },
   { key: "output", label: "context.stats.outputTokens", width: "8rem" },
   { key: "reasoning", label: "context.stats.reasoningTokens", width: "9rem" },
@@ -202,6 +202,13 @@ export function SessionContextTab() {
         currency: "USD",
       }),
   )
+  const rawMessageCost = createMemo(
+    () =>
+      new Intl.NumberFormat(language.intl(), {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+  )
 
   const ctx = createMemo(() => getSessionContext(messages(), [...providers.all().values()]))
   const formatter = createMemo(() => createSessionContextFormatter(language.intl()))
@@ -244,7 +251,7 @@ export function SessionContextTab() {
   const extraColumnValue = (message: Message, column: RawMessageExtraColumnKey) => {
     if (message.role !== "assistant") return EMPTY_DISPLAY
     if (isMessageInFlight(message)) return IN_PROGRESS_DISPLAY
-    if (column === "cost") return usd().format(message.cost)
+    if (column === "cost") return rawMessageCost().format(message.cost)
 
     const format = formatter()
     if (column === "input") return format.number(message.tokens.input)

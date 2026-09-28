@@ -412,6 +412,7 @@ export const dict = {
   "context.rawMessages.title": "원시 메시지",
   "context.rawMessages.columns": "열 표시",
   "context.rawMessages.duration": "소요 시간(s)",
+  "context.rawMessages.costHeader": "비용 (USD)",
   "context.export.session": "세션 내보내기",
 
   "context.stats.session": "세션",

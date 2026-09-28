@@ -639,6 +639,7 @@ export const dict = {
   "context.rawMessages.title": "原始消息",
   "context.rawMessages.columns": "列设置",
   "context.rawMessages.duration": "耗时(s)",
+  "context.rawMessages.costHeader": "成本（USD）",
   "context.export.session": "导出会话",
 
   "context.stats.session": "会话",

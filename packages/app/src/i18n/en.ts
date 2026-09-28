@@ -540,6 +540,7 @@ export const dict = {
   "context.rawMessages.title": "Raw messages",
   "context.rawMessages.columns": "Columns",
   "context.rawMessages.duration": "Duration (s)",
+  "context.rawMessages.costHeader": "Cost (USD)",
   "context.export.session": "Export session",
 
   "context.stats.session": "Session",
