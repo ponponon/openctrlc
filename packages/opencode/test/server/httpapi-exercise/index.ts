@@ -988,10 +988,13 @@ const scenarios: Scenario[] = [
       path: route("/api/session/{sessionID}/system-prompt-snapshot", { sessionID: ctx.state.id }),
       headers: ctx.headers(),
     }))
-    .json(200, data((value) => {
-      object(value)
-      check(value.snapshot === undefined, "a new session should not have a system prompt snapshot")
-    })),
+    .json(
+      200,
+      data((value) => {
+        object(value)
+        check(value.snapshot === undefined, "a new session should not have a system prompt snapshot")
+      }),
+    ),
   http.protected
     .post("/api/session/{sessionID}/agent", "v2.session.switchAgent")
     .seeded((ctx) => ctx.session({ title: "Switch agent" }))
