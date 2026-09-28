@@ -992,7 +992,7 @@ const scenarios: Scenario[] = [
       200,
       data((value) => {
         object(value)
-        check(value.snapshot === undefined, "a new session should not have a system prompt snapshot")
+        check(typeof value.snapshot === "string", "expected the session's system prompt snapshot")
       }),
     ),
   http.protected

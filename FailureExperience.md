@@ -936,4 +936,4 @@ Linux 与 Windows 的文件遍历顺序不同，直接把 Glob 扫描结果按�
 
 ## 新增 HttpApi 路由必须补齐覆盖场景
 
-`system-prompt-snapshot` 已进入公开 HttpApi/OpenAPI 合约，但 HttpApi exerciser 没有对应场景，导致 `test:httpapi --fail-on-missing` 拦截发布。新增或调整公开路由时，除实现 handler 和生成客户端外，还要在 `packages/opencode/test/server/httpapi-exercise/index.ts` 为每条路由加入合适的成功或错误场景；不要通过放宽 `fail-on-missing` 来绕过覆盖门禁。
+`system-prompt-snapshot` 已进入公开 HttpApi/OpenAPI 合约，但 HttpApi exerciser 没有对应场景，导致 `test:httpapi --fail-on-missing` 拦截发布。新增或调整公开路由时，除实现 handler 和生成客户端外，还要在 `packages/opencode/test/server/httpapi-exercise/index.ts` 为每条路由加入合适的成功或错误场景；不要通过放宽 `fail-on-missing` 来绕过覆盖门禁。编写场景时还要核对服务端生命周期：虽然快照字段是可选的，但 session create 会准备默认快照，不能据字段可选性推断新会话应返回空值。
