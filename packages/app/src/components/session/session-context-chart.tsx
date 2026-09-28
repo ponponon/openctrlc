@@ -300,11 +300,11 @@ function MetricChartPlot(props: {
         </div>
       }
     >
-      <div class="overflow-x-auto overflow-y-hidden">
+      <div class="shrink-0 overflow-x-auto overflow-y-hidden">
         <svg
           viewBox={top()}
           class="block w-full min-w-[560px]"
-          style={{ height: props.expanded ? "min(48vh, 470px)" : "220px" }}
+          style={{ height: props.expanded ? "470px" : "220px" }}
           role="group"
           aria-label={`${metricLabel(language, props.metric)}. ${metricDescription(language, props.metric)}`}
         >
@@ -607,7 +607,7 @@ export function DialogSessionMetricChart(props: {
       description={language.t("context.rawMessages.chart.dialogDescription")}
       class="session-context-chart-dialog h-full min-h-0 overflow-hidden"
     >
-      <div class="@container flex min-h-0 flex-1 flex-col gap-4 px-5 pb-5">
+      <div class="@container flex flex-none flex-col gap-4 px-5 pb-5">
         <div class="flex flex-col gap-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div
@@ -755,7 +755,7 @@ export function DialogSessionMetricChart(props: {
           />
         </div>
 
-        <div class="flex min-h-0 flex-1 flex-col rounded-md border border-border-base bg-surface-base p-3">
+        <div class="flex shrink-0 flex-col rounded-md border border-border-base bg-surface-base p-3">
           <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div class="text-12-medium text-text-base">{metricLabel(language, state.metric)}</div>
             <div class="flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-11-regular text-text-weak">
