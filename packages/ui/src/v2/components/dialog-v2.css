@@ -22,6 +22,9 @@
     align-items: flex-start;
     width: 480px;
     height: 368px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    min-height: 0;
     background: var(--v2-background-bg-layer-01);
     box-shadow: var(--v2-elevation-overlay);
     border-radius: 6px;
@@ -143,7 +146,9 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        overflow: hidden;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
 
         &:focus-visible {
           outline: none;
@@ -151,16 +156,6 @@
       }
       &:focus-visible {
         outline: none;
-      }
-    }
-  }
-
-  &[data-fit] {
-    [data-slot="dialog-container"] {
-      height: auto;
-
-      [data-slot="dialog-content"] {
-        min-height: 0;
       }
     }
   }
@@ -173,5 +168,17 @@
   &[data-size="x-large"] [data-slot="dialog-container"] {
     width: min(calc(100vw - 32px), 980px);
     height: min(calc(100vh - 92px), 600px);
+  }
+
+  &[data-fit] {
+    [data-slot="dialog-container"] {
+      height: auto;
+      max-height: calc(100vh - 32px);
+
+      [data-slot="dialog-content"] {
+        min-height: 0;
+        max-height: calc(100vh - 32px);
+      }
+    }
   }
 }

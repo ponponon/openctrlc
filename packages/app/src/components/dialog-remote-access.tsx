@@ -57,14 +57,18 @@ export function DialogRemoteAccess() {
   }
 
   return (
-    <Dialog size="large" fit class="w-[min(calc(100vw-32px),680px)] max-h-[calc(100vh-32px)]">
+    <Dialog
+      size="large"
+      fit
+      containerClass="!w-[min(calc(100vw_-_32px),680px)]"
+    >
       <DialogHeader closeLabel={language.t("common.close")}>
         <DialogTitleGroup
           title={language.t("remoteAccess.title")}
           description={language.t("remoteAccess.description")}
         />
       </DialogHeader>
-      <DialogBody class="flex min-h-0 flex-col gap-3 overflow-y-auto px-4 py-4">
+      <DialogBody class="gap-3 px-4 py-4">
         <Show when={state.status === "active"}>
           <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-v2-state-bg-success px-3 py-2.5">
             <span
@@ -237,25 +241,23 @@ export function DialogRemoteAccess() {
         </Show>
       </DialogBody>
       <DialogFooter>
-        <div class="flex justify-end gap-2 px-4 pb-4">
-          <ButtonV2 variant="ghost" onClick={() => dialog.close()}>
-            {language.t("common.close")}
+        <ButtonV2 variant="ghost" onClick={() => dialog.close()}>
+          {language.t("common.close")}
+        </ButtonV2>
+        <Show when={state.status !== "active"}>
+          <ButtonV2
+            variant="neutral"
+            disabled={state.status === "connecting" || !remoteAccess}
+            onClick={() => void remoteAccess?.start().catch(() => undefined)}
+          >
+            {language.t(state.status === "connecting" ? "remoteAccess.starting" : "remoteAccess.start")}
           </ButtonV2>
-          <Show when={state.status !== "active"}>
-            <ButtonV2
-              variant="neutral"
-              disabled={state.status === "connecting" || !remoteAccess}
-              onClick={() => void remoteAccess?.start().catch(() => undefined)}
-            >
-              {language.t(state.status === "connecting" ? "remoteAccess.starting" : "remoteAccess.start")}
-            </ButtonV2>
-          </Show>
-          <Show when={state.status === "active"}>
-            <ButtonV2 variant="danger" onClick={() => void remoteAccess?.stop()}>
-              {language.t("remoteAccess.stop")}
-            </ButtonV2>
-          </Show>
-        </div>
+        </Show>
+        <Show when={state.status === "active"}>
+          <ButtonV2 variant="danger" onClick={() => void remoteAccess?.stop()}>
+            {language.t("remoteAccess.stop")}
+          </ButtonV2>
+        </Show>
       </DialogFooter>
     </Dialog>
   )
