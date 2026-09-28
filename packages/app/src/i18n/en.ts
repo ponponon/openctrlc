@@ -907,7 +907,7 @@ export const dict = {
   "sidebar.settings": "Settings",
   "sidebar.help": "Help",
   "remoteAccess.title": "Mobile access",
-  "remoteAccess.description": "Open this workspace on your phone over HTTPS. Approve new devices here; approved browsers can reconnect for up to 8 hours.",
+  "remoteAccess.description": "Approve each new browser once. It can reconnect while mobile access stays on; after 30 days without use, it needs approval again.",
   "remoteAccess.setupTitle": "Start in three steps",
   "remoteAccess.stepEnable": "Turn on mobile access",
   "remoteAccess.stepScan": "Scan the QR code with your phone",

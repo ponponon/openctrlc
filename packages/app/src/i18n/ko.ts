@@ -637,7 +637,7 @@ export const dict = {
   "sidebar.help": "도움말",
   "remoteAccess.title": "휴대폰 원격 액세스",
   "remoteAccess.description":
-    "HTTPS를 통해 휴대폰에서 이 작업 공간을 여세요. 새 기기는 처음 연결할 때 데스크톱에서 승인해야 하며, 승인된 브라우저는 최대 8시간 동안 다시 연결할 수 있습니다.",
+    "새 브라우저는 처음 연결할 때 데스크톱에서 승인해야 합니다. 모바일 액세스가 켜져 있는 동안 다시 연결할 수 있으며, 30일 동안 사용하지 않으면 다시 승인해야 합니다.",
   "remoteAccess.setupTitle": "세 단계로 휴대폰 연결",
   "remoteAccess.stepEnable": "휴대폰 액세스 켜기",
   "remoteAccess.stepScan": "휴대폰으로 QR 코드 스캔",

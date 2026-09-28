@@ -1,3 +1,7 @@
+## 远程浏览器授权不能跟主机 Relay 会话共用固定短 TTL
+
+用户指出手机浏览器批准后仅能在八小时内重连，体验过短。排查发现八小时是 Relay 整个会话的固定过期时间，而不是单个浏览器授权的过期时间；清理任务删掉 Relay 会话时没有主动关闭桌面 WSS，桌面端就可能继续显示“已开启”，但二维码和授权设备都已失效。以后要分开设计主机连接和浏览器授权：主机会话随桌面 WSS 连接持续有效，并用双向应用心跳维持反向代理；每个浏览器授权采用明确的闲置过期时间且在成功访问时滑动续期，停止访问或桌面断开时仍立即撤销。容量计数也必须随过期授权同步更新。检查参考产品时要阅读当前源码确认认证机制，不能从截图推断它采用固定的授权时长。
+
 ## Suspense 下的 createResource 不能用消息驱动的 revision 当 source
 
 上下文面板为系统提示词快照引入 `createResource` 时，把 `revision: info()?.time.updated` 放进了 source。会话每次有新消息都会 `touch` 更新 `time.updated`，于是 resource 反复进入 pending/refreshing；在 `SessionSidePanel` 外层 `Suspense` 下读取 pending resource 会 `increment` 挂起边界，整块上下文面板切到空 fallback 再挂回，看起来像整页闪烁。以后凡是在 Suspense 边界内用 `createResource`，source 必须只绑定真正会导致数据变化的键（例如一次性快照只绑 `sessionID`）；已解析后的读取优先用 `.latest`，避免 refetch 时重新挂起。回归上要覆盖“连续新消息到达时不触发快照重取/面板 fallback”。

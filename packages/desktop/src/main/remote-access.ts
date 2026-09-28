@@ -11,6 +11,7 @@ export class RemoteAccessService {
   #state: RemoteAccessState = { status: "stopped", pendingRequests: [], authorizedDevices: 0 }
   #listeners = new Set<(state: RemoteAccessState) => void>()
   #socket?: WebSocket
+  #heartbeat?: ReturnType<typeof setInterval>
   #sessionID?: string
   #hostToken?: string
   #server?: ServerReadyData
@@ -47,6 +48,8 @@ export class RemoteAccessService {
 
   async stop() {
     const socket = this.#socket
+    if (this.#heartbeat) clearInterval(this.#heartbeat)
+    this.#heartbeat = undefined
     if (socket?.readyState === WebSocket.OPEN) this.#send({ type: "session.stop" })
     this.#socket = undefined
     this.#sessionID = undefined
@@ -101,6 +104,11 @@ export class RemoteAccessService {
           }
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
+          if (this.#heartbeat) clearInterval(this.#heartbeat)
+          this.#heartbeat = setInterval(() => {
+            if (this.#socket === socket && socket.readyState === WebSocket.OPEN)
+              this.#send({ type: "session.ping" })
+          }, 60_000)
           this.#setState({ status: "active", url: message.url, pendingRequests: [], authorizedDevices: 0 })
           clearTimeout(timeout)
           resolve(this.#state)
@@ -114,6 +122,8 @@ export class RemoteAccessService {
       })
       socket.addEventListener("error", () => {
         clearTimeout(timeout)
+        if (this.#heartbeat) clearInterval(this.#heartbeat)
+        this.#heartbeat = undefined
         const error = new Error("Could not connect to the OpenCtrlC Remote Relay")
         this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: error.message })
         reject(error)
@@ -121,6 +131,8 @@ export class RemoteAccessService {
       socket.addEventListener("close", (event) => {
         clearTimeout(timeout)
         if (this.#socket !== socket) return
+        if (this.#heartbeat) clearInterval(this.#heartbeat)
+        this.#heartbeat = undefined
         this.#socket = undefined
         this.#sessionID = undefined
         this.#hostToken = undefined
@@ -173,9 +185,11 @@ export class RemoteAccessService {
       this.#setState({
         ...this.#state,
         pendingRequests,
-        authorizedDevices:
-          message.type === "pair.approved" ? this.#state.authorizedDevices + 1 : this.#state.authorizedDevices,
       })
+      return
+    }
+    if (message.type === "viewer.count" && typeof message.count === "number") {
+      this.#setState({ ...this.#state, authorizedDevices: Math.min(3, Math.max(0, Math.floor(message.count))) })
       return
     }
     if (message.type === "pair.rotated" && typeof message.url === "string") {

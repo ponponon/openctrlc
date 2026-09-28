@@ -1,5 +1,6 @@
 export type RelayHostMessage =
   | { type: "session.create" }
+  | { type: "session.ping" }
   | { type: "session.stop"; sessionID: string; hostToken: string }
   | { type: "pair.rotate"; sessionID: string; hostToken: string }
   | { type: "pair.approve" | "pair.deny"; sessionID: string; hostToken: string; pairID: string }
@@ -24,6 +25,8 @@ export type RelayServerMessage =
   | { type: "pair.denied"; pairID: string }
   | { type: "pair.error"; message?: string }
   | { type: "session.stopped" }
+  | { type: "session.pong" }
+  | { type: "viewer.count"; count: number }
   | { type: "pair.rotated"; joinToken: string; url: string }
   | { type: "pair.waiting"; pairID: string }
   | { type: "pair.delivered"; pairID: string }

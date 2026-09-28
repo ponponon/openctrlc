@@ -927,7 +927,7 @@ export const dict = {
   "sidebar.settings": "设置",
   "sidebar.help": "帮助",
   "remoteAccess.title": "手机访问",
-  "remoteAccess.description": "通过 HTTPS 在手机上打开此工作区。新设备首次连接需要在桌面端批准；已授权浏览器 8 小时内可直接重连。",
+  "remoteAccess.description": "新浏览器首次连接需要在桌面端批准。手机访问开启期间，已授权浏览器可直接重连；连续 30 天未使用后需要重新批准。",
   "remoteAccess.setupTitle": "三步即可连接手机",
   "remoteAccess.stepEnable": "开启手机访问",
   "remoteAccess.stepScan": "用手机扫描二维码",

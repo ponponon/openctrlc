@@ -3,7 +3,6 @@ import {
   encodeBase64,
   randomToken,
   relayMessage,
-  type RelayHostMessage,
   type RelayServerMessage,
 } from "./protocol"
 
@@ -17,6 +16,7 @@ type SocketData = {
   protocols?: string[]
   device?: string
   clientIP?: string
+  viewerToken?: string
   ready?: boolean
   queue?: Array<{ data: string; binary: boolean; size: number }>
 }
@@ -39,12 +39,16 @@ type RelaySession = {
   hostToken: string
   joinToken: string
   host?: Bun.ServerWebSocket<SocketData>
-  expiresAt: number
   pairingSockets: Set<Bun.ServerWebSocket<SocketData>>
   pairs: Map<string, PendingPair>
-  viewers: Set<string>
+  viewers: Map<string, number>
   responses: Map<string, PendingResponse>
   sockets: Map<string, Bun.ServerWebSocket<SocketData>>
+}
+
+type ViewerGrant = {
+  session: RelaySession
+  expiresAt: number
 }
 
 const port = Number(process.env.PORT ?? 4097)
@@ -54,10 +58,11 @@ const maxPendingRequests = 64
 const maxSockets = 32
 const maxSocketQueueBytes = 512 * 1024
 const maxViewers = 3
-const sessionLifetime = 8 * 60 * 60 * 1000
+const viewerLifetime = 30 * 24 * 60 * 60 * 1000
+const viewerCookieLifetimeSeconds = Math.floor(viewerLifetime / 1000)
 const pairLifetime = 5 * 60 * 1000
 const sessions = new Map<string, RelaySession>()
-const viewerTokens = new Map<string, RelaySession>()
+const viewerTokens = new Map<string, ViewerGrant>()
 const createRates = new Map<string, number[]>()
 
 const server = Bun.serve<SocketData>({
@@ -92,13 +97,14 @@ const server = Bun.serve<SocketData>({
     }
     if (request.method === "POST" && url.pathname === "/_remote/claim") return claimViewer(request)
     if (request.method === "GET" && url.pathname === "/") {
-      const session = sessionFor(request)
-      if (!session) return htmlResponse(pairPage("home"))
-      return proxyRequest(session, request)
+      const viewer = sessionFor(request)
+      if (!viewer) return htmlResponse(pairPage("home"))
+      return proxyRequest(viewer.session, request, viewer.token)
     }
 
-    const session = sessionFor(request)
-    if (!session) return new Response("Remote session required", { status: 401, headers: noStore })
+    const viewer = sessionFor(request)
+    if (!viewer) return new Response("Remote session required", { status: 401, headers: noStore })
+    const session = viewer.session
     if (request.headers.get("upgrade")?.toLowerCase() === "websocket") {
       if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
       if (session.sockets.size >= maxSockets)
@@ -115,6 +121,7 @@ const server = Bun.serve<SocketData>({
             role: "viewer",
             sessionID: session.id,
             mode: "proxy",
+            viewerToken: viewer.token,
             id: randomToken(12),
             path: url.pathname + url.search,
             protocols,
@@ -127,7 +134,7 @@ const server = Bun.serve<SocketData>({
         return
       return new Response("WebSocket upgrade required", { status: 426 })
     }
-    return proxyRequest(session, request)
+    return proxyRequest(session, request, viewer.token)
   },
   websocket: {
     maxPayloadLength: 2 * 1024 * 1024,
@@ -161,6 +168,10 @@ const server = Bun.serve<SocketData>({
       if (socket.data.mode === "proxy") {
         const id = socket.data.id
         if (!id) return socket.close(4400, "Invalid tunnel")
+        if (!socket.data.viewerToken || !touchViewer(session, socket.data.viewerToken)) {
+          session.sockets.delete(id)
+          return socket.close(4401, "Browser authorization expired")
+        }
         const binary = typeof raw !== "string"
         const data =
           typeof raw === "string"
@@ -189,6 +200,7 @@ const server = Bun.serve<SocketData>({
         return socket.close(4400, "Pairing message required")
       }
       if (message.joinToken !== session.joinToken) return socket.close(4403, "Invalid pairing link")
+      pruneExpiredViewers(session)
       if (session.viewers.size + session.pairs.size >= maxViewers) {
         socket.send(JSON.stringify({ type: "pair.error" }))
         return socket.close(4429, "Too many devices")
@@ -223,7 +235,7 @@ const server = Bun.serve<SocketData>({
         const pair = session.pairs.get(socket.data.pairID)
         if (pair) {
           session.pairs.delete(socket.data.pairID)
-          sendHost(session, { type: "pair.deny", pairID: socket.data.pairID })
+          sendHost(session, { type: "pair.denied", pairID: socket.data.pairID })
         }
       }
       if (socket.data.mode === "proxy" && socket.data.id) {
@@ -252,10 +264,9 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       hostToken: randomToken(),
       joinToken: randomToken(),
       host: socket,
-      expiresAt: Date.now() + sessionLifetime,
       pairingSockets: new Set(),
       pairs: new Map(),
-      viewers: new Set(),
+      viewers: new Map(),
       responses: new Map(),
       sockets: new Map(),
     }
@@ -277,6 +288,10 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   if (!session || session.host !== socket || value.hostToken !== session.hostToken) {
     if (value.type === "request.start")
       socket.send(JSON.stringify({ type: "response.error", id: value.id, message: "Session authorization failed" }))
+    return
+  }
+  if (value.type === "session.ping") {
+    socket.send(JSON.stringify({ type: "session.pong" } satisfies RelayServerMessage))
     return
   }
   if (value.type === "session.stop") {
@@ -312,11 +327,13 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       socket.send(JSON.stringify({ type: "pair.denied", pairID: value.pairID } satisfies RelayServerMessage))
       return
     }
-    session.viewers.add(pair.viewerToken)
-    viewerTokens.set(pair.viewerToken, session)
+    const expiresAt = Date.now() + viewerLifetime
+    session.viewers.set(pair.viewerToken, expiresAt)
+    viewerTokens.set(pair.viewerToken, { session, expiresAt })
     pair.socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID, viewerToken: pair.viewerToken }))
     pair.socket.close(1000, "Approved")
     socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID } satisfies RelayServerMessage))
+    sendViewerCount(session)
     return
   }
   if (value.type === "pair.received" && typeof value.pairID === "string") {
@@ -385,7 +402,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
 }
 
-async function proxyRequest(session: RelaySession, request: Request) {
+async function proxyRequest(session: RelaySession, request: Request, viewerToken: string) {
   if (!session.host || session.host.readyState !== 1) return new Response("Desktop is disconnected", { status: 503 })
   if (request.headers.get("upgrade")) return new Response("Unsupported upgrade", { status: 400 })
   if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
@@ -448,9 +465,11 @@ async function proxyRequest(session: RelaySession, request: Request) {
   )
   try {
     const result = await headersPromise
+    const responseHeaders = sanitizeResponseHeaders(result.headers)
+    responseHeaders.set("set-cookie", viewerCookie(viewerToken))
     return new Response([204, 205, 304].includes(result.status) ? null : body, {
       status: result.status,
-      headers: sanitizeResponseHeaders(result.headers),
+      headers: responseHeaders,
     })
   } catch {
     return new Response("Desktop request failed", { status: 502 })
@@ -516,12 +535,17 @@ async function claimViewer(request: Request) {
   if (!body || typeof body !== "object" || !("viewerToken" in body) || typeof body.viewerToken !== "string") {
     return new Response("Invalid claim", { status: 400 })
   }
-  const session = viewerTokens.get(body.viewerToken)
-  if (!session || session.expiresAt <= Date.now()) return new Response("Pairing expired", { status: 403 })
+  const grant = viewerTokens.get(body.viewerToken)
+  if (!grant || sessions.get(grant.session.id) !== grant.session) return new Response("Pairing expired", { status: 403 })
+  if (grant.expiresAt <= Date.now()) {
+    removeViewer(grant.session, body.viewerToken)
+    sendViewerCount(grant.session)
+    return new Response("Pairing expired", { status: 403 })
+  }
   return new Response(null, {
     status: 204,
     headers: {
-      "set-cookie": `__Host-oc_remote=${body.viewerToken}; Path=/; Max-Age=28800; HttpOnly; Secure; SameSite=Strict`,
+      "set-cookie": viewerCookie(body.viewerToken),
       ...noStore,
     },
   })
@@ -535,15 +559,57 @@ function sessionFor(request: Request) {
     .find((item) => item.startsWith("__Host-oc_remote="))
     ?.slice("__Host-oc_remote=".length)
   if (!token) return
-  const session = viewerTokens.get(token)
-  if (!session || !session.viewers.has(token) || session.expiresAt <= Date.now()) return
-  return session
+  const grant = viewerTokens.get(token)
+  if (!grant || !grant.session.viewers.has(token)) return
+  if (!touchViewer(grant.session, token)) return
+  return { session: grant.session, token }
 }
 
-function sendHost(session: RelaySession, message: RelayHostMessage) {
+function viewerCookie(token: string) {
+  return `__Host-oc_remote=${token}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; HttpOnly; Secure; SameSite=Strict`
+}
+
+function removeViewer(session: RelaySession, token: string) {
+  session.viewers.delete(token)
+  if (viewerTokens.get(token)?.session === session) viewerTokens.delete(token)
+  for (const [id, socket] of session.sockets) {
+    if (socket.data.viewerToken !== token) continue
+    session.sockets.delete(id)
+    socket.close(4401, "Browser authorization expired")
+  }
+}
+
+function touchViewer(session: RelaySession, token: string) {
+  const grant = viewerTokens.get(token)
+  if (!grant || grant.session !== session || !session.viewers.has(token)) return false
+  if (grant.expiresAt <= Date.now()) {
+    removeViewer(session, token)
+    sendViewerCount(session)
+    return false
+  }
+  grant.expiresAt = Date.now() + viewerLifetime
+  session.viewers.set(token, grant.expiresAt)
+  return true
+}
+
+function pruneExpiredViewers(session: RelaySession, now = Date.now()) {
+  let changed = false
+  for (const [token, expiresAt] of session.viewers) {
+    if (expiresAt > now) continue
+    removeViewer(session, token)
+    changed = true
+  }
+  if (changed) sendViewerCount(session)
+}
+
+function sendViewerCount(session: RelaySession) {
+  sendHost(session, { type: "viewer.count", count: session.viewers.size })
+}
+
+function sendHost(session: RelaySession, message: RelayServerMessage) {
   if (!session.host || session.host.readyState !== 1) return false
   session.host.send(
-    JSON.stringify({ ...message, sessionID: session.id, hostToken: session.hostToken } satisfies RelayHostMessage & {
+    JSON.stringify({ ...message, sessionID: session.id, hostToken: session.hostToken } satisfies RelayServerMessage & {
       sessionID: string
       hostToken: string
     }),
@@ -553,7 +619,7 @@ function sendHost(session: RelaySession, message: RelayHostMessage) {
 
 function deleteSession(session: RelaySession) {
   sessions.delete(session.id)
-  for (const [token, value] of viewerTokens) if (value === session) viewerTokens.delete(token)
+  for (const [token, value] of viewerTokens) if (value.session === session) viewerTokens.delete(token)
   for (const socket of session.pairingSockets) socket.close(4404, "Session ended")
   for (const socket of session.sockets.values()) socket.close(4404, "Session ended")
   for (const response of session.responses.values()) {
@@ -565,7 +631,15 @@ function deleteSession(session: RelaySession) {
 
 function sanitizeResponseHeaders(value: Record<string, string>) {
   const headers = new Headers(value)
-  for (const name of ["connection", "content-length", "keep-alive", "transfer-encoding", "upgrade"])
+  for (const name of [
+    "connection",
+    "content-length",
+    "keep-alive",
+    "set-cookie",
+    "set-cookie2",
+    "transfer-encoding",
+    "upgrade",
+  ])
     headers.delete(name)
   return headers
 }
@@ -701,11 +775,15 @@ function pairPage(mode: "pair" | "expired" | "home") {
 setInterval(() => {
   const now = Date.now()
   for (const session of sessions.values()) {
-    if (session.expiresAt <= now || session.host?.readyState !== 1) deleteSession(session)
+    if (session.host?.readyState !== 1) {
+      deleteSession(session)
+      continue
+    }
+    pruneExpiredViewers(session, now)
     for (const [id, pair] of session.pairs) {
       if (pair.expiresAt > now) continue
       session.pairs.delete(id)
-      sendHost(session, { type: "pair.deny", pairID: id })
+      sendHost(session, { type: "pair.denied", pairID: id })
       pair.socket.close(4408, "Pairing request expired")
     }
   }

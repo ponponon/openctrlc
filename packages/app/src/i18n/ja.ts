@@ -876,7 +876,7 @@ export const dict = {
   "sidebar.help": "ヘルプ",
   "remoteAccess.title": "スマートフォンからアクセス",
   "remoteAccess.description":
-    "HTTPS 経由でこのワークスペースをスマートフォンから開けます。新しい端末は初回にデスクトップで承認が必要です。承認済みのブラウザーは最大 8 時間再接続できます。",
+    "新しいブラウザーは初回にデスクトップで承認してください。モバイルアクセス中は再接続できますが、30 日間使われなかった場合は再承認が必要です。",
   "remoteAccess.setupTitle": "3 ステップで接続",
   "remoteAccess.stepEnable": "スマートフォンからのアクセスを有効にする",
   "remoteAccess.stepScan": "スマートフォンで QR コードをスキャン",
