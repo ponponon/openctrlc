@@ -14,6 +14,23 @@
   background-color: var(--v2-overlay-simple-overlay-hover);
 }
 
+[data-component="icon-button-v2"][data-variant="ghost-muted"].titlebar-mobile-access {
+  background-color: color-mix(in srgb, var(--v2-background-bg-accent) 10%, transparent);
+  color: var(--v2-icon-icon-accent);
+}
+
+[data-component="icon-button-v2"][data-variant="ghost-muted"].titlebar-mobile-access [data-slot="icon-svg"] {
+  color: var(--v2-icon-icon-accent);
+}
+
+[data-component="icon-button-v2"][data-variant="ghost-muted"].titlebar-mobile-access:is(
+    :hover,
+    [data-state="hover"]
+  ):not(:disabled):not([data-expanded]) {
+  background-color: color-mix(in srgb, var(--v2-background-bg-accent) 16%, transparent);
+  color: var(--v2-icon-icon-accent-hover);
+}
+
 [data-slot="titlebar-tab-item"]
   [data-component="icon-button-v2"]:is(:focus-visible, [data-state="focus"]):not(:disabled) {
   opacity: 1;

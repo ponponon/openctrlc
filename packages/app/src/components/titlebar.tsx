@@ -650,6 +650,7 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
               type="button"
               variant="ghost-muted"
               size="large"
+              class="titlebar-mobile-access"
               icon={<IconV2 name="smartphone" />}
               onClick={remoteAccess().open}
               aria-label={remoteAccess().label}

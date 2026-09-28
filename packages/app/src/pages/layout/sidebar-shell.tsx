@@ -97,7 +97,7 @@ export const SidebarContent = (props: {
               <Tooltip placement={placement()} value={label()}>
                 <IconButton
                   icon="smartphone"
-                  variant="ghost"
+                  variant="secondary"
                   size="large"
                   onClick={props.onOpenRemoteAccess}
                   aria-label={label()}
