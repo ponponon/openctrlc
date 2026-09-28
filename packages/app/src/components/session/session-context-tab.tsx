@@ -215,6 +215,7 @@ export function SessionContextTab() {
   const [systemPromptState, setSystemPromptState] = createStore({ expanded: false })
 
   const systemPromptNeedsExpansion = createMemo(() => (systemPrompt()?.length ?? 0) > 800)
+  const systemPromptPreviewCollapsed = createMemo(() => systemPromptNeedsExpansion() && !systemPromptState.expanded)
   const toggleSystemPrompt = () => setSystemPromptState("expanded", (value) => !value)
 
   createEffect(
@@ -524,15 +525,23 @@ export function SessionContextTab() {
               <div class="relative border border-border-base rounded-md bg-surface-base px-3 py-2">
                 <div
                   classList={{
-                    "max-h-48 overflow-hidden": systemPromptNeedsExpansion() && !systemPromptState.expanded,
                     "max-h-[var(--app-viewport-height-60)] overflow-y-auto": systemPromptState.expanded,
                   }}
                 >
-                  <Markdown text={prompt()} class="text-12-regular" />
+                  <Markdown
+                    text={prompt()}
+                    class="text-12-regular"
+                    style={{
+                      display: systemPromptPreviewCollapsed() ? "-webkit-box" : undefined,
+                      "-webkit-line-clamp": systemPromptPreviewCollapsed() ? "3" : undefined,
+                      "-webkit-box-orient": systemPromptPreviewCollapsed() ? "vertical" : undefined,
+                      overflow: systemPromptPreviewCollapsed() ? "hidden" : undefined,
+                    }}
+                  />
                 </div>
-                <Show when={systemPromptNeedsExpansion() && !systemPromptState.expanded}>
+                <Show when={systemPromptPreviewCollapsed()}>
                   <div
-                    class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-surface-base to-transparent"
+                    class="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-surface-base to-transparent"
                     aria-hidden="true"
                   />
                 </Show>
