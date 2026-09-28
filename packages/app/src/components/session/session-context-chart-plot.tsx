@@ -206,7 +206,6 @@ export function MetricChartPlot(props: {
   })
 
   const referenceLines = createMemo(() => {
-    if (!props.expanded && !props.facet) return []
     if (!props.summary) return []
     const summary = props.summary()
     const lines: { value: number; color: string; dash: string; label: string }[] = []
