@@ -927,7 +927,7 @@ export const dict = {
   "sidebar.settings": "设置",
   "sidebar.help": "帮助",
   "remoteAccess.title": "手机访问",
-  "remoteAccess.description": "通过 HTTPS 在手机上打开此工作区。每台新设备都需要在桌面端批准。",
+  "remoteAccess.description": "通过 HTTPS 在手机上打开此工作区。新设备首次连接需要在桌面端批准；已授权浏览器 8 小时内可直接重连。",
   "remoteAccess.setupTitle": "三步即可连接手机",
   "remoteAccess.stepEnable": "开启手机访问",
   "remoteAccess.stepScan": "用手机扫描二维码",
@@ -937,6 +937,7 @@ export const dict = {
   "remoteAccess.active": "手机访问已开启",
   "remoteAccess.scan": "用手机扫描此二维码",
   "remoteAccess.pending": "有新设备请求连接",
+  "remoteAccess.pendingDescription": "浏览器信息仅供参考；请确认这是你正在配对的设备，再允许访问。",
   "remoteAccess.waitingTitle": "等待手机连接",
   "remoteAccess.waitingDescription": "扫描二维码后，新设备会显示在这里，等待你批准。",
   "remoteAccess.approve": "允许",
@@ -948,7 +949,7 @@ export const dict = {
   "remoteAccess.stop": "停止手机访问",
   "remoteAccess.securityTitle": "连接由桌面端掌控",
   "remoteAccess.securityDescription":
-    "只有链接还不能进入，每台新设备都要在这里批准。刷新二维码会让待处理请求失效；停止访问会撤销全部已授权设备。",
+    "二维码或链接可能被转发，只有你批准的设备才能访问此工作区。刷新二维码会让待处理请求失效；停止访问会撤销全部已授权设备。",
   "remoteAccess.relayPrivacy":
     "数据会经过 OpenCtrlC 中继。TLS 可保护传输过程，但中继在转发时能够查看数据；工作区内容仅在内存中处理，不会被主动保存。",
   "remoteAccess.error": "无法连接中继服务。请检查网络后重试。",

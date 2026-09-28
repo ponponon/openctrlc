@@ -876,7 +876,7 @@ export const dict = {
   "sidebar.help": "ヘルプ",
   "remoteAccess.title": "スマートフォンからアクセス",
   "remoteAccess.description":
-    "HTTPS 経由でこのワークスペースをスマートフォンから開けます。新しい端末はデスクトップで承認してください。",
+    "HTTPS 経由でこのワークスペースをスマートフォンから開けます。新しい端末は初回にデスクトップで承認が必要です。承認済みのブラウザーは最大 8 時間再接続できます。",
   "remoteAccess.setupTitle": "3 ステップで接続",
   "remoteAccess.stepEnable": "スマートフォンからのアクセスを有効にする",
   "remoteAccess.stepScan": "スマートフォンで QR コードをスキャン",
@@ -886,6 +886,7 @@ export const dict = {
   "remoteAccess.active": "スマートフォンからアクセスできます",
   "remoteAccess.scan": "スマートフォンで QR コードをスキャン",
   "remoteAccess.pending": "新しい端末から接続リクエストがあります",
+  "remoteAccess.pendingDescription": "ブラウザー情報は目安です。今ペアリングしている端末であることを確認して許可してください。",
   "remoteAccess.waitingTitle": "端末の接続を待機中",
   "remoteAccess.waitingDescription": "QR コードをスキャンしてください。新しい端末はここに表示され、承認を待ちます。",
   "remoteAccess.approve": "許可",
@@ -897,7 +898,7 @@ export const dict = {
   "remoteAccess.stop": "スマートフォンからのアクセスを停止",
   "remoteAccess.securityTitle": "接続はデスクトップで管理できます",
   "remoteAccess.securityDescription":
-    "リンクだけでは接続できず、新しい端末ごとにここで承認が必要です。QR コードを更新すると保留中の要求が無効になり、アクセスを停止するとすべての許可済み端末が取り消されます。",
+    "QR コードやリンクは転送できるため、承認した端末だけがこのワークスペースにアクセスできます。QR コードを更新すると保留中の要求が無効になり、アクセスを停止するとすべての許可済み端末が取り消されます。",
   "remoteAccess.relayPrivacy":
     "データは OpenCtrlC Relay を経由します。TLS で転送中の通信は保護されますが、中継時には Relay が内容を確認できます。ワークスペースの内容はメモリ上で処理され、意図的には保存されません。",
   "remoteAccess.error": "Relay に接続できません。ネットワークを確認して、もう一度お試しください。",

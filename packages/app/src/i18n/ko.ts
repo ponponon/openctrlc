@@ -637,7 +637,7 @@ export const dict = {
   "sidebar.help": "도움말",
   "remoteAccess.title": "휴대폰 원격 액세스",
   "remoteAccess.description":
-    "HTTPS를 통해 휴대폰에서 이 작업 공간을 여세요. 새 기기는 데스크톱에서 각각 승인해야 합니다.",
+    "HTTPS를 통해 휴대폰에서 이 작업 공간을 여세요. 새 기기는 처음 연결할 때 데스크톱에서 승인해야 하며, 승인된 브라우저는 최대 8시간 동안 다시 연결할 수 있습니다.",
   "remoteAccess.setupTitle": "세 단계로 휴대폰 연결",
   "remoteAccess.stepEnable": "휴대폰 액세스 켜기",
   "remoteAccess.stepScan": "휴대폰으로 QR 코드 스캔",
@@ -647,6 +647,7 @@ export const dict = {
   "remoteAccess.active": "휴대폰 액세스가 켜졌습니다",
   "remoteAccess.scan": "휴대폰으로 이 QR 코드를 스캔하세요",
   "remoteAccess.pending": "새 기기에서 연결을 요청했습니다",
+  "remoteAccess.pendingDescription": "브라우저 정보는 참고용입니다. 지금 페어링 중인 기기인지 확인한 후 허용하세요.",
   "remoteAccess.waitingTitle": "기기 연결 대기 중",
   "remoteAccess.waitingDescription": "QR 코드를 스캔하세요. 새 기기가 여기에 표시되면 승인할 수 있습니다.",
   "remoteAccess.approve": "허용",
@@ -658,7 +659,7 @@ export const dict = {
   "remoteAccess.stop": "휴대폰 액세스 중지",
   "remoteAccess.securityTitle": "데스크톱에서 연결을 제어합니다",
   "remoteAccess.securityDescription":
-    "링크만으로는 접속할 수 없으며 새 기기마다 여기서 승인해야 합니다. QR 코드를 새로 고치면 대기 중인 요청이 무효화되고, 액세스를 중지하면 승인된 모든 기기의 권한이 취소됩니다.",
+    "QR 코드나 링크는 전달될 수 있으므로 승인한 기기만 이 작업 공간에 접속할 수 있습니다. QR 코드를 새로 고치면 대기 중인 요청이 무효화되고, 액세스를 중지하면 승인된 모든 기기의 권한이 취소됩니다.",
   "remoteAccess.relayPrivacy":
     "데이터는 OpenCtrlC Relay를 거칩니다. TLS가 전송 중인 데이터를 보호하지만 Relay는 중계 중 내용을 볼 수 있습니다. 작업 공간 콘텐츠는 메모리에서 처리되며 의도적으로 저장하지 않습니다.",
   "remoteAccess.error": "Relay에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",

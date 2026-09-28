@@ -3,6 +3,7 @@ export type RelayHostMessage =
   | { type: "session.stop"; sessionID: string; hostToken: string }
   | { type: "pair.rotate"; sessionID: string; hostToken: string }
   | { type: "pair.approve" | "pair.deny"; sessionID: string; hostToken: string; pairID: string }
+  | { type: "pair.received"; sessionID: string; hostToken: string; pairID: string }
   | { type: "request.start"; id: string; method: string; path: string; headers: Record<string, string> }
   | { type: "request.chunk"; id: string; data: string }
   | { type: "request.end"; id: string }
@@ -25,6 +26,7 @@ export type RelayServerMessage =
   | { type: "session.stopped" }
   | { type: "pair.rotated"; joinToken: string; url: string }
   | { type: "pair.waiting"; pairID: string }
+  | { type: "pair.delivered"; pairID: string }
   | { type: "remote.ready"; protocol: string }
   | { type: "request.start"; id: string; method: string; path: string; headers: Record<string, string> }
   | { type: "request.chunk"; id: string; data: string }

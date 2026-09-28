@@ -109,6 +109,14 @@ export function registerIpcHandlers(deps: Deps) {
     remoteAccessSubscriptions.get(event.sender.id)?.()
     remoteAccessSubscriptions.delete(event.sender.id)
   })
+  ipcMain.on("remote-access-state-received", (event, pairIDs: unknown) => {
+    if (!remoteAccessSubscriptions.has(event.sender.id) || !Array.isArray(pairIDs)) return
+    deps.remoteAccess.acknowledgePairRequests(
+      pairIDs
+        .filter((pairID): pairID is string => typeof pairID === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(pairID))
+        .slice(0, 3),
+    )
+  })
   ipcMain.handle("consume-initial-deep-links", () => deps.consumeInitialDeepLinks())
   ipcMain.handle("get-default-server-url", () => deps.getDefaultServerUrl())
   ipcMain.handle("set-default-server-url", (_event: IpcMainInvokeEvent, url: string | null) =>

@@ -907,7 +907,7 @@ export const dict = {
   "sidebar.settings": "Settings",
   "sidebar.help": "Help",
   "remoteAccess.title": "Mobile access",
-  "remoteAccess.description": "Open this workspace on your phone over HTTPS. Approve every new device here.",
+  "remoteAccess.description": "Open this workspace on your phone over HTTPS. Approve new devices here; approved browsers can reconnect for up to 8 hours.",
   "remoteAccess.setupTitle": "Start in three steps",
   "remoteAccess.stepEnable": "Turn on mobile access",
   "remoteAccess.stepScan": "Scan the QR code with your phone",
@@ -917,6 +917,7 @@ export const dict = {
   "remoteAccess.active": "Mobile access is on",
   "remoteAccess.scan": "Scan this QR code on your phone",
   "remoteAccess.pending": "A new device is asking to connect",
+  "remoteAccess.pendingDescription": "Browser details are only a hint. Allow only the device you are pairing now.",
   "remoteAccess.waitingTitle": "Waiting for a device",
   "remoteAccess.waitingDescription": "Scan the QR code. New devices will appear here for approval.",
   "remoteAccess.approve": "Allow",
@@ -928,7 +929,7 @@ export const dict = {
   "remoteAccess.stop": "Stop mobile access",
   "remoteAccess.securityTitle": "Your desktop stays in control",
   "remoteAccess.securityDescription":
-    "A link alone cannot connect. Approve every new device here. Refreshing the QR code invalidates pending requests; stopping access revokes all approved devices.",
+    "A QR code or link can be forwarded, so only devices you approve can access this workspace. Refreshing the QR code invalidates pending requests; stopping access revokes all approved devices.",
   "remoteAccess.relayPrivacy":
     "Traffic passes through the OpenCtrlC Relay. TLS protects it in transit, but the relay can inspect it while forwarding. Workspace content is handled in memory and is not intentionally stored.",
   "remoteAccess.error": "Could not connect to the relay. Check your internet connection and try again.",

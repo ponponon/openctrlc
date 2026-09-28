@@ -16,6 +16,7 @@ export class RemoteAccessService {
   #server?: ServerReadyData
   #requests = new Map<string, InboundHTTP>()
   #localSockets = new Map<string, WebSocket>()
+  #notifiedPairRequests = new Set<string>()
   #starting?: Promise<RemoteAccessState>
 
   constructor(
@@ -36,6 +37,7 @@ export class RemoteAccessService {
   start() {
     if (this.#starting) return this.#starting
     if (this.#state.status === "active") return Promise.resolve(this.#state)
+    this.#notifiedPairRequests.clear()
     this.#setState({ status: "connecting", pendingRequests: [], authorizedDevices: 0 })
     this.#starting = this.#start().finally(() => {
       this.#starting = undefined
@@ -50,6 +52,7 @@ export class RemoteAccessService {
     this.#sessionID = undefined
     this.#hostToken = undefined
     this.#server = undefined
+    this.#notifiedPairRequests.clear()
     for (const request of this.#requests.values()) request.aborted.abort()
     for (const local of this.#localSockets.values()) local.close(1000, "Remote access stopped")
     this.#requests.clear()
@@ -122,6 +125,7 @@ export class RemoteAccessService {
         this.#sessionID = undefined
         this.#hostToken = undefined
         this.#server = undefined
+        this.#notifiedPairRequests.clear()
         for (const request of this.#requests.values()) {
           request.aborted.abort()
           try {
@@ -165,6 +169,7 @@ export class RemoteAccessService {
     if (message.type === "pair.approved" || message.type === "pair.denied") {
       const id = typeof message.pairID === "string" ? message.pairID : ""
       const pendingRequests = this.#state.pendingRequests.filter((item) => item.id !== id)
+      this.#notifiedPairRequests.delete(id)
       this.#setState({
         ...this.#state,
         pendingRequests,
@@ -410,6 +415,14 @@ export class RemoteAccessService {
     if (!socket || socket.readyState !== WebSocket.OPEN) return false
     socket.send(JSON.stringify({ ...message, sessionID: this.#sessionID, hostToken: this.#hostToken }))
     return true
+  }
+
+  acknowledgePairRequests(pairIDs: string[]) {
+    for (const pairID of pairIDs) {
+      if (this.#notifiedPairRequests.has(pairID)) continue
+      if (!this.#state.pendingRequests.some((request) => request.id === pairID)) continue
+      if (this.#send({ type: "pair.received", pairID })) this.#notifiedPairRequests.add(pairID)
+    }
   }
 
   #setState(state: RemoteAccessState) {

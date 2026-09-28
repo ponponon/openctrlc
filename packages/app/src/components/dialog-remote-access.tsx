@@ -83,6 +83,42 @@ export function DialogRemoteAccess() {
               {language.t("remoteAccess.deviceCount", { count: state.authorizedDevices })}
             </span>
           </div>
+          <Show when={state.pendingRequests.length > 0}>
+            <section
+              class="flex flex-col gap-2 rounded-xl border border-v2-state-border-warning bg-v2-state-bg-warning p-3 sm:p-4"
+              aria-label={language.t("remoteAccess.pending")}
+              aria-live="polite"
+            >
+              <div class="flex items-center gap-2 text-14-medium text-v2-state-fg-warning">
+                <span aria-hidden="true">
+                  <IconV2 name="smartphone" size="small" />
+                </span>
+                {language.t("remoteAccess.pending")}
+              </div>
+              <div class="flex flex-col gap-2">
+                <For each={state.pendingRequests}>
+                  {(request) => (
+                    <div class="flex min-w-0 flex-col gap-3 rounded-lg bg-v2-background-bg-layer-01 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div class="min-w-0">
+                        <div class="break-all text-14-medium text-v2-text-text-strong">{request.device}</div>
+                        <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">
+                          {language.t("remoteAccess.pendingDescription")}
+                        </p>
+                      </div>
+                      <div class="flex shrink-0 flex-wrap gap-2">
+                        <ButtonV2 size="small" onClick={() => remoteAccess?.approve(request.id)}>
+                          {language.t("remoteAccess.approve")}
+                        </ButtonV2>
+                        <ButtonV2 size="small" variant="ghost" onClick={() => remoteAccess?.deny(request.id)}>
+                          {language.t("remoteAccess.deny")}
+                        </ButtonV2>
+                      </div>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </section>
+          </Show>
           <div class="grid min-h-0 gap-3 sm:grid-cols-2">
             <section class="flex min-w-0 flex-col items-center gap-3 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-4">
               <Show
@@ -125,50 +161,24 @@ export function DialogRemoteAccess() {
               <div class="rounded-lg bg-v2-background-bg-base p-3 text-12-regular leading-5 text-v2-text-text-muted">
                 {language.t("remoteAccess.relayPrivacy")}
               </div>
-              <div class="min-h-0 border-t border-v2-border-border-base pt-3">
-                <Show
-                  when={state.pendingRequests.length > 0}
-                  fallback={
-                    <div>
-                      <div class="mb-2 text-14-medium text-v2-text-text-strong">
-                        {language.t("remoteAccess.waitingTitle")}
-                      </div>
-                      <div class="flex items-start gap-2 rounded-lg bg-v2-background-bg-base p-3">
-                        <span
-                          class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-v2-state-bg-success text-v2-state-fg-success"
-                          aria-hidden="true"
-                        >
-                          <IconV2 name="check" size="small" />
-                        </span>
-                        <span class="text-12-regular leading-5 text-v2-text-text-muted">
-                          {language.t("remoteAccess.waitingDescription")}
-                        </span>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div>
-                    <div class="mb-2 text-14-medium text-v2-text-text-strong">{language.t("remoteAccess.pending")}</div>
-                    <div class="flex max-h-40 flex-col gap-2 overflow-y-auto">
-                      <For each={state.pendingRequests}>
-                        {(request) => (
-                          <div class="flex min-w-0 flex-col gap-2 rounded-lg bg-v2-background-bg-base p-3">
-                            <div class="break-all text-12-regular text-v2-text-text-base">{request.device}</div>
-                            <div class="flex gap-2">
-                              <ButtonV2 size="small" onClick={() => remoteAccess?.approve(request.id)}>
-                                {language.t("remoteAccess.approve")}
-                              </ButtonV2>
-                              <ButtonV2 size="small" variant="ghost" onClick={() => remoteAccess?.deny(request.id)}>
-                                {language.t("remoteAccess.deny")}
-                              </ButtonV2>
-                            </div>
-                          </div>
-                        )}
-                      </For>
-                    </div>
+              <Show when={state.pendingRequests.length === 0}>
+                <div class="border-t border-v2-border-border-base pt-3">
+                  <div class="mb-2 text-14-medium text-v2-text-text-strong">
+                    {language.t("remoteAccess.waitingTitle")}
                   </div>
-                </Show>
-              </div>
+                  <div class="flex items-start gap-2 rounded-lg bg-v2-background-bg-base p-3">
+                    <span
+                      class="mt-0.5 flex size-5 shrink-0 items-center justify-center text-v2-text-text-muted"
+                      aria-hidden="true"
+                    >
+                      <IconV2 name="smartphone" size="small" />
+                    </span>
+                    <span class="text-12-regular leading-5 text-v2-text-text-muted">
+                      {language.t("remoteAccess.waitingDescription")}
+                    </span>
+                  </div>
+                </div>
+              </Show>
             </section>
           </div>
         </Show>
