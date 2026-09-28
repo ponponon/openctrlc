@@ -4,7 +4,7 @@ OpenCtrlC Desktop connects outbound to this relay over WSS. A phone scans a shor
 
 ## Security model
 
-- The desktop creates an eight-hour in-memory session. Restarting the relay or closing the desktop revokes it.
+- The desktop keeps an in-memory session open while its relay WebSocket remains connected. A desktop heartbeat keeps the reverse-proxy connection alive. Each approved browser expires after 30 days without use; authenticated HTTP and WebSocket activity renews the grant. Stopping mobile access, closing the desktop, or restarting the relay revokes all grants.
 - The QR code contains a one-time pairing secret in the URL fragment, which browsers do not send in the initial HTTP request or the `Referer` header.
 - Every new browser receives access only after an explicit desktop approval. A session allows at most three approved browsers. Rotating the QR code cancels pending approvals; stopping access revokes all approved browsers.
 - Viewer access uses a random bearer cookie marked `HttpOnly`, `Secure`, `SameSite=Strict`, and `__Host-`. The relay does not forward that cookie or browser authorization headers to the desktop server.
