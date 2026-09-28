@@ -9,9 +9,9 @@ source of updates.
 - Local exact tag: `base-opencode-7774461`
 - Published marker: `openctrlc-baseline-7774461`
 - Imported: 2026-08-19
-- Reviewed through upstream commit: `c10134729dd2ce00beb18604ec91f10319f59a78`
-- Last selective sync: 2026-09-21
-- Upstream version at review: `1.18.31`
+- Reviewed through upstream commit: `b471c2b4495747353af768fbf2e0790c9d820ce2`
+- Last selective sync: 2026-09-28
+- Upstream version at review: `1.18.32`
 - OpenCtrlC version at sync: `1.18.18`
 
 ## Sync policy
@@ -45,7 +45,7 @@ Do not edit generated client files directly; regenerate them from
 
 ## Integrated upstream commits
 
-The 2026-09-13 and 2026-09-21 syncs integrated the following upstream fixes and
+The 2026-09-13, 2026-09-21, and 2026-09-28 syncs integrated the following upstream fixes and
 features while preserving OpenCtrlC's independent product code:
 
 ### Runtime, provider, and session reliability
@@ -71,12 +71,23 @@ features while preserving OpenCtrlC's independent product code:
   remove its Bun dependency, and keep model discovery quiet.
 - `c10134729dd` restrict Bedrock tool-result image retention to Claude, Nova,
   and Llama 4 model families, hoisting unsupported images into user messages.
+- `ba341c6c` makes Node package entrypoint resolution return an importable file
+  URL, including packages with conditional exports.
+- `f5ce4f88` breaks the filesystem search import cycle by importing schema
+  constructors directly.
+- `3a35b45d` allows GPT-6 Sol and GPT-6 Luna in the Codex provider.
+- `82d4c890` redacts credentials from `debug config` output without changing
+  the resolved configuration used by providers.
+- `b471c2b4` reports MCP browser launcher failures even when the launcher exits
+  before `open()` returns; the test is adapted to OpenCtrlC's current opener.
 
 ### Statistics hardening
 
 - `2e018f70f2` adapted to OpenCtrlC's statistics normalization: reject model
   identifiers longer than 256 characters in both in-memory aggregates and R2
   SQL, preventing oversized dimensions from breaking aggregation.
+- `0f549842` attributes Hy4 preview traffic to Tencent and retires the stale
+  `unknown/hy4-preview` dimensions from model and geo statistics.
 
 ### App, UI, ACP, and desktop compatibility
 
@@ -115,3 +126,13 @@ OpenCtrlC-specific adaptation:
 - `45ad8dc38a`, `d870e22c70`: R2 SQL pagination and transient retry changes;
   the local R2 SQL layer predates the upstream pagination interface and needs
   an isolated adaptation with its own tests.
+- `610df0b5`: Gemini thinking default change; the local provider transform has
+  OpenCtrlC-specific drift and needs a manual adaptation.
+- `29f07e0c`: shared browser opener refactor; broad core/TUI dependency changes
+  are not required for the browser failure fix and remain deferred.
+- `45719acebb`, `79e8eee5`: GitLab AI provider dependency bumps; defer until
+  the lockfile and provider patch graph can be validated together.
+- `0f549842`: Hy4 preview statistics attribution was integrated separately;
+  the remaining stats comparison-radar work in `6df0d5d9` is deferred.
+- `fe3f3a41`: upstream release-version sync; OpenCtrlC keeps an independent
+  release/version cadence.

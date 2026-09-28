@@ -56,15 +56,17 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 ### 实现范围
 
 - 以 `7774461bbf7bd0600070cdede4fe8b9d9f301bf4` 作为内容基线，不把上游历史强行改造成 OpenCtrlC 的父提交。
-- 本轮检查至 `c10134729dd2ce00beb18604ec91f10319f59a78`，按单个上游 commit 选择性移植，覆盖 Bedrock 图片工具消息和统计模型名边界；依赖升级、R2 分页重构及 Zen/Go 专属变更继续延期。
+- 本轮检查至 `b471c2b4495747353af768fbf2e0790c9d820ce2`，按单个上游 commit 选择性移植，覆盖 Node 包入口、文件搜索循环依赖、Codex GPT-6 Sol/Luna、debug 配置脱敏、MCP 浏览器失败处理和 Hy4 统计归属；Gemini 思维默认值、依赖升级、R2 分页重构及 Zen/Go 专属变更继续延期。
 - 适配 `c10134729dd`，仅让 Claude、Nova 和 Llama 4 的 Bedrock 模型保留工具结果图片，其余模型转为独立用户消息；适配 `2e018f70f2`，将超长模型名统一归一化为 `unknown`。
+- 适配 `ba341c6c`，让 Node 下的 NPM 条件导出解析为可导入的 file URL；适配 `f5ce4f88`，消除文件搜索模块对完整 `FileSystem` 命名空间的运行时依赖。
+- 适配 `3a35b45d`、`82d4c890` 和 `b471c2b4`，分别支持 Codex GPT-6 Sol/Luna、脱敏 `debug config` 输出，以及 MCP 浏览器启动器提前退出的错误传播；适配 `0f549842`，将 Hy4 preview 统计归属到腾讯并清理旧维度。
 - 在 `UPSTREAM.md` 中记录已集成与延期的上游 commit，在 `scripts/upstream-sync-report.sh` 中根据游标生成下一轮待审查范围。
 - 对上游生成文件、依赖补丁和 OpenCtrlC 定制边界保留人工审查，避免一次性全量 diff 引入 Go/Console/Zen 等不属于本项目的产品代码。
 
 ### 验证方式
 
 - 在 `packages/opencode`、`packages/core`、`packages/app`、`packages/stats/core` 分别执行对应的单元测试和 `bun typecheck`。
-- 本轮验证 `packages/opencode` 的 `message-v2` 测试 40 项、`packages/stats/core` 的 inference 测试 11 项，并通过两个受影响包的 typecheck。
+- 本轮验证 `packages/core` 的 NPM 测试 5 项、`packages/opencode` 的 Codex 新增模型断言和 MCP 浏览器测试 2 项、`packages/stats/core` 的 inference 测试 12 项，并通过 core、opencode、stats/core 的 typecheck；依赖随机端口的 CLI/Codex 网络用例受当前 Bun `port: 0` 环境限制未能启动。
 - 使用 `git diff --check` 检查空白错误，并在提交前扫描改动文件中的 API key、token、密码和私钥内容。
 - 后续同步先执行 `git fetch upstream dev`，再运行 `bash scripts/upstream-sync-report.sh`，按 `UPSTREAM.md` 的延期清单逐项复核，完成后更新游标和台账。
 
