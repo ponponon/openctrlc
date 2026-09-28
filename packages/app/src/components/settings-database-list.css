@@ -1,0 +1,104 @@
+.settings-database-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-database-section-title {
+  padding-bottom: 4px;
+  color: var(--v2-text-text-base);
+  font-size: 15px;
+  font-weight: 640;
+  line-height: 1;
+}
+
+.settings-database-card {
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: var(--v2-background-bg-layer-01, var(--surface-base));
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted, var(--border-weak-base));
+  padding-inline: 20px;
+}
+
+.settings-database-group + .settings-database-group {
+  border-top: 0.5px solid var(--v2-border-border-base);
+}
+
+.settings-database-group-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 16px;
+}
+
+.settings-database-group-title {
+  color: var(--v2-text-text-base);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.settings-database-group-description {
+  margin: 0;
+  color: var(--v2-text-text-muted);
+  font-size: 12px;
+  font-weight: 440;
+  line-height: 17px;
+}
+
+.settings-database-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  border-top: 0.5px solid var(--v2-border-border-base);
+  padding-block: 9px;
+}
+
+.settings-database-file-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settings-database-file-name {
+  overflow: hidden;
+  color: var(--v2-text-text-base);
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-database-file-path {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--v2-text-text-muted);
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  font-weight: 440;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+}
+
+.settings-database-action {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 520px) {
+  .settings-database-card {
+    padding-inline: 12px;
+  }
+
+  .settings-database-row {
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

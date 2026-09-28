@@ -685,6 +685,10 @@ export const dict = {
   "settings.general.section.sounds": "효과음",
   "settings.general.section.feed": "피드",
   "settings.general.section.display": "디스플레이",
+  "settings.general.section.localData": "로컬 데이터",
+  "settings.general.database.group.openctrlc": "세션 및 프로젝트",
+  "settings.general.database.group.drafts": "초안 및 첨부 파일",
+  "settings.general.database.group.unknown": "기타 데이터베이스",
   "settings.general.database.description.drafts": "프롬프트 초안, 초안 기록 및 첨부 파일을 저장합니다.",
   "settings.general.database.description.openctrlc":
     "OpenCtrlC 세션, 메시지, 프로젝트 및 기타 앱 데이터를 저장합니다. 파일 이름 접미사가 런타임 채널을 식별합니다.",

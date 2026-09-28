@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo, createResource, onMount, type JSX } from "solid-js"
+import { Component, Show, createMemo, createResource, onMount, type JSX } from "solid-js"
 import { Button } from "@openctrlc/ui/button"
 import { Icon } from "@openctrlc/ui/icon"
 import { Select } from "@openctrlc/ui/select"
@@ -31,7 +31,7 @@ import { decode64 } from "@/utils/base64"
 import { playSoundById, SOUND_OPTIONS } from "@/utils/sound"
 import { ExternalLink } from "./external-link"
 import { SettingsList } from "./settings-list"
-import { databasePurposeDescription } from "@/utils/database-files"
+import { SettingsDatabaseList } from "./settings-database-list"
 
 let demoSoundState = {
   cleanup: undefined as (() => void) | undefined,
@@ -457,34 +457,28 @@ export const SettingsGeneral: Component = () => {
             />
           </div>
         </SettingsRow>
-
-        <Show when={databaseFiles.latest.length > 0}>
-          <For each={databaseFiles.latest}>
-            {(database) => (
-              <SettingsRow
-                title={database.name}
-                description={
-                  <>
-                    {language.t(databasePurposeDescription[database.purpose])}
-                    <br />
-                    {database.path}
-                  </>
-                }
-              >
-                <Button
-                  size="small"
-                  variant="secondary"
-                  onClick={() => void platform.revealPath?.(database.path)}
-                  disabled={!platform.revealPath}
-                >
-                  {language.t("session.header.reveal.containingFolder")}
-                </Button>
-              </SettingsRow>
-            )}
-          </For>
-        </Show>
       </SettingsList>
     </div>
+  )
+
+  const LocalDatabaseSection = () => (
+    <Show when={desktop() && databaseFiles.latest.length > 0}>
+      <SettingsDatabaseList
+        files={databaseFiles.latest}
+        renderAction={(database) => (
+          <Button
+            type="button"
+            size="small"
+            variant="ghost"
+            icon="folder"
+            onClick={() => void platform.revealPath?.(database.path)}
+            disabled={!platform.revealPath}
+          >
+            {language.t("session.header.reveal.containingFolder")}
+          </Button>
+        )}
+      />
+    </Show>
   )
 
   const AppearanceSection = () => (
@@ -806,6 +800,8 @@ export const SettingsGeneral: Component = () => {
         <Show when={desktop()}>
           <AdvancedSection />
         </Show>
+
+        <LocalDatabaseSection />
       </div>
     </div>
   )

@@ -983,6 +983,10 @@ export const dict = {
   "settings.general.section.sounds": "音效",
   "settings.general.section.feed": "动态",
   "settings.general.section.display": "显示",
+  "settings.general.section.localData": "本地数据",
+  "settings.general.database.group.openctrlc": "会话与项目",
+  "settings.general.database.group.drafts": "草稿和附件",
+  "settings.general.database.group.unknown": "其他数据库",
   "settings.general.database.description.drafts": "保存输入草稿、草稿历史和附件数据。",
   "settings.general.database.description.openctrlc":
     "保存 OpenCtrlC 的会话、消息、项目等核心数据；文件名后缀用于区分运行通道。",

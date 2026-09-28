@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo, createResource } from "solid-js"
+import { Component, Show, createMemo, createResource } from "solid-js"
 import { createMediaQuery } from "@solid-primitives/media"
 import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
 import { SelectV2 } from "@openctrlc/ui/v2/select-v2"
@@ -10,7 +10,7 @@ import { usePlatform } from "@/context/platform"
 import { useUpdaterAction } from "../updater-action"
 import { useSettings } from "@/context/settings"
 import { ExternalLink } from "../external-link"
-import { databasePurposeDescription } from "@/utils/database-files"
+import { SettingsDatabaseList } from "../settings-database-list"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
 import { LayoutRetirementNotice, LayoutTransitionToggle } from "./interface-transition"
@@ -459,34 +459,28 @@ export const SettingsGeneralV2: Component<{
             />
           </div>
         </SettingsRowV2>
-
-        <Show when={databaseFiles.latest.length > 0}>
-          <For each={databaseFiles.latest}>
-            {(database) => (
-              <SettingsRowV2
-                title={database.name}
-                description={
-                  <>
-                    {language.t(databasePurposeDescription[database.purpose])}
-                    <br />
-                    {database.path}
-                  </>
-                }
-              >
-                <ButtonV2
-                  size="normal"
-                  variant="neutral"
-                  onClick={() => void platform.revealPath?.(database.path)}
-                  disabled={!platform.revealPath}
-                >
-                  {language.t("session.header.reveal.containingFolder")}
-                </ButtonV2>
-              </SettingsRowV2>
-            )}
-          </For>
-        </Show>
       </SettingsListV2>
     </div>
+  )
+
+  const LocalDatabaseSection = () => (
+    <Show when={desktop() && databaseFiles.latest.length > 0}>
+      <SettingsDatabaseList
+        files={databaseFiles.latest}
+        renderAction={(database) => (
+          <ButtonV2
+            type="button"
+            size="small"
+            variant="ghost"
+            icon="folder"
+            onClick={() => void platform.revealPath?.(database.path)}
+            disabled={!platform.revealPath}
+          >
+            {language.t("session.header.reveal.containingFolder")}
+          </ButtonV2>
+        )}
+      />
+    </Show>
   )
 
   const NotificationsSection = () => (
@@ -612,6 +606,8 @@ export const SettingsGeneralV2: Component<{
         <DisplaySection />
 
         <AdvancedSection />
+
+        <LocalDatabaseSection />
       </div>
     </>
   )

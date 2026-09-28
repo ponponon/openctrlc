@@ -927,6 +927,10 @@ export const dict = {
   "settings.general.section.sounds": "効果音",
   "settings.general.section.feed": "フィード",
   "settings.general.section.display": "ディスプレイ",
+  "settings.general.section.localData": "ローカルデータ",
+  "settings.general.database.group.openctrlc": "セッションとプロジェクト",
+  "settings.general.database.group.drafts": "下書きと添付ファイル",
+  "settings.general.database.group.unknown": "その他のデータベース",
   "settings.general.database.description.drafts": "プロンプトの下書き、下書き履歴、添付ファイルを保存します。",
   "settings.general.database.description.openctrlc":
     "OpenCtrlCのセッション、メッセージ、プロジェクトなどのアプリデータを保存します。ファイル名のサフィックスが実行チャネルを識別します。",
