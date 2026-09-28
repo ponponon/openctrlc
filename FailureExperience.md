@@ -933,3 +933,7 @@ Linux 与 Windows 的文件遍历顺序不同，直接把 Glob 扫描结果按�
 ## 新增 E2E 用例时必须同步更新持久化清单
 
 跨平台排序修复后，CI 又指出 `session-timeline-scroll-restore.spec.ts` 已开始读写 server 和 tabs 持久化键，但没有登记到身份残留清单；随后又发现 `session-search-tool-hit.spec.ts` 与 `session-timeline-follow-pause.spec.ts` 没有任何持久化读写，却也未登记为 `expectedNoPersistence`。新增或调整 E2E 用例时，必须同时更新 `identity-residuals.test.ts` 中的 `expectedPersistence` / `expectedNoPersistence`，确保每个文件都明确归类，并根据实际读写行为选择类别。
+
+## 新增 HttpApi 路由必须补齐覆盖场景
+
+`system-prompt-snapshot` 已进入公开 HttpApi/OpenAPI 合约，但 HttpApi exerciser 没有对应场景，导致 `test:httpapi --fail-on-missing` 拦截发布。新增或调整公开路由时，除实现 handler 和生成客户端外，还要在 `packages/opencode/test/server/httpapi-exercise/index.ts` 为每条路由加入合适的成功或错误场景；不要通过放宽 `fail-on-missing` 来绕过覆盖门禁。

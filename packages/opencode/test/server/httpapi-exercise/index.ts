@@ -982,6 +982,17 @@ const scenarios: Scenario[] = [
     }))
     .json(200, data(object)),
   http.protected
+    .get("/api/session/{sessionID}/system-prompt-snapshot", "v2.session.systemPromptSnapshot")
+    .seeded((ctx) => ctx.session({ title: "System prompt snapshot" }))
+    .at((ctx) => ({
+      path: route("/api/session/{sessionID}/system-prompt-snapshot", { sessionID: ctx.state.id }),
+      headers: ctx.headers(),
+    }))
+    .json(200, data((value) => {
+      object(value)
+      check(value.snapshot === undefined, "a new session should not have a system prompt snapshot")
+    })),
+  http.protected
     .post("/api/session/{sessionID}/agent", "v2.session.switchAgent")
     .seeded((ctx) => ctx.session({ title: "Switch agent" }))
     .at((ctx) => ({
