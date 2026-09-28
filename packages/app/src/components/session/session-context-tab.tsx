@@ -9,11 +9,11 @@ import { Button } from "@openctrlc/ui/button"
 import { DropdownMenu } from "@openctrlc/ui/dropdown-menu"
 import { Accordion } from "@openctrlc/ui/accordion"
 import { StickyAccordionHeader } from "@openctrlc/ui/sticky-accordion-header"
+import { useDialog } from "@openctrlc/ui/context/dialog"
 import { File } from "@openctrlc/session-ui/file"
 import { Markdown } from "@openctrlc/session-ui/markdown"
-import { assistantStatistics } from "@openctrlc/session-ui/message-statistics"
 import { ScrollView } from "@openctrlc/ui/scroll-view"
-import type { Message, Part, UserMessage } from "@openctrlc/sdk/v2/client"
+import type { AssistantMessage, Message, Part, UserMessage } from "@openctrlc/sdk/v2/client"
 import { showToast } from "@/utils/toast"
 import {
   downloadSessionExport,
@@ -39,6 +39,7 @@ import {
 import { estimateSessionContextBreakdown, type SessionContextBreakdownKey } from "./session-context-breakdown"
 import { createSessionContextFormatter } from "./session-context-format"
 import { getSessionSystemPrompt } from "./session-context-system-prompt"
+import { DialogSessionMetricChart, SessionTokenSpeedChart } from "./session-context-chart"
 import { copySessionID, copyText } from "./session-id-copy"
 
 const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
@@ -144,188 +145,6 @@ function RawMessage(props: {
   )
 }
 
-function SessionTokenSpeedChart(props: { messages: Message[]; onSelectMessage: (messageID: string) => void }) {
-  const language = useLanguage()
-  const entries = createMemo(() =>
-    props.messages.flatMap((message) => {
-      if (message.role !== "assistant") return []
-      return [
-        {
-          message,
-          statistics: assistantStatistics({
-            output: message.tokens?.output,
-            reasoning: message.tokens?.reasoning,
-            created: message.time?.created,
-            completed: message.time?.completed,
-          }),
-        },
-      ]
-    }),
-  )
-  const maximum = createMemo(() =>
-    entries().reduce((value, entry) => Math.max(value, entry.statistics?.tokensPerSecond ?? 0), 0),
-  )
-  const chartMaximum = createMemo(() => {
-    const value = maximum() * 1.1
-    if (value <= 0) return 1
-    const magnitude = 10 ** Math.floor(Math.log10(value))
-    return Math.ceil(value / magnitude) * magnitude
-  })
-  const layout = { left: 58, top: 12, width: 882, height: 184 }
-  const points = createMemo(() => {
-    const all = entries()
-    const max = chartMaximum()
-    return all.map((entry, index) => ({
-      ...entry,
-      index: index + 1,
-      x: layout.left + (all.length <= 1 ? layout.width / 2 : (index / (all.length - 1)) * layout.width),
-      y: layout.top + (1 - (entry.statistics?.tokensPerSecond ?? 0) / max) * layout.height,
-    }))
-  })
-  const yTicks = createMemo(() =>
-    [0, 0.25, 0.5, 0.75, 1].map((ratio) => ({
-      value: chartMaximum() * ratio,
-      y: layout.top + (1 - ratio) * layout.height,
-    })),
-  )
-  const xTicks = createMemo(() => {
-    const count = entries().length
-    const length = Math.min(count, 5)
-    return Array.from({ length }, (_, tick) => {
-      const index = count <= 5 ? tick : Math.round((count - 1) * (tick / (length - 1)))
-      return { index, x: points()[index]?.x ?? layout.left }
-    })
-  })
-  const line = createMemo(() =>
-    points().reduce((path, point, index, all) => {
-      if (!point.statistics) return path
-      return `${path}${all[index - 1]?.statistics ? "L" : "M"}${point.x} ${point.y} `
-    }, ""),
-  )
-  const formatter = createMemo(() => createSessionContextFormatter(language.intl()))
-  const rate = createMemo(() => new Intl.NumberFormat(language.intl(), { maximumFractionDigits: 1 }))
-  const hasData = createMemo(() => entries().some((entry) => entry.statistics !== undefined))
-
-  return (
-    <div class="rounded-md border border-border-base bg-surface-base p-3">
-      <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <div class="text-12-medium text-text-base">{language.t("context.rawMessages.speedChart.title")}</div>
-        <div class="text-11-regular text-text-weak">
-          {language.t("context.rawMessages.speedChart.description")}
-        </div>
-      </div>
-      <Show
-        when={hasData()}
-        fallback={
-          <div class="flex h-40 items-center justify-center text-12-regular text-text-weak">
-            {language.t("context.rawMessages.speedChart.empty")}
-          </div>
-        }
-      >
-        <div class="overflow-x-auto">
-          <svg
-            viewBox="0 0 960 238"
-            class="block h-52 w-full min-w-[560px]"
-            role="group"
-            aria-label={`${language.t("context.rawMessages.speedChart.title")}. ${language.t("context.rawMessages.speedChart.description")}`}
-          >
-            <For each={yTicks()}>
-              {(tick) => (
-                <>
-                  <line
-                    x1={layout.left}
-                    y1={tick.y}
-                    x2={layout.left + layout.width}
-                    y2={tick.y}
-                    stroke="var(--border-weak-base)"
-                    stroke-dasharray="3 4"
-                  />
-                  <text
-                    x={layout.left - 10}
-                    y={tick.y + 4}
-                    fill="var(--text-weak)"
-                    font-size="11"
-                    text-anchor="end"
-                  >
-                    {rate().format(tick.value)}
-                  </text>
-                </>
-              )}
-            </For>
-            <path
-              d={line()}
-              fill="none"
-              stroke="var(--syntax-info)"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <For each={points()}>
-              {(point) => (
-                <Show when={point.statistics}>
-                  {(statistics) => {
-                    const tooltip = language.t("context.rawMessages.speedChart.tooltip", {
-                      index: point.index,
-                      time: formatter().time(point.message.time.created),
-                      speed: rate().format(statistics().tokensPerSecond),
-                      tokens: formatter().number(statistics().total),
-                      duration: (statistics().durationMs / 1000).toLocaleString(language.intl(), {
-                        maximumFractionDigits: 1,
-                      }),
-                    })
-                    return (
-                      <circle
-                        cx={point.x}
-                        cy={point.y}
-                        r="5"
-                        fill="var(--syntax-info)"
-                        role="button"
-                        tabindex="0"
-                        aria-label={tooltip}
-                        class="cursor-pointer"
-                        onClick={() => props.onSelectMessage(point.message.id)}
-                        onKeyDown={(event) => {
-                          if (event.key !== "Enter" && event.key !== " ") return
-                          event.preventDefault()
-                          props.onSelectMessage(point.message.id)
-                        }}
-                      >
-                        <title>{tooltip}</title>
-                      </circle>
-                    )
-                  }}
-                </Show>
-              )}
-            </For>
-            <For each={xTicks()}>
-              {(tick) => (
-                <text
-                  x={tick.x}
-                  y="220"
-                  fill="var(--text-weak)"
-                  font-size="11"
-                  text-anchor="middle"
-                >
-                  {tick.index + 1}
-                </text>
-              )}
-            </For>
-            <text
-              x={layout.left + layout.width / 2}
-              y="236"
-              fill="var(--text-weak)"
-              font-size="11"
-              text-anchor="middle"
-            >
-              {language.t("context.rawMessages.speedChart.axis")}
-            </text>
-          </svg>
-        </div>
-      </Show>
-    </div>
-  )
-}
-
 const emptyMessages: Message[] = []
 const emptyUserMessages: UserMessage[] = []
 
@@ -334,6 +153,7 @@ export function SessionContextTab() {
   const language = useLanguage()
   const platform = usePlatform()
   const sdk = useSDK()
+  const dialog = useDialog()
   const providers = useProviders(() => sdk().directory)
   const { params, view } = useSessionLayout()
   const info = createMemo(() => (params.id ? sync().session.get(params.id) : undefined))
@@ -642,6 +462,19 @@ export function SessionContextTab() {
     })
   }
 
+  const messageModelLabel = (message: AssistantMessage) => {
+    const provider = providers.all().get(message.providerID)
+    return `${provider?.models[message.modelID]?.name ?? message.modelID} · ${provider?.name ?? message.providerID}`
+  }
+  const expandChart = () =>
+    dialog.show(() => (
+      <DialogSessionMetricChart
+        messages={messages()}
+        modelLabel={messageModelLabel}
+        onSelectMessage={selectRawMessage}
+      />
+    ))
+
   const handleScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
     pending = {
       x: event.currentTarget.scrollLeft,
@@ -882,7 +715,12 @@ export function SessionContextTab() {
           </div>
           <Show when={rawMessageChartState.speed}>
             <div id="session-token-speed-chart">
-              <SessionTokenSpeedChart messages={messages()} onSelectMessage={selectRawMessage} />
+              <SessionTokenSpeedChart
+                messages={messages()}
+                modelLabel={messageModelLabel}
+                onSelectMessage={selectRawMessage}
+                onExpand={expandChart}
+              />
             </div>
           </Show>
           <div classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
