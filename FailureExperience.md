@@ -929,3 +929,7 @@ WebSocket 仍显示 `OPEN` 不代表桌面到 Relay 的传输链路仍能双向�
 ## 跨平台文件扫描结果必须先规范化再比较
 
 Linux 与 Windows 的文件遍历顺序不同，直接把 Glob 扫描结果按插入顺序放入 Map 再和字面量 Map 比较，会让内容完全相同的清单在 CI 中失败。比较扫描清单时，应先按稳定的路径顺序排列条目和值；文件集合断言也应显式排序，不能依赖底层目录遍历顺序。
+
+## 新增 E2E 用例时必须同步更新持久化清单
+
+跨平台排序修复后，CI 又指出 `session-timeline-scroll-restore.spec.ts` 已开始读写 server 和 tabs 持久化键，但没有登记到身份残留清单。新增或调整 E2E 用例时，必须同时更新 `identity-residuals.test.ts` 中的 `expectedPersistence` / `expectedNoPersistence`，确保清单反映用例实际读写，而不是只处理排序导致的表面失败。
