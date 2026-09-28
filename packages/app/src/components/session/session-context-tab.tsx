@@ -104,7 +104,7 @@ function RawMessage(props: {
   gridStyle: JSX.CSSProperties
 }) {
   return (
-    <Accordion.Item value={props.message.id}>
+    <Accordion.Item value={props.message.id} id={`session-context-message-${props.message.id}`}>
       <StickyAccordionHeader>
         <Accordion.Trigger>
           <div
@@ -144,7 +144,7 @@ function RawMessage(props: {
   )
 }
 
-function SessionTokenSpeedChart(props: { messages: Message[] }) {
+function SessionTokenSpeedChart(props: { messages: Message[]; onSelectMessage: (messageID: string) => void }) {
   const language = useLanguage()
   const entries = createMemo(() =>
     props.messages.flatMap((message) => {
@@ -157,11 +157,6 @@ function SessionTokenSpeedChart(props: { messages: Message[] }) {
             reasoning: message.tokens?.reasoning,
             created: message.time?.created,
             completed: message.time?.completed,
-            requestStarted: message.time?.requestStarted,
-            firstGenerated: message.time?.firstGenerated,
-            lastGenerated: message.time?.lastGenerated,
-            generationDuration: message.time?.generationDuration,
-            providerCompleted: message.time?.providerCompleted,
           }),
         },
       ]
@@ -231,7 +226,7 @@ function SessionTokenSpeedChart(props: { messages: Message[] }) {
           <svg
             viewBox="0 0 960 238"
             class="block h-52 w-full min-w-[560px]"
-            role="img"
+            role="group"
             aria-label={`${language.t("context.rawMessages.speedChart.title")}. ${language.t("context.rawMessages.speedChart.description")}`}
           >
             <For each={yTicks()}>
@@ -268,28 +263,37 @@ function SessionTokenSpeedChart(props: { messages: Message[] }) {
             <For each={points()}>
               {(point) => (
                 <Show when={point.statistics}>
-                  {(statistics) => (
-                    <circle
-                      cx={point.x}
-                      cy={point.y}
-                      r="5"
-                      fill="var(--syntax-info)"
-                      tabindex="0"
-                      class="cursor-help"
-                    >
-                      <title>
-                        {language.t("context.rawMessages.speedChart.tooltip", {
-                          index: point.index,
-                          time: formatter().time(point.message.time.created),
-                          speed: rate().format(statistics().tokensPerSecond),
-                          tokens: formatter().number(statistics().total),
-                          duration: (statistics().durationMs / 1000).toLocaleString(language.intl(), {
-                            maximumFractionDigits: 1,
-                          }),
-                        })}
-                      </title>
-                    </circle>
-                  )}
+                  {(statistics) => {
+                    const tooltip = language.t("context.rawMessages.speedChart.tooltip", {
+                      index: point.index,
+                      time: formatter().time(point.message.time.created),
+                      speed: rate().format(statistics().tokensPerSecond),
+                      tokens: formatter().number(statistics().total),
+                      duration: (statistics().durationMs / 1000).toLocaleString(language.intl(), {
+                        maximumFractionDigits: 1,
+                      }),
+                    })
+                    return (
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r="5"
+                        fill="var(--syntax-info)"
+                        role="button"
+                        tabindex="0"
+                        aria-label={tooltip}
+                        class="cursor-pointer"
+                        onClick={() => props.onSelectMessage(point.message.id)}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter" && event.key !== " ") return
+                          event.preventDefault()
+                          props.onSelectMessage(point.message.id)
+                        }}
+                      >
+                        <title>{tooltip}</title>
+                      </circle>
+                    )
+                  }}
                 </Show>
               )}
             </For>
@@ -399,6 +403,7 @@ export function SessionContextTab() {
     cache: false,
   })
   const [rawMessageChartState, setRawMessageChartState] = createStore({ speed: false })
+  const [rawMessageAccordionState, setRawMessageAccordionState] = createStore({ value: [] as string[] })
   const rawMessageExtraColumns = createMemo(() =>
     RAW_MESSAGE_EXTRA_COLUMNS.filter((column) => rawMessageColumnState[column.key]),
   )
@@ -626,6 +631,15 @@ export function SessionContextTab() {
 
     if (el.scrollTop !== s.y) el.scrollTop = s.y
     if (el.scrollLeft !== s.x) el.scrollLeft = s.x
+  }
+
+  const selectRawMessage = (messageID: string) => {
+    setRawMessageAccordionState("value", (value) => (value.includes(messageID) ? value : [...value, messageID]))
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`session-context-message-${messageID}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
   }
 
   const handleScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
@@ -868,7 +882,7 @@ export function SessionContextTab() {
           </div>
           <Show when={rawMessageChartState.speed}>
             <div id="session-token-speed-chart">
-              <SessionTokenSpeedChart messages={messages()} />
+              <SessionTokenSpeedChart messages={messages()} onSelectMessage={selectRawMessage} />
             </div>
           </Show>
           <div classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
@@ -888,6 +902,8 @@ export function SessionContextTab() {
             </div>
             <Accordion
               multiple
+              value={rawMessageAccordionState.value}
+              onChange={(value) => setRawMessageAccordionState("value", value)}
               class="w-full"
               classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
             >
