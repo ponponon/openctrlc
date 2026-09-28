@@ -48,7 +48,16 @@ const BREAKDOWN_COLOR: Record<SessionContextBreakdownKey, string> = {
   other: "var(--syntax-comment)",
 }
 
-const RAW_MESSAGE_GRID = "grid grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_8rem_12.5rem] items-center gap-3 w-full"
+const RAW_MESSAGE_GRID = "grid items-center gap-3 w-full"
+const RAW_MESSAGE_EXTRA_COLUMNS = [
+  { key: "cost", label: "context.usage.cost", width: "6rem" },
+  { key: "input", label: "context.stats.inputTokens", width: "8rem" },
+  { key: "output", label: "context.stats.outputTokens", width: "8rem" },
+  { key: "reasoning", label: "context.stats.reasoningTokens", width: "9rem" },
+  { key: "cache", label: "context.stats.cacheTokens", width: "11rem" },
+] as const
+
+type RawMessageExtraColumnKey = (typeof RAW_MESSAGE_EXTRA_COLUMNS)[number]["key"]
 
 function Stat(props: { label: string; value: JSX.Element }) {
   return (
@@ -89,18 +98,35 @@ function RawMessage(props: {
   activity: string
   duration: string
   tokenDelta: string
+  extraColumns: (typeof RAW_MESSAGE_EXTRA_COLUMNS)[number][]
+  extraColumnValue: (message: Message, column: RawMessageExtraColumnKey) => string
+  gridStyle: JSX.CSSProperties
 }) {
   return (
     <Accordion.Item value={props.message.id}>
       <StickyAccordionHeader>
         <Accordion.Trigger>
-          <div class={RAW_MESSAGE_GRID}>
+          <div
+            class={RAW_MESSAGE_GRID}
+            classList={{ "min-w-max": props.extraColumns.length > 0 }}
+            style={props.gridStyle}
+          >
             <div class="shrink-0 text-left">{props.message.role}</div>
             <div class="min-w-0 truncate text-left text-text-weak" title={props.activity}>
               {props.activity}
             </div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.duration}</div>
             <div class="min-w-0 text-right text-text-base tabular-nums">{props.tokenDelta}</div>
+            <For each={props.extraColumns}>
+              {(column) => (
+                <div
+                  class="min-w-0 truncate text-right text-text-base tabular-nums"
+                  title={props.extraColumnValue(props.message, column.key)}
+                >
+                  {props.extraColumnValue(props.message, column.key)}
+                </div>
+              )}
+            </For>
             <div class="flex items-center justify-end gap-3">
               <div class="shrink-0 text-12-regular text-text-weak">{props.time(props.message.time.created)}</div>
               <Icon name="chevron-grabber-vertical" size="small" class="shrink-0 text-text-weak" />
@@ -179,6 +205,26 @@ export function SessionContextTab() {
 
   const ctx = createMemo(() => getSessionContext(messages(), [...providers.all().values()]))
   const formatter = createMemo(() => createSessionContextFormatter(language.intl()))
+  const [rawMessageColumnState, setRawMessageColumnState] = createStore({
+    cost: false,
+    input: false,
+    output: false,
+    reasoning: false,
+    cache: false,
+  })
+  const rawMessageExtraColumns = createMemo(() =>
+    RAW_MESSAGE_EXTRA_COLUMNS.filter((column) => rawMessageColumnState[column.key]),
+  )
+  const rawMessageGridStyle = createMemo(() => ({
+    "grid-template-columns": [
+      "5.5rem",
+      rawMessageExtraColumns().length > 0 ? "minmax(10rem,1fr)" : "minmax(0,1fr)",
+      "4.5rem",
+      "8rem",
+      ...rawMessageExtraColumns().map((column) => column.width),
+      "12.5rem",
+    ].join(" "),
+  }))
 
   const messageTokenDelta = (messages: Message[], index: number) => {
     const delta = getMessageTokenDeltaDisplay(messages, index)
@@ -193,6 +239,18 @@ export function SessionContextTab() {
     if (display !== undefined) return display
     if (isMessageInFlight(message)) return IN_PROGRESS_DISPLAY
     return EMPTY_DISPLAY
+  }
+
+  const extraColumnValue = (message: Message, column: RawMessageExtraColumnKey) => {
+    if (message.role !== "assistant") return EMPTY_DISPLAY
+    if (isMessageInFlight(message)) return IN_PROGRESS_DISPLAY
+    if (column === "cost") return usd().format(message.cost)
+
+    const format = formatter()
+    if (column === "input") return format.number(message.tokens.input)
+    if (column === "output") return format.number(message.tokens.output)
+    if (column === "reasoning") return format.number(message.tokens.reasoning)
+    return `${format.number(message.tokens.cache.read)} / ${format.number(message.tokens.cache.write)}`
   }
 
   const cost = createMemo(() => {
@@ -551,55 +609,104 @@ export function SessionContextTab() {
         </Show>
 
         <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <div class="text-12-regular text-text-weak">{language.t("context.rawMessages.title")}</div>
-            <DropdownMenu placement="bottom-end" gutter={4}>
-              <DropdownMenu.Trigger
-                as={Button}
-                size="small"
-                variant="ghost"
-                class="gap-1.5 px-2 text-text-weak hover:text-text-base"
-              >
-                <Icon name="download" size="small" />
-                <span>{language.t("context.export.session")}</span>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content>
-                  <DropdownMenu.Item onSelect={() => void exportSession("json")}>
-                    <DropdownMenu.ItemLabel>JSON</DropdownMenu.ItemLabel>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item onSelect={() => void exportSession("markdown")}>
-                    <DropdownMenu.ItemLabel>Markdown</DropdownMenu.ItemLabel>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item onSelect={() => void exportSession("markdown-detailed")}>
-                    <DropdownMenu.ItemLabel>Markdown (full)</DropdownMenu.ItemLabel>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu>
+            <div class="flex items-center gap-1">
+              <DropdownMenu placement="bottom-end" gutter={4}>
+                <DropdownMenu.Trigger
+                  as={Button}
+                  size="small"
+                  variant="ghost"
+                  class="gap-1.5 px-2 text-text-weak hover:text-text-base"
+                >
+                  <Icon name="sliders" size="small" />
+                  <span>{language.t("context.rawMessages.columns")}</span>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content>
+                    <DropdownMenu.Group>
+                      <DropdownMenu.GroupLabel>{language.t("context.rawMessages.columns")}</DropdownMenu.GroupLabel>
+                      <For each={RAW_MESSAGE_EXTRA_COLUMNS}>
+                        {(column) => (
+                          <DropdownMenu.CheckboxItem
+                            checked={rawMessageColumnState[column.key]}
+                            onChange={(checked) => setRawMessageColumnState(column.key, checked)}
+                          >
+                            <DropdownMenu.ItemLabel>{language.t(column.label)}</DropdownMenu.ItemLabel>
+                            <DropdownMenu.ItemIndicator>
+                              <Icon name="check-small" size="small" class="text-icon-weak" />
+                            </DropdownMenu.ItemIndicator>
+                          </DropdownMenu.CheckboxItem>
+                        )}
+                      </For>
+                    </DropdownMenu.Group>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu>
+              <DropdownMenu placement="bottom-end" gutter={4}>
+                <DropdownMenu.Trigger
+                  as={Button}
+                  size="small"
+                  variant="ghost"
+                  class="gap-1.5 px-2 text-text-weak hover:text-text-base"
+                >
+                  <Icon name="download" size="small" />
+                  <span>{language.t("context.export.session")}</span>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content>
+                    <DropdownMenu.Item onSelect={() => void exportSession("json")}>
+                      <DropdownMenu.ItemLabel>JSON</DropdownMenu.ItemLabel>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item onSelect={() => void exportSession("markdown")}>
+                      <DropdownMenu.ItemLabel>Markdown</DropdownMenu.ItemLabel>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item onSelect={() => void exportSession("markdown-detailed")}>
+                      <DropdownMenu.ItemLabel>Markdown (full)</DropdownMenu.ItemLabel>
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu>
+            </div>
           </div>
-          <div class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}>
-            <div>Role</div>
-            <div class="text-left">{language.t("context.stats.lastActivity")}</div>
-            <div class="text-right">{language.t("context.rawMessages.duration")}</div>
-            <div class="text-right">{language.t("context.usage.tokens")}</div>
-            <div class="text-right">Time</div>
+          <div classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
+            <div
+              class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}
+              classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
+              style={rawMessageGridStyle()}
+            >
+              <div>Role</div>
+              <div class="text-left">{language.t("context.stats.lastActivity")}</div>
+              <div class="text-right">{language.t("context.rawMessages.duration")}</div>
+              <div class="text-right">{language.t("context.usage.tokens")}</div>
+              <For each={rawMessageExtraColumns()}>
+                {(column) => <div class="text-right">{language.t(column.label)}</div>}
+              </For>
+              <div class="text-right">Time</div>
+            </div>
+            <Accordion
+              multiple
+              class="w-full"
+              classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
+            >
+              <For each={messages()}>
+                {(message, index) => (
+                  <RawMessage
+                    message={message}
+                    getParts={getParts}
+                    onRendered={restoreScroll}
+                    time={formatter().time}
+                    activity={getMessageActivity(message, getParts(message.id))}
+                    duration={messageDuration(message)}
+                    tokenDelta={messageTokenDelta(messages(), index())}
+                    extraColumns={rawMessageExtraColumns()}
+                    extraColumnValue={extraColumnValue}
+                    gridStyle={rawMessageGridStyle()}
+                  />
+                )}
+              </For>
+            </Accordion>
           </div>
-          <Accordion multiple>
-            <For each={messages()}>
-              {(message, index) => (
-                <RawMessage
-                  message={message}
-                  getParts={getParts}
-                  onRendered={restoreScroll}
-                  time={formatter().time}
-                  activity={getMessageActivity(message, getParts(message.id))}
-                  duration={messageDuration(message)}
-                  tokenDelta={messageTokenDelta(messages(), index())}
-                />
-              )}
-            </For>
-          </Accordion>
         </div>
       </div>
     </ScrollView>

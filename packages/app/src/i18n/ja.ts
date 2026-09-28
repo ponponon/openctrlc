@@ -608,6 +608,7 @@ export const dict = {
   "context.systemPrompt.copy": "Copy system prompt",
   "context.systemPrompt.copyFailed": "Failed to copy system prompt",
   "context.rawMessages.title": "生のメッセージ",
+  "context.rawMessages.columns": "列の表示",
   "context.rawMessages.duration": "所要時間(s)",
   "context.export.session": "セッションをエクスポート",
 
