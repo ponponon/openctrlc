@@ -78,6 +78,9 @@ features while preserving OpenCtrlC's independent product code:
 - `3a35b45d` allows GPT-6 Sol and GPT-6 Luna in the Codex provider.
 - `82d4c890` redacts credentials from `debug config` output without changing
   the resolved configuration used by providers.
+- `610df0b5` adapts Gemini thinking defaults and supported reasoning variants
+  across Google, Vertex, OpenRouter, and LLMGateway while preserving legacy
+  Gemini behavior and OpenCtrlC's provider-specific transform logic.
 - `b471c2b4` reports MCP browser launcher failures even when the launcher exits
   before `open()` returns; the test is adapted to OpenCtrlC's current opener.
 
@@ -126,8 +129,6 @@ OpenCtrlC-specific adaptation:
 - `45ad8dc38a`, `d870e22c70`: R2 SQL pagination and transient retry changes;
   the local R2 SQL layer predates the upstream pagination interface and needs
   an isolated adaptation with its own tests.
-- `610df0b5`: Gemini thinking default change; the local provider transform has
-  OpenCtrlC-specific drift and needs a manual adaptation.
 - `29f07e0c`: shared browser opener refactor; broad core/TUI dependency changes
   are not required for the browser failure fix and remain deferred.
 - `45719acebb`, `79e8eee5`: GitLab AI provider dependency bumps; defer until
