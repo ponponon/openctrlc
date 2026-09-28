@@ -24,7 +24,7 @@ export function DialogEditProjectV2(props: { project: LocalProject; server: Serv
           <DialogTitle>{language.t("dialog.project.edit.title")}</DialogTitle>
         </DialogHeader>
         <DividerV2 />
-        <DialogBody class="flex max-h-[min(560px,calc(100vh-160px))] w-full flex-col gap-6 overflow-y-auto px-4 pt-4 pb-1">
+        <DialogBody class="flex max-h-[min(560px,calc(var(--app-viewport-height)-160px))] w-full flex-col gap-6 overflow-y-auto px-4 pt-4 pb-1">
           <Field>
             <Field.Label>{language.t("dialog.project.edit.name")}</Field.Label>
             <TextInputV2

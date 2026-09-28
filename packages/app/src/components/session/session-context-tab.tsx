@@ -525,7 +525,7 @@ export function SessionContextTab() {
                 <div
                   classList={{
                     "max-h-48 overflow-hidden": systemPromptNeedsExpansion() && !systemPromptState.expanded,
-                    "max-h-[60vh] overflow-y-auto": systemPromptState.expanded,
+                    "max-h-[var(--app-viewport-height-60)] overflow-y-auto": systemPromptState.expanded,
                   }}
                 >
                   <Markdown text={prompt()} class="text-12-regular" />

@@ -1,5 +1,9 @@
 :root {
   interpolate-size: allow-keywords;
+  /* 旧浏览器回退到 vh；支持动态视口的浏览器跟随地址栏收放，避免弹层超出实际可见区域。 */
+  --app-viewport-height: 100vh;
+  --app-viewport-height-90: 90vh;
+  --app-viewport-height-60: 60vh;
 
   [data-popper-positioner] {
     pointer-events: none;
@@ -10,6 +14,14 @@
   /*   background-color: var(--color-primary); */
   /*   color: var(--color-background); */
   /* } */
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+    --app-viewport-height-90: 90dvh;
+    --app-viewport-height-60: 60dvh;
+  }
 }
 
 .no-scrollbar {

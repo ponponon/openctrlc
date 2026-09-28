@@ -83,7 +83,7 @@ export function TabsInfoPopup() {
                 bottom: "0",
                 "inset-inline-end": "0",
                 "inset-inline-start": "auto",
-                "max-height": "100vh",
+                "max-height": "var(--app-viewport-height)",
                 "max-width": "100vw",
                 "border-radius": "0",
               }

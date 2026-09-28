@@ -778,7 +778,7 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
           data-component="titlebar-update-popover"
           class="z-50 w-[360px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-v2-border-border-base bg-v2-background-bg-base text-v2-text-text-base shadow-[var(--v2-elevation-floating)] outline-none"
         >
-          <div class="max-h-[min(520px,calc(100vh-56px))] overflow-y-auto p-4">
+          <div class="max-h-[min(520px,calc(var(--app-viewport-height)-56px))] overflow-y-auto p-4">
             <header class="border-b border-v2-border-border-base pb-3">
               <h2 class="text-14-medium text-v2-text-text-strong">
                 {props.state.version ? props.state.title : props.state.label}
