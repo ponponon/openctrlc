@@ -992,7 +992,7 @@ const scenarios: Scenario[] = [
       200,
       data((value) => {
         object(value)
-        check(typeof value.snapshot === "string", "expected the session's system prompt snapshot")
+        check(value.snapshot === undefined, "expected an absent snapshot to be omitted")
       }),
     ),
   http.protected

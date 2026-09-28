@@ -107,19 +107,18 @@ export const SessionHandler = HttpApiBuilder.group(Api, "server.session", (handl
       .handle(
         "session.systemPromptSnapshot",
         Effect.fn(function* (ctx) {
-          return {
-            data: {
-              snapshot: yield* session.getSystemPromptSnapshot(ctx.params.sessionID).pipe(
-                Effect.catchTag("Session.NotFoundError", (error) =>
-                  Effect.fail(
-                    new SessionNotFoundError({
-                      sessionID: error.sessionID,
-                      message: `Session not found: ${error.sessionID}`,
-                    }),
-                  ),
-                ),
+          const snapshot = yield* session.getSystemPromptSnapshot(ctx.params.sessionID).pipe(
+            Effect.catchTag("Session.NotFoundError", (error) =>
+              Effect.fail(
+                new SessionNotFoundError({
+                  sessionID: error.sessionID,
+                  message: `Session not found: ${error.sessionID}`,
+                }),
               ),
-            },
+            ),
+          )
+          return {
+            data: snapshot === undefined ? {} : { snapshot },
           }
         }),
       )
