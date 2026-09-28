@@ -22,11 +22,13 @@ type PlatformName = "web" | "desktop"
 type DesktopOS = "macos" | "windows" | "linux"
 
 export type RemoteAccessPairRequest = { id: string; device: string }
+export type RemoteAccessAuthorizedViewer = { id: string; device: string }
 export type RemoteAccessState = {
   status: "stopped" | "connecting" | "active" | "error"
   url?: string
   pendingRequests: RemoteAccessPairRequest[]
   authorizedDevices: number
+  authorizedViewers?: RemoteAccessAuthorizedViewer[]
   error?: string
 }
 export type RemoteAccessPlatform = {
@@ -35,6 +37,7 @@ export type RemoteAccessPlatform = {
   start(): Promise<RemoteAccessState>
   stop(): Promise<void>
   rotatePairingLink(): Promise<void>
+  revokeViewer(viewerID: string): Promise<void>
   approve(pairID: string): Promise<void> | void
   deny(pairID: string): Promise<void> | void
 }

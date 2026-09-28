@@ -6,7 +6,7 @@ import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
 import { getCACertificates, setDefaultCACertificates } from "node:tls"
 import type { Event } from "electron"
-import { app, BrowserWindow } from "electron"
+import { app, BrowserWindow, powerMonitor } from "electron"
 
 import { Deferred, Effect, Fiber } from "effect"
 import contextMenu from "electron-context-menu"
@@ -181,6 +181,8 @@ const main = Effect.gen(function* () {
     () => Effect.runPromise(Deferred.await(serverReady)),
     (error) => logger.error("remote access relay failed", error),
   )
+  powerMonitor.on("suspend", () => remoteAccess.suspendHeartbeat())
+  powerMonitor.on("resume", () => remoteAccess.resumeHeartbeat())
   const stopSidecars = async () => {
     await remoteAccess.stop()
     await killSidecar()

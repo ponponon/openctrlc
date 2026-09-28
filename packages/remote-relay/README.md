@@ -4,9 +4,10 @@ OpenCtrlC Desktop connects outbound to this relay over WSS. A phone scans a shor
 
 ## Security model
 
-- The desktop keeps an in-memory session open while its relay WebSocket remains connected. A desktop heartbeat keeps the reverse-proxy connection alive. Each approved browser expires after 30 days without use; authenticated HTTP and WebSocket activity renews the grant. Stopping mobile access, closing the desktop, or restarting the relay revokes all grants.
+- The desktop keeps an in-memory session open while its relay WebSocket remains connected. It sends an application heartbeat every 30 seconds and closes a connection after 90 seconds without a matching pong; heartbeat checks pause during system suspend and resume immediately when the desktop wakes. Each approved browser expires after 30 days without use; authenticated HTTP and WebSocket activity renews the grant. Stopping mobile access, closing the desktop, or restarting the relay revokes all grants.
 - The QR code contains a one-time pairing secret in the URL fragment, which browsers do not send in the initial HTTP request or the `Referer` header.
 - Every new browser receives access only after an explicit desktop approval. A session allows at most three approved browsers. Rotating the QR code cancels pending approvals; stopping access revokes all approved browsers.
+- The desktop can list and revoke one approved browser without stopping other grants. The relay sends the desktop a random authorization ID and a User-Agent-derived browser hint, never the bearer token; the hint can be spoofed and does not identify a physical device. Revocation removes that grant and closes its active WebSockets.
 - Viewer access uses a random bearer cookie marked `HttpOnly`, `Secure`, `SameSite=Strict`, and `__Host-`. The relay does not forward that cookie or browser authorization headers to the desktop server.
 - The desktop-to-relay and phone-to-relay network hops use TLS. TLS terminates at the relay, so the relay operator can technically inspect traffic while forwarding it. The relay keeps session state in memory and does not intentionally persist workspace traffic.
 - No inbound connection to the desktop is required. The relay restricts forwarded paths to the desktop's local server origin, limits payloads and concurrent requests, and applies pairing and session limits.

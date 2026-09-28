@@ -1,10 +1,11 @@
 export type RelayHostMessage =
   | { type: "session.create" }
-  | { type: "session.ping" }
+  | { type: "session.ping"; pingID?: string }
   | { type: "session.stop"; sessionID: string; hostToken: string }
   | { type: "pair.rotate"; sessionID: string; hostToken: string }
   | { type: "pair.approve" | "pair.deny"; sessionID: string; hostToken: string; pairID: string }
   | { type: "pair.received"; sessionID: string; hostToken: string; pairID: string }
+  | { type: "viewer.revoke"; sessionID: string; hostToken: string; viewerID: string }
   | { type: "request.start"; id: string; method: string; path: string; headers: Record<string, string> }
   | { type: "request.chunk"; id: string; data: string }
   | { type: "request.end"; id: string }
@@ -25,8 +26,11 @@ export type RelayServerMessage =
   | { type: "pair.denied"; pairID: string }
   | { type: "pair.error"; message?: string }
   | { type: "session.stopped" }
-  | { type: "session.pong" }
+  | { type: "session.pong"; pingID?: string }
   | { type: "viewer.count"; count: number }
+  | { type: "viewer.list"; devices: Array<{ id: string; device: string }> }
+  | { type: "viewer.revoked"; viewerID: string }
+  | { type: "viewer.revoke.error"; viewerID: string }
   | { type: "pair.rotated"; joinToken: string; url: string }
   | { type: "pair.waiting"; pairID: string }
   | { type: "pair.delivered"; pairID: string }

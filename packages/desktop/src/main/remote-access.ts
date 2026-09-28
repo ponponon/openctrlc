@@ -1,4 +1,4 @@
-import { decodeBase64, encodeBase64, relayMessage } from "@openctrlc/remote-relay/protocol"
+import { decodeBase64, encodeBase64, randomToken, relayMessage } from "@openctrlc/remote-relay/protocol"
 import type { RemoteAccessPairRequest, RemoteAccessState } from "@openctrlc/app"
 import type { ServerReadyData } from "../preload/types"
 
@@ -7,11 +7,20 @@ type InboundHTTP = {
   aborted: AbortController
 }
 
+const heartbeatInterval = 30_000
+const heartbeatTimeout = 90_000
+
 export class RemoteAccessService {
   #state: RemoteAccessState = { status: "stopped", pendingRequests: [], authorizedDevices: 0 }
   #listeners = new Set<(state: RemoteAccessState) => void>()
   #socket?: WebSocket
   #heartbeat?: ReturnType<typeof setInterval>
+  #pendingPings = new Map<string, number>()
+  #heartbeatSuspended = false
+  #pendingRevocations = new Map<
+    string,
+    { resolve: () => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }
+  >()
   #sessionID?: string
   #hostToken?: string
   #server?: ServerReadyData
@@ -50,6 +59,8 @@ export class RemoteAccessService {
     const socket = this.#socket
     if (this.#heartbeat) clearInterval(this.#heartbeat)
     this.#heartbeat = undefined
+    this.#pendingPings.clear()
+    this.#rejectPendingRevocations(new Error("Mobile access stopped"))
     if (socket?.readyState === WebSocket.OPEN) this.#send({ type: "session.stop" })
     this.#socket = undefined
     this.#sessionID = undefined
@@ -78,6 +89,34 @@ export class RemoteAccessService {
     this.#send({ type: "pair.deny", pairID })
   }
 
+  revokeViewer(viewerID: string) {
+    if (!/^[A-Za-z0-9_-]{8,24}$/.test(viewerID)) return Promise.reject(new Error("Invalid browser authorization"))
+    if (this.#pendingRevocations.has(viewerID)) return Promise.reject(new Error("Revocation is already pending"))
+    return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.#pendingRevocations.delete(viewerID)
+        reject(new Error("The relay did not confirm the browser revocation"))
+      }, 8_000)
+      this.#pendingRevocations.set(viewerID, { resolve, reject, timeout })
+      if (this.#send({ type: "viewer.revoke", viewerID })) return
+      clearTimeout(timeout)
+      this.#pendingRevocations.delete(viewerID)
+      reject(new Error("The relay is not connected"))
+    })
+  }
+
+  suspendHeartbeat() {
+    this.#heartbeatSuspended = true
+    if (this.#heartbeat) clearInterval(this.#heartbeat)
+    this.#heartbeat = undefined
+    this.#pendingPings.clear()
+  }
+
+  resumeHeartbeat() {
+    this.#heartbeatSuspended = false
+    if (this.#state.status === "active" && this.#socket) this.#startHeartbeat(this.#socket)
+  }
+
   async #start() {
     this.#server = await this.getServer()
     const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
@@ -104,12 +143,8 @@ export class RemoteAccessService {
           }
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
-          if (this.#heartbeat) clearInterval(this.#heartbeat)
-          this.#heartbeat = setInterval(() => {
-            if (this.#socket === socket && socket.readyState === WebSocket.OPEN)
-              this.#send({ type: "session.ping" })
-          }, 60_000)
           this.#setState({ status: "active", url: message.url, pendingRequests: [], authorizedDevices: 0 })
+          this.#startHeartbeat(socket)
           clearTimeout(timeout)
           resolve(this.#state)
           return
@@ -124,7 +159,9 @@ export class RemoteAccessService {
         clearTimeout(timeout)
         if (this.#heartbeat) clearInterval(this.#heartbeat)
         this.#heartbeat = undefined
+        this.#pendingPings.clear()
         const error = new Error("Could not connect to the OpenCtrlC Remote Relay")
+        this.#rejectPendingRevocations(error)
         this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: error.message })
         reject(error)
       })
@@ -133,6 +170,7 @@ export class RemoteAccessService {
         if (this.#socket !== socket) return
         if (this.#heartbeat) clearInterval(this.#heartbeat)
         this.#heartbeat = undefined
+        this.#pendingPings.clear()
         this.#socket = undefined
         this.#sessionID = undefined
         this.#hostToken = undefined
@@ -149,6 +187,7 @@ export class RemoteAccessService {
         this.#localSockets.clear()
         if (this.#state.status !== "stopped") {
           const error = event.reason || "The remote relay connection ended"
+          this.#rejectPendingRevocations(new Error(error))
           this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error })
           this.onError(new Error(error))
         }
@@ -166,7 +205,59 @@ export class RemoteAccessService {
     })
   }
 
+  #startHeartbeat(socket: WebSocket) {
+    if (this.#heartbeat) clearInterval(this.#heartbeat)
+    this.#heartbeat = undefined
+    this.#pendingPings.clear()
+    if (this.#heartbeatSuspended || socket !== this.#socket || this.#state.status !== "active") return
+    const ping = () => {
+      if (this.#heartbeatSuspended || socket !== this.#socket || socket.readyState !== WebSocket.OPEN) return
+      if ([...this.#pendingPings.values()].some((sentAt) => Date.now() - sentAt >= heartbeatTimeout)) {
+        socket.close(4000, "Relay heartbeat timed out")
+        return
+      }
+      const pingID = randomToken(12)
+      this.#pendingPings.set(pingID, Date.now())
+      if (!this.#send({ type: "session.ping", pingID })) socket.close(4000, "Could not send relay heartbeat")
+    }
+    ping()
+    this.#heartbeat = setInterval(ping, heartbeatInterval)
+  }
+
+  #rejectPendingRevocations(error: Error) {
+    for (const [viewerID, pending] of this.#pendingRevocations) {
+      clearTimeout(pending.timeout)
+      pending.reject(error)
+      this.#pendingRevocations.delete(viewerID)
+    }
+  }
+
   #handleMessage(message: Record<string, unknown>) {
+    if (message.type === "session.pong") {
+      if (typeof message.pingID === "string") this.#pendingPings.delete(message.pingID)
+      else this.#pendingPings.clear()
+      return
+    }
+    if (message.type === "viewer.list" && Array.isArray(message.devices)) {
+      const authorizedViewers = message.devices.flatMap((item) => {
+        if (!item || typeof item !== "object") return []
+        const device = item as Record<string, unknown>
+        if (typeof device.id !== "string" || !/^[A-Za-z0-9_-]{8,24}$/.test(device.id)) return []
+        if (typeof device.device !== "string" || device.device.length > 80) return []
+        return [{ id: device.id, device: device.device }]
+      })
+      this.#setState({ ...this.#state, authorizedDevices: Math.min(3, authorizedViewers.length), authorizedViewers })
+      return
+    }
+    if ((message.type === "viewer.revoked" || message.type === "viewer.revoke.error") && typeof message.viewerID === "string") {
+      const pending = this.#pendingRevocations.get(message.viewerID)
+      if (!pending) return
+      clearTimeout(pending.timeout)
+      this.#pendingRevocations.delete(message.viewerID)
+      if (message.type === "viewer.revoked") pending.resolve()
+      else pending.reject(new Error("The browser authorization is no longer available"))
+      return
+    }
     if (message.type === "pair.request" && typeof message.pairID === "string") {
       const pendingRequests = [
         ...this.#state.pendingRequests.filter((item) => item.id !== message.pairID),

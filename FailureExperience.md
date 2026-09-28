@@ -901,3 +901,11 @@ Homebrew 的 notability/star 门槛用于 `homebrew/core` 等官方仓库的收�
 ## 桌面预构建必须显式固定服务端数据库 channel
 
 桌面开发 UI 默认使用 `dev` channel，但 `packages/script` 在 `OPENCTRLC_CHANNEL` 未设置时会把 Git 分支名作为服务端 channel。桌面 `predev` 只把 `dev` 用于复制图标，未把它传给内嵌服务构建；在 `mobile-relay` 这类功能分支上，UI 因此连接到空的 `openctrlc-mobile-relay.db`，而用户数据仍在 `openctrlc-dev.db`，表现为所有会话都丢失。桌面预构建必须先把解析后的合法 channel 显式写入子进程环境，并让 `latest` 与桌面 `prod` 归一到同一 channel；排查会话消失时先核对运行中的 channel 和数据库路径，查询所有会话 ID/计数后再判断数据是否删除，不能仅凭单个 404 断定会话不存在。
+
+## 远程连接必须校验 Relay 心跳并照顾系统睡眠
+
+WebSocket 仍显示 `OPEN` 不代表桌面到 Relay 的传输链路仍能双向通信；只发送心跳、不读取匹配的 pong 会让桌面错误显示“手机访问已开启”。以后要用带请求 ID 的应用层 ping/pong，并在合理超时后清理失联连接、将 UI 更新为错误状态。桌面睡眠会暂停 JS 定时器且可能错过 pong，必须监听系统 suspend/resume：睡眠时清除未完成探测，唤醒后重新开始并立即探测，避免按墙上时钟误判睡眠时长。
+
+## 远程授权列表必须支持逐项撤销且不冒充设备身份
+
+只显示已授权浏览器数量无法确认是哪条浏览器授权，也无法在不停止整个手机访问的情况下撤销单条凭证。Relay 应为每条 bearer token 关联不含秘密的随机授权 ID 和经过裁剪的 User-Agent 标签，并把 token 留在服务端；桌面通过受会话认证的命令按 ID 撤销，Relay 同步关闭该授权的 WebSocket 并推送最新列表。User-Agent 可被伪造，所有待批准和已批准列表都必须明确说明它只是参考提示，不能当作设备身份验证。

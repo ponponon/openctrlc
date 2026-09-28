@@ -71,6 +71,7 @@ const api: ElectronAPI = {
     start: () => ipcRenderer.invoke("remote-access-start"),
     stop: () => ipcRenderer.invoke("remote-access-stop"),
     rotatePairingLink: () => ipcRenderer.invoke("remote-access-rotate-link"),
+    revokeViewer: (viewerID) => ipcRenderer.invoke("remote-access-revoke-viewer", viewerID),
     approve: (pairID) => ipcRenderer.invoke("remote-access-approve", pairID),
     deny: (pairID) => ipcRenderer.invoke("remote-access-deny", pairID),
     subscribe: async (callback) => {

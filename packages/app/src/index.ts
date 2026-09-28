@@ -15,6 +15,7 @@ export {
   type FatalRendererErrorLog,
   type Platform,
   type RemoteAccessPairRequest,
+  type RemoteAccessAuthorizedViewer,
   type RemoteAccessPlatform,
   type RemoteAccessState,
   PlatformProvider,

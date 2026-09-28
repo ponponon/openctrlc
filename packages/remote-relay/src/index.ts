@@ -24,6 +24,7 @@ type SocketData = {
 type PendingPair = {
   socket: Bun.ServerWebSocket<SocketData>
   viewerToken: string
+  device: string
   expiresAt: number
 }
 
@@ -41,13 +42,15 @@ type RelaySession = {
   host?: Bun.ServerWebSocket<SocketData>
   pairingSockets: Set<Bun.ServerWebSocket<SocketData>>
   pairs: Map<string, PendingPair>
-  viewers: Map<string, number>
+  viewers: Map<string, ViewerGrant>
   responses: Map<string, PendingResponse>
   sockets: Map<string, Bun.ServerWebSocket<SocketData>>
 }
 
 type ViewerGrant = {
   session: RelaySession
+  id: string
+  device: string
   expiresAt: number
 }
 
@@ -207,7 +210,12 @@ const server = Bun.serve<SocketData>({
       }
       const pairID = randomToken(18)
       socket.data.pairID = pairID
-      session.pairs.set(pairID, { socket, viewerToken: randomToken(), expiresAt: Date.now() + pairLifetime })
+      session.pairs.set(pairID, {
+        socket,
+        viewerToken: randomToken(),
+        device: socket.data.device ?? "Browser",
+        expiresAt: Date.now() + pairLifetime,
+      })
       if (
         !sendHost(session, {
           type: "pair.request",
@@ -281,6 +289,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
       } satisfies RelayServerMessage),
     )
+    sendViewerState(session)
     return
   }
 
@@ -291,7 +300,12 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     return
   }
   if (value.type === "session.ping") {
-    socket.send(JSON.stringify({ type: "session.pong" } satisfies RelayServerMessage))
+    socket.send(
+      JSON.stringify({
+        type: "session.pong",
+        ...(typeof value.pingID === "string" ? { pingID: value.pingID } : {}),
+      } satisfies RelayServerMessage),
+    )
     return
   }
   if (value.type === "session.stop") {
@@ -328,12 +342,30 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       return
     }
     const expiresAt = Date.now() + viewerLifetime
-    session.viewers.set(pair.viewerToken, expiresAt)
-    viewerTokens.set(pair.viewerToken, { session, expiresAt })
+    const grant = {
+      session,
+      id: randomToken(8),
+      device: pair.device,
+      expiresAt,
+    }
+    session.viewers.set(pair.viewerToken, grant)
+    viewerTokens.set(pair.viewerToken, grant)
     pair.socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID, viewerToken: pair.viewerToken }))
     pair.socket.close(1000, "Approved")
     socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID } satisfies RelayServerMessage))
-    sendViewerCount(session)
+    sendViewerState(session)
+    return
+  }
+  if (value.type === "viewer.revoke") {
+    if (typeof value.viewerID !== "string" || !/^[A-Za-z0-9_-]{8,24}$/.test(value.viewerID)) return
+    const viewer = [...session.viewers.entries()].find(([, grant]) => grant.id === value.viewerID)
+    if (!viewer) {
+      sendHost(session, { type: "viewer.revoke.error", viewerID: value.viewerID })
+      return
+    }
+    removeViewer(session, viewer[0], "Access revoked by desktop")
+    sendViewerState(session)
+    sendHost(session, { type: "viewer.revoked", viewerID: value.viewerID })
     return
   }
   if (value.type === "pair.received" && typeof value.pairID === "string") {
@@ -539,7 +571,7 @@ async function claimViewer(request: Request) {
   if (!grant || sessions.get(grant.session.id) !== grant.session) return new Response("Pairing expired", { status: 403 })
   if (grant.expiresAt <= Date.now()) {
     removeViewer(grant.session, body.viewerToken)
-    sendViewerCount(grant.session)
+    sendViewerState(grant.session)
     return new Response("Pairing expired", { status: 403 })
   }
   return new Response(null, {
@@ -569,13 +601,13 @@ function viewerCookie(token: string) {
   return `__Host-oc_remote=${token}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; HttpOnly; Secure; SameSite=Strict`
 }
 
-function removeViewer(session: RelaySession, token: string) {
+function removeViewer(session: RelaySession, token: string, reason = "Browser authorization expired") {
   session.viewers.delete(token)
   if (viewerTokens.get(token)?.session === session) viewerTokens.delete(token)
   for (const [id, socket] of session.sockets) {
     if (socket.data.viewerToken !== token) continue
     session.sockets.delete(id)
-    socket.close(4401, "Browser authorization expired")
+    socket.close(4401, reason)
   }
 }
 
@@ -584,26 +616,29 @@ function touchViewer(session: RelaySession, token: string) {
   if (!grant || grant.session !== session || !session.viewers.has(token)) return false
   if (grant.expiresAt <= Date.now()) {
     removeViewer(session, token)
-    sendViewerCount(session)
+    sendViewerState(session)
     return false
   }
   grant.expiresAt = Date.now() + viewerLifetime
-  session.viewers.set(token, grant.expiresAt)
   return true
 }
 
 function pruneExpiredViewers(session: RelaySession, now = Date.now()) {
   let changed = false
-  for (const [token, expiresAt] of session.viewers) {
-    if (expiresAt > now) continue
+  for (const [token, grant] of session.viewers) {
+    if (grant.expiresAt > now) continue
     removeViewer(session, token)
     changed = true
   }
-  if (changed) sendViewerCount(session)
+  if (changed) sendViewerState(session)
 }
 
-function sendViewerCount(session: RelaySession) {
+function sendViewerState(session: RelaySession) {
   sendHost(session, { type: "viewer.count", count: session.viewers.size })
+  sendHost(session, {
+    type: "viewer.list",
+    devices: [...session.viewers.values()].map((grant) => ({ id: grant.id, device: grant.device })),
+  })
 }
 
 function sendHost(session: RelaySession, message: RelayServerMessage) {

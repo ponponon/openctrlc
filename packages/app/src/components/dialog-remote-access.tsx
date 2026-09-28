@@ -21,6 +21,8 @@ export function DialogRemoteAccess() {
   const remoteAccess = platform.remoteAccess
   const [state, setState] = createStore(emptyState)
   const [copied, setCopied] = createSignal(false)
+  const [revokingViewer, setRevokingViewer] = createSignal<string>()
+  const [revokeFailed, setRevokeFailed] = createSignal(false)
   const [qrCode] = createResource(
     () => state.url,
     (url) => QRCode.toDataURL(url, { errorCorrectionLevel: "Q", margin: 2, width: 264 }),
@@ -54,6 +56,18 @@ export function DialogRemoteAccess() {
     if (!state.url) return ""
     const url = new URL(state.url)
     return `${url.origin}${url.pathname}`
+  }
+
+  const revokeViewer = async (viewerID: string) => {
+    setRevokingViewer(viewerID)
+    setRevokeFailed(false)
+    try {
+      await remoteAccess?.revokeViewer(viewerID)
+    } catch {
+      setRevokeFailed(true)
+    } finally {
+      setRevokingViewer(undefined)
+    }
   }
 
   return (
@@ -161,6 +175,51 @@ export function DialogRemoteAccess() {
               <div class="rounded-lg bg-v2-background-bg-base p-3 text-12-regular leading-5 text-v2-text-text-muted">
                 {language.t("remoteAccess.relayPrivacy")}
               </div>
+              <Show when={state.authorizedViewers}>
+                <section class="border-t border-v2-border-border-base pt-3">
+                  <div class="text-14-medium text-v2-text-text-strong">
+                    {language.t("remoteAccess.authorizedTitle")}
+                  </div>
+                  <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">
+                    {language.t("remoteAccess.authorizedDescription")}
+                  </p>
+                  <Show
+                    when={(state.authorizedViewers?.length ?? 0) > 0}
+                    fallback={
+                      <p class="mt-2 rounded-lg bg-v2-background-bg-base p-3 text-12-regular text-v2-text-text-muted">
+                        {language.t("remoteAccess.authorizedEmpty")}
+                      </p>
+                    }
+                  >
+                    <div class="mt-2 flex flex-col gap-2">
+                      <For each={state.authorizedViewers}>
+                        {(viewer) => (
+                          <div class="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-v2-background-bg-base p-3">
+                            <div class="min-w-0">
+                              <div class="truncate text-14-medium text-v2-text-text-strong">
+                                {viewer.device} · #{viewer.id.slice(0, 6)}
+                              </div>
+                            </div>
+                            <ButtonV2
+                              size="small"
+                              variant="danger"
+                              disabled={revokingViewer() === viewer.id}
+                              onClick={() => void revokeViewer(viewer.id)}
+                            >
+                              {language.t(revokingViewer() === viewer.id ? "remoteAccess.revoking" : "remoteAccess.revoke")}
+                            </ButtonV2>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                  <Show when={revokeFailed()}>
+                    <p class="mt-2 text-12-regular leading-5 text-v2-state-fg-danger" role="alert">
+                      {language.t("remoteAccess.revokeFailed")}
+                    </p>
+                  </Show>
+                </section>
+              </Show>
               <Show when={state.pendingRequests.length === 0}>
                 <div class="border-t border-v2-border-border-base pt-3">
                   <div class="mb-2 text-14-medium text-v2-text-text-strong">

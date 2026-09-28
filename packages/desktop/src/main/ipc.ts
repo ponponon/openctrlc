@@ -83,6 +83,12 @@ export function registerIpcHandlers(deps: Deps) {
   ipcMain.handle("remote-access-start", () => deps.remoteAccess.start())
   ipcMain.handle("remote-access-stop", () => deps.remoteAccess.stop())
   ipcMain.handle("remote-access-rotate-link", () => deps.remoteAccess.rotatePairingLink())
+  ipcMain.handle("remote-access-revoke-viewer", (_event: IpcMainInvokeEvent, viewerID: unknown) => {
+    if (typeof viewerID !== "string" || !/^[A-Za-z0-9_-]{8,24}$/.test(viewerID)) {
+      throw new Error("Invalid browser authorization")
+    }
+    return deps.remoteAccess.revokeViewer(viewerID)
+  })
   ipcMain.handle("remote-access-approve", (_event: IpcMainInvokeEvent, pairID: unknown) => {
     if (typeof pairID !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(pairID)) throw new Error("Invalid pairing request")
     deps.remoteAccess.approve(pairID)
