@@ -73,6 +73,13 @@ import { LegacyHome } from "@/pages/home/legacy-home"
 
 const NewSession = lazy(() => import("@/pages/new-session"))
 
+const setDesktopTitlebar = (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => {
+  const api = (window as Window & {
+    api?: { setTitlebar?: (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => Promise<void> }
+  }).api
+  void api?.setTitlebar?.(theme)
+}
+
 const SessionRoute = () => {
   const settings = useSettings()
   const params = useParams()
@@ -273,10 +280,6 @@ declare global {
     __OPENCTRLC__?: {
       deepLinks?: string[]
     }
-    api?: {
-      setTitlebar?: (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => Promise<void>
-      exportDebugLogs?: () => Promise<string>
-    }
   }
 }
 
@@ -466,7 +469,7 @@ export function AppBaseProviders(
       <Font />
       <ThemeProvider
         onThemeApplied={(_, mode, scheme) => {
-          void window.api?.setTitlebar?.({ mode, scheme })
+          setDesktopTitlebar({ mode, scheme })
         }}
       >
         <LanguageProvider locale={props.locale} onNativeTranslations={props.onNativeTranslations}>
