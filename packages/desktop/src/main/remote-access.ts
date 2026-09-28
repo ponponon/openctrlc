@@ -9,6 +9,10 @@ type InboundHTTP = {
 
 const heartbeatInterval = 30_000
 const heartbeatTimeout = 90_000
+const reconnectGrace = 3 * 60_000
+const reconnectDelays = [1_000, 2_000, 4_000, 8_000, 10_000]
+
+class RemoteSessionUnavailable extends Error {}
 
 export class RemoteAccessService {
   #state: RemoteAccessState = { status: "stopped", pendingRequests: [], authorizedDevices: 0 }
@@ -28,6 +32,10 @@ export class RemoteAccessService {
   #localSockets = new Map<string, WebSocket>()
   #notifiedPairRequests = new Set<string>()
   #starting?: Promise<RemoteAccessState>
+  #reconnectTimer?: ReturnType<typeof setTimeout>
+  #reconnectUntil?: number
+  #reconnectAttempt = 0
+  #generation = 0
 
   constructor(
     private readonly getServer: () => Promise<ServerReadyData>,
@@ -46,10 +54,12 @@ export class RemoteAccessService {
 
   start() {
     if (this.#starting) return this.#starting
-    if (this.#state.status === "active") return Promise.resolve(this.#state)
+    if (this.#state.status === "active" || this.#state.status === "reconnecting") return Promise.resolve(this.#state)
+    const generation = ++this.#generation
+    this.#clearReconnect()
     this.#notifiedPairRequests.clear()
     this.#setState({ status: "connecting", pendingRequests: [], authorizedDevices: 0 })
-    this.#starting = this.#start().finally(() => {
+    this.#starting = this.#start(generation).finally(() => {
       this.#starting = undefined
     })
     return this.#starting
@@ -57,11 +67,21 @@ export class RemoteAccessService {
 
   async stop() {
     const socket = this.#socket
+    const sessionID = this.#sessionID
+    const hostToken = this.#hostToken
+    let stopRequest: Promise<void> | undefined
+    ++this.#generation
+    this.#clearReconnect()
     if (this.#heartbeat) clearInterval(this.#heartbeat)
     this.#heartbeat = undefined
     this.#pendingPings.clear()
     this.#rejectPendingRevocations(new Error("Mobile access stopped"))
-    if (socket?.readyState === WebSocket.OPEN) this.#send({ type: "session.stop" })
+    if (socket?.readyState === WebSocket.OPEN && sessionID && hostToken) {
+      socket.send(JSON.stringify({ type: "session.stop", sessionID, hostToken }))
+    } else if (sessionID && hostToken) {
+      stopRequest = this.#sendStopOnNewSocket(sessionID, hostToken)
+    }
+    this.#setState({ status: "stopped", pendingRequests: [], authorizedDevices: 0 })
     this.#socket = undefined
     this.#sessionID = undefined
     this.#hostToken = undefined
@@ -72,7 +92,47 @@ export class RemoteAccessService {
     this.#requests.clear()
     this.#localSockets.clear()
     if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, "Remote access stopped")
-    this.#setState({ status: "stopped", pendingRequests: [], authorizedDevices: 0 })
+    await stopRequest
+  }
+
+  #sendStopOnNewSocket(sessionID: string, hostToken: string) {
+    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+    return new Promise<void>((resolve) => {
+      let timeout: ReturnType<typeof setTimeout> | undefined
+      let settled = false
+      const finish = (socket?: WebSocket) => {
+        if (settled) return
+        settled = true
+        if (timeout) clearTimeout(timeout)
+        if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, "Mobile access stopped")
+        resolve()
+      }
+      let socket: WebSocket
+      try {
+        socket = new WebSocket(relay)
+      } catch {
+        finish()
+        return
+      }
+      timeout = setTimeout(() => finish(socket), 2_500)
+      socket.addEventListener(
+        "open",
+        () => {
+          try {
+            socket.send(JSON.stringify({ type: "session.stop", sessionID, hostToken }))
+          } catch {
+            finish(socket)
+          }
+        },
+        { once: true },
+      )
+      socket.addEventListener("message", (event) => {
+        const message = relayMessage(event.data)
+        if (message?.type === "session.stopped") finish(socket)
+      })
+      socket.addEventListener("close", () => finish(), { once: true })
+      socket.addEventListener("error", () => finish(socket), { once: true })
+    })
   }
 
   rotatePairingLink() {
@@ -117,82 +177,14 @@ export class RemoteAccessService {
     if (this.#state.status === "active" && this.#socket) this.#startHeartbeat(this.#socket)
   }
 
-  async #start() {
-    this.#server = await this.getServer()
-    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
-    return new Promise<RemoteAccessState>((resolve, reject) => {
-      const socket = new WebSocket(relay)
-      this.#socket = socket
-      const timeout = setTimeout(() => {
-        socket.close()
-        reject(new Error("Relay connection timed out"))
-      }, 20_000)
-      socket.addEventListener("open", () => socket.send(JSON.stringify({ type: "session.create" })), { once: true })
-      socket.addEventListener("message", (event) => {
-        const message = relayMessage(event.data)
-        if (!message || typeof message.type !== "string") return
-        if (message.type === "session.created") {
-          if (
-            typeof message.sessionID !== "string" ||
-            typeof message.hostToken !== "string" ||
-            typeof message.url !== "string"
-          ) {
-            clearTimeout(timeout)
-            reject(new Error("The relay returned an invalid session"))
-            return
-          }
-          this.#sessionID = message.sessionID
-          this.#hostToken = message.hostToken
-          this.#setState({ status: "active", url: message.url, pendingRequests: [], authorizedDevices: 0 })
-          this.#startHeartbeat(socket)
-          clearTimeout(timeout)
-          resolve(this.#state)
-          return
-        }
-        this.#handleMessage(message)
-        if (message.type === "pair.error" && this.#state.status === "connecting") {
-          clearTimeout(timeout)
-          reject(new Error(typeof message.message === "string" ? message.message : "Relay rejected the connection"))
-        }
-      })
-      socket.addEventListener("error", () => {
-        clearTimeout(timeout)
-        if (this.#heartbeat) clearInterval(this.#heartbeat)
-        this.#heartbeat = undefined
-        this.#pendingPings.clear()
-        const error = new Error("Could not connect to the OpenCtrlC Remote Relay")
-        this.#rejectPendingRevocations(error)
-        this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: error.message })
-        reject(error)
-      })
-      socket.addEventListener("close", (event) => {
-        clearTimeout(timeout)
-        if (this.#socket !== socket) return
-        if (this.#heartbeat) clearInterval(this.#heartbeat)
-        this.#heartbeat = undefined
-        this.#pendingPings.clear()
-        this.#socket = undefined
-        this.#sessionID = undefined
-        this.#hostToken = undefined
-        this.#server = undefined
-        this.#notifiedPairRequests.clear()
-        for (const request of this.#requests.values()) {
-          request.aborted.abort()
-          try {
-            request.controller?.error(new Error("Remote relay disconnected"))
-          } catch {}
-        }
-        this.#requests.clear()
-        for (const local of this.#localSockets.values()) local.close(1001, "Remote relay disconnected")
-        this.#localSockets.clear()
-        if (this.#state.status !== "stopped") {
-          const error = event.reason || "The remote relay connection ended"
-          this.#rejectPendingRevocations(new Error(error))
-          this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error })
-          this.onError(new Error(error))
-        }
-      })
-    }).catch((error: unknown) => {
+  async #start(generation: number) {
+    try {
+      this.#server = await this.getServer()
+      if (generation !== this.#generation || this.#state.status === "stopped") return this.#state
+      const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+      await this.#connect(relay, generation, false)
+      return this.#state
+    } catch (error) {
       if (this.#state.status === "connecting") {
         this.#setState({
           status: "error",
@@ -202,7 +194,209 @@ export class RemoteAccessService {
         })
       }
       throw error
+    }
+  }
+
+  #connect(relay: string, generation: number, resume: boolean) {
+    return new Promise<void>((resolve, reject) => {
+      const socket = new WebSocket(relay)
+      this.#socket = socket
+      let connected = false
+      let settled = false
+      let timeout: ReturnType<typeof setTimeout>
+      const fail = (error: Error) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        if (this.#socket === socket) this.#socket = undefined
+        if (socket.readyState < WebSocket.CLOSING) socket.close()
+        reject(error)
+      }
+      timeout = setTimeout(() => fail(new Error("Relay connection timed out")), resume ? 12_000 : 20_000)
+      const activate = (url: string) => {
+        if (generation !== this.#generation || this.#state.status === "stopped") {
+          fail(new Error("Mobile access stopped"))
+          return
+        }
+        connected = true
+        settled = true
+        clearTimeout(timeout)
+        this.#notifiedPairRequests.clear()
+        this.#clearReconnect()
+        this.#setState({ status: "active", url, pendingRequests: [], authorizedDevices: 0 })
+        this.#startHeartbeat(socket)
+        resolve()
+      }
+      socket.addEventListener(
+        "open",
+        () => {
+          if (generation !== this.#generation || this.#state.status === "stopped") {
+            socket.close(1000, "Mobile access stopped")
+            return
+          }
+          try {
+            socket.send(
+              JSON.stringify(
+                resume
+                  ? { type: "session.resume", sessionID: this.#sessionID, hostToken: this.#hostToken }
+                  : { type: "session.create" },
+              ),
+            )
+          } catch {
+            fail(new Error("Could not send the Relay handshake"))
+          }
+        },
+        { once: true },
+      )
+      socket.addEventListener("message", (event) => {
+        if (settled && !connected) return
+        const message = relayMessage(event.data)
+        if (!message || typeof message.type !== "string") return
+        if (!resume && message.type === "session.created") {
+          if (
+            typeof message.sessionID !== "string" ||
+            typeof message.hostToken !== "string" ||
+            typeof message.url !== "string"
+          ) {
+            fail(new Error("The relay returned an invalid session"))
+            return
+          }
+          if (generation !== this.#generation || this.#state.status === "stopped") {
+            socket.send(
+              JSON.stringify({
+                type: "session.stop",
+                sessionID: message.sessionID,
+                hostToken: message.hostToken,
+              }),
+            )
+            socket.close(1000, "Mobile access stopped")
+            return
+          }
+          this.#sessionID = message.sessionID
+          this.#hostToken = message.hostToken
+          activate(message.url)
+          return
+        }
+        if (resume && message.type === "session.resumed") {
+          if (
+            message.sessionID !== this.#sessionID ||
+            message.hostToken !== this.#hostToken ||
+            typeof message.url !== "string"
+          ) {
+            fail(new RemoteSessionUnavailable("The relay could not restore the previous session"))
+            return
+          }
+          activate(message.url)
+          return
+        }
+        if (resume && message.type === "session.resume.error") {
+          fail(new RemoteSessionUnavailable("The remote session is no longer available"))
+          return
+        }
+        this.#handleMessage(message)
+        if (!resume && message.type === "pair.error" && this.#state.status === "connecting") {
+          fail(new Error(typeof message.message === "string" ? message.message : "Relay rejected the connection"))
+        }
+      })
+      socket.addEventListener("error", () => {
+        if (connected) {
+          socket.close()
+          return
+        }
+        fail(new Error("Could not connect to the OpenCtrlC Remote Relay"))
+      })
+      socket.addEventListener("close", (event) => {
+        clearTimeout(timeout)
+        if (this.#socket !== socket || generation !== this.#generation) return
+        if (!connected) {
+          fail(new Error(event.reason || "The relay connection ended before it was ready"))
+          return
+        }
+        this.#handleDisconnect(socket, generation, event.reason || "The remote relay connection ended")
+      })
     })
+  }
+
+  #handleDisconnect(socket: WebSocket, generation: number, reason: string) {
+    if (this.#socket !== socket || generation !== this.#generation) return
+    if (this.#heartbeat) clearInterval(this.#heartbeat)
+    this.#heartbeat = undefined
+    this.#pendingPings.clear()
+    this.#socket = undefined
+    const error = new Error("Remote relay disconnected")
+    this.#rejectPendingRevocations(error)
+    for (const request of this.#requests.values()) {
+      request.aborted.abort()
+      try {
+        request.controller?.error(error)
+      } catch {}
+    }
+    this.#requests.clear()
+    for (const local of this.#localSockets.values()) local.close(1001, "Remote relay disconnected")
+    this.#localSockets.clear()
+    if (this.#sessionID && this.#hostToken && this.#server && this.#state.status === "active") {
+      this.#reconnectUntil = Date.now() + reconnectGrace
+      this.#reconnectAttempt = 0
+      this.#notifiedPairRequests.clear()
+      this.#setState({ ...this.#state, status: "reconnecting", pendingRequests: [], error: undefined })
+      this.#scheduleReconnect(generation)
+      return
+    }
+    this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: reason })
+    this.onError(new Error(reason))
+  }
+
+  #scheduleReconnect(generation: number) {
+    if (generation !== this.#generation || this.#state.status !== "reconnecting") return
+    const until = this.#reconnectUntil
+    if (!until || until <= Date.now()) {
+      this.#endReconnect(generation)
+      return
+    }
+    const delay = reconnectDelays[Math.min(this.#reconnectAttempt, reconnectDelays.length - 1)]
+    this.#reconnectAttempt += 1
+    this.#reconnectTimer = setTimeout(() => {
+      this.#reconnectTimer = undefined
+      void this.#resume(generation)
+    }, Math.min(delay, until - Date.now()))
+  }
+
+  async #resume(generation: number) {
+    if (generation !== this.#generation || this.#state.status !== "reconnecting") return
+    if (!this.#reconnectUntil || this.#reconnectUntil <= Date.now()) {
+      this.#endReconnect(generation)
+      return
+    }
+    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+    try {
+      await this.#connect(relay, generation, true)
+    } catch (error) {
+      if (generation !== this.#generation || this.#state.status !== "reconnecting") return
+      if (error instanceof RemoteSessionUnavailable) {
+        this.#endReconnect(generation)
+        return
+      }
+      this.#scheduleReconnect(generation)
+    }
+  }
+
+  #endReconnect(generation: number) {
+    if (generation !== this.#generation || this.#state.status !== "reconnecting") return
+    this.#clearReconnect()
+    this.#sessionID = undefined
+    this.#hostToken = undefined
+    this.#server = undefined
+    this.#notifiedPairRequests.clear()
+    const error = "Could not restore the remote session"
+    this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: "reconnect-failed" })
+    this.onError(new Error(error))
+  }
+
+  #clearReconnect() {
+    if (this.#reconnectTimer) clearTimeout(this.#reconnectTimer)
+    this.#reconnectTimer = undefined
+    this.#reconnectUntil = undefined
+    this.#reconnectAttempt = 0
   }
 
   #startHeartbeat(socket: WebSocket) {

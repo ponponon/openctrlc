@@ -259,6 +259,26 @@ export function DialogRemoteAccess() {
             </div>
           </div>
         </Show>
+        <Show when={state.status === "reconnecting"}>
+          <div
+            class="flex min-h-48 items-center justify-center rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-5"
+            role="status"
+            aria-live="polite"
+          >
+            <div class="flex max-w-sm flex-col items-center gap-3 text-center">
+              <span
+                class="flex size-12 items-center justify-center rounded-xl bg-v2-background-bg-accent/10 text-v2-icon-icon-accent"
+                aria-hidden="true"
+              >
+                <IconV2 name="smartphone" size="large" />
+              </span>
+              <p class="text-14-medium text-v2-text-text-strong">{language.t("remoteAccess.reconnecting")}</p>
+              <p class="text-12-regular leading-5 text-v2-text-text-muted">
+                {language.t("remoteAccess.reconnectingDescription")}
+              </p>
+            </div>
+          </div>
+        </Show>
         <Show when={state.status === "stopped" || state.status === "error"}>
           <div class="grid gap-3 sm:grid-cols-2">
             <section class="flex flex-col gap-4 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-4">
@@ -278,7 +298,7 @@ export function DialogRemoteAccess() {
                   class="rounded-lg bg-v2-state-bg-danger px-3 py-2 text-12-regular leading-5 text-v2-state-fg-danger"
                   role="alert"
                 >
-                  {language.t("remoteAccess.error")}
+                  {language.t(state.error === "reconnect-failed" ? "remoteAccess.reconnectFailed" : "remoteAccess.error")}
                 </div>
               </Show>
               <ol class="flex flex-col gap-3 border-t border-v2-border-border-base pt-4">
@@ -313,7 +333,7 @@ export function DialogRemoteAccess() {
         <ButtonV2 variant="ghost" onClick={() => dialog.close()}>
           {language.t("common.close")}
         </ButtonV2>
-        <Show when={state.status !== "active"}>
+        <Show when={state.status === "stopped" || state.status === "error" || state.status === "connecting"}>
           <ButtonV2
             variant="neutral"
             disabled={state.status === "connecting" || !remoteAccess}
@@ -322,7 +342,7 @@ export function DialogRemoteAccess() {
             {language.t(state.status === "connecting" ? "remoteAccess.starting" : "remoteAccess.start")}
           </ButtonV2>
         </Show>
-        <Show when={state.status === "active"}>
+        <Show when={state.status === "active" || state.status === "reconnecting"}>
           <ButtonV2 variant="danger" onClick={() => void remoteAccess?.stop()}>
             {language.t("remoteAccess.stop")}
           </ButtonV2>

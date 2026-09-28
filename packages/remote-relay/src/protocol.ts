@@ -1,5 +1,6 @@
 export type RelayHostMessage =
   | { type: "session.create" }
+  | { type: "session.resume"; sessionID: string; hostToken: string }
   | { type: "session.ping"; pingID?: string }
   | { type: "session.stop"; sessionID: string; hostToken: string }
   | { type: "pair.rotate"; sessionID: string; hostToken: string }
@@ -21,6 +22,8 @@ export type RelayHostMessage =
 
 export type RelayServerMessage =
   | { type: "session.created"; sessionID: string; hostToken: string; joinToken: string; url: string }
+  | { type: "session.resumed"; sessionID: string; hostToken: string; url: string }
+  | { type: "session.resume.error"; reason: "unavailable" | "invalid" }
   | { type: "pair.request"; pairID: string; device: string }
   | { type: "pair.approved"; pairID: string }
   | { type: "pair.denied"; pairID: string }

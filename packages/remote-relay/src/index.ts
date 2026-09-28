@@ -45,6 +45,8 @@ type RelaySession = {
   viewers: Map<string, ViewerGrant>
   responses: Map<string, PendingResponse>
   sockets: Map<string, Bun.ServerWebSocket<SocketData>>
+  resumeUntil?: number
+  resumeTimer?: ReturnType<typeof setTimeout>
 }
 
 type ViewerGrant = {
@@ -64,6 +66,7 @@ const maxViewers = 3
 const viewerLifetime = 30 * 24 * 60 * 60 * 1000
 const viewerCookieLifetimeSeconds = Math.floor(viewerLifetime / 1000)
 const pairLifetime = 5 * 60 * 1000
+const hostReconnectGrace = 3 * 60 * 1000
 const sessions = new Map<string, RelaySession>()
 const viewerTokens = new Map<string, ViewerGrant>()
 const createRates = new Map<string, number[]>()
@@ -232,7 +235,7 @@ const server = Bun.serve<SocketData>({
     close(socket) {
       if (socket.data.role === "host") {
         const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
-        if (session?.host === socket) deleteSession(session)
+        if (session?.host === socket) suspendHost(session, socket)
         return
       }
       if (!socket.data.sessionID) return
@@ -257,6 +260,50 @@ const server = Bun.serve<SocketData>({
 console.log(`OpenCtrlC Remote Relay listening on ${server.hostname}:${server.port}`)
 
 async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value: Record<string, unknown>) {
+  if (value.type === "session.stop" && !socket.data.sessionID) {
+    const session = typeof value.sessionID === "string" ? sessions.get(value.sessionID) : undefined
+    if (!session || value.hostToken !== session.hostToken) {
+      socket.close(4404, "Session unavailable")
+      return
+    }
+    const previous = session.host
+    deleteSession(session)
+    if (previous && previous !== socket) previous.close(1000, "Mobile access stopped")
+    socket.send(JSON.stringify({ type: "session.stopped" } satisfies RelayServerMessage))
+    socket.close(1000, "Session stopped")
+    return
+  }
+
+  if (value.type === "session.resume") {
+    const session = typeof value.sessionID === "string" ? sessions.get(value.sessionID) : undefined
+    if (!session || value.hostToken !== session.hostToken || (session.resumeUntil && session.resumeUntil <= Date.now())) {
+      if (session?.resumeUntil && session.resumeUntil <= Date.now()) deleteSession(session)
+      socket.send(JSON.stringify({ type: "session.resume.error", reason: "unavailable" } satisfies RelayServerMessage))
+      socket.close(4404, "Session unavailable")
+      return
+    }
+    if (session.host && session.host !== socket) {
+      const previous = session.host
+      suspendHost(session, previous)
+      previous.close(4001, "Relay session resumed on a new connection")
+    }
+    if (session.resumeTimer) clearTimeout(session.resumeTimer)
+    session.resumeTimer = undefined
+    session.resumeUntil = undefined
+    session.host = socket
+    socket.data.sessionID = session.id
+    socket.send(
+      JSON.stringify({
+        type: "session.resumed",
+        sessionID: session.id,
+        hostToken: session.hostToken,
+        url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
+      } satisfies RelayServerMessage),
+    )
+    if (!pruneExpiredViewers(session)) sendViewerState(session)
+    return
+  }
+
   if (value.type === "session.create") {
     if (socket.data.sessionID) return socket.close(4400, "Session already exists")
     const address = socket.data.clientIP ?? "unknown"
@@ -631,6 +678,7 @@ function pruneExpiredViewers(session: RelaySession, now = Date.now()) {
     changed = true
   }
   if (changed) sendViewerState(session)
+  return changed
 }
 
 function sendViewerState(session: RelaySession) {
@@ -652,7 +700,38 @@ function sendHost(session: RelaySession, message: RelayServerMessage) {
   return true
 }
 
+function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketData>) {
+  if (session.host !== socket) return
+  session.host = undefined
+  session.resumeUntil = Date.now() + hostReconnectGrace
+  if (session.resumeTimer) clearTimeout(session.resumeTimer)
+  session.resumeTimer = setTimeout(() => {
+    if (!session.host && session.resumeUntil && session.resumeUntil <= Date.now()) deleteSession(session)
+  }, hostReconnectGrace)
+
+  for (const pair of session.pairs.values()) {
+    pair.socket.send(JSON.stringify({ type: "pair.error" } satisfies RelayServerMessage))
+    pair.socket.close(1012, "Desktop is reconnecting")
+  }
+  session.pairs.clear()
+  for (const pairingSocket of session.pairingSockets) pairingSocket.close(1012, "Desktop is reconnecting")
+  session.pairingSockets.clear()
+
+  for (const viewer of session.sockets.values()) viewer.close(1012, "Desktop is reconnecting")
+  session.sockets.clear()
+  for (const response of session.responses.values()) {
+    const error = new Error("Desktop relay connection interrupted")
+    response.closed = true
+    response.rejectHeaders(error)
+    try {
+      response.controller?.error(error)
+    } catch {}
+  }
+  session.responses.clear()
+}
+
 function deleteSession(session: RelaySession) {
+  if (session.resumeTimer) clearTimeout(session.resumeTimer)
   sessions.delete(session.id)
   for (const [token, value] of viewerTokens) if (value.session === session) viewerTokens.delete(token)
   for (const socket of session.pairingSockets) socket.close(4404, "Session ended")
@@ -810,8 +889,12 @@ function pairPage(mode: "pair" | "expired" | "home") {
 setInterval(() => {
   const now = Date.now()
   for (const session of sessions.values()) {
-    if (session.host?.readyState !== 1) {
-      deleteSession(session)
+    if (!session.host) {
+      if (!session.resumeUntil || session.resumeUntil <= now) deleteSession(session)
+      continue
+    }
+    if (session.host.readyState !== 1) {
+      suspendHost(session, session.host)
       continue
     }
     pruneExpiredViewers(session, now)

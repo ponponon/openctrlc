@@ -24,7 +24,7 @@ type DesktopOS = "macos" | "windows" | "linux"
 export type RemoteAccessPairRequest = { id: string; device: string }
 export type RemoteAccessAuthorizedViewer = { id: string; device: string }
 export type RemoteAccessState = {
-  status: "stopped" | "connecting" | "active" | "error"
+  status: "stopped" | "connecting" | "reconnecting" | "active" | "error"
   url?: string
   pendingRequests: RemoteAccessPairRequest[]
   authorizedDevices: number

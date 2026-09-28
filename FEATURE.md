@@ -1,3 +1,32 @@
+## Relay 短时断线自动恢复
+
+### 功能目标
+
+桌面端到公共 Relay 的连接遇到短暂网络中断时，自动恢复已有手机访问会话和浏览器授权，避免用户重新扫码和批准。
+
+### 实现范围
+
+- Relay 在桌面 WebSocket 意外断开后保留会话与已批准浏览器授权最多 3 分钟；期间取消待批准配对和正在进行的代理请求/WebSocket，避免断线期间的旧操作悬挂。
+- 桌面端使用原 `sessionID` 和 `hostToken` 自动指数退避重连，成功后 Relay 返回原二维码链接并推送当前授权浏览器列表。
+- 点击停止时立即取消重试；即使桌面正处于重试间隔、暂时没有打开的 Relay socket，也会通过短连接请求 Relay 撤销会话。
+- 明确区分 3 分钟的网络故障恢复窗口和浏览器授权的 30 天滑动有效期；Relay 进程重启、恢复窗口到期、桌面关闭或用户主动停止均结束会话并撤销授权。
+- 手机访问对话框在恢复中显示明确状态，并允许用户主动停止。
+- 同步英文、简体中文、日文和韩文的状态文案及四种远程访问文档。
+
+### 代码位置
+
+- `packages/remote-relay/src/index.ts`、`protocol.ts`：保留断线会话、认证恢复、清理临时代理连接与显式停止。
+- `packages/desktop/src/main/remote-access.ts`：原会话自动重连、退避调度、停止竞态处理。
+- `packages/app/src/components/dialog-remote-access.tsx`、`context/platform.tsx`、`i18n/`：恢复中状态和本地化文案。
+- `packages/remote-relay/README.md`、`packages/web/src/content/docs/*/remote-access.mdx`：用户可见行为说明。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 在 `packages/remote-relay` 执行 focused TypeScript 检查并构建 Relay。
+- 桌面手动验证：短暂断网后自动恢复原 URL 和授权设备；恢复中点击停止后 Relay 会话撤销；超过恢复窗口或 Relay 重启后显示可重新开启状态。
+- 桌面完整 typecheck 目前受已有 Renderer `window.api` 类型错误阻塞，需确认改动文件没有新增诊断。
+
 ## 上下文原始消息可选明细列
 
 ### 功能目标
