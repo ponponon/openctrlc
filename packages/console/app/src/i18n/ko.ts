@@ -24,6 +24,7 @@ export const dict = {
   "footer.github": "GitHub",
   "footer.docs": "문서",
   "footer.changelog": "변경 내역",
+  "footer.community": "커뮤니티",
   "footer.discord": "Discord",
   "footer.x": "X",
 

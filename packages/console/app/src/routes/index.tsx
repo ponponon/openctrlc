@@ -51,6 +51,13 @@ type Copy = {
   faqTitle: string
   faqEyebrow: string
   faq: Array<{ question: string; answer: string }>
+  community: {
+    eyebrow: string
+    title: string
+    body: string
+    qq: { title: string; detail: string; alt: string; openLabel: string }
+    feishu: { title: string; detail: string; alt: string; openLabel: string }
+  }
   finalTitle: string
   finalBody: string
   finalEyebrow: string
@@ -158,6 +165,23 @@ const COPY: Pick<Record<Locale, Copy>, "en" | "zh"> = {
           "CLI packages are published for macOS, Windows, and Linux. Desktop installers are published for macOS, Windows, and Linux with x64 and arm64 targets in the release workflow.",
       },
     ],
+    community: {
+      eyebrow: "Community",
+      title: "Join the OpenCtrlC community.",
+      body: "Meet other users, share feedback, and get help. Choose a group and scan its QR code to join.",
+      qq: {
+        title: "QQ group",
+        detail: "OpenCtrlC user group · 537131912",
+        alt: "QQ group QR code, group number 537131912",
+        openLabel: "Open the full-size QQ group QR code",
+      },
+      feishu: {
+        title: "Feishu group",
+        detail: "OpenCtrlC user community",
+        alt: "Feishu user group QR code",
+        openLabel: "Open the full-size Feishu group QR code",
+      },
+    },
     finalTitle: "Make your next codebase easier to work with.",
     finalBody: "OpenCtrlC is open source, inspectable, and ready for the workflow you already use.",
     finalEyebrow: "OpenCtrlC",
@@ -259,6 +283,23 @@ const COPY: Pick<Record<Locale, Copy>, "en" | "zh"> = {
           "CLI 支持 macOS、Windows 和 Linux。桌面版发布流程覆盖 macOS、Windows 和 Linux，并提供 x64 与 arm64 目标。",
       },
     ],
+    community: {
+      eyebrow: "用户交流群",
+      title: "加入 OpenCtrlC 用户交流群",
+      body: "交流使用经验、分享反馈，或向其他用户提问。选择你常用的平台扫码加入。",
+      qq: {
+        title: "QQ 交流群",
+        detail: "群号：537131912",
+        alt: "OpenCtrlC QQ 交流群二维码，群号 537131912",
+        openLabel: "查看 QQ 群二维码大图",
+      },
+      feishu: {
+        title: "飞书用户群",
+        detail: "OpenCtrlC 用户交流群",
+        alt: "OpenCtrlC 飞书用户交流群二维码",
+        openLabel: "查看飞书群二维码大图",
+      },
+    },
     finalTitle: "让下一个代码库，更容易开始工作。",
     finalBody: "OpenCtrlC 开源、可检查，也能贴合你已经习惯的开发方式。",
     finalEyebrow: "OpenCtrlC",
@@ -367,6 +408,23 @@ const LOCALIZED_COPY: Pick<Record<Locale, Partial<Copy>>, "ja" | "ko"> = {
           "CLI パッケージは macOS、Windows、Linux 向けに公開されています。Desktop インストーラーは 3 つの OS の x64 と arm64 を対象にしています。",
       },
     ],
+    community: {
+      eyebrow: "コミュニティ",
+      title: "OpenCtrlC のコミュニティに参加しましょう。",
+      body: "ほかのユーザーと交流し、フィードバックを共有したり、質問したりできます。参加したいグループの QR コードを読み取ってください。",
+      qq: {
+        title: "QQ グループ",
+        detail: "OpenCtrlC ユーザーグループ · 537131912",
+        alt: "QQ グループの QR コード、グループ番号 537131912",
+        openLabel: "QQ グループの QR コードを拡大表示",
+      },
+      feishu: {
+        title: "Feishu グループ",
+        detail: "OpenCtrlC ユーザーコミュニティ",
+        alt: "Feishu ユーザーグループの QR コード",
+        openLabel: "Feishu グループの QR コードを拡大表示",
+      },
+    },
     finalTitle: "次のコードベースを、もっと扱いやすく。",
     finalBody: "OpenCtrlC はオープンソースで、動作を確認でき、今のワークフローにすぐ使えます。",
     finalEyebrow: "OpenCtrlC",
@@ -471,6 +529,23 @@ const LOCALIZED_COPY: Pick<Record<Locale, Partial<Copy>>, "ja" | "ko"> = {
           "CLI 패키지는 macOS, Windows와 Linux용으로 제공됩니다. Desktop 설치 파일은 세 플랫폼의 x64 및 arm64 대상을 지원합니다.",
       },
     ],
+    community: {
+      eyebrow: "커뮤니티",
+      title: "OpenCtrlC 사용자 커뮤니티에 참여하세요.",
+      body: "다른 사용자와 경험을 나누고 피드백을 공유하거나 질문해 보세요. 원하는 그룹의 QR 코드를 스캔해 참여할 수 있습니다.",
+      qq: {
+        title: "QQ 그룹",
+        detail: "OpenCtrlC 사용자 그룹 · 537131912",
+        alt: "QQ 그룹 QR 코드, 그룹 번호 537131912",
+        openLabel: "QQ 그룹 QR 코드 크게 보기",
+      },
+      feishu: {
+        title: "Feishu 그룹",
+        detail: "OpenCtrlC 사용자 커뮤니티",
+        alt: "Feishu 사용자 그룹 QR 코드",
+        openLabel: "Feishu 그룹 QR 코드 크게 보기",
+      },
+    },
     finalTitle: "다음 코드베이스를 더 쉽게 다뤄보세요.",
     finalBody: "OpenCtrlC는 오픈 소스이며 직접 확인할 수 있고, 지금 사용하는 워크플로에 바로 맞출 수 있습니다.",
     finalEyebrow: "OpenCtrlC",
@@ -691,6 +766,54 @@ export default function Home() {
                     </summary>
                     <p>{item.answer}</p>
                   </details>
+                )}
+              </For>
+            </div>
+          </section>
+
+          <section data-component="community" id="community">
+            <div data-slot="section-heading">
+              <p data-slot="eyebrow">{copy().community.eyebrow}</p>
+              <h2>{copy().community.title}</h2>
+              <p>{copy().community.body}</p>
+            </div>
+            <div data-slot="community-grid">
+              <For
+                each={[
+                  {
+                    ...copy().community.qq,
+                    image: "/openctrlc-qq-group.png",
+                    width: 1284,
+                    height: 2289,
+                  },
+                  {
+                    ...copy().community.feishu,
+                    image: "/openctrlc-feishu-group.png",
+                    width: 1372,
+                    height: 1392,
+                  },
+                ]}
+              >
+                {(group) => (
+                  <article data-slot="community-card">
+                    <div data-slot="community-card-copy">
+                      <h3>{group.title}</h3>
+                      <p>{group.detail}</p>
+                    </div>
+                    <figure data-slot="community-poster">
+                      <a href={group.image} target="_blank" rel="noreferrer" aria-label={group.openLabel}>
+                        <img
+                          src={group.image}
+                          alt={group.alt}
+                          width={group.width}
+                          height={group.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </a>
+                      <figcaption>{group.openLabel}</figcaption>
+                    </figure>
+                  </article>
                 )}
               </For>
             </div>

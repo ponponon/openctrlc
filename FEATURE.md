@@ -2330,3 +2330,31 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 2. **游标回放没有现成客户端入口**：vendored client 的 `session.log({ after, follow })`（`/api/experimental/session/:id/log`）类型完美匹配 `applyV2`，但 **opencode server 未实现该端点**；新 `history?after=` 有端点但事件 type/字段是 `session.next.*`（如 `textID`，而 reducer 用数字 `ordinal`），不能直接喂给 `applyV2`。
 3. **可行的游标路径（推荐）**：在 server 实现 `/api/experimental/session/:id/log`，用 `EventV2.durable` 回放 **V1 持久事件**（`message.updated` 等）喂 `apply()`，或回放 vendored 口径的 `session.*` 事件喂 `applyV2`。避免在客户端写 `session.next.* → session.*` 的有损映射。
 4. Delta 事件（`message.part.delta` / `session.*.delta`）设计为 live-only，回放应以 `*.ended` / `message.part.updated` 全量边界为准。
+
+## 官网用户交流群入口
+
+### 功能目标
+
+让官网访客能直接加入 OpenCtrlC 的 QQ 和飞书用户交流群，交流使用经验、反馈问题并互相帮助。
+
+### 实现范围
+
+- 首页在 FAQ 之后、开源支持区块之前展示 QQ 与飞书群二维码卡片。
+- 保留用户提供的完整二维码海报，不裁切二维码；点击海报可在新标签页查看原尺寸图片，便于扫码或保存。
+- 页脚新增“用户群 / Community”入口，站内其他页面也可以跳转到首页交流群区块。
+- 首页内容覆盖英文、简体中文、日文和韩文，页脚入口同步本地化。
+- QQ 海报原始文件虽使用 `.jpg` 扩展名，实际为 PNG，官网静态资源以 `.png` 格式提供。
+
+### 代码位置
+
+- `packages/console/app/src/routes/index.tsx`：首页交流群区块与四种语言的文案。
+- `packages/console/app/src/routes/index.css`：二维码卡片的桌面和窄屏布局。
+- `packages/console/app/src/component/footer.tsx`：页脚锚点入口。
+- `packages/console/app/src/i18n/{en,zh,ja,ko}.ts`：页脚入口翻译。
+- `packages/console/app/public/openctrlc-qq-group.png`、`packages/console/app/public/openctrlc-feishu-group.png`：群二维码海报。
+
+### 验证方式
+
+- 在 `packages/console/app` 执行 `bun typecheck` 和 `bun run build`。
+- 检查首页四种语言都展示两张完整二维码，页脚入口跳转到 `#community`。
+- 检查手机窄屏时卡片纵向排列，海报保持完整比例且二维码没有被裁切。
