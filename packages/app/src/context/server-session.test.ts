@@ -1862,4 +1862,42 @@ describe("server session", () => {
 
     expect(listCalls).toHaveLength(2)
   })
+
+  test("catchUpSession prefers the message log and reports the path", async () => {
+    const requests: unknown[] = []
+    const logCalls: unknown[] = []
+    const messageApi = {
+      list: async (input: unknown) => {
+        requests.push(input)
+        return { data: [], cursor: { previous: null, next: null } }
+      },
+    } as unknown as MessageApi
+    const sessionApi = {
+      async get() {
+        return session("root")
+      },
+      log(input: unknown) {
+        logCalls.push(input)
+        return (async function* () {
+          yield { type: "log.synced", aggregateID: "root", seq: 5, more: false }
+        })()
+      },
+    } as unknown as SessionApi
+    const store = createServerSession({} as OpencodeClient, sessionApi, messageApi)
+    store.remember(session("root"))
+    await store.sync("root")
+    store.applyV2({
+      id: "evt-5",
+      type: "session.text.ended",
+      created: 10,
+      data: { sessionID: "root", assistantMessageID: "a", textID: "t", text: "x" },
+      durable: { aggregateID: "root", seq: 5, version: 1 },
+    } as never)
+
+    const result = await store.catchUpSession("root")
+
+    expect(result).toEqual({ sessionID: "root", replayed: true })
+    expect(logCalls).toHaveLength(1)
+    expect(requests).toHaveLength(1)
+  })
 })

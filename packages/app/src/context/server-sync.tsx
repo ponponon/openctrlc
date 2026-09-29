@@ -418,11 +418,11 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
       console.warn("[session-stall] session made no progress", diagnosis)
 
       // Stall with a busy transcript can mean we dropped live events while the
-      // socket looked healthy. Force-sync once per stall so the open timeline
+      // socket looked healthy. Catch up once per stall so the open timeline
       // cannot stay truncated.
       const before = session.data.message[sessionID]?.length ?? 0
-      void session.sync(sessionID, { force: true }).then(
-        () => {
+      void session.catchUpSession(sessionID).then(
+        (result) => {
           const after = session.data.message[sessionID]?.length ?? 0
           console.warn("[session-stall] catch-up", {
             sessionID,
@@ -430,6 +430,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
             ageMs: diagnosis.ageMs,
             messagesBefore: before,
             messagesAfter: after,
+            replayed: result.replayed,
           })
         },
         () => {},

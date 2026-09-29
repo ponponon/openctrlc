@@ -943,6 +943,14 @@ export function createServerSession(
     }
   }
 
+  // Catch up one session after a live-stream gap. Prefer the durable message
+  // log when a cursor exists; otherwise snapshot-sync the transcript.
+  const catchUpSession = async (sessionID: string) => {
+    const replayed = await replayMessageLog(sessionID)
+    if (!replayed) await sync(sessionID, { force: true })
+    return { sessionID, replayed }
+  }
+
   // SSE reconnect restores the live stream only; events published while the
   // client was detached never arrive. Force-sync transcripts that still look
   // active so a gap cannot leave the open timeline truncated. A short global
@@ -962,13 +970,7 @@ export function createServerSession(
     for (const [sessionID, items] of Object.entries(data.question)) {
       if (items.length > 0 && hasCache(sessionID)) targets.add(sessionID)
     }
-    return Promise.all(
-      [...targets].map(async (sessionID) => {
-        const replayed = await replayMessageLog(sessionID)
-        if (!replayed) await sync(sessionID, { force: true })
-        return { sessionID, replayed }
-      }),
-    ).then((result) => {
+    return Promise.all([...targets].map((sessionID) => catchUpSession(sessionID))).then((result) => {
       if (result.length > 0) {
         console.warn("[global-sdk] reconnect catch-up", {
           sessions: result.map((item) => item.sessionID),
@@ -1457,6 +1459,7 @@ export function createServerSession(
     sync,
     prefetch,
     catchUpAfterReconnect,
+    catchUpSession,
     shouldPrefetch(sessionID: string, limit: number) {
       if (data.message[sessionID] === undefined) return true
       if (Date.now() - (meta.at[sessionID] ?? 0) > 15_000) return true

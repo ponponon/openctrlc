@@ -2353,6 +2353,12 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `follow=true` 仍为不截断的实时流（catch-up 不用该模式）；`limit` 只约束 `follow=false` 的历史页。
 - 测试：`httpapi-experimental.test.ts`（limit=2 只出 2 条且 `more:true`）、`server-session.test.ts`（两页 logCalls after=5→6）。
 
+## 假活补拉与重连补拉共用 catchUpSession
+
+- `ServerSession.catchUpSession(sessionID)` 是单会话恢复入口：优先 `session.log` 增量，失败或无游标时 `sync({ force: true })`，返回 `{ sessionID, replayed }`。
+- `catchUpAfterReconnect`（SSE 重连，2s 防抖、多会话）与 `inspectStalledSessions`（假活，按 stall key 去重）都走该入口，不再各自写一套 force sync。
+- 假活日志 `[session-stall] catch-up` 增加 `replayed` 字段，与重连日志一致，可区分增量/快照路径。
+
 ## 官网用户交流群入口
 
 ### 功能目标
