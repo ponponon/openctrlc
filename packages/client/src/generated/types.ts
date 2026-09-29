@@ -592,7 +592,12 @@ export type SessionsContextOutput = {
         readonly agent: string
         readonly model: { readonly id: string; readonly providerID: string; readonly variant?: string }
         readonly content: ReadonlyArray<
-          | { readonly type: "text"; readonly id: string; readonly text: string }
+          | {
+              readonly type: "text"
+              readonly id: string
+              readonly text: string
+              readonly channel?: "analysis" | "commentary" | "final"
+            }
           | {
               readonly type: "reasoning"
               readonly id: string
@@ -895,6 +900,7 @@ export type SessionsHistoryOutput = {
           readonly sessionID: string
           readonly assistantMessageID: string
           readonly textID: string
+          readonly channel?: "analysis" | "commentary" | "final"
         }
       }
     | {
@@ -1353,6 +1359,7 @@ export type SessionsEventsOutput =
         readonly sessionID: string
         readonly assistantMessageID: string
         readonly textID: string
+        readonly channel?: "analysis" | "commentary" | "final"
       }
     }
   | {
@@ -1670,7 +1677,12 @@ export type SessionsMessageOutput = {
         readonly agent: string
         readonly model: { readonly id: string; readonly providerID: string; readonly variant?: string }
         readonly content: ReadonlyArray<
-          | { readonly type: "text"; readonly id: string; readonly text: string }
+          | {
+              readonly type: "text"
+              readonly id: string
+              readonly text: string
+              readonly channel?: "analysis" | "commentary" | "final"
+            }
           | {
               readonly type: "reasoning"
               readonly id: string
@@ -1842,7 +1854,12 @@ export type MessagesListOutput = {
         readonly agent: string
         readonly model: { readonly id: string; readonly providerID: string; readonly variant?: string }
         readonly content: ReadonlyArray<
-          | { readonly type: "text"; readonly id: string; readonly text: string }
+          | {
+              readonly type: "text"
+              readonly id: string
+              readonly text: string
+              readonly channel?: "analysis" | "commentary" | "final"
+            }
           | {
               readonly type: "reasoning"
               readonly id: string

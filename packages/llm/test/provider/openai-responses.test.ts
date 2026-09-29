@@ -754,6 +754,58 @@ describe("OpenAI Responses route", () => {
     }),
   )
 
+  it.effect("preserves structured text phases from Responses output items", () =>
+    Effect.gen(function* () {
+      const response = yield* LLMClient.generate(request).pipe(
+        Effect.provide(
+          fixedResponse(
+            sseEvents(
+              {
+                type: "response.output_item.added",
+                item: { type: "message", id: "msg_commentary", phase: "commentary" },
+              },
+              { type: "response.output_text.delta", item_id: "msg_commentary", delta: "Checking." },
+              {
+                type: "response.output_item.done",
+                item: { type: "message", id: "msg_commentary", phase: "commentary" },
+              },
+              {
+                type: "response.output_item.added",
+                item: { type: "message", id: "msg_analysis", phase: "analysis" },
+              },
+              { type: "response.output_text.delta", item_id: "msg_analysis", delta: "Checking the details." },
+              {
+                type: "response.output_item.done",
+                item: { type: "message", id: "msg_analysis", phase: "analysis" },
+              },
+              {
+                type: "response.output_item.added",
+                item: { type: "message", id: "msg_final", phase: "final_answer" },
+              },
+              { type: "response.output_text.delta", item_id: "msg_final", delta: "Done." },
+              {
+                type: "response.output_item.added",
+                item: { type: "message", id: "msg_unknown", phase: "notification" },
+              },
+              { type: "response.output_text.delta", item_id: "msg_unknown", delta: "FYI." },
+              {
+                type: "response.completed",
+                response: { id: "resp_1", usage: { input_tokens: 1, output_tokens: 2, total_tokens: 3 } },
+              },
+            ),
+          ),
+        ),
+      )
+
+      expect(response.events.filter((event) => event.type === "text-start")).toEqual([
+        { type: "text-start", id: "msg_commentary", channel: "commentary" },
+        { type: "text-start", id: "msg_analysis", channel: "analysis" },
+        { type: "text-start", id: "msg_final", channel: "final" },
+        { type: "text-start", id: "msg_unknown" },
+      ])
+    }),
+  )
+
   it.effect("parses reasoning summary stream fixtures", () =>
     Effect.gen(function* () {
       const body = sseEvents(

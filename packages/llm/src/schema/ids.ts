@@ -2,6 +2,7 @@ import { Schema } from "effect"
 import { ProviderMetadata } from "@openctrlc/schema/llm"
 
 export { ProviderMetadata }
+export { TextChannel } from "@openctrlc/schema/llm"
 
 /** Stable string identifier for a protocol implementation. */
 export const ProtocolID = Schema.String

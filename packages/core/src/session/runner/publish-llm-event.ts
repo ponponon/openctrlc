@@ -252,6 +252,7 @@ export const createLLMEventPublisher = (events: EventV2.Interface, input: Input)
           assistantMessageID: yield* startAssistant(),
           timestamp: yield* timestamp,
           textID: event.id,
+          channel: event.channel,
         })
         return
       case "text-delta":

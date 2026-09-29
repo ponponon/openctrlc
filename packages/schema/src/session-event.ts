@@ -3,7 +3,7 @@ export * as SessionEvent from "./session-event"
 import { Schema } from "effect"
 import { optional } from "./schema"
 import { Event } from "./event"
-import { ProviderMetadata, ToolContent } from "./llm"
+import { ProviderMetadata, TextChannel, ToolContent } from "./llm"
 import { Delivery } from "./session-delivery"
 import { Model } from "./model"
 import { DateTimeUtcFromMillis, NonNegativeInt, RelativePath } from "./schema"
@@ -202,6 +202,7 @@ export namespace Text {
       ...Base,
       assistantMessageID: SessionMessage.ID,
       textID: Schema.String,
+      channel: TextChannel.pipe(optional),
     },
   })
   export type Started = typeof Started.Type

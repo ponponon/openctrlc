@@ -2,7 +2,7 @@ export * as SessionMessage from "./session-message"
 
 import { Schema } from "effect"
 import { optional } from "./schema"
-import { ProviderMetadata, ToolContent } from "./llm"
+import { ProviderMetadata, TextChannel, ToolContent } from "./llm"
 import { Model } from "./model"
 import { FileAttachment, Prompt } from "./prompt"
 import { DateTimeUtcFromMillis, RelativePath, statics } from "./schema"
@@ -142,6 +142,7 @@ export const AssistantText = Schema.Struct({
   type: Schema.Literal("text"),
   id: Schema.String,
   text: Schema.String,
+  channel: TextChannel.pipe(optional),
 }).annotate({ identifier: "Session.Message.Assistant.Text" })
 
 export interface AssistantReasoning extends Schema.Schema.Type<typeof AssistantReasoning> {}

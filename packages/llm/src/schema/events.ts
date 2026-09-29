@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import { ContentBlockID, FinishReason, ProtocolID, ProviderMetadata, RouteID, ToolCallID } from "./ids"
+import { ContentBlockID, FinishReason, ProtocolID, ProviderMetadata, RouteID, TextChannel, ToolCallID } from "./ids"
 import { ModelSchema } from "./options"
 import { Message, ToolCallPart, ToolOutput, ToolResultPart, ToolResultValue, type ContentPart } from "./messages"
 import { ProviderFailureClassification } from "./errors"
@@ -84,6 +84,7 @@ export type StepStart = Schema.Schema.Type<typeof StepStart>
 export const TextStart = Schema.Struct({
   type: Schema.tag("text-start"),
   id: ContentBlockID,
+  channel: Schema.optional(TextChannel),
   providerMetadata: Schema.optional(ProviderMetadata),
 }).annotate({ identifier: "LLM.Event.TextStart" })
 export type TextStart = Schema.Schema.Type<typeof TextStart>

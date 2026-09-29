@@ -13,6 +13,7 @@ import {
   type ProviderMetadata,
   type ReasoningPart,
   type TextPart,
+  type TextChannel,
   type ToolCallPart,
   type ToolDefinition,
   type ToolContent,
@@ -177,6 +178,7 @@ type OpenAIResponsesUsage = Schema.Schema.Type<typeof OpenAIResponsesUsage>
 const OpenAIResponsesStreamItem = Schema.Struct({
   type: Schema.String,
   id: Schema.optional(Schema.String),
+  phase: Schema.optional(Schema.String),
   call_id: Schema.optional(Schema.String),
   name: Schema.optional(Schema.String),
   arguments: Schema.optional(Schema.String),
@@ -238,6 +240,7 @@ interface ParserState {
   readonly hasFunctionCall: boolean
   readonly lifecycle: Lifecycle.State
   readonly reasoningItems: Readonly<Record<string, ReasoningStreamItem>>
+  readonly textChannels: Readonly<Record<string, TextChannel>>
   readonly store: boolean | undefined
 }
 
@@ -616,7 +619,16 @@ const onOutputTextDelta = (state: ParserState, event: OpenAIResponsesEvent): Ste
   if (!event.delta) return [state, NO_EVENTS]
   const events: LLMEvent[] = []
   return [
-    { ...state, lifecycle: Lifecycle.textDelta(state.lifecycle, events, event.item_id ?? "text-0", event.delta) },
+    {
+      ...state,
+      lifecycle: Lifecycle.textDelta(
+        state.lifecycle,
+        events,
+        event.item_id ?? "text-0",
+        event.delta,
+        event.item_id ? state.textChannels[event.item_id] : undefined,
+      ),
+    },
     events,
   ]
 }
@@ -655,6 +667,17 @@ const reasoningMetadata = (item: OpenAIResponsesStreamItem & { id: string }) =>
 // best-effort, not guaranteed.
 const onOutputItemAdded = (state: ParserState, event: OpenAIResponsesEvent): StepResult => {
   const item = event.item
+  if (item?.type === "message" && item.id) {
+    const channel =
+      item.phase === "analysis" || item.phase === "commentary"
+        ? item.phase
+        : item.phase === "final_answer" || item.phase === "final"
+          ? "final"
+          : undefined
+    return channel
+      ? [{ ...state, textChannels: { ...state.textChannels, [item.id]: channel } }, NO_EVENTS]
+      : [state, NO_EVENTS]
+  }
   if (item && isReasoningItem(item)) {
     const events: LLMEvent[] = []
     return [
@@ -811,6 +834,11 @@ const onOutputItemDone = Effect.fn("OpenAIResponses.onOutputItemDone")(function*
 ) {
   const item = event.item
   if (!item) return [state, NO_EVENTS] satisfies StepResult
+
+  if (item.type === "message" && item.id && state.textChannels[item.id]) {
+    const { [item.id]: _removed, ...textChannels } = state.textChannels
+    return [{ ...state, textChannels }, NO_EVENTS] satisfies StepResult
+  }
 
   if (item.type === "function_call") {
     if (!item.id || !item.call_id || !item.name) return [state, NO_EVENTS] satisfies StepResult
@@ -969,6 +997,7 @@ export const protocol = Protocol.make({
       tools: ToolStream.empty<string>(),
       lifecycle: Lifecycle.initial(),
       reasoningItems: {},
+      textChannels: {},
       store: OpenAIOptions.store(request),
     }),
     step,

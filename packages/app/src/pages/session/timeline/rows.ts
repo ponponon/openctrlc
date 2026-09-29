@@ -28,6 +28,8 @@ export type TimelineRowMap = {
   }
   AssistantSteps: {
     userMessageID: string
+    stepID: string
+    showDuration: boolean
     groups: PartGroup[]
   }
   Thinking: { userMessageID: string; reasoningHeading?: string }
@@ -129,37 +131,51 @@ export namespace Timeline {
         .filter((part) => renderable(part, showReasoning))
         .map((part) => ({ messageID: message.id, messageIndex, part })),
     )
-    const assistantGroups = groupParts(assistantPartRefs)
-    const lastProcessGroupIndex = assistantGroups.findLastIndex(
-      (group) => !isAssistantResponseGroup(group, getMessageParts),
+    const hasVisibleAssistantText = assistantPartRefs.some(
+      ({ part }) =>
+        part.type === "text" &&
+        !("channel" in part && (part.channel === "analysis" || part.channel === "commentary")),
     )
-    const processGroups =
-      !interrupted && lastProcessGroupIndex >= 0 && lastProcessGroupIndex < assistantGroups.length - 1
-        ? assistantGroups.slice(0, lastProcessGroupIndex + 1)
-        : []
-    const assistantItems =
-      interrupted && !compaction
-        ? [
-            ...groupParts(assistantPartRefs.filter((ref) => ref.messageIndex <= interruptedMessageIndex)).map(
-              (group) => ({
-                type: "part" as const,
-                group,
-              }),
-            ),
-            { type: "interrupted" as const },
-            ...groupParts(assistantPartRefs.filter((ref) => ref.messageIndex > interruptedMessageIndex)).map(
-              (group) => ({
-                type: "part" as const,
-                group,
-              }),
-            ),
-          ]
-        : processGroups.length > 0
-          ? [
-              { type: "steps" as const, groups: processGroups },
-              ...assistantGroups.slice(processGroups.length).map((group) => ({ type: "part" as const, group })),
-            ]
-          : assistantGroups.map((group) => ({ type: "part" as const, group }))
+    // A tool-only result (notably a standalone shell turn) is its own answer; interrupted process still collapses.
+    const collapseProcess = interrupted || status !== "idle" || hasVisibleAssistantText
+    const assistantGroups = groupParts(assistantPartRefs)
+    const assistantItems: (
+      | { type: "part"; group: PartGroup }
+      | { type: "steps"; groups: PartGroup[]; stepID: string; showDuration: boolean }
+      | { type: "interrupted" }
+    )[] = []
+    let showDuration = true
+    const appendGroups = (groups: PartGroup[]) => {
+      let processGroups: PartGroup[] = []
+      const flushProcessGroups = () => {
+        if (processGroups.length === 0) return
+        assistantItems.push({
+          type: "steps",
+          groups: processGroups,
+          stepID: processGroups[0]!.key,
+          showDuration,
+        })
+        processGroups = []
+        showDuration = false
+      }
+      groups.forEach((group) => {
+        if (collapseProcess && isAssistantProcessGroup(group, getMessageParts)) {
+          processGroups.push(group)
+          return
+        }
+        flushProcessGroups()
+        assistantItems.push({ type: "part", group })
+      })
+      flushProcessGroups()
+    }
+
+    if (interrupted && !compaction) {
+      appendGroups(groupParts(assistantPartRefs.filter((ref) => ref.messageIndex <= interruptedMessageIndex)))
+      assistantItems.push({ type: "interrupted" })
+      appendGroups(groupParts(assistantPartRefs.filter((ref) => ref.messageIndex > interruptedMessageIndex)))
+    } else {
+      appendGroups(assistantGroups)
+    }
     if (previousUserMessage) rows.push(new TimelineRow.TurnGap({ userMessageID: userMessage.id }))
 
     if (comments.length > 0 && !inlineComments)
@@ -201,6 +217,8 @@ export namespace Timeline {
         rows.push(
           new TimelineRow.AssistantSteps({
             userMessageID: userMessage.id,
+            stepID: item.stepID,
+            showDuration: item.showDuration,
             groups: item.groups,
           }),
         )
@@ -259,9 +277,12 @@ export namespace Timeline {
     return rows
   }
 
-  function isAssistantResponseGroup(group: PartGroup, getMessageParts: (messageID: string) => Part[]) {
-    if (group.type !== "part") return false
-    return getMessageParts(group.ref.messageID).find((part) => part.id === group.ref.partID)?.type === "text"
+  function isAssistantProcessGroup(group: PartGroup, getMessageParts: (messageID: string) => Part[]) {
+    if (group.type === "context") return true
+    const part = getMessageParts(group.ref.messageID).find((item) => item.id === group.ref.partID)
+    if (!part) return false
+    if (part.type !== "text") return true
+    return "channel" in part && (part.channel === "analysis" || part.channel === "commentary")
   }
 
   function reasoningHeading(text: string) {

@@ -26,6 +26,8 @@ export namespace TimelineRow {
   }> {}
   export class AssistantSteps extends Data.TaggedClass("AssistantSteps")<{
     userMessageID: string
+    stepID: string
+    showDuration: boolean
     groups: PartGroup[]
   }> {}
   export class Thinking extends Data.TaggedClass("Thinking")<{
@@ -69,7 +71,7 @@ export namespace TimelineRow {
       case "AssistantPart":
         return `assistant-part:${row.userMessageID}:${row.group.key}`
       case "AssistantSteps":
-        return `assistant-steps:${row.userMessageID}`
+        return `assistant-steps:${row.userMessageID}:${row.stepID}`
       case "Thinking":
         return `thinking:${row.userMessageID}`
       case "DiffSummary":

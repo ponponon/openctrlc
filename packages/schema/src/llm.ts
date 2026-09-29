@@ -8,6 +8,11 @@ export const ProviderMetadata = Schema.Record(Schema.String, Schema.Record(Schem
 })
 export type ProviderMetadata = Schema.Schema.Type<typeof ProviderMetadata>
 
+// Provider-neutral semantic labels for assistant text. Absence means the
+// provider did not supply a reliable label, so consumers must treat it as unknown.
+export const TextChannel = Schema.Literals(["analysis", "commentary", "final"])
+export type TextChannel = Schema.Schema.Type<typeof TextChannel>
+
 export interface ToolTextContent extends Schema.Schema.Type<typeof ToolTextContent> {}
 export const ToolTextContent = Schema.Struct({
   type: Schema.Literal("text"),

@@ -6,6 +6,7 @@ import type {
   SessionMessageUser,
 } from "@opencode-ai/client/promise"
 import type { AssistantMessage, FilePart, Message, Part, ToolPart, UserMessage } from "@openctrlc/sdk/v2"
+import type { TextChannel } from "@openctrlc/schema/llm"
 import { Option, Schema } from "effect"
 
 const emptyTokens = { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } }
@@ -267,7 +268,12 @@ function assistantParts(sessionID: string, message: SessionMessageAssistant): Pa
   const ordinals = { text: 0, reasoning: 0 }
   return message.content.flatMap((content): Part[] => {
     if (content.type === "text") {
-      const part = textPart(sessionID, message.id, ordinals.text++, content.text)
+      const channel =
+        "channel" in content &&
+        (content.channel === "analysis" || content.channel === "commentary" || content.channel === "final")
+          ? content.channel
+          : undefined
+      const part = textPart(sessionID, message.id, ordinals.text++, content.text, undefined, channel)
       return content.text.trim() ? [part] : []
     }
     if (content.type === "reasoning") {
@@ -289,7 +295,16 @@ function assistantParts(sessionID: string, message: SessionMessageAssistant): Pa
   })
 }
 
-function textPart(sessionID: string, messageID: string, ordinal: number, text: string, synthetic?: boolean): Part {
+type TextPartWithChannel = Extract<Part, { type: "text" }> & { channel?: TextChannel }
+
+function textPart(
+  sessionID: string,
+  messageID: string,
+  ordinal: number,
+  text: string,
+  synthetic?: boolean,
+  channel?: TextChannel,
+): TextPartWithChannel {
   return {
     id: sessionMessagePartID(messageID, "text", ordinal),
     sessionID,
@@ -297,6 +312,7 @@ function textPart(sessionID: string, messageID: string, ordinal: number, text: s
     type: "text",
     text,
     synthetic,
+    channel,
   }
 }
 

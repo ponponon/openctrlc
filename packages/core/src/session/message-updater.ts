@@ -230,7 +230,14 @@ export function update(adapter: Adapter, event: SessionEvent.Event) {
       "session.next.text.started": (event) => {
         return updateOwnedAssistant(event.data.assistantMessageID, (draft) => {
           draft.content.push(
-            castDraft(SessionMessage.AssistantText.make({ type: "text", id: event.data.textID, text: "" })),
+            castDraft(
+              SessionMessage.AssistantText.make({
+                type: "text",
+                id: event.data.textID,
+                text: "",
+                channel: event.data.channel,
+              }),
+            ),
           )
         })
       },

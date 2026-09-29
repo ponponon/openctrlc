@@ -589,7 +589,10 @@ export function MessageTimeline(props: {
   createEffect(() => {
     const currentWorkingMessageID = sessionStatus().type === "idle" ? undefined : activeMessageID()
     if (previousWorkingMessageID && previousWorkingMessageID !== currentWorkingMessageID) {
-      setStepsOpen(previousWorkingMessageID, false)
+      timelineRows().forEach((row) => {
+        if (row._tag === "AssistantSteps" && row.userMessageID === previousWorkingMessageID)
+          setStepsOpen(TimelineRow.key(row), false)
+      })
     }
     previousWorkingMessageID = currentWorkingMessageID
   })
@@ -740,9 +743,10 @@ export function MessageTimeline(props: {
 
       const row = searchIndex >= 0 ? timelineRows()[searchIndex] : undefined
       if (row?._tag === "AssistantSteps") {
+        const key = TimelineRow.key(row)
         const open =
-          stepsOpen[row.userMessageID] ?? (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
-        if (!open) setStepsOpen(row.userMessageID, true)
+          stepsOpen[key] ?? (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
+        if (!open) setStepsOpen(key, true)
       }
       // 工具命中默认收起：先展开目标工具，输出区才有可测的命中节点。
       if (searchMatch) {
@@ -1536,15 +1540,16 @@ export function MessageTimeline(props: {
 
   const renderAssistantSteps = (row: Accessor<TimelineRowMap["AssistantSteps"]>, onSizeChange?: () => void) => {
     const userMessageID = () => row().userMessageID
-    const open = createMemo(() => stepsOpen[userMessageID()] ?? workingTurn(userMessageID()))
-    const duration = createMemo(() => turnDurationLabel(userMessageID()))
+    const key = () => `assistant-steps:${userMessageID()}:${row().stepID}`
+    const open = createMemo(() => stepsOpen[key()] ?? workingTurn(userMessageID()))
+    const duration = createMemo(() => (row().showDuration ? turnDurationLabel(userMessageID()) : undefined))
     const groups = createMemo(() => assistantStepGroups(row().groups))
     createEffect(() => {
       open()
       onSizeChange?.()
     })
     const onOpenChange = (value: boolean) => {
-      setStepsOpen(userMessageID(), value)
+      setStepsOpen(key(), value)
     }
 
     return (

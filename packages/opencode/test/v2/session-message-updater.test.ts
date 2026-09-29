@@ -9,6 +9,43 @@ import { SessionEvent } from "@openctrlc/core/session/event"
 import { SessionMessageUpdater } from "@openctrlc/core/session/message-updater"
 import { SessionMessage } from "@openctrlc/core/session/message"
 
+test("persists a structured assistant text channel from its start event", () => {
+  const sessionID = SessionID.make("session")
+  const assistantMessageID = SessionMessage.ID.create()
+  const state: SessionMessageUpdater.MemoryState = {
+    messages: [
+      SessionMessage.Assistant.make({
+        id: assistantMessageID,
+        type: "assistant",
+        agent: "build",
+        model: { id: ModelV2.ID.make("model"), providerID: ProviderV2.ID.make("provider") },
+        content: [],
+        time: { created: DateTime.makeUnsafe(1) },
+      }),
+    ],
+  }
+
+  Effect.runSync(
+    SessionMessageUpdater.update(SessionMessageUpdater.memory(state), {
+      id: EventV2.ID.create(),
+      type: "session.next.text.started",
+      data: {
+        sessionID,
+        assistantMessageID,
+        timestamp: DateTime.makeUnsafe(2),
+        textID: "text-1",
+        channel: "commentary",
+      },
+    } satisfies SessionEvent.Event),
+  )
+
+  expect(state.messages[0]?.type).toBe("assistant")
+  if (state.messages[0]?.type !== "assistant") return
+  expect(state.messages[0].content).toEqual([
+    { type: "text", id: "text-1", text: "", channel: "commentary" },
+  ])
+})
+
 test.skip("step snapshots carry over to assistant messages", () => {
   const state: SessionMessageUpdater.MemoryState = { messages: [] }
   const sessionID = SessionID.make("session")

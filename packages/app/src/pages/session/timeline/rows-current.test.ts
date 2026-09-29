@@ -45,8 +45,126 @@ describe("current session timeline rows", () => {
 
     expect(result.rows.map(TimelineRow.key)).toEqual([
       "user-message:msg_user",
-      "assistant-steps:msg_user",
+      "assistant-steps:msg_user:msg_assistant:reasoning:0",
       "assistant-part:msg_user:msg_assistant:text:0",
+    ])
+  })
+
+  test("keeps unclassified text visible around folded process groups", () => {
+    const source = [
+      { id: "msg_user", type: "user", text: "inspect", time: { created: 1 } },
+      {
+        id: "msg_assistant",
+        type: "assistant",
+        agent: "build",
+        model: { id: "model", providerID: "provider" },
+        content: [
+          { type: "text", text: "The likely cause is already clear." },
+          { type: "reasoning", text: "I am checking one detail." },
+          { type: "text", text: "That confirms it." },
+        ],
+        time: { created: 2, completed: 3 },
+      },
+    ] satisfies SessionMessageInfo[]
+    const normalized = normalizeSessionMessages("ses_1", source)
+    const messages = new Map(normalized.messages.map((message) => [message.id, message]))
+
+    const result = Timeline.constructSessionMessageRows(
+      source,
+      (messageID) => messages.get(messageID),
+      (messageID) => normalized.parts.get(messageID) ?? [],
+      true,
+      "idle",
+      true,
+      normalized.messages.filter((message) => message.role === "user"),
+    )
+
+    expect(result.rows.map(TimelineRow.key)).toEqual([
+      "user-message:msg_user",
+      "assistant-part:msg_user:msg_assistant:text:0",
+      "assistant-steps:msg_user:msg_assistant:reasoning:0",
+      "assistant-part:msg_user:msg_assistant:text:1",
+    ])
+  })
+
+  test("folds only provider-labeled analysis and commentary text in chronological runs", () => {
+    const source = [
+      { id: "msg_user", type: "user", text: "inspect", time: { created: 1 } },
+      {
+        id: "msg_assistant",
+        type: "assistant",
+        agent: "build",
+        model: { id: "model", providerID: "provider" },
+        content: [
+          { type: "text", text: "I will inspect the issue first.", channel: "commentary" },
+          { type: "reasoning", text: "Compare the two values." },
+          { type: "text", text: "The root cause is a missing field.", channel: "final" },
+          { type: "text", text: "Older unmarked text stays visible." },
+          { type: "text", text: "Internal labeled note.", channel: "analysis" },
+        ],
+        time: { created: 2, completed: 3 },
+      },
+    ] as unknown as SessionMessageInfo[]
+    const normalized = normalizeSessionMessages("ses_1", source)
+    const messages = new Map(normalized.messages.map((message) => [message.id, message]))
+
+    const result = Timeline.constructSessionMessageRows(
+      source,
+      (messageID) => messages.get(messageID),
+      (messageID) => normalized.parts.get(messageID) ?? [],
+      true,
+      "idle",
+      true,
+      normalized.messages.filter((message) => message.role === "user"),
+    )
+
+    expect(result.rows.map(TimelineRow.key)).toEqual([
+      "user-message:msg_user",
+      "assistant-steps:msg_user:msg_assistant:text:0",
+      "assistant-part:msg_user:msg_assistant:text:1",
+      "assistant-part:msg_user:msg_assistant:text:2",
+      "assistant-steps:msg_user:msg_assistant:text:3",
+    ])
+    expect(result.rows.filter((row) => row._tag === "AssistantSteps").map((row) => row.showDuration)).toEqual([
+      true,
+      false,
+    ])
+  })
+
+  test("keeps explicit process folding enabled for interrupted responses", () => {
+    const source = [
+      { id: "msg_user", type: "user", text: "inspect", time: { created: 1 } },
+      {
+        id: "msg_assistant",
+        type: "assistant",
+        agent: "build",
+        model: { id: "model", providerID: "provider" },
+        content: [
+          { type: "text", text: "The likely cause is clear." },
+          { type: "reasoning", text: "Checking the last detail." },
+        ],
+        error: { type: "MessageAbortedError", message: "interrupted" },
+        time: { created: 2, completed: 3 },
+      },
+    ] satisfies SessionMessageInfo[]
+    const normalized = normalizeSessionMessages("ses_1", source)
+    const messages = new Map(normalized.messages.map((message) => [message.id, message]))
+
+    const result = Timeline.constructSessionMessageRows(
+      source,
+      (messageID) => messages.get(messageID),
+      (messageID) => normalized.parts.get(messageID) ?? [],
+      true,
+      "idle",
+      true,
+      normalized.messages.filter((message) => message.role === "user"),
+    )
+
+    expect(result.rows.map(TimelineRow.key)).toEqual([
+      "user-message:msg_user",
+      "assistant-part:msg_user:msg_assistant:text:0",
+      "assistant-steps:msg_user:msg_assistant:reasoning:0",
+      "turn-divider:msg_user:interrupted",
     ])
   })
 
@@ -90,7 +208,7 @@ describe("current session timeline rows", () => {
       "assistant-part:msg_1:msg_2:text:0",
       "turn-gap:msg_3",
       "user-message:msg_3",
-      "assistant-part:msg_3:msg_4:reasoning:0",
+      "assistant-steps:msg_3:msg_4:reasoning:0",
     ])
   })
 

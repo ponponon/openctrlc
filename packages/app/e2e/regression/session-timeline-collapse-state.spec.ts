@@ -180,6 +180,35 @@ test.describe("regression: session timeline local row state", () => {
       .toBeLessThan(24)
   })
 
+  test("collapses interrupted process while keeping assistant text visible", async ({ page }) => {
+    const events: EventPayload[] = []
+    const interruptedMessage = {
+      ...assistantMessage,
+      info: {
+        ...assistantMessage.info,
+        error: { name: "MessageAbortedError", data: { message: "Stopped" } },
+      },
+      parts: [editPart, streamedTextPart],
+    }
+    await mockServer(page, events, [userMessage, interruptedMessage])
+    await configurePage(page)
+
+    await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
+    await expectSessionTitle(page, title)
+
+    const steps = page.locator('[data-slot="session-turn-steps"]').first()
+    const trigger = steps.locator('[data-slot="collapsible-trigger"]').first()
+    await expectAppVisible(steps)
+    await expect(trigger).toHaveAttribute("aria-expanded", "false")
+    await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
+    await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(
+      streamedTextPart.text,
+    )
+
+    await trigger.click()
+    await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  })
+
   test("does not remount an edit diff when sibling parts or diff counts update", async ({ page }) => {
     const events: EventPayload[] = []
     await installDiffProbe(page)
@@ -211,7 +240,7 @@ test.describe("regression: session timeline local row state", () => {
     expect(siblingProbe).toEqual({
       fileMarker: "before",
       frameMarker: "before",
-      rowKey: `assistant-steps:${userMessageID}`,
+      rowKey: `assistant-steps:${userMessageID}:part:${assistantMessageID}:${editPartID}`,
       rowMarker: "before",
       shadowRoots: 0,
       toolMarker: "before",
@@ -232,7 +261,7 @@ test.describe("regression: session timeline local row state", () => {
     expect(await readDiffProbe(page)).toEqual({
       fileMarker: "before",
       frameMarker: "before",
-      rowKey: `assistant-steps:${userMessageID}`,
+      rowKey: `assistant-steps:${userMessageID}:part:${assistantMessageID}:${editPartID}`,
       rowMarker: "before",
       shadowRoots: 0,
       toolMarker: "before",
