@@ -162,12 +162,28 @@ type PermissionResponse = {
 
 async function configureServers(page: Page, tabs: { type: "session"; server: string; sessionId: string }[] = []) {
   await page.addInitScript(
-    ({ serverB, tabs }) => {
+    ({ serverB, directoryA, directoryB, tabs, acceptKeyA, acceptKeyB }) => {
       localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
       localStorage.setItem("openctrlc.global.dat:server", JSON.stringify({ list: [serverB] }))
+      // These tests verify turning auto-accept on, so begin from an explicit off state.
+      localStorage.setItem(
+        `openctrlc.global.dat:local\u0000permission`,
+        JSON.stringify({ autoAccept: { [acceptKeyA]: false } }),
+      )
+      localStorage.setItem(
+        `openctrlc.global.dat:${serverB}\u0000permission`,
+        JSON.stringify({ autoAccept: { [acceptKeyB]: false } }),
+      )
       localStorage.setItem("openctrlc.window.browser.dat:tabs", JSON.stringify(tabs))
     },
-    { serverB, tabs },
+    {
+      serverB,
+      directoryA,
+      directoryB,
+      tabs,
+      acceptKeyA: `${base64Encode(directoryA)}/*`,
+      acceptKeyB: `${base64Encode(directoryB)}/*`,
+    },
   )
 }
 

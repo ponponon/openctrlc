@@ -2,7 +2,8 @@ import { expect, test } from "bun:test"
 
 const read = (path: string) => Bun.file(path).text()
 const legacyPersistenceKey = /opencode\.[A-Za-z0-9_.-]+\.dat(?::[A-Za-z0-9_.-]+)?/g
-const persistenceKey = /(?:openctrlc|opencode)\.[A-Za-z0-9_.-]+\.dat(?::[A-Za-z0-9_.-]+)?/g
+const persistenceKey =
+  /(?:openctrlc|opencode)\.[A-Za-z0-9_.-]+\.dat(?::(?:[A-Za-z0-9_.-]+(?:\\u0000[A-Za-z0-9_.-]+)?|\$\{[^}]+\}\\u0000[A-Za-z0-9_.-]+))?/g
 
 test("uses the OpenCtrlC Vite server contract", async () => {
   const env = await read("./src/env.d.ts")
@@ -68,7 +69,12 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     ["e2e/regression/project-picker-recent-search.spec.ts", ["openctrlc.global.dat:server"]],
     [
       "e2e/regression/remote-session-settings.spec.ts",
-      ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
+      [
+        "openctrlc.global.dat:server",
+        "openctrlc.global.dat:local\\u0000permission",
+        "openctrlc.global.dat:${serverB}\\u0000permission",
+        "openctrlc.window.browser.dat:tabs",
+      ],
     ],
     ["e2e/regression/remote-tab-busy.spec.ts", ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"]],
     [
@@ -85,6 +91,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
       "e2e/regression/review-state-persistence.spec.ts",
       ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
     ],
+    ["e2e/regression/session-request-docks.spec.ts", ["openctrlc.global.dat:local\\u0000permission"]],
     ["e2e/regression/review-terminal-stacked.spec.ts", ["openctrlc.global.dat:layout"]],
     ["e2e/regression/session-list-path-loading.spec.ts", ["openctrlc.global.dat:server"]],
     [
@@ -172,7 +179,6 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     "e2e/regression/prompt-thinking-level.spec.ts",
     "e2e/regression/review-image-flash.spec.ts",
     "e2e/regression/review-line-comment.spec.ts",
-    "e2e/regression/session-request-docks.spec.ts",
     "e2e/regression/session-search-tool-hit.spec.ts",
     "e2e/regression/session-timeline-accessibility.spec.ts",
     "e2e/regression/session-timeline-collapse-state.spec.ts",

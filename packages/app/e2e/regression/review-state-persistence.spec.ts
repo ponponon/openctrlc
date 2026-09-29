@@ -17,7 +17,7 @@ test("restores review mode and selected file per session", async ({ page }) => {
   await setup(page)
   await page.goto(sessionHref(sessionA))
   await expectSessionTitle(page, titleA)
-  await page.getByRole("button", { name: "Toggle review" }).click()
+  await openReview(page)
 
   await selectMode(page, "Git changes", "Branch changes")
   await selectFile(page, "beta.ts")
@@ -47,6 +47,13 @@ test("restores review mode and selected file per session", async ({ page }) => {
 async function selectMode(page: Page, current: string, next: string) {
   await page.getByRole("button", { name: current }).click()
   await page.getByRole("option", { name: next }).dispatchEvent("click")
+}
+
+async function openReview(page: Page) {
+  const toggle = page.getByRole("button", { name: "Toggle review" })
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click()
+  const reviewTab = page.locator("#session-side-panel-review-tab")
+  if ((await reviewTab.getAttribute("data-selected")) !== "") await reviewTab.click()
 }
 
 async function selectFile(page: Page, file: string) {

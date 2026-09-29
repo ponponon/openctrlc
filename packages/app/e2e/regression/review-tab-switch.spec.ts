@@ -27,8 +27,10 @@ test("keeps the v2 review pane mounted when switching session tabs in a workspac
   await page.goto(sessionHref(sessionA))
   await expectSessionTitle(page, titleA)
 
-  await page.getByRole("button", { name: "Toggle review" }).click()
+  const toggle = page.getByRole("button", { name: "Toggle review" })
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click()
   const reviewTab = page.locator("#session-side-panel-review-tab")
+  if ((await reviewTab.getAttribute("data-selected")) !== "") await reviewTab.click()
   const reviewTabPanel = page.locator("#session-side-panel-review-tabpanel")
   await expect(reviewTab).toHaveAttribute("aria-controls", "session-side-panel-review-tabpanel")
   await expect(reviewTabPanel).toHaveAttribute("id", "session-side-panel-review-tabpanel")
