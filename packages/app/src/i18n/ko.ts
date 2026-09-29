@@ -472,7 +472,8 @@ export const dict = {
   "context.rawMessages.chart.description.cumTokens": "세션 시작부터 현재 메시지까지의 누적 토큰",
   "context.rawMessages.chart.description.genRate":
     "출력 + 추론 토큰 ÷ 순수 생성 시간으로, 모델의 실제 출력 속도에 더 가깝습니다",
-  "context.rawMessages.chart.description.genDuration": "처음부터 끝까지의 순수 생성 시간이며 대기 및 도구 실행은 제외합니다",
+  "context.rawMessages.chart.description.genDuration":
+    "처음부터 끝까지의 순수 생성 시간이며 대기 및 도구 실행은 제외합니다",
   "context.rawMessages.chart.description.ttft": "메시지 생성부터 첫 생성 토큰까지의 대기 시간",
   "context.rawMessages.chart.compareLabel": "비교 지표",
   "context.rawMessages.chart.compare.none": "없음",

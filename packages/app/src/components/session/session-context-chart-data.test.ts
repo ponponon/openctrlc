@@ -140,10 +140,7 @@ describe("chart data", () => {
   })
 
   test("cumulative metrics track running totals", () => {
-    const entries = buildChartEntries(
-      [message({ id: "a", cost: 0.1 }), message({ id: "b", cost: 0.25 })],
-      () => "m",
-    )
+    const entries = buildChartEntries([message({ id: "a", cost: 0.1 }), message({ id: "b", cost: 0.25 })], () => "m")
     expect(entries[0].cumCost).toBeCloseTo(0.1)
     expect(entries[1].cumCost).toBeCloseTo(0.35)
     expect(metricValue(entries[1], "cumCost")).toBeCloseTo(0.35)

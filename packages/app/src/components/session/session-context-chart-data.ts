@@ -205,7 +205,9 @@ export function applyRange(entries: ChartEntry[], range: ChartRange) {
 export function movingAverage(values: (number | undefined)[], window: number) {
   if (window <= 1) return values.map((value) => value)
   return values.map((_, index) => {
-    const slice = values.slice(Math.max(0, index - window + 1), index + 1).filter((value): value is number => value !== undefined)
+    const slice = values
+      .slice(Math.max(0, index - window + 1), index + 1)
+      .filter((value): value is number => value !== undefined)
     if (slice.length === 0) return undefined
     return slice.reduce((sum, value) => sum + value, 0) / slice.length
   })
@@ -215,7 +217,15 @@ export function summarize(values: number[], messageIDs: string[]): ChartSummary 
   const sorted = [...values].sort((a, b) => a - b)
   const count = sorted.length
   if (count === 0)
-    return { count: 0, sum: undefined, average: undefined, median: undefined, p90: undefined, maximum: undefined, peakMessageID: undefined }
+    return {
+      count: 0,
+      sum: undefined,
+      average: undefined,
+      median: undefined,
+      p90: undefined,
+      maximum: undefined,
+      peakMessageID: undefined,
+    }
   const maximum = sorted[count - 1]
   const middle = Math.floor(count / 2)
   return {
@@ -256,11 +266,7 @@ export function modelList(entries: ChartEntry[], colors: string[]) {
   }))
 }
 
-export function modelSummaries(
-  entries: ChartEntry[],
-  colors: string[],
-  metric: ChartMetric,
-): ModelSummary[] {
+export function modelSummaries(entries: ChartEntry[], colors: string[], metric: ChartMetric): ModelSummary[] {
   return modelList(entries, colors).map((model) => {
     const points = model.entries
       .map((entry) => ({ entry, value: metricValue(entry, metric) }))
@@ -320,7 +326,9 @@ export function chartCSV(
       created,
       entry.modelLabel,
       metricValue(entry, metric)?.toFixed(METRIC_DEFS[metric].fractionDigits) ?? "",
-      ...(compareMetric && compareLabel ? [metricValue(entry, compareMetric)?.toFixed(METRIC_DEFS[compareMetric].fractionDigits) ?? ""] : []),
+      ...(compareMetric && compareLabel
+        ? [metricValue(entry, compareMetric)?.toFixed(METRIC_DEFS[compareMetric].fractionDigits) ?? ""]
+        : []),
       entry.durationMs === undefined ? "" : (entry.durationMs / 1000).toFixed(1),
       entry.generationMs === undefined ? "" : (entry.generationMs / 1000).toFixed(1),
       entry.ttftMs === undefined ? "" : (entry.ttftMs / 1000).toFixed(2),
@@ -336,7 +344,10 @@ export function chartCSV(
     ]
     return row.map((cell) => (/[",\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell)).join(",")
   })
-  return [headers.map((cell) => (/[",\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell)).join(","), ...rows].join("\n")
+  return [
+    headers.map((cell) => (/[",\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell)).join(","),
+    ...rows,
+  ].join("\n")
 }
 
 export function downloadTextFile(filename: string, content: string, type = "text/csv;charset=utf-8") {
@@ -376,10 +387,7 @@ export function percentileOf(sorted: number[], p: number) {
   return sorted[low] + (sorted[high] - sorted[low]) * (rank - low)
 }
 
-export function histogram(
-  points: { value: number; modelKey: string }[],
-  binCount = 12,
-): HistogramBin[] {
+export function histogram(points: { value: number; modelKey: string }[], binCount = 12): HistogramBin[] {
   if (points.length === 0) return []
   const values = points.map((point) => point.value)
   const min = Math.min(...values)
