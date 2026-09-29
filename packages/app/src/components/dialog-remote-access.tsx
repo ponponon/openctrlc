@@ -191,14 +191,21 @@ export function DialogRemoteAccess() {
                       <For each={state.authorizedViewers}>
                         {(viewer) => (
                           <div class="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-v2-background-bg-base p-3">
-                            <div class="min-w-0">
-                              <div class="truncate text-14-medium text-v2-text-text-strong">
+                            <div class="min-w-0 flex-1">
+                              <div
+                                class="truncate text-14-medium text-v2-text-text-strong"
+                                title={`${viewer.device} · #${viewer.id.slice(0, 6)}`}
+                              >
                                 {viewer.device} · #{viewer.id.slice(0, 6)}
                               </div>
                             </div>
                             <ButtonV2
                               size="small"
                               variant="danger"
+                              class="shrink-0 whitespace-nowrap"
+                              aria-label={`${language.t(
+                                revokingViewer() === viewer.id ? "remoteAccess.revoking" : "remoteAccess.revoke",
+                              )} ${viewer.device} #${viewer.id.slice(0, 6)}`}
                               disabled={revokingViewer() === viewer.id}
                               onClick={() => void revokeViewer(viewer.id)}
                             >
