@@ -10,13 +10,20 @@ import { SessionTable } from "@openctrlc/core/session/sql"
 import { Database } from "@openctrlc/core/database/database"
 import { AccountV2 } from "@openctrlc/core/account"
 import { AccountTable } from "@openctrlc/core/account/sql"
+import { SessionV1 } from "@openctrlc/core/v1/session"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { Worktree } from "../../src/worktree"
 import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, TestInstance } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 import { httpApiLayer, requestInDirectory } from "./httpapi-layer"
 
-const it = testEffect(Layer.mergeAll(LayerNode.compile(LayerNode.group([Session.node, Database.node])), httpApiLayer))
+const it = testEffect(
+  Layer.mergeAll(
+    LayerNode.compile(LayerNode.group([Session.node, Database.node, EventV2Bridge.node])),
+    httpApiLayer,
+  ),
+)
 const testWorktreeMutations = process.platform === "win32" ? it.instance.skip : it.instance
 
 function request(path: string, directory: string, init: RequestInit = {}) {
@@ -265,6 +272,46 @@ describe("experimental HttpApi", () => {
         expect((yield* json<Session.GlobalInfo[]>(next)).map((session) => session.id)).toContain(first.id)
       }),
     { git: true, config: { formatter: false, lsp: false } },
+  )
+
+  it.instance(
+    "replays durable V1 message events from session log",
+    () =>
+      Effect.gen(function* () {
+        const tmp = yield* TestInstance
+        const session = yield* createSession({ title: "log-replay" })
+        const events = yield* EventV2Bridge.Service
+        yield* events.publish(SessionV1.Event.MessageUpdated, {
+          sessionID: session.id,
+          info: {
+            id: "msg-log-1",
+            sessionID: session.id,
+            role: "user",
+            time: { created: 1 },
+            agent: "build",
+            model: { providerID: "provider", modelID: "model" },
+          },
+        } as never)
+
+        const path = ExperimentalPaths.sessionLog.replace(":sessionID", session.id)
+        const response = yield* request(`${path}?follow=false`, tmp.directory)
+        expect(response.status).toBe(200)
+        expect(response.headers["content-type"]).toContain("text/event-stream")
+        const body = yield* response.text
+        expect(body).toContain("message.updated")
+        expect(body).toContain("msg-log-1")
+        expect(body).toContain('"seq"')
+      }),
+    { config: { formatter: false, lsp: false } },
+  )
+
+  it.instance("returns 404 for session log of a missing session", () =>
+    Effect.gen(function* () {
+      const tmp = yield* TestInstance
+      const path = ExperimentalPaths.sessionLog.replace(":sessionID", "ses_missing")
+      const response = yield* request(`${path}?follow=false`, tmp.directory)
+      expect(response.status).toBe(404)
+    }),
   )
 
   testWorktreeMutations(

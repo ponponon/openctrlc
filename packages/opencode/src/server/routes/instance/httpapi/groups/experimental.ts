@@ -98,6 +98,7 @@ export const ExperimentalPaths = {
   worktreeReset: "/experimental/worktree/reset",
   session: "/experimental/session",
   sessionBackground: "/experimental/session/:sessionID/background",
+  sessionLog: "/experimental/session/:sessionID/log",
   resource: "/experimental/resource",
 } as const
 
@@ -243,6 +244,23 @@ export const ExperimentalApi = HttpApi.make("experimental")
             summary: "Background subagents",
             description:
               "Detach any synchronous subagents currently blocking the session and continue them in the background.",
+          }),
+        ),
+        HttpApiEndpoint.get("sessionLog", ExperimentalPaths.sessionLog, {
+          params: { sessionID: SessionID },
+          query: {
+            ...WorkspaceRoutingQueryFields,
+            after: Schema.optional(Schema.NumberFromString),
+            follow: Schema.optional(QueryBoolean),
+          },
+          success: Schema.String.pipe(HttpApiSchema.asText({ contentType: "text/event-stream" })),
+          error: HttpApiError.NotFound,
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "experimental.session.log",
+            summary: "Replay session message log",
+            description:
+              "Replay durable V1 session message events after an exclusive aggregate sequence, then optionally continue with new events.",
           }),
         ),
         HttpApiEndpoint.get("resource", ExperimentalPaths.resource, {

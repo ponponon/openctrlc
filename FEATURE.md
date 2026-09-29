@@ -2331,6 +2331,13 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 3. **可行的游标路径（推荐）**：在 server 实现 `/api/experimental/session/:id/log`，用 `EventV2.durable` 回放 **V1 持久事件**（`message.updated` 等）喂 `apply()`，或回放 vendored 口径的 `session.*` 事件喂 `applyV2`。避免在客户端写 `session.next.* → session.*` 的有损映射。
 4. Delta 事件（`message.part.delta` / `session.*.delta`）设计为 live-only，回放应以 `*.ended` / `message.part.updated` 全量边界为准。
 
+## 会话消息日志回放端点（session.log）
+
+- 端点：`GET /api/experimental/session/:sessionID/log?after=&follow=`（SSE）。`after` 为聚合序号（exclusive，默认 -1）；`follow` 默认 true（回放后继续接实时），`false` 则回放到请求时刻的 high-water mark 后关闭。
+- 行为：用 `EventV2.durable` 从事件库回放 **V1 持久消息事件**（`message.updated` / `message.removed` / `message.part.updated` / `message.part.removed`），每条 SSE JSON 含 `id` / `type` / `data` / `durable{aggregateID,seq,version}`，可直接喂客户端 `apply()`，并用 `durable.seq` 记录 lastSeq。
+- 实现：`packages/opencode/src/server/routes/instance/httpapi/groups/experimental.ts`（`sessionLog`）、`handlers/experimental.ts`（`ExperimentalHttpApi.sessionLog`）。测试见 `test/server/httpapi-experimental.test.ts`。
+- 边界：当前只回放 V1 `message.*`（时间线 parts/messages 的权威源）；`session.next.*` 仍不接入（见上文契约分裂）。客户端 `catchUpAfterReconnect` 尚未改走该端点，仍用 force sync；接入 lastSeq 后可把长会话补拉从整页快照降为增量。
+
 ## 官网用户交流群入口
 
 ### 功能目标

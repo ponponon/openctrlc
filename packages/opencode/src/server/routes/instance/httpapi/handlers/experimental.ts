@@ -4,6 +4,7 @@ import { BackgroundJob } from "@/background/job"
 import { Config } from "@/config/config"
 import { InstanceState } from "@/effect/instance-state"
 import { RuntimeFlags } from "@/effect/runtime-flags"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { MCP } from "@/mcp"
 import { Project } from "@/project/project"
 import { Session } from "@/session/session"
@@ -11,11 +12,34 @@ import type { SessionID } from "@/session/schema"
 import { ToolJsonSchema } from "@/tool/json-schema"
 import { ToolRegistry } from "@/tool/registry"
 import { Worktree } from "@/worktree"
-import { Effect, Option } from "effect"
+import { Database } from "@openctrlc/core/database/database"
+import { EventV2 } from "@openctrlc/core/event"
+import { Effect, Option, Stream } from "effect"
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
 import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
+import * as Sse from "effect/unstable/encoding/Sse"
 import { InstanceHttpApi } from "../api"
 import { ConsoleSwitchPayload, SessionListQuery, ToolListQuery, WorktreeApiError } from "../groups/experimental"
+
+const V1_MESSAGE_EVENT_TYPES = new Set([
+  "message.updated",
+  "message.removed",
+  "message.part.updated",
+  "message.part.removed",
+])
+
+function isV1MessageEvent(event: EventV2.Payload) {
+  return V1_MESSAGE_EVENT_TYPES.has(event.type)
+}
+
+function logEventData(data: unknown): Sse.Event {
+  return {
+    _tag: "Event",
+    event: "message",
+    id: undefined,
+    data: JSON.stringify(data),
+  }
+}
 
 function mapWorktreeError<A, R>(self: Effect.Effect<A, Worktree.Error, R>) {
   return self.pipe(
@@ -35,6 +59,8 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
     const sessions = yield* Session.Service
     const background = yield* BackgroundJob.Service
     const flags = yield* RuntimeFlags.Service
+    const events = yield* EventV2Bridge.Service
+    const { db } = yield* Database.Service
 
     const capabilities = Effect.fn("ExperimentalHttpApi.capabilities")(function* () {
       return { backgroundSubagents: flags.experimentalBackgroundSubagents }
@@ -171,6 +197,59 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
       return promoted.some((job) => job !== undefined)
     })
 
+    const sessionLog = Effect.fn("ExperimentalHttpApi.sessionLog")(function* (ctx: {
+      params: { sessionID: SessionID }
+      query: { after?: string | number; follow?: string | boolean }
+    }) {
+      const after = ctx.query.after === undefined ? -1 : Number(ctx.query.after)
+      const follow = ctx.query.follow === undefined ? true : ctx.query.follow === true || ctx.query.follow === "true"
+      if (Number.isNaN(after) || after < -1) return yield* new HttpApiError.NotFound({})
+
+      const sessionID = ctx.params.sessionID
+      yield* sessions.get(sessionID).pipe(Effect.catch(() => Effect.fail(new HttpApiError.NotFound({}))))
+
+      // Capture the high-water mark so follow=false can close after the
+      // historical page instead of hanging on the live tail.
+      const startSeq = yield* EventV2.latestSequence(db, sessionID)
+      const empty = HttpServerResponse.stream(Stream.empty as Stream.Stream<Uint8Array>, {
+        contentType: "text/event-stream",
+        headers: {
+          "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
+          "X-Content-Type-Options": "nosniff",
+        },
+      })
+      if (!follow && startSeq <= after) {
+        yield* Effect.logInfo("session log connected", { sessionID, after, follow, empty: true })
+        return empty
+      }
+
+      const source = events.durable({ aggregateID: sessionID, after }).pipe(
+        Stream.takeUntil((event) => !follow && (event.durable?.seq ?? -1) >= startSeq),
+        Stream.filter(isV1MessageEvent),
+        Stream.map((event) => ({
+          id: event.id,
+          type: event.type,
+          data: event.data,
+          durable: event.durable,
+        })),
+        Stream.map(logEventData),
+        Stream.pipeThroughChannel(Sse.encode()),
+        Stream.encodeText,
+        Stream.ensuring(Effect.logInfo("session log disconnected", { sessionID, after, follow })),
+      )
+
+      yield* Effect.logInfo("session log connected", { sessionID, after, follow })
+      return HttpServerResponse.stream(source, {
+        contentType: "text/event-stream",
+        headers: {
+          "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
+          "X-Content-Type-Options": "nosniff",
+        },
+      })
+    })
+
     const resource = Effect.fn("ExperimentalHttpApi.resource")(function* () {
       return yield* mcp.resources()
     })
@@ -188,6 +267,7 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
       .handle("worktreeReset", worktreeReset)
       .handle("session", session)
       .handle("sessionBackground", sessionBackground)
+      .handleRaw("sessionLog", sessionLog)
       .handle("resource", resource)
   }),
 )
