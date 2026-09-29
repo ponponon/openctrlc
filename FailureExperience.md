@@ -1001,3 +1001,7 @@ Linux 与 Windows 的文件遍历顺序不同，直接把 Glob 扫描结果按�
 ## 远程浏览器不能把本机的空标签状态误认为没有工作区
 
 Relay 代理到的是同一个桌面本地服务器，会话记录和消息并没有分叉；真正分离的是 App 客户端状态：打开项目保存在各自浏览器/窗口的持久化存储中，打开会话标签也按窗口保存。新手机没有桌面浏览器的 localStorage，因此首页用空项目集过滤了服务器已有会话，造成“项目和会话都不存在”的假象。以后遇到桌面与远程列表不一致，先区分服务器数据与客户端工作区视图，不要误判为会话丢失或先改数据库。远程模式应在授权后安全传递打开项目、会话 ID 和当前会话索引；不要把路径/会话 ID 放进公开 QR URL，也不要传提示词、草稿或消息正文。Relay 对该索引只做会话内存缓存，并在产品文档中说明路径和 ID 对中继运营方可见。刷新时需要重新读取最新索引；消息与运行状态始终由同一桌面服务器提供。桌面端的持久化状态采用异步恢复，发送首个快照前必须等项目状态和会话标签都 ready，不能让启动时的临时空列表覆盖已有工作区。
+
+## 新增 HttpApi 路由必须同步加入 exerciser
+
+发布 CI 的 `test:httpapi --fail-on-missing` 因 `GET /experimental/session/{sessionID}/log` 没有对应 scenario 失败。实现并公开新的 `HttpApi` 路由时，不能只更新 handler、schema 和生成客户端；必须在 `packages/opencode/test/server/httpapi-exercise/index.ts` 里添加与路由契约匹配的覆盖场景。本次 session log 场景验证 SSE content type 和终止同步标记 `log.synced`。新增路由后应在 `packages/opencode` 目录运行 `bun run test:httpapi`，并检查 coverage 模式的 `missing=0`。

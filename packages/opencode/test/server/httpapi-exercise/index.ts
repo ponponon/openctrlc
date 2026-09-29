@@ -593,6 +593,23 @@ const scenarios: Scenario[] = [
     .json(200, (body) => {
       check(body === false, "background route should be a no-op without running subagents")
     }),
+  http.protected
+    .get("/experimental/session/{sessionID}/log", "experimental.session.log")
+    .stream()
+    .seeded((ctx) => ctx.session({ title: "Session log route owner" }))
+    .at((ctx) => ({
+      path: `${route("/experimental/session/{sessionID}/log", { sessionID: ctx.state.id })}?after=0&follow=false`,
+      headers: ctx.headers(),
+    }))
+    .status(
+      200,
+      (_ctx, result) =>
+        Effect.sync(() => {
+          check(result.contentType.includes("text/event-stream"), "session log should return an SSE stream")
+          check(result.text.includes('"type":"log.synced"'), "session log should end with a synchronization marker")
+        }),
+      "status",
+    ),
   http.protected.get("/experimental/resource", "experimental.resource.list").json(),
   http.protected
     .post("/sync/history", "sync.history.list")

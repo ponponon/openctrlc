@@ -2351,6 +2351,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 服务端 `session.log` 增加 `limit` 查询（默认 200，最大 1000）。`follow=false` 时最多返回 `limit` 条 V1 message 事件，末尾追加 `log.synced`：`{ type: "log.synced", aggregateID, seq, more }`，`more=true` 表示后面还有。
 - 客户端 `replayMessageLog` 按 `log.synced.more` 翻页：每页用更新后的 `after` 再拉，直到 `more=false`；最多 100 页防死循环。无 `log.synced` 的旧服务端按单页处理（`more` 视为 false）。
 - `follow=true` 仍为不截断的实时流（catch-up 不用该模式）；`limit` 只约束 `follow=false` 的历史页。
+- `GET /experimental/session/{sessionID}/log` 在 HttpApi exerciser 中覆盖 SSE content type 与 `log.synced` 结束标记，避免公开路由遗漏被 CI 覆盖门禁拦截。
 - 测试：`httpapi-experimental.test.ts`（limit=2 只出 2 条且 `more:true`）、`server-session.test.ts`（两页 logCalls after=5→6）。
 
 ## 假活补拉与重连补拉共用 catchUpSession
@@ -2407,4 +2408,5 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `packages/app`、`packages/desktop`、`packages/remote-relay` 执行各自 typecheck/build。
 - 已运行 `packages/app`、`packages/desktop` 的 typecheck，以及 `packages/remote-relay` 的 Bun bundle 构建，均通过。
 - 生产会话标签切换基准：改动前冷/热首个正确画面中位数为 13.0 ms / 34.3 ms，稳定画面为 33.7 ms / 43.6 ms；改动后分别为 12.8 ms / 30.7 ms 和 32.8 ms / 44.7 ms，没有观察到明显回退。基准中的另一个 review pane 场景仍因既有 `#review-panel` 缺失而失败，与本功能无关。
-- 需要在桌面端和 Relay 更新后手动端到端验收：桌面打开多个项目和会话后，用新配对的空浏览器确认项目、会话标签和当前会话恢复；确认消息和运行状态由同一服务器同步；刷新手机后仍拿到最新桌面快照。当前未部署，因此尚未完成此项验收。
+- Relay 已部署到 `openctrlc-remote.quniv.cn`；生产容器状态为 healthy，私有 `/healthz` 返回成功，公网 HTTPS 页面返回 200 且证书验证通过。
+- 手动端到端验收仍需在 1.1.1 桌面端运行后完成：桌面打开多个项目和会话，用新配对的空浏览器确认项目、会话标签和当前会话恢复；确认消息与运行状态来自同一服务器；刷新手机后仍拿到最新桌面快照。当前桌面进程尚未升级或重启，因此不能声称此项已经通过。
