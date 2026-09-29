@@ -134,8 +134,20 @@ describe("chart data", () => {
   test("metric defs cover rate, cost, and second families", () => {
     expect(METRIC_DEFS.rate.additive).toBe(false)
     expect(METRIC_DEFS.cost.additive).toBe(true)
+    expect(METRIC_DEFS.cumCost.additive).toBe(false)
     expect(METRIC_DEFS.ttft.fractionDigits).toBe(2)
-    expect(Object.keys(METRIC_DEFS)).toHaveLength(12)
+    expect(Object.keys(METRIC_DEFS)).toHaveLength(14)
+  })
+
+  test("cumulative metrics track running totals", () => {
+    const entries = buildChartEntries(
+      [message({ id: "a", cost: 0.1 }), message({ id: "b", cost: 0.25 })],
+      () => "m",
+    )
+    expect(entries[0].cumCost).toBeCloseTo(0.1)
+    expect(entries[1].cumCost).toBeCloseTo(0.35)
+    expect(metricValue(entries[1], "cumCost")).toBeCloseTo(0.35)
+    expect(metricValue(entries[0], "cumTokens")).toBe(365)
   })
 })
 

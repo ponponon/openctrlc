@@ -157,6 +157,25 @@
 - 执行 `bunx playwright test e2e/smoke/session-context-chart.spec.ts`。
 - 手动：拖拽刷选后把手可微调，点空白恢复全量；模型对比卡显示成本占比条。
 
+## 会话图表累计成本、导出区间与快捷键
+
+### 功能目标
+
+把“花了多少钱”和“怎么快速翻图”补齐：累计成本/Token 看会话烧钱曲线，导出标明区间，键盘可盲操。
+
+### 实现范围
+
+- 新增累计成本（USD）与累计 Token 两项指标：从会话首条助手消息起算的 running total，不随范围/模型筛选重置；未完成消息也显示截至当前累计值。CSV 增加 `cum_cost_usd`、`cum_tokens` 两列。
+- 导出菜单文案带区间：可见范围显示 `导出可见 #起–#止（N 条）`，全部显示 `导出全部消息 CSV（N 条）`，避免导出文件与屏幕范围对不上。
+- 新增「快捷键」菜单：←/→ 切点、Enter 打开原始消息、Esc 清刷选、D/M/T/X 切到详情/模型/表/分布。弹窗内 Esc 在有刷选时先清刷选不关窗。
+- 文案四语言同步；e2e 断言累计成本指标与带区间导出文案。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun typecheck` 与 `bun test src/components/session`。
+- 执行 `bunx playwright test e2e/smoke/session-context-chart.spec.ts`。
+- 手动：切到累计成本应单调不减；有刷选时按 Esc 只清选区；导出菜单显示对应条数。
+
 ## 参考桌面项目能力审查与 Windows 系统托盘
 
 ### 参考结论

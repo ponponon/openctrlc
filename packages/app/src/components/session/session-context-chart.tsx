@@ -268,6 +268,19 @@ export function DialogSessionMetricChart(props: {
     )
     downloadTextFile(`session-chart-${state.metric}.csv`, csv)
   }
+  const exportVisibleLabel = () => {
+    const list = analysisEntries()
+    if (!list.length) return language.t("context.rawMessages.chart.exportCsv")
+    const start = list[0]!.sequence
+    const end = list[list.length - 1]!.sequence
+    return language.t("context.rawMessages.chart.exportCsvRange", {
+      start,
+      end,
+      count: list.length,
+    })
+  }
+  const exportAllLabel = () =>
+    language.t("context.rawMessages.chart.exportCsvAllCount", { count: entries().length })
 
   const summaryText = () => {
     const lines = [
@@ -310,7 +323,38 @@ export function DialogSessionMetricChart(props: {
       description={language.t("context.rawMessages.chart.dialogDescription")}
       class="session-context-chart-dialog h-full min-h-0 overflow-hidden"
     >
-      <div class="@container flex h-full min-h-0 flex-col gap-3 px-5 pb-5">
+      <div
+        class="@container flex h-full min-h-0 flex-col gap-3 px-5 pb-5"
+        onKeyDown={(event) => {
+          if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
+          const key = event.key.toLowerCase()
+          if (key === "escape" && state.brush) {
+            event.preventDefault()
+            event.stopPropagation()
+            setBrush(undefined)
+            return
+          }
+          if (key === "d") {
+            event.preventDefault()
+            setState("bottomTab", "detail")
+            return
+          }
+          if (key === "m") {
+            event.preventDefault()
+            setState("bottomTab", "models")
+            return
+          }
+          if (key === "t") {
+            event.preventDefault()
+            setState("bottomTab", "table")
+            return
+          }
+          if (key === "x") {
+            event.preventDefault()
+            setState("bottomTab", "distribution")
+          }
+        }}
+      >
         <div class="flex flex-none flex-col gap-2.5">
           <div
             class="flex min-w-0 max-w-full gap-1 overflow-x-auto overscroll-x-contain rounded-md bg-surface-raised-base p-1"
@@ -612,20 +656,57 @@ export function DialogSessionMetricChart(props: {
               <DropdownMenu.Portal>
                 <DropdownMenu.Content>
                   <DropdownMenu.Item onSelect={() => exportCSV("visible")}>
-                    <DropdownMenu.ItemLabel>
-                      {language.t("context.rawMessages.chart.exportCsv")}
-                    </DropdownMenu.ItemLabel>
+                    <DropdownMenu.ItemLabel>{exportVisibleLabel()}</DropdownMenu.ItemLabel>
                   </DropdownMenu.Item>
                   <DropdownMenu.Item onSelect={() => exportCSV("all")}>
-                    <DropdownMenu.ItemLabel>
-                      {language.t("context.rawMessages.chart.exportCsvAll")}
-                    </DropdownMenu.ItemLabel>
+                    <DropdownMenu.ItemLabel>{exportAllLabel()}</DropdownMenu.ItemLabel>
                   </DropdownMenu.Item>
                   <DropdownMenu.Item onSelect={() => void copySummary()}>
                     <DropdownMenu.ItemLabel>
                       {state.copyState === "done"
                         ? language.t("context.rawMessages.chart.copySummaryDone")
                         : language.t("context.rawMessages.chart.copySummary")}
+                    </DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu>
+
+            <DropdownMenu placement="bottom-end" gutter={4}>
+              <DropdownMenu.Trigger
+                as={Button}
+                size="small"
+                variant="secondary"
+                class="gap-1.5 px-2"
+                aria-label={language.t("context.rawMessages.chart.shortcuts")}
+              >
+                <Icon name="keyboard" size="small" />
+                <span>{language.t("context.rawMessages.chart.shortcuts")}</span>
+                <Icon name="chevron-down" size="small" />
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content>
+                  <DropdownMenu.GroupLabel>
+                    {language.t("context.rawMessages.chart.shortcutsHint")}
+                  </DropdownMenu.GroupLabel>
+                  <DropdownMenu.Item>
+                    <DropdownMenu.ItemLabel>
+                      {language.t("context.rawMessages.chart.shortcut.prev")}
+                    </DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item>
+                    <DropdownMenu.ItemLabel>
+                      {language.t("context.rawMessages.chart.shortcut.activate")}
+                    </DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item>
+                    <DropdownMenu.ItemLabel>
+                      {language.t("context.rawMessages.chart.shortcut.clearBrush")}
+                    </DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item>
+                    <DropdownMenu.ItemLabel>
+                      {language.t("context.rawMessages.chart.shortcut.tabs")}
                     </DropdownMenu.ItemLabel>
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>

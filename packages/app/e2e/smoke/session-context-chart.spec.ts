@@ -56,6 +56,7 @@ test.describe("smoke: session context chart", () => {
     const metricBar = dialog.getByRole("group", { name: "Chart metrics" })
     await expect(metricBar.getByRole("button", { name: "Average rate (Token/s)", exact: true })).toBeVisible()
     await expect(metricBar.getByRole("button", { name: "Cost (USD)", exact: true })).toBeVisible()
+    await expect(metricBar.getByRole("button", { name: "Cumulative cost (USD)", exact: true })).toBeVisible()
     await expect(metricBar.getByRole("button", { name: "Time to first token (s)", exact: true })).toBeVisible()
     await expect(dialog.getByText("P90", { exact: true })).toBeVisible()
     await expect(dialog.getByText(/valid points/i)).toBeVisible()
@@ -72,6 +73,7 @@ test.describe("smoke: session context chart", () => {
     await expect(dialog.getByText("Cost share", { exact: true })).toHaveCount(fixture.expected.modelLabels.length)
 
     await dialog.getByRole("button", { name: "Export", exact: true }).click()
-    await expect(page.getByRole("menuitem", { name: "Export visible CSV" })).toBeVisible()
+    await expect(page.getByRole("menuitem", { name: /^Export visible #\d+–#\d+ \(\d+ msgs\)$/ })).toBeVisible()
+    await expect(page.getByRole("menuitem", { name: /^Export all messages CSV \(\d+ msgs\)$/ })).toBeVisible()
   })
 })

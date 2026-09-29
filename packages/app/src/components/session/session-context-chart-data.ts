@@ -11,6 +11,8 @@ export const CHART_METRICS = [
   "cacheRead",
   "cacheWrite",
   "cost",
+  "cumCost",
+  "cumTokens",
   "duration",
   "genDuration",
   "ttft",
@@ -34,6 +36,8 @@ export const METRIC_DEFS: Record<ChartMetric, ChartMetricDef> = {
   cacheRead: { kind: "tokens", additive: true, fractionDigits: 0 },
   cacheWrite: { kind: "tokens", additive: true, fractionDigits: 0 },
   cost: { kind: "cost", additive: true, fractionDigits: 3 },
+  cumCost: { kind: "cost", additive: false, fractionDigits: 3 },
+  cumTokens: { kind: "tokens", additive: false, fractionDigits: 0 },
   duration: { kind: "seconds", additive: false, fractionDigits: 1 },
   genDuration: { kind: "seconds", additive: false, fractionDigits: 1 },
   ttft: { kind: "seconds", additive: false, fractionDigits: 2 },
@@ -57,6 +61,8 @@ export type ChartEntry = {
   cacheWrite: number
   total: number
   cost: number
+  cumCost: number
+  cumTokens: number
   durationMs?: number
   generationMs?: number
   ttftMs?: number
@@ -98,6 +104,8 @@ export function buildChartEntries(
   messages: Message[],
   modelLabel: (message: AssistantMessage) => string,
 ): ChartEntry[] {
+  let cumCost = 0
+  let cumTokens = 0
   return messages
     .filter((message): message is AssistantMessage => message.role === "assistant")
     .map((message, index) => {
@@ -118,6 +126,10 @@ export function buildChartEntries(
           ? undefined
           : Math.max(0, (message.time.firstGenerated ?? 0) - message.time.created)
       const produced = output + reasoning
+      const total = input + output + reasoning + cacheRead + cacheWrite
+      const cost = tokenCount(message.cost)
+      cumCost += cost
+      cumTokens += total
 
       return {
         message,
@@ -129,8 +141,10 @@ export function buildChartEntries(
         reasoning,
         cacheRead,
         cacheWrite,
-        total: input + output + reasoning + cacheRead + cacheWrite,
-        cost: tokenCount(message.cost),
+        total,
+        cost,
+        cumCost,
+        cumTokens,
         durationMs,
         generationMs,
         ttftMs,
@@ -147,6 +161,8 @@ export function buildChartEntries(
 }
 
 export function metricValue(entry: ChartEntry, metric: ChartMetric) {
+  if (metric === "cumCost") return entry.cumCost
+  if (metric === "cumTokens") return entry.cumTokens
   if (entry.message.time.completed === undefined) return
   if (metric === "rate") return entry.rate
   if (metric === "genRate") return entry.genRate
@@ -294,6 +310,8 @@ export function chartCSV(
     "cache_write_tokens",
     "total_tokens",
     "cost_usd",
+    "cum_cost_usd",
+    "cum_tokens",
   ]
   const rows = entries.map((entry) => {
     const created = new Date(entry.message.time.created).toISOString()
@@ -313,6 +331,8 @@ export function chartCSV(
       String(entry.cacheWrite),
       String(entry.total),
       entry.cost.toFixed(3),
+      entry.cumCost.toFixed(3),
+      String(entry.cumTokens),
     ]
     return row.map((cell) => (/[",\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell)).join(",")
   })
