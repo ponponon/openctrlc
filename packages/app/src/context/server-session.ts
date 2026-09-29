@@ -215,6 +215,9 @@ export function createServerSession(
   const optimistic = new Map<string, Map<string, OptimisticItem>>()
   const v2 = createV2SessionReducer()
   const messageLoads = new Map<string, MessageLoadState>()
+  // High-water mark of durable aggregate seq per session; used to replay only
+  // the gap after an SSE reconnect instead of refetching the whole transcript.
+  const lastSeq = new Map<string, number>()
   const pendingParts = new Map<string, Map<string, Set<string>>>()
   const orphanParts = new Map<string, Set<string>>()
   const orphanPartValues = new Map<string, Map<string, Part>>()
@@ -892,6 +895,36 @@ export function createServerSession(
     await runInflight(inflight, sessionID, () => loadMessages(sessionID, limit))
   }
 
+  // Replay durable V1 message events after lastSeq. Returns false when there is
+  // no cursor yet or the log endpoint is unavailable so the caller can fall back
+  // to a full snapshot sync.
+  const replayMessageLog = async (sessionID: string) => {
+    const after = lastSeq.get(sessionID)
+    if (after === undefined) return false
+    if (!sessionApi?.log) return false
+    if ((await options?.protocol) === "v1") return false
+    try {
+      for await (const item of sessionApi.log({ sessionID, after, follow: false })) {
+        const candidate = item as { type?: unknown; data?: unknown; durable?: { seq?: unknown } }
+        const seq = candidate.durable?.seq
+        if (typeof seq === "number") {
+          const previous = lastSeq.get(sessionID) ?? -1
+          if (seq > previous) lastSeq.set(sessionID, seq)
+        }
+        if (typeof candidate.type === "string" && candidate.data && typeof candidate.data === "object") {
+          try {
+            apply({ type: candidate.type, properties: candidate.data })
+          } catch {
+            // Keep replaying the remaining gap even if one event is stale.
+          }
+        }
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
   // SSE reconnect restores the live stream only; events published while the
   // client was detached never arrive. Force-sync transcripts that still look
   // active so a gap cannot leave the open timeline truncated. A short global
@@ -911,11 +944,19 @@ export function createServerSession(
     for (const [sessionID, items] of Object.entries(data.question)) {
       if (items.length > 0 && hasCache(sessionID)) targets.add(sessionID)
     }
-    return Promise.all([...targets].map((sessionID) => sync(sessionID, { force: true }))).then((result) => {
-      if (targets.size > 0) {
+    return Promise.all(
+      [...targets].map(async (sessionID) => {
+        const replayed = await replayMessageLog(sessionID)
+        if (!replayed) await sync(sessionID, { force: true })
+        return { sessionID, replayed }
+      }),
+    ).then((result) => {
+      if (result.length > 0) {
         console.warn("[global-sdk] reconnect catch-up", {
-          sessions: [...targets],
-          count: targets.size,
+          sessions: result.map((item) => item.sessionID),
+          count: result.length,
+          replayed: result.filter((item) => item.replayed).length,
+          snapshot: result.filter((item) => !item.replayed).length,
         })
       }
       return result
@@ -1000,6 +1041,11 @@ export function createServerSession(
   const applyV2 = (event: OpenCodeEvent) => {
     if (!("data" in event) || !("sessionID" in event.data) || typeof event.data.sessionID !== "string") return
     const sessionID = event.data.sessionID
+    const seq = (event as { durable?: { seq?: unknown } }).durable?.seq
+    if (typeof seq === "number") {
+      const previous = lastSeq.get(sessionID) ?? -1
+      if (seq > previous) lastSeq.set(sessionID, seq)
+    }
     const reduction = v2.reduce(data.session_message[sessionID] ?? [], event)
     if (reduction) {
       projectV2(reduction)

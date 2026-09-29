@@ -2338,6 +2338,13 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 实现：`packages/opencode/src/server/routes/instance/httpapi/groups/experimental.ts`（`sessionLog`）、`handlers/experimental.ts`（`ExperimentalHttpApi.sessionLog`）。测试见 `test/server/httpapi-experimental.test.ts`。
 - 边界：当前只回放 V1 `message.*`（时间线 parts/messages 的权威源）；`session.next.*` 仍不接入（见上文契约分裂）。客户端 `catchUpAfterReconnect` 尚未改走该端点，仍用 force sync；接入 lastSeq 后可把长会话补拉从整页快照降为增量。
 
+## 客户端 lastSeq 游标与增量补拉
+
+- lastSeq：`packages/app/src/context/server-session.ts` 在 `applyV2` 与 `session.log` 回放时记录每个会话的 `durable.seq` 高水位。
+- 补拉顺序：`catchUpAfterReconnect` 对活跃会话优先 `sessionApi.log({ after: lastSeq, follow: false })` 增量回放并 `apply()`；无 lastSeq、无 log API、协议为 v1、或回放失败时回退 `sync({ force: true })` 整页快照。
+- 防抖与范围不变：仍是「有消息缓存且活跃」+ 2s 全局防抖；日志 `reconnect catch-up` 现在带 `replayed` / `snapshot` 计数，可区分走了哪条路径。
+- 单条事件 apply 失败不中断整段回放，避免一条脏事件把缺口补拉打成快照回退。
+
 ## 官网用户交流群入口
 
 ### 功能目标

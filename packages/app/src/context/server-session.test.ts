@@ -1726,4 +1726,82 @@ describe("server session", () => {
     expect(client.requests).toHaveLength(2)
     expect(store.data.part[message.id]).toEqual([textPart(message.id, { text: "after" })])
   })
+
+  test("replays the message log after reconnect when a durable cursor exists", async () => {
+    const user = { id: "msg_user", type: "user", text: "hello", time: { created: 1 } }
+    const listCalls: unknown[] = []
+    const logCalls: unknown[] = []
+    const messageApi = {
+      list: async (input: unknown) => {
+        listCalls.push(input)
+        return { data: [user], cursor: { previous: null, next: null } }
+      },
+    } as unknown as MessageApi
+    const sessionApi = {
+      async get() {
+        return session("root")
+      },
+      log(input: unknown) {
+        logCalls.push(input)
+        return (async function* () {
+          yield {
+            id: "evt-6",
+            type: "message.updated",
+            data: { sessionID: "root", info: userMessage("message-1", { sessionID: "root" }) },
+            durable: { aggregateID: "root", seq: 6, version: 1 },
+          }
+        })()
+      },
+    } as unknown as SessionApi
+    const store = createServerSession({} as OpencodeClient, sessionApi, messageApi)
+    store.remember(session("root"))
+    await store.sync("root")
+    store.applyV2({
+      id: "evt-5",
+      type: "session.text.ended",
+      created: 10,
+      data: { sessionID: "root", assistantMessageID: "a", textID: "t", text: "x" },
+      durable: { aggregateID: "root", seq: 5, version: 1 },
+    } as never)
+    store.apply({ type: "session.status", properties: { sessionID: "root", status: { type: "busy" } } })
+
+    await store.catchUpAfterReconnect()
+
+    expect(logCalls).toEqual([{ sessionID: "root", after: 5, follow: false }])
+    expect(listCalls).toHaveLength(1)
+  })
+
+  test("falls back to snapshot sync when the message log is unavailable", async () => {
+    const user = { id: "msg_user", type: "user", text: "hello", time: { created: 1 } }
+    const listCalls: unknown[] = []
+    const messageApi = {
+      list: async (input: unknown) => {
+        listCalls.push(input)
+        return { data: [user], cursor: { previous: null, next: null } }
+      },
+    } as unknown as MessageApi
+    const sessionApi = {
+      async get() {
+        return session("root")
+      },
+      log() {
+        throw new Error("log unavailable")
+      },
+    } as unknown as SessionApi
+    const store = createServerSession({} as OpencodeClient, sessionApi, messageApi)
+    store.remember(session("root"))
+    await store.sync("root")
+    store.applyV2({
+      id: "evt-5",
+      type: "session.text.ended",
+      created: 10,
+      data: { sessionID: "root", assistantMessageID: "a", textID: "t", text: "x" },
+      durable: { aggregateID: "root", seq: 5, version: 1 },
+    } as never)
+    store.apply({ type: "session.status", properties: { sessionID: "root", status: { type: "busy" } } })
+
+    await store.catchUpAfterReconnect()
+
+    expect(listCalls).toHaveLength(2)
+  })
 })
