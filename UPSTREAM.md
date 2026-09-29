@@ -9,9 +9,9 @@ source of updates.
 - Local exact tag: `base-opencode-7774461`
 - Published marker: `openctrlc-baseline-7774461`
 - Imported: 2026-08-19
-- Reviewed through upstream commit: `b471c2b4495747353af768fbf2e0790c9d820ce2`
-- Last selective sync: 2026-09-28
-- Upstream version at review: `1.18.32`
+- Reviewed through upstream commit: `7945de2089`
+- Last selective sync: 2026-09-29
+- Upstream version at review: `1.18.33`
 - OpenCtrlC version at sync: `1.18.18`
 
 ## Sync policy
@@ -83,6 +83,11 @@ features while preserving OpenCtrlC's independent product code:
   Gemini behavior and OpenCtrlC's provider-specific transform logic.
 - `b471c2b4` reports MCP browser launcher failures even when the launcher exits
   before `open()` returns; the test is adapted to OpenCtrlC's current opener.
+- `35fc7a776c` extracts the provider timeout-aware fetch wrapper and applies it
+  to Cloudflare AI Gateway REST catalog models, preserving configured custom
+  fetches while enforcing header, SSE chunk, and request timeouts. The native
+  passthrough timeout path is deferred below because the local gateway SDK
+  rejects its Anthropic route before dispatch.
 
 ### Statistics hardening
 
@@ -137,3 +142,25 @@ OpenCtrlC-specific adaptation:
   the remaining stats comparison-radar work in `6df0d5d9` is deferred.
 - `fe3f3a41`: upstream release-version sync; OpenCtrlC keeps an independent
   release/version cadence.
+- `35fc7a776c` native Cloudflare AI Gateway passthrough timeout path: with the
+  local `ai-gateway-provider@3.2.0`, Anthropic models are rejected as
+  `anthropic.messages` unsupported before the custom fetch is called. The
+  REST catalog timeout path passes locally; do not enable the binding-based
+  native path until the SDK route and a regression test are resolved.
+- `1eacc1bdb9`: changelog entry for OpenCode-hosted GPT-6 Luna; the hosted model
+  is not an OpenCtrlC provider model.
+- `661b7c5548`, `d6963bdf24`, `03e67171ab`, `ddbeaa17c0`, `725e4ba4b8`,
+  `482a1cdf0d`, `083ed266e0`, `f416138844`, `b76bbb3692`, `3c893f0a16`,
+  `ad6c72c706`, `d1dc00d83d`, `90853b2121`, `8d05153965`, `9f9e73ae0f`:
+  OpenCode Go/Go Plus rankings, product pages, docs, translations, and generated
+  assets; these product surfaces do not exist in OpenCtrlC.
+- `acb6859b06`: usage attribution depends on OpenCode's hosted model catalog and
+  deletes stale `unknown` dimensions from its stats database. OpenCtrlC needs a
+  separate catalog/source and data-migration design before adapting this.
+- `7f964bbb00`: Go ranking tooltip contrast; its CSS patch does not apply cleanly
+  to the locally customized stats chart, so defer rather than transplanting
+  selectors by guesswork.
+- `75e1e7ae31`, `09a3aa0b4c`, `d03d6e28d6`: OpenCode Black subscription,
+  Zen privacy, and referral-program product copy; not applicable to this fork.
+- `90e65205f6`: upstream `1.18.33` release/version synchronization; OpenCtrlC
+  continues to use its own release cadence.

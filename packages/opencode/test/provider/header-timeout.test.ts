@@ -238,6 +238,115 @@ it.live("OpenAI API auth gets default headerTimeout", () =>
   }),
 )
 
+const gatewayModel = "google/gemini-2.5-flash"
+
+it.live("cloudflare-ai-gateway REST catalog applies chunkTimeout when the SSE body stalls", () =>
+  Effect.gen(function* () {
+    yield* provideTmpdirInstance(
+      () =>
+        Effect.gen(function* () {
+          const urls = yield* setupGateway(() =>
+            Promise.resolve(new Response(new ReadableStream(), { headers: { "content-type": "text/event-stream" } })),
+          )
+          const provider = yield* Provider.Service
+          const model = yield* provider.getModel(
+            ProviderV2.ID.make("cloudflare-ai-gateway"),
+            ModelV2.ID.make(gatewayModel),
+          )
+          const result = streamText({
+            model: yield* provider.getLanguage(model),
+            onError() {},
+            messages: [{ role: "user", content: "hello" }],
+          })
+
+          const error = yield* Effect.promise(() => firstStreamError(result.fullStream))
+          expect(urls).toHaveLength(1)
+          expect(error).toBeInstanceOf(ProviderError.ResponseStreamError)
+        }),
+      { config: gatewayConfig({ chunkTimeout: 50 }) },
+    )
+  }),
+)
+
+it.live("cloudflare-ai-gateway applies headerTimeout when response headers do not arrive", () =>
+  Effect.gen(function* () {
+    yield* provideTmpdirInstance(
+      () =>
+        Effect.gen(function* () {
+          const urls = yield* setupGateway(
+            (init) => {
+              return new Promise((_, reject) => {
+                const signal = init?.signal
+                if (!signal) return reject(new Error("timeout signal missing"))
+                if (signal.aborted) return reject(signal.reason)
+                signal.addEventListener("abort", () => reject(signal.reason), { once: true })
+              })
+            },
+          )
+          const provider = yield* Provider.Service
+          const model = yield* provider.getModel(
+            ProviderV2.ID.make("cloudflare-ai-gateway"),
+            ModelV2.ID.make(gatewayModel),
+          )
+          const result = streamText({
+            model: yield* provider.getLanguage(model),
+            onError() {},
+            messages: [{ role: "user", content: "hello" }],
+          })
+
+          const error = yield* Effect.promise(() => firstStreamError(result.fullStream))
+          expect(urls).toEqual([
+            "https://api.cloudflare.com/client/v4/accounts/test-account/ai/v1/chat/completions",
+          ])
+          expect(String(error)).toContain("response headers timed out")
+        }),
+      { config: gatewayConfig({ headerTimeout: 50 }) },
+    )
+  }),
+)
+
+// Routes the gateway provider's requests to `respond` through the configured custom fetch, which
+// the timeout wrapper calls instead of the global fetch. Returns the requested URLs.
+function setupGateway(respond: (init?: RequestInit) => Promise<Response>) {
+  return Effect.gen(function* () {
+    yield* Env.use.set("CLOUDFLARE_ACCOUNT_ID", "test-account")
+    yield* Env.use.set("CLOUDFLARE_GATEWAY_ID", "test-gateway")
+    yield* Env.use.set("CLOUDFLARE_API_TOKEN", "test-token")
+    const provider = yield* Provider.Service
+    const configured = yield* provider.getProvider(ProviderV2.ID.make("cloudflare-ai-gateway"))
+    const urls: string[] = []
+    configured.options.fetch = (input: string, init?: RequestInit) => {
+      urls.push(input)
+      return respond(init)
+    }
+    return urls
+  })
+}
+
+function gatewayConfig(options: Record<string, unknown>) {
+  return {
+    provider: {
+      "cloudflare-ai-gateway": {
+        options,
+        models: {
+          // The gateway loader builds its own client; a bundled npm keeps resolveSDK off the network.
+          [gatewayModel]: { name: "Gemini 2.5 Flash", provider: { npm: "@ai-sdk/openai-compatible" } },
+        },
+      },
+    },
+  }
+}
+
+async function firstStreamError(stream: AsyncIterable<{ type: string; error?: unknown }>) {
+  try {
+    for await (const part of stream) {
+      if (part.type === "error") return part.error
+    }
+  } catch (error) {
+    return error
+  }
+}
+
 function providerConfig(url: string, options: Record<string, unknown> = {}) {
   const config = testProviderConfig(url)
   return {
