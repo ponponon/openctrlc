@@ -108,6 +108,7 @@ const live: Layer.Layer<
         ...input,
         provider: item,
         auth: info,
+        textVerbosity: cfg.text_verbosity,
         plugin,
         flags,
         isWorkflow,

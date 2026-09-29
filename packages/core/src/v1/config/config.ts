@@ -74,6 +74,9 @@ export const Info = Schema.Struct({
   model: Schema.optional(Schema.String).annotate({
     description: "Model to use in the format of provider/model, eg anthropic/claude-2",
   }),
+  text_verbosity: Schema.optional(Schema.Literals(["default", "low", "medium", "high"])).annotate({
+    description: "Default response detail for compatible GPT-5 Responses models",
+  }),
   small_model: Schema.optional(Schema.String).annotate({
     description: "Small model to use for tasks like title generation in the format of provider/model",
   }),

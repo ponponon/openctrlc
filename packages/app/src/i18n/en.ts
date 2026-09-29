@@ -1185,6 +1185,13 @@ export const dict = {
     "Switch between agents in the composer. When hidden, defaults to Build agent.",
   "settings.general.row.reasoningSummaries.title": "Show reasoning summaries",
   "settings.general.row.reasoningSummaries.description": "Display model reasoning summaries in the timeline",
+  "settings.general.row.textVerbosity.title": "Reply detail",
+  "settings.general.row.textVerbosity.description":
+    "Choose the reply detail level for compatible GPT-5 Responses models. Model default keeps the model’s current behavior.",
+  "settings.general.row.textVerbosity.option.default": "Model default",
+  "settings.general.row.textVerbosity.option.low": "Low",
+  "settings.general.row.textVerbosity.option.medium": "Medium",
+  "settings.general.row.textVerbosity.option.high": "High",
   "settings.general.row.shellToolPartsExpanded.title": "Expand shell tool parts",
   "settings.general.row.shellToolPartsExpanded.description":
     "Show shell tool parts expanded by default in the timeline",

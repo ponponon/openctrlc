@@ -163,6 +163,13 @@ export const SettingsGeneral: Component = () => {
 
   const autoOption = { id: "auto", value: "", label: language.t("settings.general.row.shell.autoDefault") }
   const currentShell = createMemo(() => serverSync().data.config.shell ?? "")
+  const textVerbosityOptions = createMemo(() =>
+    (["default", "low", "medium", "high"] as const).map((value) => ({
+      value,
+      label: language.t(`settings.general.row.textVerbosity.option.${value}`),
+    })),
+  )
+  const currentTextVerbosity = createMemo(() => serverSync().data.config.text_verbosity ?? "default")
 
   const shellOptions = createMemo<ShellSelectOption[]>(() => {
     const list = shells.latest
@@ -346,6 +353,30 @@ export const SettingsGeneral: Component = () => {
               if (!option) return
               if (option.value === currentShell()) return
               serverSync().updateConfig({ shell: option.value })
+            }}
+            variant="secondary"
+            size="small"
+            triggerVariant="settings"
+            triggerStyle={{ "min-width": "180px" }}
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.row.textVerbosity.title")}
+          description={language.t("settings.general.row.textVerbosity.description")}
+        >
+          <Select
+            data-action="settings-text-verbosity"
+            options={textVerbosityOptions()}
+            current={
+              textVerbosityOptions().find((option) => option.value === currentTextVerbosity()) ??
+              textVerbosityOptions()[0]
+            }
+            value={(option) => option.value}
+            label={(option) => option.label}
+            onSelect={(option) => {
+              if (!option || option.value === currentTextVerbosity()) return
+              serverSync().updateConfig({ text_verbosity: option.value })
             }}
             variant="secondary"
             size="small"

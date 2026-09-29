@@ -106,7 +106,8 @@ const layer = Layer.effect(
     const config = yield* Config.Service
     const snapshots = yield* Snapshot.Service
     const db = (yield* Database.Service).db
-    const compaction = SessionCompaction.make({ events, llm, config: yield* config.entries() })
+    const configEntries = yield* config.entries()
+    const compaction = SessionCompaction.make({ events, llm, config: configEntries })
     const getSession = Effect.fn("SessionRunner.getSession")(function* (sessionID: SessionSchema.ID) {
       const session = yield* store.get(sessionID)
       if (!session) return yield* Effect.die(`Session not found: ${sessionID}`)
@@ -197,6 +198,8 @@ const layer = Layer.effect(
       const system =
         initialized ?? (yield* SessionContextEpoch.prepare(db, events, loadSystemContext(agent), session.id))
       const model = yield* models.resolve(session)
+      const textVerbosity = Config.latest(configEntries, "text_verbosity")
+      const modelID = model.id.toLowerCase()
       const entries = yield* SessionHistory.entriesForRunner(db, session.id, system.baselineSeq)
       const context = entries.map((entry) => entry.message)
       const isLastStep = agent.info?.steps !== undefined && currentStep >= agent.info.steps
@@ -211,7 +214,18 @@ const layer = Layer.effect(
             ...(session.parentID ? { "x-parent-session-id": session.parentID } : {}),
           },
         },
-        providerOptions: { openai: { promptCacheKey } },
+        providerOptions: {
+          openai: {
+            promptCacheKey,
+            ...(textVerbosity &&
+            textVerbosity !== "default" &&
+            modelID.includes("gpt-5.") &&
+            !modelID.includes("codex") &&
+            !modelID.includes("-chat")
+              ? { textVerbosity }
+              : {}),
+          },
+        },
         system: [agent.info?.system, system.baseline]
           .filter((part): part is string => part !== undefined && part.length > 0)
           .map(SystemPart.make),

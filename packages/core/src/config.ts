@@ -37,6 +37,9 @@ export class Info extends Schema.Class<Info>("Config.Info")({
   model: Schema.String.pipe(Schema.optional).annotate({
     description: "Default model to use when no session or agent model is selected",
   }),
+  text_verbosity: Schema.Literals(["default", "low", "medium", "high"])
+    .pipe(Schema.optional)
+    .annotate({ description: "Default response detail for compatible GPT-5 Responses models" }),
   default_agent: Schema.String.pipe(Schema.optional).annotate({
     description: "Default primary agent to use when no session agent is selected",
   }),

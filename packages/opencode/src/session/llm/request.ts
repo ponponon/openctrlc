@@ -24,6 +24,7 @@ type PrepareInput = {
   readonly sessionID: string
   readonly parentSessionID?: string
   readonly model: Provider.Model
+  readonly textVerbosity?: "default" | "low" | "medium" | "high"
   readonly agent: Agent.Info
   readonly permission?: PermissionV1.Ruleset
   readonly system: string[]
@@ -91,6 +92,17 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
         providerOptions: input.provider.options,
       })
   const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)
+  const modelID = input.model.api.id.toLowerCase()
+  if (
+    input.textVerbosity !== undefined &&
+    input.textVerbosity !== "default" &&
+    modelID.includes("gpt-5.") &&
+    !modelID.includes("codex") &&
+    !modelID.includes("-chat") &&
+    (input.model.api.npm === "@ai-sdk/openai" || input.model.api.npm === "@ai-sdk/amazon-bedrock/mantle")
+  ) {
+    options.textVerbosity = input.textVerbosity
+  }
   if (
     input.model.api.npm === "@ai-sdk/azure" &&
     (input.provider.options.useCompletionUrls || input.model.options.useCompletionUrls || options.useCompletionUrls)

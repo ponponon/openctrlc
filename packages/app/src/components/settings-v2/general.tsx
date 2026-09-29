@@ -7,6 +7,7 @@ import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
+import { useServerSync } from "@/context/server-sync"
 import { useUpdaterAction } from "../updater-action"
 import { useSettings } from "@/context/settings"
 import { ExternalLink } from "../external-link"
@@ -279,6 +280,7 @@ export const SettingsGeneralV2: Component<{
   const platform = usePlatform()
   const dialog = useDialog()
   const settings = useSettings()
+  const serverSync = useServerSync()
   const mobile = createMediaQuery("(max-width: 767px)")
   const updater = useUpdaterAction()
   const permissionScope = createPermissionScopeController(() => props.sessionID)
@@ -339,6 +341,25 @@ export const SettingsGeneralV2: Component<{
         <PermissionScopeSetting controller={permissionScope} />
 
         <ShellSetting controller={shell} />
+
+        <SettingsRowV2
+          title={language.t("settings.general.row.textVerbosity.title")}
+          description={language.t("settings.general.row.textVerbosity.description")}
+        >
+          <SelectV2
+            appearance="inline"
+            data-action="settings-text-verbosity"
+            options={["default", "low", "medium", "high"] as const}
+            current={serverSync().data.config.text_verbosity ?? "default"}
+            placement="bottom-end"
+            gutter={6}
+            label={(value) => language.t(`settings.general.row.textVerbosity.option.${value}`)}
+            onSelect={(value) => {
+              if (!value || value === (serverSync().data.config.text_verbosity ?? "default")) return
+              serverSync().updateConfig({ text_verbosity: value })
+            }}
+          />
+        </SettingsRowV2>
 
         <SettingsRowV2
           title={language.t("settings.general.row.followup.title")}

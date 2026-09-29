@@ -1939,6 +1939,7 @@ export type Config = {
   disabled_providers?: Array<string>
   enabled_providers?: Array<string>
   model?: string
+  text_verbosity?: "default" | "low" | "medium" | "high"
   small_model?: string
   default_agent?: string
   subagent_depth?: number

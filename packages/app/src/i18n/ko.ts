@@ -849,6 +849,13 @@ export const dict = {
   "settings.general.row.followup.option.steer": "즉시 반영",
   "settings.general.row.reasoningSummaries.title": "추론 요약 표시",
   "settings.general.row.reasoningSummaries.description": "타임라인에 모델 추론 요약 표시",
+  "settings.general.row.textVerbosity.title": "답변 상세도",
+  "settings.general.row.textVerbosity.description":
+    "GPT-5 Responses 상세도 매개변수를 지원하는 모델의 답변 상세도를 설정합니다. ‘모델 기본값’은 모델의 기존 동작을 따릅니다",
+  "settings.general.row.textVerbosity.option.default": "모델 기본값",
+  "settings.general.row.textVerbosity.option.low": "낮음",
+  "settings.general.row.textVerbosity.option.medium": "보통",
+  "settings.general.row.textVerbosity.option.high": "높음",
   "settings.general.row.shellToolPartsExpanded.title": "shell 도구 항목 펼치기",
   "settings.general.row.shellToolPartsExpanded.description":
     "타임라인에서 기본적으로 shell 도구 항목을 펼친 상태로 표시합니다",

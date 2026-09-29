@@ -1118,6 +1118,13 @@ export const dict = {
     "コンポーザーでエージェントを切り替えます。非表示の場合は、デフォルトでBuildエージェントが使用されます。",
   "settings.general.row.reasoningSummaries.title": "推論の要約を表示",
   "settings.general.row.reasoningSummaries.description": "タイムラインにモデルの推論の要約を表示します",
+  "settings.general.row.textVerbosity.title": "回答の詳しさ",
+  "settings.general.row.textVerbosity.description":
+    "GPT-5 Responses の詳細度パラメーターに対応するモデルの回答の詳しさを設定します。「モデルの既定値」ではモデル本来の動作を使用します",
+  "settings.general.row.textVerbosity.option.default": "モデルの既定値",
+  "settings.general.row.textVerbosity.option.low": "低",
+  "settings.general.row.textVerbosity.option.medium": "中",
+  "settings.general.row.textVerbosity.option.high": "高",
   "settings.general.row.shellToolPartsExpanded.title": "shell ツールパーツを展開",
   "settings.general.row.shellToolPartsExpanded.description":
     "タイムラインで shell ツールパーツをデフォルトで展開して表示します",
