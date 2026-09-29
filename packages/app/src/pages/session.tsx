@@ -572,9 +572,7 @@ export default function Page() {
       ([id, desktop, layoutReady]) => {
         if (!id || !desktop || !layoutReady) return
 
-        const current = tabs()
-        const active = current.active()
-        if (current.all().some((tab) => tab !== "context")) return
+        const active = tabs().active()
         if (active && active !== "review" && active !== "context") return
 
         view().reviewPanel.open("context-button")
