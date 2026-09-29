@@ -71,7 +71,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
       "e2e/regression/remote-session-settings.spec.ts",
       [
         "openctrlc.global.dat:server",
-        "openctrlc.global.dat:local\\u0000permission",
+        "openctrlc.global.dat:permission",
         "openctrlc.global.dat:${serverB}\\u0000permission",
         "openctrlc.window.browser.dat:tabs",
       ],
@@ -91,7 +91,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
       "e2e/regression/review-state-persistence.spec.ts",
       ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
     ],
-    ["e2e/regression/session-request-docks.spec.ts", ["openctrlc.global.dat:local\\u0000permission"]],
+    ["e2e/regression/session-request-docks.spec.ts", ["openctrlc.global.dat:permission"]],
     ["e2e/regression/review-terminal-stacked.spec.ts", ["openctrlc.global.dat:layout"]],
     ["e2e/regression/session-list-path-loading.spec.ts", ["openctrlc.global.dat:server"]],
     [

@@ -167,7 +167,7 @@ async function configureServers(page: Page, tabs: { type: "session"; server: str
       localStorage.setItem("openctrlc.global.dat:server", JSON.stringify({ list: [serverB] }))
       // These tests verify turning auto-accept on, so begin from an explicit off state.
       localStorage.setItem(
-        `openctrlc.global.dat:local\u0000permission`,
+        "openctrlc.global.dat:permission",
         JSON.stringify({ autoAccept: { [acceptKeyA]: false } }),
       )
       localStorage.setItem(
