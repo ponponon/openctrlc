@@ -253,6 +253,14 @@ export function PromptInputV2(props: PromptInputV2Props) {
                 </Show>
               )}
             </Show>
+            <Show when={view.textVerbosity} keyed>
+              {(control) => (
+                <PromptInputV2ConfiguredSelect
+                  title={i18n.t("ui.promptInput.chooseTextVerbosity")}
+                  control={control}
+                />
+              )}
+            </Show>
           </div>
           <PromptInputV2SubmitButton
             mode={state.mode}
@@ -543,6 +551,7 @@ function PromptInputV2ConfiguredSelect(props: {
           <ProviderIcon id={providerID()!} class="size-4 shrink-0 opacity-60" />
         </Show>
       }
+      dataAction={props.control.dataAction}
       onSelect={props.control.onSelect}
     />
   )
@@ -555,6 +564,7 @@ export function PromptInputV2Select(props: {
   current: string
   currentIcon?: JSX.Element
   class?: string
+  dataAction?: string
   onOpenChange?: (open: boolean) => void
   onSelect: (id: string) => void
 }) {
@@ -574,6 +584,7 @@ export function PromptInputV2Select(props: {
           variant="ghost-muted"
           size="normal"
           class={`max-w-[220px] justify-start ![font-weight:440] ${props.class ?? ""}`}
+          data-action={props.dataAction}
           aria-label={props.title}
         >
           {props.currentIcon}

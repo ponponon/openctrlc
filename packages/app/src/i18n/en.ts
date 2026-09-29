@@ -1192,6 +1192,10 @@ export const dict = {
   "settings.general.row.textVerbosity.option.low": "Low",
   "settings.general.row.textVerbosity.option.medium": "Medium",
   "settings.general.row.textVerbosity.option.high": "High",
+  "prompt.replyDetail.option.default": "Detail: Model default",
+  "prompt.replyDetail.option.low": "Detail: Low",
+  "prompt.replyDetail.option.medium": "Detail: Medium",
+  "prompt.replyDetail.option.high": "Detail: High",
   "settings.general.row.shellToolPartsExpanded.title": "Expand shell tool parts",
   "settings.general.row.shellToolPartsExpanded.description":
     "Show shell tool parts expanded by default in the timeline",

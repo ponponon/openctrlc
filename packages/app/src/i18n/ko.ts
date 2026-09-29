@@ -857,6 +857,10 @@ export const dict = {
   "settings.general.row.textVerbosity.option.low": "낮음",
   "settings.general.row.textVerbosity.option.medium": "보통",
   "settings.general.row.textVerbosity.option.high": "높음",
+  "prompt.replyDetail.option.default": "상세도: 모델 기본값",
+  "prompt.replyDetail.option.low": "상세도: 낮음",
+  "prompt.replyDetail.option.medium": "상세도: 보통",
+  "prompt.replyDetail.option.high": "상세도: 높음",
   "settings.general.row.shellToolPartsExpanded.title": "shell 도구 항목 펼치기",
   "settings.general.row.shellToolPartsExpanded.description":
     "타임라인에서 기본적으로 shell 도구 항목을 펼친 상태로 표시합니다",

@@ -51,6 +51,7 @@ import { useCommand } from "@/context/command"
 import { usePermission } from "@/context/permission"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
+import { useServerSync } from "@/context/server-sync"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { createTextFragment, getCursorPosition, setCursorPosition, setRangeEdge } from "./prompt-input/editor-dom"
 import { createPromptAttachments } from "./prompt-input/attachments"
@@ -117,6 +118,7 @@ const EXAMPLES = [
 
 export const PromptInput: Component<PromptInputProps> = (props) => {
   const sdk = useSDK()
+  const serverSync = useServerSync()
 
   const sync = useSync()
   const files = useFile()
@@ -1191,6 +1193,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   )
 
   const variants = createMemo(() => ["default", ...props.controls.model.selection.variant.list()])
+  const textVerbosityOptions = ["default", "low", "medium", "high"] as const
   // Check provider variants directly: `variants` also includes the UI-only default option.
   const showVariantControl = createMemo(() => props.controls.model.selection.variant.list().length > 0)
   const accepting = createMemo(() => {
@@ -1783,6 +1786,24 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         </TooltipKeybind>
                       </div>
                     </Show>
+                    <div data-component="prompt-text-verbosity-control">
+                      <Select
+                        size="normal"
+                        options={[...textVerbosityOptions]}
+                        current={serverSync().data.config.text_verbosity ?? "default"}
+                        label={(value) => language.t(`prompt.replyDetail.option.${value}`)}
+                        onSelect={(value) => {
+                          if (value === (serverSync().data.config.text_verbosity ?? "default")) return
+                          serverSync().updateConfig({ text_verbosity: value })
+                          restoreFocus()
+                        }}
+                        class="capitalize max-w-[180px] text-text-base"
+                        valueClass="truncate text-13-regular text-text-base"
+                        triggerStyle={control()}
+                        triggerProps={{ "data-action": "prompt-text-verbosity" }}
+                        variant="ghost"
+                      />
+                    </div>
                     <PromptPermissionControl directory={sdk().directory} />
                   </Show>
                 </Show>

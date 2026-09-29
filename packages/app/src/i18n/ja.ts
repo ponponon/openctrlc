@@ -1125,6 +1125,10 @@ export const dict = {
   "settings.general.row.textVerbosity.option.low": "低",
   "settings.general.row.textVerbosity.option.medium": "中",
   "settings.general.row.textVerbosity.option.high": "高",
+  "prompt.replyDetail.option.default": "詳しさ：モデルの既定値",
+  "prompt.replyDetail.option.low": "詳しさ：低",
+  "prompt.replyDetail.option.medium": "詳しさ：中",
+  "prompt.replyDetail.option.high": "詳しさ：高",
   "settings.general.row.shellToolPartsExpanded.title": "shell ツールパーツを展開",
   "settings.general.row.shellToolPartsExpanded.description":
     "タイムラインで shell ツールパーツをデフォルトで展開して表示します",

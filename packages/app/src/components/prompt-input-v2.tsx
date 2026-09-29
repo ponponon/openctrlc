@@ -23,6 +23,7 @@ import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
 import { type ImageAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
+import { useServerSync } from "@/context/server-sync"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { createSessionTabs } from "@/pages/session/helpers"
@@ -94,6 +95,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
   const permission = usePermission()
   const language = useLanguage()
   const platform = usePlatform()
+  const serverSync = useServerSync()
   const prompt = props.state ?? usePrompt()
   let editor: HTMLDivElement | undefined
 
@@ -325,6 +327,12 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     })),
   )
   const variants = createMemo(() => ["default", ...props.controls.model.selection.variant.list()])
+  const textVerbosityOptions = createMemo(() =>
+    (["default", "low", "medium", "high"] as const).map((value) => ({
+      id: value,
+      label: language.t(`prompt.replyDetail.option.${value}`),
+    })),
+  )
   const controller = createPromptInputV2Controller({
     store: () => prompt.capture().store,
     state: interaction,
@@ -405,6 +413,16 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
         current: () => props.controls.model.selection.variant.current() ?? "default",
         onSelect: (value) => props.controls.model.selection.variant.set(value === "default" ? undefined : value),
         keybind: () => command.keybindParts("model.variant.cycle"),
+      },
+      textVerbosity: {
+        options: () => textVerbosityOptions(),
+        current: () => serverSync().data.config.text_verbosity ?? "default",
+        dataAction: "prompt-text-verbosity",
+        onSelect: (value) => {
+          const option = textVerbosityOptions().find((item) => item.id === value)
+          if (!option || option.id === (serverSync().data.config.text_verbosity ?? "default")) return
+          serverSync().updateConfig({ text_verbosity: option.id })
+        },
       },
       submit: {
         stopping,

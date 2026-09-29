@@ -2278,7 +2278,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ## 回复详细程度全局设置
 
-- 设置页提供“输出详细程度”选项：模型默认、低、中、高；旧版和新版设置界面共用同一项全局服务端配置，并覆盖英文、简体中文、日文和韩文。
+- 设置页和会话输入区都提供“输出详细程度”选项：模型默认、低、中、高；两处共用同一项全局服务端配置，并覆盖英文、简体中文、日文和韩文。
+- 输入区选择器紧邻模型变体/推理强度选择器，当前值显示“详略：…”前缀，避免与“High”推理强度混淆；旧版和新版输入区均支持。
 - 服务端在模型请求链路读取 `text_verbosity`。模型默认保留模型当前参数行为；手动选择低/中/高时，仅对兼容的 GPT-5 Responses 模型传入 `text.verbosity`，不修改系统提示词，也不改变推理强度。
 - V1 和 V2 会话执行链路都支持该设置；当前支持范围沿用 GPT-5 Responses 参数兼容性筛选，GPT-5 Codex 与 chat 模型不注入该字段。
-- 配置 schema 位于 `packages/core/src/v1/config/config.ts` 和 `packages/core/src/config.ts`，V1 到 V2 迁移保留该值；桌面设置分别位于 `packages/app/src/components/settings-general.tsx` 和 `packages/app/src/components/settings-v2/general.tsx`。公开 schema 变动后需重生成 client SDK。
+- 配置 schema 位于 `packages/core/src/v1/config/config.ts` 和 `packages/core/src/config.ts`，V1 到 V2 迁移保留该值；桌面设置分别位于 `packages/app/src/components/settings-general.tsx` 和 `packages/app/src/components/settings-v2/general.tsx`，输入区控制位于 `packages/app/src/components/prompt-input.tsx`、`packages/app/src/components/prompt-input-v2.tsx` 及 `packages/session-ui/src/v2/components/prompt-input/`。公开 schema 变动后需重生成 client SDK。
