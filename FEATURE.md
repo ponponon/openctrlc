@@ -2312,3 +2312,21 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 与重连补拉的关系：SSE 重连走 `catchUpAfterReconnect`（多会话、2s 全局防抖）；假活走单会话 force sync（单次、按 stall key 去重）。两条路径互补，覆盖「断连丢事件」与「假活丢事件」。
 - 可观测：补拉完成后输出 `[session-stall] catch-up`，带上 `kind` / `ageMs` / 补拉前后消息数，便于用日志验证恢复是否真的拉齐了时间线。
 - 游标补空窗的阻塞点（待后续）：`GET /api/session/:id/history` 返回 `SessionEvent.Durable`（`session.next.*`），而桌面端 `applyV2` / `server-session-v2-reducer` 消费的是 vendored `OpenCodeEvent`（`session.*`），两套事件契约的 type 与字段均不一致，不能直接回放。需先完成事件契约统一（或写一层兼容映射），才能把 `history?after=seq` 接到补拉路径上。
+
+## 会话事件契约现状（游标改造前置）
+
+桌面时间线同时吃三套事件，补拉/游标改造必须认清边界：
+
+| 族 | type 形态 | 发布方 | 客户端入口 | 用途 |
+|---|---|---|---|---|
+| V1 持久 | `message.updated` / `message.part.updated` / `message.part.removed` | `packages/opencode/src/session/session.ts`、`message-v2.ts` | `server-session.apply()` | `data.message` / `data.part`，时间线 parts 来源 |
+| V1 实时 | `message.part.delta` | 同上 | `apply()` | 流式文本增量 |
+| Vendored V2 | `session.text.delta` / `session.step.started` 等（无 `.next`） | **仓库内无发布方**（来自 vendored `@opencode-ai/client` 类型） | `applyV2()` / `server-session-v2-reducer` | `session_message` 投影 |
+| 新 Schema | `session.next.text.ended` / `session.next.step.started` 等 | `packages/core/src/session/runner/publish-llm-event.ts`（`SessionEvent.*`） | `GET /api/session/:id/history`（未接入 UI） | 持久事件回放源 |
+
+关键结论：
+
+1. **正确性补拉（force sync）不依赖事件回放**：`fetchMessages` 走 `messageApi.list` → `normalizeSessionMessages`，同时重建 V1 与 `session_message`，所以已上线的重连/假活补拉是闭环的。
+2. **游标回放没有现成客户端入口**：vendored client 的 `session.log({ after, follow })`（`/api/experimental/session/:id/log`）类型完美匹配 `applyV2`，但 **opencode server 未实现该端点**；新 `history?after=` 有端点但事件 type/字段是 `session.next.*`（如 `textID`，而 reducer 用数字 `ordinal`），不能直接喂给 `applyV2`。
+3. **可行的游标路径（推荐）**：在 server 实现 `/api/experimental/session/:id/log`，用 `EventV2.durable` 回放 **V1 持久事件**（`message.updated` 等）喂 `apply()`，或回放 vendored 口径的 `session.*` 事件喂 `applyV2`。避免在客户端写 `session.next.* → session.*` 的有损映射。
+4. Delta 事件（`message.part.delta` / `session.*.delta`）设计为 live-only，回放应以 `*.ended` / `message.part.updated` 全量边界为准。
