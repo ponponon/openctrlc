@@ -85,7 +85,6 @@ test("opens and searches project files inline", async ({ page }) => {
     },
     { directory, server, sessionID },
   )
-
   await page.goto(`/server/${base64Encode(server)}/session/${sessionID}`)
   await expectSessionTitle(page, title)
 
@@ -112,7 +111,6 @@ test("opens and searches project files inline", async ({ page }) => {
   await expect(filter).toBeFocused()
   await expect(panel.getByRole("tab", { name: "Open file" })).toHaveAttribute("data-selected", "")
   await expect(panel.getByText("open-file-project", { exact: true })).toBeVisible()
-
   await panel.getByRole("button", { name: "README.md" }).click()
   await expect(panel.getByRole("tab", { name: "README.md" })).toHaveAttribute("data-selected", "")
   await expect(sidebarToggle).toBeEnabled()

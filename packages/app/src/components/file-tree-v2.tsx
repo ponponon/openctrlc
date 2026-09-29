@@ -23,7 +23,7 @@ import {
   normalizeFileTreeV2Path,
   type FileTreeV2Node,
 } from "@/components/file-tree-v2-model"
-import { virtualScrollElement } from "@/components/virtual-scroll-element"
+import { observeVirtualScrollRect, virtualScrollElement } from "@/components/virtual-scroll-element"
 
 export type { Kind } from "@/components/file-tree"
 
@@ -149,6 +149,7 @@ export default function FileTreeV2(props: {
     },
     getScrollElement: () => virtualScrollElement(root()),
     initialRect: { width: 0, height: 600 },
+    observeElementRect: observeVirtualScrollRect,
     estimateSize: () => 28,
     gap: 2,
     overscan: 10,

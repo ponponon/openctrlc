@@ -193,6 +193,11 @@ export function SessionSidePanel(props: {
   const openedTabs = tabState.openedTabs
   const activeTab = tabState.activeTab
   const activeFileTab = tabState.activeFileTab
+  // Keep the v2 review subtree alive when per-session tab state temporarily selects Context.
+  const reviewPanelV2Mounted = createMemo(
+    (prev) => prev || (!!props.fileBrowserState && reviewTab() && props.canReview() && activeTab() === "review"),
+    false,
+  )
 
   const fileTreeTab = () => layout.fileTree.tab()
 
@@ -776,7 +781,7 @@ export function SessionSidePanel(props: {
                           </div>
                         </div>
 
-                        <Show when={reviewTab() && props.canReview() && activeTab() === "review"}>
+                        <Show when={reviewTab() && props.canReview() && reviewPanelV2Mounted()}>
                           <div
                             id={reviewTabPanelID}
                             role="tabpanel"
@@ -784,6 +789,7 @@ export function SessionSidePanel(props: {
                             tabIndex={props.reviewHasFocusableContent() ? undefined : 0}
                             data-slot="tabs-content"
                             class="flex flex-col h-full overflow-hidden contain-strict"
+                            hidden={activeTab() !== "review"}
                           >
                             {props.reviewPanel()}
                           </div>

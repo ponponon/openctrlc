@@ -5,7 +5,7 @@ import { createEffect, createMemo, createSignal, For, Show } from "solid-js"
 import { kindChange, kindLabel, type Kind } from "@/components/file-tree-v2"
 import { normalizePath } from "@/pages/session/v2/review-diff-kinds"
 import { createVirtualizer, defaultRangeExtractor } from "@tanstack/solid-virtual"
-import { virtualScrollElement } from "@/components/virtual-scroll-element"
+import { observeVirtualScrollRect, virtualScrollElement } from "@/components/virtual-scroll-element"
 
 // Drives the highlight/selection of the flat search-result list from the filter
 // input's keyboard events.
@@ -60,6 +60,7 @@ export function SessionFileListV2(props: {
     },
     getScrollElement: () => virtualScrollElement(root()),
     initialRect: { width: 0, height: 600 },
+    observeElementRect: observeVirtualScrollRect,
     estimateSize: () => 28,
     gap: 2,
     overscan: 10,

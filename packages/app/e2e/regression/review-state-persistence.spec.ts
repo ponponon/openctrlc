@@ -36,6 +36,7 @@ test("restores review mode and selected file per session", async ({ page }) => {
 
   await page.reload()
   await expectSessionTitle(page, titleA)
+  await openReview(page)
   await expect(page.getByRole("button", { name: "Branch changes" })).toBeVisible()
   await expectSelectedFile(page, "beta.ts")
 
@@ -68,6 +69,7 @@ async function expectSelectedFile(page: Page, file: string) {
 async function switchSession(page: Page, title: string) {
   await page.locator("[data-titlebar-tab-slot]", { hasText: title }).click()
   await expectSessionTitle(page, title)
+  await openReview(page)
 }
 
 async function setup(page: Page) {
