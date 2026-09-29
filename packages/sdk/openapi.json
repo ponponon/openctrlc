@@ -21390,6 +21390,10 @@
           "model": {
             "type": "string"
           },
+          "text_verbosity": {
+            "type": "string",
+            "enum": ["default", "low", "medium", "high"]
+          },
           "small_model": {
             "type": "string"
           },

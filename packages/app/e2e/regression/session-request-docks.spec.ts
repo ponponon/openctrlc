@@ -215,12 +215,15 @@ async function mockServer(
     permissions: requests.permissions,
     questions: requests.questions,
   })
-  await page.addInitScript((autoAcceptKey) => {
-    localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
-    // Keep permission dock coverage on the manual-approval path despite the app's default-on behavior.
-    localStorage.setItem(
-      `openctrlc.global.dat:local\u0000permission`,
-      JSON.stringify({ autoAccept: { [autoAcceptKey]: false } }),
-    )
-  }, `${base64Encode(directory)}/*`)
+  await page.addInitScript(
+    (autoAcceptKey) => {
+      localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
+      // Keep permission dock coverage on the manual-approval path despite the app's default-on behavior.
+      localStorage.setItem(
+        `openctrlc.global.dat:local\u0000permission`,
+        JSON.stringify({ autoAccept: { [autoAcceptKey]: false } }),
+      )
+    },
+    `${base64Encode(directory)}/*`,
+  )
 }
