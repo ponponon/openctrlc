@@ -463,11 +463,7 @@ export function MessageTimeline(props: {
   ) => {
     if (!done) return
     const root = listRoot()
-    if (
-      root &&
-      snapshot.anchor &&
-      !root.querySelector(`[data-timeline-key="${CSS.escape(snapshot.anchor)}"]`)
-    ) {
+    if (root && snapshot.anchor && !root.querySelector(`[data-timeline-key="${CSS.escape(snapshot.anchor)}"]`)) {
       // A prepend can move the anchor outside the virtual range; mount it before pixel correction.
       const index = timelineRows().findIndex((row) => TimelineRow.key(row) === snapshot.anchor)
       if (index >= 0) virtualizer.scrollToIndex(index, { align: "start" })

@@ -255,10 +255,7 @@ export function PromptInputV2(props: PromptInputV2Props) {
             </Show>
             <Show when={view.textVerbosity} keyed>
               {(control) => (
-                <PromptInputV2ConfiguredSelect
-                  title={i18n.t("ui.promptInput.chooseTextVerbosity")}
-                  control={control}
-                />
+                <PromptInputV2ConfiguredSelect title={i18n.t("ui.promptInput.chooseTextVerbosity")} control={control} />
               )}
             </Show>
           </div>
