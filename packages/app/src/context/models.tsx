@@ -19,9 +19,14 @@ type Store = {
 
 const RECENT_LIMIT = 5
 export const CLOUDFLARE_AI_GATEWAY_PROVIDER_ID = "cloudflare-ai-gateway"
+export const CLOUDFLARE_WORKERS_AI_PROVIDER_ID = "cloudflare-workers-ai"
+
+export function isCloudflareModelProvider(providerID: string) {
+  return providerID === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID || providerID === CLOUDFLARE_WORKERS_AI_PROVIDER_ID
+}
 
 export function defaultProviderEnabled(providerID: string) {
-  return providerID !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID
+  return !isCloudflareModelProvider(providerID)
 }
 
 function modelKey(model: ModelKey) {
@@ -150,15 +155,13 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
     }
 
     const providerVisible = (providerID: string) => {
+      if (isCloudflareModelProvider(providerID)) return providerEnabled(providerID)
       const models = allList().filter((model) => model.provider.id === providerID)
-      return (
-        (providerID !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID || providerEnabled(providerID)) &&
-        models.every((model) => visible({ modelID: model.id, providerID }))
-      )
+      return models.every((model) => visible({ modelID: model.id, providerID }))
     }
 
     const setProviderVisibility = (providerID: string, state: boolean) => {
-      if (providerID === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID) {
+      if (isCloudflareModelProvider(providerID)) {
         setStore("providers", (current) => ({ ...current, [providerID]: state }))
       }
       allList()

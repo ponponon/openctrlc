@@ -7,7 +7,7 @@ import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { type Component, For, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
-import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, useModels } from "@/context/models"
+import { isCloudflareModelProvider, useModels } from "@/context/models"
 import { useServerSDK } from "@/context/server-sdk"
 import { popularProviders } from "@/hooks/use-providers"
 import { Persist, persisted } from "@/utils/persist"
@@ -23,6 +23,19 @@ export const SettingsModelsV2: Component = () => {
   const language = useLanguage()
   const models = useModels()
   const serverSdk = useServerSDK()
+  const cloudflareProviders = () =>
+    models
+      .all()
+      .map((item) => item.provider)
+      .filter(
+        (provider, index, providers) =>
+          isCloudflareModelProvider(provider.id) && providers.findIndex((item) => item.id === provider.id) === index,
+      )
+  const cloudflareEnabled = () =>
+    cloudflareProviders().length > 0 && cloudflareProviders().every((provider) => models.providerEnabled(provider.id))
+  const setCloudflareEnabled = (enabled: boolean) => {
+    cloudflareProviders().forEach((provider) => models.setProviderVisibility(provider.id, enabled))
+  }
   const [store, setStore] = persisted(
     Persist.serverGlobal(serverSdk().scope, "settings-v2.models.providers"),
     createStore({ collapsed: {} as Record<string, boolean> }),
@@ -81,22 +94,16 @@ export const SettingsModelsV2: Component = () => {
       </div>
 
       <div class="settings-v2-tab-body settings-v2-models">
-        <Show when={models.all().find((item) => item.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)}>
-          {(provider) => (
-            <div class="settings-v2-section">
-              <SettingsListV2>
-                <SettingsRowV2 title={provider().name} description="">
-                  <Switch
-                    checked={models.providerVisible(provider().id)}
-                    onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
-                    hideLabel
-                  >
-                    {provider().name}
-                  </Switch>
-                </SettingsRowV2>
-              </SettingsListV2>
-            </div>
-          )}
+        <Show when={cloudflareProviders().length > 0}>
+          <div class="settings-v2-section">
+            <SettingsListV2>
+              <SettingsRowV2 title="Cloudflare AI" description="">
+                <Switch checked={cloudflareEnabled()} onChange={setCloudflareEnabled} hideLabel>
+                  Cloudflare AI
+                </Switch>
+              </SettingsRowV2>
+            </SettingsListV2>
+          </div>
         </Show>
         <Show
           when={!list.grouped.loading}

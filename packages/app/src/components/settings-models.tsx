@@ -6,7 +6,7 @@ import { IconButton } from "@openctrlc/ui/icon-button"
 import { TextField } from "@openctrlc/ui/text-field"
 import { type Component, For, Show } from "solid-js"
 import { useLanguage } from "@/context/language"
-import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, useModels } from "@/context/models"
+import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, isCloudflareModelProvider, useModels } from "@/context/models"
 import { popularProviders } from "@/hooks/use-providers"
 import { SettingsList } from "./settings-list"
 import { SettingsServerPicker, SettingsServerScope } from "./settings-server-picker"
@@ -43,6 +43,19 @@ export const SettingsModels: Component = () => {
 const SettingsModelsContent: Component = () => {
   const language = useLanguage()
   const models = useModels()
+  const cloudflareProviders = () =>
+    models
+      .all()
+      .map((item) => item.provider)
+      .filter(
+        (provider, index, providers) =>
+          isCloudflareModelProvider(provider.id) && providers.findIndex((item) => item.id === provider.id) === index,
+      )
+  const cloudflareEnabled = () =>
+    cloudflareProviders().length > 0 && cloudflareProviders().every((provider) => models.providerEnabled(provider.id))
+  const setCloudflareEnabled = (enabled: boolean) => {
+    cloudflareProviders().forEach((provider) => models.setProviderVisibility(provider.id, enabled))
+  }
 
   const list = useFilteredList<ModelItem>({
     items: (_filter) => models.list(),
@@ -95,22 +108,16 @@ const SettingsModelsContent: Component = () => {
         </div>
       </div>
 
-      <Show when={models.all().find((item) => item.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)}>
-        {(provider) => (
-          <div class="flex items-center justify-between gap-4 max-w-[720px] py-3 border-b border-border-weak-base">
-            <div class="flex min-w-0 items-center gap-3">
-              <ProviderIcon id={provider().id} class="size-5 shrink-0 icon-strong-base" />
-              <span class="text-14-medium text-text-strong truncate">{provider().name}</span>
-            </div>
-            <Switch
-              checked={models.providerVisible(provider().id)}
-              onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
-              hideLabel
-            >
-              {provider().name}
-            </Switch>
+      <Show when={cloudflareProviders().length > 0}>
+        <div class="flex items-center justify-between gap-4 max-w-[720px] py-3 border-b border-border-weak-base">
+          <div class="flex min-w-0 items-center gap-3">
+            <ProviderIcon id={CLOUDFLARE_AI_GATEWAY_PROVIDER_ID} class="size-5 shrink-0 icon-strong-base" />
+            <span class="text-14-medium text-text-strong truncate">Cloudflare AI</span>
           </div>
-        )}
+          <Switch checked={cloudflareEnabled()} onChange={setCloudflareEnabled} hideLabel>
+            Cloudflare AI
+          </Switch>
+        </div>
       </Show>
 
       <div class="flex flex-col gap-8 max-w-[720px]">

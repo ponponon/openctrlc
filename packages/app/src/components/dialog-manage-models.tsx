@@ -13,7 +13,7 @@ import { ProviderIcon } from "@openctrlc/ui/provider-icon"
 import { useFilteredList } from "@openctrlc/ui/hooks"
 import { For, Show, type Component } from "solid-js"
 import { useLocal } from "@/context/local"
-import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, useModels } from "@/context/models"
+import { CLOUDFLARE_AI_GATEWAY_PROVIDER_ID, isCloudflareModelProvider, useModels } from "@/context/models"
 import { popularProviders } from "@/hooks/use-providers"
 import { useLanguage } from "@/context/language"
 import { useDialog } from "@openctrlc/ui/context/dialog"
@@ -36,8 +36,19 @@ export const DialogManageModels: Component = () => {
     void dialog.show(() => <DialogConnectProvider directory={directory} />)
   }
   const providerRank = (id: string) => popularProviders.indexOf(id)
-  const cloudflareProvider = () =>
-    models.all().find((x) => x.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)?.provider
+  const cloudflareProviders = () =>
+    models
+      .all()
+      .map((x) => x.provider)
+      .filter(
+        (provider, index, providers) =>
+          isCloudflareModelProvider(provider.id) && providers.findIndex((item) => item.id === provider.id) === index,
+      )
+  const cloudflareEnabled = () =>
+    cloudflareProviders().length > 0 && cloudflareProviders().every((provider) => models.providerEnabled(provider.id))
+  const setCloudflareEnabled = (enabled: boolean) => {
+    cloudflareProviders().forEach((provider) => models.setProviderVisibility(provider.id, enabled))
+  }
 
   return (
     <Dialog
@@ -49,22 +60,16 @@ export const DialogManageModels: Component = () => {
         </Button>
       }
     >
-      <Show when={cloudflareProvider()}>
-        {(provider) => (
-          <div class="flex items-center justify-between gap-x-3 border-b border-border-weak-base px-4 py-3">
-            <div class="flex min-w-0 items-center gap-x-3">
-              <ProviderIcon id={provider().id} class="size-5 shrink-0" />
-              <span class="truncate">{provider().name}</span>
-            </div>
-            <Switch
-              checked={models.providerVisible(provider().id)}
-              onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
-              hideLabel
-            >
-              {provider().name}
-            </Switch>
+      <Show when={cloudflareProviders().length > 0}>
+        <div class="flex items-center justify-between gap-x-3 border-b border-border-weak-base px-4 py-3">
+          <div class="flex min-w-0 items-center gap-x-3">
+            <ProviderIcon id={CLOUDFLARE_AI_GATEWAY_PROVIDER_ID} class="size-5 shrink-0" />
+            <span class="truncate">Cloudflare AI</span>
           </div>
-        )}
+          <Switch checked={cloudflareEnabled()} onChange={setCloudflareEnabled} hideLabel>
+            Cloudflare AI
+          </Switch>
+        </div>
       </Show>
       <List
         class="px-3"
@@ -80,7 +85,7 @@ export const DialogManageModels: Component = () => {
           return (
             <>
               <span>{provider.name}</span>
-              <Show when={provider.id !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID}>
+              <Show when={!isCloudflareModelProvider(provider.id)}>
                 <Tooltip
                   placement="top"
                   value={language.t("dialog.model.manage.provider.toggle", { provider: provider.name })}
@@ -141,8 +146,19 @@ export const DialogManageModelsV2: Component = () => {
   const handleConnectProvider = () => {
     void dialog.show(() => <DialogConnectProvider directory={directory} />)
   }
-  const cloudflareProvider = () =>
-    models.all().find((x) => x.provider.id === CLOUDFLARE_AI_GATEWAY_PROVIDER_ID)?.provider
+  const cloudflareProviders = () =>
+    models
+      .all()
+      .map((x) => x.provider)
+      .filter(
+        (provider, index, providers) =>
+          isCloudflareModelProvider(provider.id) && providers.findIndex((item) => item.id === provider.id) === index,
+      )
+  const cloudflareEnabled = () =>
+    cloudflareProviders().length > 0 && cloudflareProviders().every((provider) => models.providerEnabled(provider.id))
+  const setCloudflareEnabled = (enabled: boolean) => {
+    cloudflareProviders().forEach((provider) => models.setProviderVisibility(provider.id, enabled))
+  }
   const setModelVisibility = (item: ModelItem, checked: boolean) => {
     local.model.setVisibility({ modelID: item.id, providerID: item.provider.id }, checked)
   }
@@ -204,20 +220,14 @@ export const DialogManageModelsV2: Component = () => {
             </Show>
           </div>
         </div>
-        <Show when={cloudflareProvider()}>
-          {(provider) => (
-            <div class="settings-v2-section px-4 pb-4">
-              <SettingsRowV2 title={provider().name} description="">
-                <SwitchV2
-                  checked={models.providerVisible(provider().id)}
-                  onChange={(checked) => models.setProviderVisibility(provider().id, checked)}
-                  hideLabel
-                >
-                  {provider().name}
-                </SwitchV2>
-              </SettingsRowV2>
-            </div>
-          )}
+        <Show when={cloudflareProviders().length > 0}>
+          <div class="settings-v2-section px-4 pb-4">
+            <SettingsRowV2 title="Cloudflare AI" description="">
+              <SwitchV2 checked={cloudflareEnabled()} onChange={setCloudflareEnabled} hideLabel>
+                Cloudflare AI
+              </SwitchV2>
+            </SettingsRowV2>
+          </div>
         </Show>
         <div data-slot="manage-models-scroll" class="relative min-h-0 flex-1">
           <div class="settings-v2-panel settings-v2-models h-full px-4 pt-4 pb-4">
@@ -249,7 +259,7 @@ export const DialogManageModelsV2: Component = () => {
                           <ProviderIcon id={group.category} width={16} height={16} class="ml-4 shrink-0" />
                           <h3 class="settings-v2-section-title">{group.items[0].provider.name}</h3>
                         </div>
-                        <Show when={group.category !== CLOUDFLARE_AI_GATEWAY_PROVIDER_ID}>
+                        <Show when={!isCloudflareModelProvider(group.category)}>
                           <div>
                             <SwitchV2
                               class="mr-6"
