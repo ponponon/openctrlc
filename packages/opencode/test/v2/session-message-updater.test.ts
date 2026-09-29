@@ -41,9 +41,7 @@ test("persists a structured assistant text channel from its start event", () => 
 
   expect(state.messages[0]?.type).toBe("assistant")
   if (state.messages[0]?.type !== "assistant") return
-  expect(state.messages[0].content).toEqual([
-    { type: "text", id: "text-1", text: "", channel: "commentary" },
-  ])
+  expect(state.messages[0].content).toEqual([{ type: "text", id: "text-1", text: "", channel: "commentary" }])
 })
 
 test.skip("step snapshots carry over to assistant messages", () => {

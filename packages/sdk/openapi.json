@@ -18333,6 +18333,10 @@
                       },
                       "textID": {
                         "type": "string"
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": ["analysis", "commentary", "final"]
                       }
                     },
                     "required": ["timestamp", "sessionID", "assistantMessageID", "textID"],
@@ -26176,6 +26180,10 @@
                   },
                   "textID": {
                     "type": "string"
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": ["analysis", "commentary", "final"]
                   }
                 },
                 "required": ["timestamp", "sessionID", "assistantMessageID", "textID"],
@@ -27717,6 +27725,10 @@
           },
           "text": {
             "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["analysis", "commentary", "final"]
           }
         },
         "required": ["type", "id", "text"],
@@ -28899,6 +28911,10 @@
               },
               "textID": {
                 "type": "string"
+              },
+              "channel": {
+                "type": "string",
+                "enum": ["analysis", "commentary", "final"]
               }
             },
             "required": ["timestamp", "sessionID", "assistantMessageID", "textID"],
@@ -34757,6 +34773,10 @@
               },
               "textID": {
                 "type": "string"
+              },
+              "channel": {
+                "type": "string",
+                "enum": ["analysis", "commentary", "final"]
               }
             },
             "required": ["timestamp", "sessionID", "assistantMessageID", "textID"],

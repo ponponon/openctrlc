@@ -273,16 +273,14 @@ it.live("cloudflare-ai-gateway applies headerTimeout when response headers do no
     yield* provideTmpdirInstance(
       () =>
         Effect.gen(function* () {
-          const urls = yield* setupGateway(
-            (init) => {
-              return new Promise((_, reject) => {
-                const signal = init?.signal
-                if (!signal) return reject(new Error("timeout signal missing"))
-                if (signal.aborted) return reject(signal.reason)
-                signal.addEventListener("abort", () => reject(signal.reason), { once: true })
-              })
-            },
-          )
+          const urls = yield* setupGateway((init) => {
+            return new Promise((_, reject) => {
+              const signal = init?.signal
+              if (!signal) return reject(new Error("timeout signal missing"))
+              if (signal.aborted) return reject(signal.reason)
+              signal.addEventListener("abort", () => reject(signal.reason), { once: true })
+            })
+          })
           const provider = yield* Provider.Service
           const model = yield* provider.getModel(
             ProviderV2.ID.make("cloudflare-ai-gateway"),
@@ -295,9 +293,7 @@ it.live("cloudflare-ai-gateway applies headerTimeout when response headers do no
           })
 
           const error = yield* Effect.promise(() => firstStreamError(result.fullStream))
-          expect(urls).toEqual([
-            "https://api.cloudflare.com/client/v4/accounts/test-account/ai/v1/chat/completions",
-          ])
+          expect(urls).toEqual(["https://api.cloudflare.com/client/v4/accounts/test-account/ai/v1/chat/completions"])
           expect(String(error)).toContain("response headers timed out")
         }),
       { config: gatewayConfig({ headerTimeout: 50 }) },

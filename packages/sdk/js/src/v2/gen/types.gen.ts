@@ -969,6 +969,7 @@ export type GlobalEvent = {
           sessionID: string
           assistantMessageID: string
           textID: string
+          channel?: "analysis" | "commentary" | "final"
         }
       }
     | {
@@ -3542,6 +3543,7 @@ export type SyncEventSessionNextTextStarted = {
       sessionID: string
       assistantMessageID: string
       textID: string
+      channel?: "analysis" | "commentary" | "final"
     }
   }
 }
@@ -4038,6 +4040,7 @@ export type SessionMessageAssistantText = {
   type: "text"
   id: string
   text: string
+  channel?: "analysis" | "commentary" | "final"
 }
 
 export type SessionMessageAssistantReasoning = {
@@ -4446,6 +4449,7 @@ export type SessionNextTextStarted = {
     sessionID: string
     assistantMessageID: string
     textID: string
+    channel?: "analysis" | "commentary" | "final"
   }
 }
 
@@ -6415,6 +6419,7 @@ export type EventSessionNextTextStarted = {
     sessionID: string
     assistantMessageID: string
     textID: string
+    channel?: "analysis" | "commentary" | "final"
   }
 }
 

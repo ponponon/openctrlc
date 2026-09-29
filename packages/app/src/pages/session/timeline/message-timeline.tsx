@@ -740,8 +740,7 @@ export function MessageTimeline(props: {
       const row = searchIndex >= 0 ? timelineRows()[searchIndex] : undefined
       if (row?._tag === "AssistantSteps") {
         const key = TimelineRow.key(row)
-        const open =
-          stepsOpen[key] ?? (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
+        const open = stepsOpen[key] ?? (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
         if (!open) setStepsOpen(key, true)
       }
       // 工具命中默认收起：先展开目标工具，输出区才有可测的命中节点。

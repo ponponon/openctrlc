@@ -133,8 +133,7 @@ export namespace Timeline {
     )
     const hasVisibleAssistantText = assistantPartRefs.some(
       ({ part }) =>
-        part.type === "text" &&
-        !("channel" in part && (part.channel === "analysis" || part.channel === "commentary")),
+        part.type === "text" && !("channel" in part && (part.channel === "analysis" || part.channel === "commentary")),
     )
     // A tool-only result (notably a standalone shell turn) is its own answer; interrupted process still collapses.
     const collapseProcess = interrupted || status !== "idle" || hasVisibleAssistantText

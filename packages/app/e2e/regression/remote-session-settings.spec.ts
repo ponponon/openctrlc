@@ -166,10 +166,7 @@ async function configureServers(page: Page, tabs: { type: "session"; server: str
       localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
       localStorage.setItem("openctrlc.global.dat:server", JSON.stringify({ list: [serverB] }))
       // These tests verify turning auto-accept on, so begin from an explicit off state.
-      localStorage.setItem(
-        "openctrlc.global.dat:permission",
-        JSON.stringify({ autoAccept: { [acceptKeyA]: false } }),
-      )
+      localStorage.setItem("openctrlc.global.dat:permission", JSON.stringify({ autoAccept: { [acceptKeyA]: false } }))
       localStorage.setItem(
         `openctrlc.global.dat:${serverB}\u0000permission`,
         JSON.stringify({ autoAccept: { [acceptKeyB]: false } }),

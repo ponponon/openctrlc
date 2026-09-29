@@ -201,9 +201,7 @@ test.describe("regression: session timeline local row state", () => {
     await expectAppVisible(steps)
     await expect(trigger).toHaveAttribute("aria-expanded", "false")
     await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
-    await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(
-      streamedTextPart.text,
-    )
+    await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(streamedTextPart.text)
 
     await trigger.click()
     await expect(trigger).toHaveAttribute("aria-expanded", "true")

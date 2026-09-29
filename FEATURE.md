@@ -2317,12 +2317,12 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 桌面时间线同时吃三套事件，补拉/游标改造必须认清边界：
 
-| 族 | type 形态 | 发布方 | 客户端入口 | 用途 |
-|---|---|---|---|---|
-| V1 持久 | `message.updated` / `message.part.updated` / `message.part.removed` | `packages/opencode/src/session/session.ts`、`message-v2.ts` | `server-session.apply()` | `data.message` / `data.part`，时间线 parts 来源 |
-| V1 实时 | `message.part.delta` | 同上 | `apply()` | 流式文本增量 |
-| Vendored V2 | `session.text.delta` / `session.step.started` 等（无 `.next`） | **仓库内无发布方**（来自 vendored `@opencode-ai/client` 类型） | `applyV2()` / `server-session-v2-reducer` | `session_message` 投影 |
-| 新 Schema | `session.next.text.ended` / `session.next.step.started` 等 | `packages/core/src/session/runner/publish-llm-event.ts`（`SessionEvent.*`） | `GET /api/session/:id/history`（未接入 UI） | 持久事件回放源 |
+| 族          | type 形态                                                           | 发布方                                                                      | 客户端入口                                  | 用途                                            |
+| ----------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
+| V1 持久     | `message.updated` / `message.part.updated` / `message.part.removed` | `packages/opencode/src/session/session.ts`、`message-v2.ts`                 | `server-session.apply()`                    | `data.message` / `data.part`，时间线 parts 来源 |
+| V1 实时     | `message.part.delta`                                                | 同上                                                                        | `apply()`                                   | 流式文本增量                                    |
+| Vendored V2 | `session.text.delta` / `session.step.started` 等（无 `.next`）      | **仓库内无发布方**（来自 vendored `@opencode-ai/client` 类型）              | `applyV2()` / `server-session-v2-reducer`   | `session_message` 投影                          |
+| 新 Schema   | `session.next.text.ended` / `session.next.step.started` 等          | `packages/core/src/session/runner/publish-llm-event.ts`（`SessionEvent.*`） | `GET /api/session/:id/history`（未接入 UI） | 持久事件回放源                                  |
 
 关键结论：
 
