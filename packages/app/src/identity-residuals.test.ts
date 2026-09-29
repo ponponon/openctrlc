@@ -109,6 +109,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
       "e2e/regression/new-session-panel-corner.spec.ts",
       ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
     ],
+    ["e2e/smoke/session-context-chart.spec.ts", ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"]],
     ["e2e/smoke/session-timeline.spec.ts", ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"]],
     ["e2e/user-story/model-selection-flow.spec.ts", ["openctrlc.global.dat:server"]],
   ])
