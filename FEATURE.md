@@ -2291,3 +2291,11 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 范围：只补已进入内存缓存的会话（`data.message[sessionID]` 存在），不给未打开的会话全量拉取；2 秒全局防抖吸收 SSE 重连抖动，避免反复 force sync。
 - 实现：`packages/app/src/context/server-session.ts` 的 `catchUpAfterReconnect`；调用点在 `packages/app/src/context/server-sync.tsx` 的 `server.connected` 处理分支。
 - 已知边界：本步不做 `Last-Event-ID` / `after=` 事件游标回放（服务端 SSE 帧目前 `id: undefined`），也不覆盖 TUI/ACP 客户端；超长断连仍以快照整页对账，成本与会话长度相关。
+- 补充结论：V2 下 `fetchMessages` 会同时刷新 `data.message`（V1）与 `session_message`（V2 投影），因此上述 force sync 已覆盖时间线正确性；事件游标（`session.events?after=` / `EventV2.durable`）是既有的可恢复通道，后续接入只是降低长会话整页重拉成本，不是正确性前置。
+
+## SSE 断连原因结构化日志
+
+- 背景：`global event disconnected` 只能说明某条 `/global/event` SSE 流结束，无法区分 webview 卸载、网络错误、主动 abort，排障只能猜。
+- 行为：`packages/app/src/context/server-sdk.tsx` 在事件流结束时输出 `console.warn("[global-sdk] event stream ended", …)`，带上 `reason`（`stream-complete` / `stream-error` / `pagehide` / `cleanup` / `closed`）、`stopping`、`url`、fetch 通道（platform/webview）和错误名；`stop("pagehide"|"cleanup")` 区分生命周期来源。桌面端 `electron-log` 开启了 `spyRendererConsole`，该日志会进入桌面日志。
+- 同步：`catchUpAfterReconnect` 在实际补拉时打 `reconnect catch-up` 日志，便于与断连时间线对齐。
+- 测试文件 `server-sdk.test.ts` 依赖 solid-js 的既有导入问题与本改动无关。

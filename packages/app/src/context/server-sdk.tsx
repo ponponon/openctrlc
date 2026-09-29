@@ -257,10 +257,28 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
   let run: Promise<void> | undefined
   let started = false
   let generation = 0
+  let stopping: "pagehide" | "cleanup" | "stop" | undefined
+
+  const logStreamEnd = (reason: string, error?: unknown) => {
+    const detail =
+      error === undefined
+        ? {}
+        : error instanceof Error
+          ? { errorName: error.name, errorMessage: error.message }
+          : { errorName: typeof error, errorMessage: String(error) }
+    console.warn("[global-sdk] event stream ended", {
+      url: server.http.url,
+      fetch: eventFetch ? "platform" : "webview",
+      reason,
+      stopping: stopping ?? null,
+      ...detail,
+    })
+  }
 
   const start = () => {
     if (started) return run
     started = true
+    stopping = undefined
     const active = ++generation
     const previous = run
     const current = (async () => {
@@ -291,14 +309,20 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
             yielded = Date.now()
             await wait(0)
           }
+          logStreamEnd("stream-complete")
         } catch (error) {
-          if (!isStreamClosed(error, attempt?.signal) && !streamErrorLogged) {
-            streamErrorLogged = true
-            console.error("[global-sdk] event stream failed", {
-              url: server.http.url,
-              fetch: eventFetch ? "platform" : "webview",
-              error,
-            })
+          if (isStreamClosed(error, attempt?.signal)) {
+            logStreamEnd(stopping ?? "closed", error)
+          } else {
+            logStreamEnd("stream-error", error)
+            if (!streamErrorLogged) {
+              streamErrorLogged = true
+              console.error("[global-sdk] event stream failed", {
+                url: server.http.url,
+                fetch: eventFetch ? "platform" : "webview",
+                error,
+              })
+            }
           }
         } finally {
           abort.signal.removeEventListener("abort", onAbort)
@@ -317,19 +341,20 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
     return run
   }
 
-  const stop = () => {
+  const stop = (reason: "pagehide" | "cleanup" | "stop" = "stop") => {
+    stopping = reason
     started = false
     generation++
     attempt?.abort()
   }
 
   onMount(() => {
-    makeEventListener(window, "pagehide", stop)
+    makeEventListener(window, "pagehide", () => stop("pagehide"))
     makeEventListener(window, "pageshow", (event) => resumeStreamAfterPageShow(event, start))
   })
 
   onCleanup(() => {
-    stop()
+    stop("cleanup")
     abort.abort()
     flush()
   })

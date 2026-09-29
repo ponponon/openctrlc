@@ -911,7 +911,15 @@ export function createServerSession(
     for (const [sessionID, items] of Object.entries(data.question)) {
       if (items.length > 0 && hasCache(sessionID)) targets.add(sessionID)
     }
-    return Promise.all([...targets].map((sessionID) => sync(sessionID, { force: true })))
+    return Promise.all([...targets].map((sessionID) => sync(sessionID, { force: true }))).then((result) => {
+      if (targets.size > 0) {
+        console.warn("[global-sdk] reconnect catch-up", {
+          sessions: [...targets],
+          count: targets.size,
+        })
+      }
+      return result
+    })
   }
 
   const eventSessionID = (event: { type: string; properties?: unknown }) => {
