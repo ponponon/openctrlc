@@ -2,12 +2,15 @@ import { describe, expect, test } from "bun:test"
 import type { AssistantMessage } from "@openctrlc/sdk/v2/client"
 import {
   applyRange,
+  boxStats,
   buildChartEntries,
   chartCSV,
+  histogram,
   METRIC_DEFS,
   metricValue,
   modelSummaries,
   movingAverage,
+  percentileOf,
   summarize,
   summarizeMetric,
 } from "./session-context-chart-data"
@@ -133,5 +136,48 @@ describe("chart data", () => {
     expect(METRIC_DEFS.cost.additive).toBe(true)
     expect(METRIC_DEFS.ttft.fractionDigits).toBe(2)
     expect(Object.keys(METRIC_DEFS)).toHaveLength(12)
+  })
+})
+
+describe("distribution helpers", () => {
+  test("histogram buckets values and tracks models", () => {
+    const bins = histogram(
+      [
+        { value: 1, modelKey: "a" },
+        { value: 2, modelKey: "a" },
+        { value: 10, modelKey: "b" },
+        { value: 11, modelKey: "b" },
+      ],
+      2,
+    )
+    expect(bins).toHaveLength(2)
+    expect(bins[0].count + bins[1].count).toBe(4)
+    expect(bins[0].byModel.a).toBe(2)
+    expect(bins[1].byModel.b).toBe(2)
+  })
+
+  test("histogram collapses identical values into one bin", () => {
+    const bins = histogram(
+      [
+        { value: 5, modelKey: "a" },
+        { value: 5, modelKey: "b" },
+      ],
+      8,
+    )
+    expect(bins).toHaveLength(1)
+    expect(bins[0].count).toBe(2)
+  })
+
+  test("boxStats fences outliers", () => {
+    const stats = boxStats([1, 2, 3, 4, 5, 100])
+    expect(stats?.median).toBe(3.5)
+    expect(stats?.outliers).toEqual([100])
+    expect(stats?.count).toBe(6)
+  })
+
+  test("percentileOf interpolates", () => {
+    expect(percentileOf([0, 10], 50)).toBe(5)
+    expect(percentileOf([4], 90)).toBe(4)
+    expect(percentileOf([], 50)).toBeUndefined()
   })
 })

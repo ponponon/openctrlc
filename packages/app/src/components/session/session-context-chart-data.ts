@@ -328,3 +328,82 @@ export function downloadTextFile(filename: string, content: string, type = "text
   anchor.click()
   URL.revokeObjectURL(url)
 }
+
+export type HistogramBin = {
+  start: number
+  end: number
+  count: number
+  byModel: Record<string, number>
+}
+
+export type BoxStats = {
+  min: number
+  q1: number
+  median: number
+  q3: number
+  max: number
+  count: number
+  outliers: number[]
+}
+
+export function percentileOf(sorted: number[], p: number) {
+  if (sorted.length === 0) return undefined
+  if (sorted.length === 1) return sorted[0]
+  const rank = (p / 100) * (sorted.length - 1)
+  const low = Math.floor(rank)
+  const high = Math.ceil(rank)
+  if (low === high) return sorted[low]
+  return sorted[low] + (sorted[high] - sorted[low]) * (rank - low)
+}
+
+export function histogram(
+  points: { value: number; modelKey: string }[],
+  binCount = 12,
+): HistogramBin[] {
+  if (points.length === 0) return []
+  const values = points.map((point) => point.value)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const count = Math.max(1, Math.min(binCount, values.length))
+  if (max === min) {
+    const byModel: Record<string, number> = {}
+    for (const point of points) byModel[point.modelKey] = (byModel[point.modelKey] ?? 0) + 1
+    return [{ start: min, end: max, count: points.length, byModel }]
+  }
+  const width = (max - min) / count
+  const bins: HistogramBin[] = Array.from({ length: count }, (_, index) => ({
+    start: min + index * width,
+    end: index === count - 1 ? max : min + (index + 1) * width,
+    count: 0,
+    byModel: {},
+  }))
+  for (const point of points) {
+    const raw = Math.floor((point.value - min) / width)
+    const index = Math.max(0, Math.min(count - 1, raw))
+    bins[index].count++
+    bins[index].byModel[point.modelKey] = (bins[index].byModel[point.modelKey] ?? 0) + 1
+  }
+  return bins
+}
+
+export function boxStats(values: number[]): BoxStats | undefined {
+  if (values.length === 0) return undefined
+  const sorted = [...values].sort((a, b) => a - b)
+  const q1 = percentileOf(sorted, 25) ?? sorted[0]
+  const median = percentileOf(sorted, 50) ?? sorted[0]
+  const q3 = percentileOf(sorted, 75) ?? sorted[0]
+  const iqr = q3 - q1
+  const lowerFence = q1 - 1.5 * iqr
+  const upperFence = q3 + 1.5 * iqr
+  const inliers = sorted.filter((value) => value >= lowerFence && value <= upperFence)
+  const outliers = sorted.filter((value) => value < lowerFence || value > upperFence)
+  return {
+    min: inliers[0] ?? sorted[0],
+    q1,
+    median,
+    q3,
+    max: inliers[inliers.length - 1] ?? sorted[sorted.length - 1],
+    count: sorted.length,
+    outliers,
+  }
+}

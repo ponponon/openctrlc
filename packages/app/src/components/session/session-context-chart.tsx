@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
 import type { AssistantMessage, Message } from "@openctrlc/sdk/v2/client"
 import { Button } from "@openctrlc/ui/button"
@@ -30,6 +30,8 @@ import {
   CHART_METRICS,
 } from "./session-context-chart-data"
 import {
+  BoxPlot,
+  HistogramPlot,
   MetricChartPlot,
   metricDescription,
   metricLabel,
@@ -135,10 +137,11 @@ export function DialogSessionMetricChart(props: {
     smooth: "off" as ChartSmoothMode,
     range: "all" as ChartRange,
     selectedModels: [...new Set(entries().map((entry) => entry.modelKey))],
-    bottomTab: "detail" as "detail" | "models" | "table",
+    bottomTab: "detail" as "detail" | "models" | "table" | "distribution",
     tableSort: "sequence" as TableSortKey,
     tableDesc: false,
     copyState: "idle" as "idle" | "done",
+    brush: undefined as { startSequence: number; endSequence: number } | undefined,
   })
   const knownModels = new Set(models().map((model) => model.key))
   createEffect(() => {
@@ -151,28 +154,49 @@ export function DialogSessionMetricChart(props: {
   const visibleEntries = createMemo(() =>
     applyRange(entries(), state.range).filter((entry) => state.selectedModels.includes(entry.modelKey)),
   )
+  const analysisEntries = createMemo(() => {
+    const brush = state.brush
+    if (!brush) return visibleEntries()
+    return visibleEntries().filter(
+      (entry) => entry.sequence >= brush.startSequence && entry.sequence <= brush.endSequence,
+    )
+  })
   const selectedPoints = createMemo(() =>
-    visibleEntries()
+    analysisEntries()
       .map((entry) => ({ entry, value: metricValue(entry, state.metric) }))
       .filter((point): point is { entry: ChartEntry; value: number } => point.value !== undefined),
   )
   const summary = createMemo(() => summarizeMetric(selectedPoints()))
-  const compareSummary = createMemo(() =>
-    state.compareMetric === undefined
-      ? undefined
-      : summarizeMetric(
-          visibleEntries()
-            .map((entry) => ({ entry, value: metricValue(entry, state.compareMetric as ChartMetric) }))
-            .filter((point): point is { entry: ChartEntry; value: number } => point.value !== undefined),
-        ),
-  )
-  const modelStats = createMemo(() => modelSummaries(visibleEntries(), MODEL_COLORS, state.metric))
+  const modelStats = createMemo(() => modelSummaries(analysisEntries(), MODEL_COLORS, state.metric))
   const facetModels = createMemo(() =>
     modelStats().filter((model) => state.selectedModels.includes(model.key)),
+  )
+  const distributionModels = createMemo(() =>
+    modelList(analysisEntries(), MODEL_COLORS).map((model) => ({
+      key: model.key,
+      label: model.label,
+      color: model.color,
+      values: model.entries
+        .map((entry) => metricValue(entry, state.metric))
+        .filter((value): value is number => value !== undefined),
+    })),
+  )
+  const histogramPoints = createMemo(() =>
+    analysisEntries()
+      .map((entry) => ({
+        value: metricValue(entry, state.metric),
+        modelKey: entry.modelKey,
+        modelLabel: entry.modelLabel,
+      }))
+      .filter((point): point is { value: number; modelKey: string; modelLabel: string } => point.value !== undefined),
   )
 
   const setMetric = (metric: ChartMetric) => {
     setState("metric", metric)
+    setActivePoint(undefined)
+  }
+  const setBrush = (range: { startSequence: number; endSequence: number } | undefined) => {
+    setState("brush", range)
     setActivePoint(undefined)
   }
   const setCompareMetric = (metric: ChartMetric | undefined) => {
@@ -201,7 +225,7 @@ export function DialogSessionMetricChart(props: {
     ms === undefined ? "—" : formatMetric(ms / 1000, metric, language.intl())
 
   const tableRows = createMemo(() => {
-    const rows = visibleEntries().map((entry) => ({
+    const rows = analysisEntries().map((entry) => ({
       entry,
       metric: metricValue(entry, state.metric),
       duration: entry.durationMs === undefined ? undefined : entry.durationMs / 1000,
@@ -231,7 +255,7 @@ export function DialogSessionMetricChart(props: {
   }
 
   const exportCSV = (scope: "visible" | "all") => {
-    const source = scope === "visible" ? visibleEntries() : entries()
+    const source = scope === "visible" ? analysisEntries() : entries()
     const csv = chartCSV(
       source,
       state.metric,
@@ -604,6 +628,18 @@ export function DialogSessionMetricChart(props: {
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu>
+
+            <Show when={state.brush}>
+              <Button
+                size="small"
+                variant="secondary"
+                class="gap-1.5 px-2"
+                onClick={() => setBrush(undefined)}
+              >
+                <Icon name="circle-x" size="small" />
+                <span>{language.t("context.rawMessages.chart.clearBrush")}</span>
+              </Button>
+            </Show>
           </div>
 
           <div class="text-11-regular text-text-weak">
@@ -612,6 +648,14 @@ export function DialogSessionMetricChart(props: {
               {" · "}
               {language.t("context.rawMessages.chart.compareHint", {
                 metric: metricLabel(language, state.compareMetric as ChartMetric),
+              })}
+            </Show>
+            <Show when={state.brush}>
+              {" · "}
+              {language.t("context.rawMessages.chart.brushHint", {
+                start: state.brush?.startSequence ?? 0,
+                end: state.brush?.endSequence ?? 0,
+                count: analysisEntries().length,
               })}
             </Show>
           </div>
@@ -721,10 +765,12 @@ export function DialogSessionMetricChart(props: {
                 selectedModels={state.selectedModels}
                 expanded
                 summary={summary}
+                brush={() => state.brush}
                 activeMessageID={activePoint()?.message.id}
                 onSelectMessage={selectMessage}
                 onActivatePoint={setActivePoint}
                 onActivePoint={setActivePoint}
+                onBrush={setBrush}
               />
             </Show>
           </div>
@@ -749,7 +795,7 @@ export function DialogSessionMetricChart(props: {
         </div>
 
         <div class="flex flex-none items-center gap-1">
-          <For each={["detail", "models", "table"] as const}>
+          <For each={["detail", "models", "table", "distribution"] as const}>
             {(tab) => (
               <Button
                 size="small"
@@ -769,6 +815,37 @@ export function DialogSessionMetricChart(props: {
         </div>
 
         <div class="min-h-[140px] flex-none overflow-auto rounded-md border border-border-base bg-surface-base px-3 py-2.5">
+          <Show when={state.bottomTab === "distribution"}>
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <div class="text-12-medium text-text-base">
+                  {language.t("context.rawMessages.chart.distributionTitle")}
+                </div>
+                <div class="text-11-regular text-text-weak">
+                  {language.t("context.rawMessages.chart.distributionHint")}
+                </div>
+              </div>
+              <div class="grid gap-4 @[64rem]:grid-cols-2">
+                <div class="rounded-md border border-border-weak-base p-2">
+                  <div class="mb-1 text-11-medium text-text-base">
+                    {language.t("context.rawMessages.chart.histogramTitle")}
+                  </div>
+                  <HistogramPlot
+                    points={histogramPoints}
+                    metric={state.metric}
+                    colors={() => models().map((model) => ({ key: model.key, color: model.color, label: model.label }))}
+                  />
+                </div>
+                <div class="rounded-md border border-border-weak-base p-2">
+                  <div class="mb-1 text-11-medium text-text-base">
+                    {language.t("context.rawMessages.chart.boxTitle")}
+                  </div>
+                  <BoxPlot models={distributionModels} metric={state.metric} />
+                </div>
+              </div>
+            </div>
+          </Show>
+          <Show when={state.bottomTab !== "distribution"}>
           <Show
             when={state.bottomTab === "detail"}
             fallback={
@@ -995,6 +1072,7 @@ export function DialogSessionMetricChart(props: {
                 </div>
               )}
             </Show>
+          </Show>
           </Show>
         </div>
       </div>
