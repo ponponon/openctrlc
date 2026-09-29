@@ -2,6 +2,7 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+mode=${1:-full}
 host_conf=/usr/local/openresty/nginx/conf/conf.d/openctrlc-remote.quniv.cn.conf
 relay=/home/pon/openctrlc-remote
 compose=$relay/infra/remote-relay/compose.yaml
@@ -13,6 +14,14 @@ trap 'rm -rf "$temp"' EXIT HUP INT TERM
 if [ ! -f "$root/infra/remote-relay/compose.yaml" ]; then
   echo "Repository root not found: $root" >&2
   exit 1
+fi
+if [ "$mode" != full ] && [ "$mode" != --config-only ]; then
+  echo "Usage: sh infra/remote-relay/deploy.sh [--config-only]" >&2
+  exit 2
+fi
+if [ "$mode" = --config-only ] && [ "$#" -ne 1 ]; then
+  echo "Usage: sh infra/remote-relay/deploy.sh [--config-only]" >&2
+  exit 2
 fi
 
 if [ -e "$relay" ] && [ ! -f "$managed_marker" ]; then
@@ -40,6 +49,30 @@ if docker exec "$openresty" test -e "$host_conf"; then
     echo "Refusing to replace an unmanaged OpenResty config: $host_conf" >&2
     exit 1
   fi
+fi
+
+if [ "$mode" = --config-only ]; then
+  if [ ! -f "$temp/existing.conf" ]; then
+    echo "Refusing config-only deployment without an existing managed virtual host" >&2
+    exit 1
+  fi
+  docker cp "$root/infra/remote-relay/openresty.conf" "$openresty:/tmp/openctrlc-remote.conf"
+  docker exec -u root "$openresty" install -m 0644 /tmp/openctrlc-remote.conf "$host_conf"
+  if ! docker exec -u root "$openresty" nginx -t; then
+    docker cp "$temp/existing.conf" "$openresty:/tmp/openctrlc-remote.rollback.conf"
+    docker exec -u root "$openresty" install -m 0644 /tmp/openctrlc-remote.rollback.conf "$host_conf"
+    docker exec -u root "$openresty" nginx -t
+    exit 1
+  fi
+  if ! docker exec -u root "$openresty" nginx -s reload; then
+    docker cp "$temp/existing.conf" "$openresty:/tmp/openctrlc-remote.rollback.conf"
+    docker exec -u root "$openresty" install -m 0644 /tmp/openctrlc-remote.rollback.conf "$host_conf"
+    docker exec -u root "$openresty" nginx -t
+    docker exec -u root "$openresty" nginx -s reload
+    exit 1
+  fi
+  echo "OpenResty config reloaded without restarting the Relay process"
+  exit 0
 fi
 
 install -d -m 0755 "$relay/packages" "$relay/infra/remote-relay"

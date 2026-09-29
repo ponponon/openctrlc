@@ -12,6 +12,8 @@ sh infra/remote-relay/deploy.sh
 
 The script checks that the expected OpenResty container and certificate are present, refuses to replace an unrelated container or virtual host, builds the isolated relay container, checks its local health endpoint, validates the Nginx configuration, then reloads OpenResty. It does not restart other containers. The managed files live under `/home/pon/openctrlc-remote` and `/usr/local/openresty/nginx/conf/conf.d/openctrlc-remote.quniv.cn.conf`.
 
+For a managed virtual-host change that must preserve active in-memory sessions, run `sh infra/remote-relay/deploy.sh --config-only`. This validates the existing managed configuration and certificate, installs only `openresty.conf`, runs `nginx -t`, and gracefully reloads OpenResty with rollback on failure. It does not rebuild or restart the Relay container.
+
 For another host, edit `compose.yaml` (`OPENCTRLC_REMOTE_PUBLIC_URL`), `openresty.conf` (`server_name` and certificate paths), and `deploy.sh` (host-specific paths and OpenResty container name) before deployment. Provide a valid public TLS certificate and preserve the loopback-only relay port binding.
 
 ## Operations

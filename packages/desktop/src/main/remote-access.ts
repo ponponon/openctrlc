@@ -596,6 +596,7 @@ export class RemoteAccessService {
               ![
                 "connection",
                 "content-length",
+                "content-encoding",
                 "keep-alive",
                 "set-cookie",
                 "set-cookie2",

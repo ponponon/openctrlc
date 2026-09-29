@@ -747,6 +747,7 @@ function sanitizeResponseHeaders(value: Record<string, string>) {
   for (const name of [
     "connection",
     "content-length",
+    "content-encoding",
     "keep-alive",
     "set-cookie",
     "set-cookie2",
