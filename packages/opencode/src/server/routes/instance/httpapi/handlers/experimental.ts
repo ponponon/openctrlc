@@ -225,10 +225,10 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
       // historical page instead of hanging on the live tail.
       const startSeq = yield* EventV2.latestSequence(db, sessionID)
       const sse = (source: Stream.Stream<Sse.Event>) =>
-        HttpServerResponse.stream(
-          source.pipe(Stream.pipeThroughChannel(Sse.encode()), Stream.encodeText),
-          { contentType: "text/event-stream", headers: SSE_HEADERS },
-        )
+        HttpServerResponse.stream(source.pipe(Stream.pipeThroughChannel(Sse.encode()), Stream.encodeText), {
+          contentType: "text/event-stream",
+          headers: SSE_HEADERS,
+        })
 
       if (!follow && startSeq <= after) {
         yield* Effect.logInfo("session log connected", { sessionID, after, follow, empty: true, limit })
@@ -243,28 +243,26 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
         // Page the historical gap and close with log.synced.more so the client
         // can fetch the next page without holding a live SSE open.
         const state = { emitted: 0, lastSeq: after, more: false }
-        const items = yield* events
-          .durable({ aggregateID: sessionID, after })
-          .pipe(
-            Stream.takeUntil((event) => (event.durable?.seq ?? -1) >= startSeq),
-            Stream.filter(isV1MessageEvent),
-            Stream.filter((event) => {
-              if (state.emitted >= limit) {
-                state.more = true
-                return false
-              }
-              state.emitted++
-              state.lastSeq = event.durable?.seq ?? state.lastSeq
-              return true
-            }),
-            Stream.map((event) => ({
-              id: event.id,
-              type: event.type,
-              data: event.data,
-              durable: event.durable,
-            })),
-            Stream.runCollect,
-          )
+        const items = yield* events.durable({ aggregateID: sessionID, after }).pipe(
+          Stream.takeUntil((event) => (event.durable?.seq ?? -1) >= startSeq),
+          Stream.filter(isV1MessageEvent),
+          Stream.filter((event) => {
+            if (state.emitted >= limit) {
+              state.more = true
+              return false
+            }
+            state.emitted++
+            state.lastSeq = event.durable?.seq ?? state.lastSeq
+            return true
+          }),
+          Stream.map((event) => ({
+            id: event.id,
+            type: event.type,
+            data: event.data,
+            durable: event.durable,
+          })),
+          Stream.runCollect,
+        )
         yield* Effect.logInfo("session log connected", {
           sessionID,
           after,

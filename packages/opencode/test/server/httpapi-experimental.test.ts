@@ -19,10 +19,7 @@ import { testEffect } from "../lib/effect"
 import { httpApiLayer, requestInDirectory } from "./httpapi-layer"
 
 const it = testEffect(
-  Layer.mergeAll(
-    LayerNode.compile(LayerNode.group([Session.node, Database.node, EventV2Bridge.node])),
-    httpApiLayer,
-  ),
+  Layer.mergeAll(LayerNode.compile(LayerNode.group([Session.node, Database.node, EventV2Bridge.node])), httpApiLayer),
 )
 const testWorktreeMutations = process.platform === "win32" ? it.instance.skip : it.instance
 

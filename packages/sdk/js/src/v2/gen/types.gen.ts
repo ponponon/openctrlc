@@ -7873,6 +7873,43 @@ export type ExperimentalSessionBackgroundResponses = {
 export type ExperimentalSessionBackgroundResponse =
   ExperimentalSessionBackgroundResponses[keyof ExperimentalSessionBackgroundResponses]
 
+export type ExperimentalSessionLogData = {
+  body?: never
+  path: {
+    sessionID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+    after?: string
+    follow?: "true" | "false"
+    limit?: string
+  }
+  url: "/experimental/session/{sessionID}/log"
+}
+
+export type ExperimentalSessionLogErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type ExperimentalSessionLogError = ExperimentalSessionLogErrors[keyof ExperimentalSessionLogErrors]
+
+export type ExperimentalSessionLogResponses = {
+  /**
+   * Success
+   */
+  200: string
+}
+
+export type ExperimentalSessionLogResponse = ExperimentalSessionLogResponses[keyof ExperimentalSessionLogResponses]
+
 export type ExperimentalResourceListData = {
   body?: never
   path?: never

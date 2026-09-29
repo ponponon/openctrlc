@@ -46,6 +46,8 @@ import type {
   ExperimentalSessionBackgroundResponses,
   ExperimentalSessionListErrors,
   ExperimentalSessionListResponses,
+  ExperimentalSessionLogErrors,
+  ExperimentalSessionLogResponses,
   ExperimentalWorkspaceAdapterListErrors,
   ExperimentalWorkspaceAdapterListResponses,
   ExperimentalWorkspaceCreateErrors,
@@ -882,6 +884,48 @@ export class Session extends HeyApiClient {
       ThrowOnError
     >({
       url: "/experimental/session/{sessionID}/background",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Replay session message log
+   *
+   * Replay durable V1 session message events after an exclusive aggregate sequence, then optionally continue with new events. When follow is false, at most `limit` events are returned and a trailing `log.synced` marker reports whether more remain.
+   */
+  public log<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      directory?: string
+      workspace?: string
+      after?: string
+      follow?: "true" | "false"
+      limit?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "query", key: "after" },
+            { in: "query", key: "follow" },
+            { in: "query", key: "limit" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).sse.get<
+      ExperimentalSessionLogResponses,
+      ExperimentalSessionLogErrors,
+      ThrowOnError
+    >({
+      url: "/experimental/session/{sessionID}/log",
       ...options,
       ...params,
     })
