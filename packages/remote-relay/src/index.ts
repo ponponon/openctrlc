@@ -1,4 +1,11 @@
-import { decodeBase64, encodeBase64, randomToken, relayMessage, type RelayServerMessage } from "./protocol"
+import {
+  decodeBase64,
+  encodeBase64,
+  randomToken,
+  relayMessage,
+  type RelayServerMessage,
+  type RelayWorkspaceSnapshot,
+} from "./protocol"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -41,6 +48,7 @@ type RelaySession = {
   sockets: Map<string, Bun.ServerWebSocket<SocketData>>
   resumeUntil?: number
   resumeTimer?: ReturnType<typeof setTimeout>
+  workspace?: RelayWorkspaceSnapshot
 }
 
 type ViewerGrant = {
@@ -99,12 +107,18 @@ const server = Bun.serve<SocketData>({
     if (request.method === "GET" && url.pathname === "/") {
       const viewer = sessionFor(request)
       if (!viewer) return htmlResponse(pairPage("home"))
+      if (!hasWorkspaceBootstrapCookie(request)) return workspaceBootstrapResponse(viewer.session.workspace, "/")
       return proxyRequest(viewer.session, request, viewer.token)
     }
 
     const viewer = sessionFor(request)
     if (!viewer) return new Response("Remote session required", { status: 401, headers: noStore })
     const session = viewer.session
+    if (request.method === "GET" && request.headers.get("sec-fetch-dest") === "document") {
+      if (!hasWorkspaceBootstrapCookie(request)) {
+        return workspaceBootstrapResponse(viewer.session.workspace, url.pathname + url.search)
+      }
+    }
     if (request.headers.get("upgrade")?.toLowerCase() === "websocket") {
       if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
       if (session.sockets.size >= maxSockets)
@@ -413,6 +427,11 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     sendHost(session, { type: "viewer.revoked", viewerID: value.viewerID })
     return
   }
+  if (value.type === "workspace.update") {
+    const workspace = validateWorkspaceSnapshot(value.workspace)
+    if (workspace) session.workspace = workspace
+    return
+  }
   if (value.type === "pair.received" && typeof value.pairID === "string") {
     const pair = session.pairs.get(value.pairID)
     if (pair && pair.expiresAt > Date.now()) {
@@ -627,6 +646,65 @@ async function claimViewer(request: Request) {
       ...noStore,
     },
   })
+}
+
+function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return
+  const input = value as Record<string, unknown>
+  if (!Array.isArray(input.projects) || input.projects.length > 128) return
+  if (!Array.isArray(input.sessionIDs) || input.sessionIDs.length > 128) return
+  const projects = input.projects.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return []
+    const project = item as Record<string, unknown>
+    if (typeof project.worktree !== "string" || project.worktree.length > 4096) return []
+    return [{ worktree: project.worktree, expanded: project.expanded === true }]
+  })
+  if (projects.length !== input.projects.length) return
+  const sessionIDs = input.sessionIDs.filter(
+    (item): item is string => typeof item === "string" && item.length > 0 && item.length <= 200,
+  )
+  if (sessionIDs.length !== input.sessionIDs.length) return
+  if (input.lastProject !== undefined && (typeof input.lastProject !== "string" || input.lastProject.length > 4096))
+    return
+  if (
+    input.activeSessionID !== undefined &&
+    (typeof input.activeSessionID !== "string" ||
+      input.activeSessionID.length === 0 ||
+      input.activeSessionID.length > 200)
+  )
+    return
+  const workspace = {
+    projects,
+    ...(typeof input.lastProject === "string" ? { lastProject: input.lastProject } : {}),
+    sessionIDs,
+    ...(typeof input.activeSessionID === "string" ? { activeSessionID: input.activeSessionID } : {}),
+  } satisfies RelayWorkspaceSnapshot
+  if (JSON.stringify(workspace).length > 64 * 1024) return
+  return workspace
+}
+
+function hasWorkspaceBootstrapCookie(request: Request) {
+  return request.headers
+    .get("cookie")
+    ?.split(";")
+    .some((item) => item.trim() === "__Host-oc_remote_boot=1")
+}
+
+function workspaceBootstrapResponse(workspace: RelayWorkspaceSnapshot | undefined, destination: string) {
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))))
+  const snapshot = JSON.stringify(workspace ?? null).replaceAll("<", "\\u003c")
+  const target = JSON.stringify(destination).replaceAll("<", "\\u003c")
+  return new Response(
+    `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCtrlC</title><body><script nonce="${nonce}">try{const workspace=${snapshot};const key="openctrlc.remote-workspace";if(workspace)sessionStorage.setItem(key,JSON.stringify(workspace));else sessionStorage.removeItem(key)}catch{}location.replace(${target})</script></body></html>`,
+    {
+      headers: {
+        ...noStore,
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+        "set-cookie": "__Host-oc_remote_boot=1; Path=/; Max-Age=60; Secure; SameSite=Strict",
+      },
+    },
+  )
 }
 
 function sessionFor(request: Request) {

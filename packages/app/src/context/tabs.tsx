@@ -5,7 +5,7 @@ import { Persist, persisted, removePersisted, draftPersistedKeys } from "@/utils
 import { ServerConnection, useServer } from "./server"
 import { createEffect, getOwner, onCleanup, startTransition } from "solid-js"
 import { useLocation, useNavigate, useParams } from "@solidjs/router"
-import { usePlatform } from "./platform"
+import { usePlatform, type RemoteWorkspaceSnapshot } from "./platform"
 import { uuid } from "@/utils/uuid"
 import { SessionTabsRemovedDetail } from "@/components/titlebar-session-events"
 import { sessionHref } from "@/utils/session-route"
@@ -53,7 +53,7 @@ export function sessionHasOpenTab(tabs: Tab[], server: ServerConnection.Key, ses
 export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
   name: "Tabs",
   gate: false,
-  init: () => {
+  init: (props: { remoteWorkspace?: RemoteWorkspaceSnapshot }) => {
     const server = useServer()
     const platform = usePlatform()
     const fallback = server.key
@@ -67,6 +67,19 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
     const [recent, setRecent, , recentReady] = persisted(Persist.window("tabs.recent"), createStore<RecentTab>({}))
     const [info, setInfo] = persisted(Persist.window("tabs.info"), createStore<Record<string, TabInfo>>({}))
     const [closed, setClosed, , closedReady] = persisted(Persist.window("tabs.closed"), createStore<ClosedTab[]>([]))
+
+    if (platform.platform === "web" && props.remoteWorkspace) {
+      const sessions = props.remoteWorkspace.sessionIDs.map((sessionId) => ({
+        type: "session" as const,
+        server: fallback,
+        sessionId,
+      }))
+      const active = props.remoteWorkspace.activeSessionID
+      const activeTab = active ? sessions.find((tab) => tab.sessionId === active) : undefined
+      if (active && !activeTab) sessions.push({ type: "session", server: fallback, sessionId: active })
+      setStore(sessions)
+      if (active) setRecent("key", tabKey(sessions.find((tab) => tab.sessionId === active)!))
+    }
 
     const params = useParams()
     const navigate = useNavigate()

@@ -12,6 +12,8 @@ import { authFromToken } from "@/utils/server"
 import pkg from "../package.json"
 import { ServerConnection } from "./context/server"
 import { Brand } from "@openctrlc/identity"
+import { sessionHref } from "./utils/session-route"
+import { takeRemoteWorkspaceSnapshot } from "./utils/remote-workspace"
 
 const DEFAULT_SERVER_URL_KEY = `${Brand.runtimeDirectory}.settings.dat:defaultServerUrl`
 
@@ -152,6 +154,14 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 }
 
 if (root instanceof HTMLElement) {
+  const remoteWorkspace = takeRemoteWorkspaceSnapshot()
+  if (remoteWorkspace?.activeSessionID && location.pathname === "/") {
+    const server = ServerConnection.Key.make(getCurrentUrl())
+    history.replaceState(null, "", sessionHref(server, remoteWorkspace.activeSessionID))
+  }
+  if (typeof document === "object") {
+    document.cookie = "__Host-oc_remote_boot=; Path=/; Max-Age=0; Secure; SameSite=Strict"
+  }
   void loadInitialLocale().then((locale) => {
     const auth = authFromToken(new URLSearchParams(location.search).get("auth_token"))
     clearAuthToken()
@@ -168,10 +178,11 @@ if (root instanceof HTMLElement) {
         <PlatformProvider value={platform}>
           <AppBaseProviders locale={locale}>
             <AppInterface
-              defaultServer={ServerConnection.Key.make(getDefaultUrl())}
+              defaultServer={ServerConnection.Key.make(remoteWorkspace ? getCurrentUrl() : getDefaultUrl())}
               canonicalLocalServer={ServerConnection.key(server)}
               servers={[server]}
               disableHealthCheck
+              remoteWorkspace={remoteWorkspace}
             />
           </AppBaseProviders>
         </PlatformProvider>

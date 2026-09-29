@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron"
 import type { ElectronAPI, WslServersEvent } from "./types"
 import type { UpdaterState } from "@openctrlc/app/updater"
-import type { RemoteAccessState } from "@openctrlc/app"
+import type { RemoteAccessState, RemoteWorkspaceSnapshot } from "@openctrlc/app"
 
 const updaterCallbacks = new Set<(state: UpdaterState) => void>()
 let updaterState: UpdaterState | undefined
@@ -77,6 +77,7 @@ const api: ElectronAPI = {
     revokeViewer: (viewerID) => ipcRenderer.invoke("remote-access-revoke-viewer", viewerID),
     approve: (pairID) => ipcRenderer.invoke("remote-access-approve", pairID),
     deny: (pairID) => ipcRenderer.invoke("remote-access-deny", pairID),
+    updateWorkspace: (snapshot: RemoteWorkspaceSnapshot) => ipcRenderer.send("remote-access-workspace", snapshot),
     subscribe: async (callback) => {
       remoteAccessCallbacks.add(callback)
       if (!remoteAccessSubscription) {

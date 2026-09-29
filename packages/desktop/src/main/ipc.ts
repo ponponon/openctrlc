@@ -81,6 +81,10 @@ export function registerIpcHandlers(deps: Deps) {
   ipcMain.handle("await-initialization", () => deps.awaitInitialization())
   ipcMain.handle("remote-access-state", () => deps.remoteAccess.getState())
   ipcMain.handle("remote-access-start", () => deps.remoteAccess.start())
+  ipcMain.on("remote-access-workspace", (_event, value: unknown) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return
+    deps.remoteAccess.updateWorkspace(value as Parameters<RemoteAccessService["updateWorkspace"]>[0])
+  })
   ipcMain.handle("remote-access-stop", () => deps.remoteAccess.stop())
   ipcMain.handle("remote-access-rotate-link", () => deps.remoteAccess.rotatePairingLink())
   ipcMain.handle("remote-access-revoke-viewer", (_event: IpcMainInvokeEvent, viewerID: unknown) => {

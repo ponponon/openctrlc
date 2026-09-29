@@ -1,3 +1,10 @@
+export type RelayWorkspaceSnapshot = {
+  projects: Array<{ worktree: string; expanded: boolean }>
+  lastProject?: string
+  sessionIDs: string[]
+  activeSessionID?: string
+}
+
 export type RelayHostMessage =
   | { type: "session.create" }
   | { type: "session.resume"; sessionID: string; hostToken: string }
@@ -7,6 +14,12 @@ export type RelayHostMessage =
   | { type: "pair.approve" | "pair.deny"; sessionID: string; hostToken: string; pairID: string }
   | { type: "pair.received"; sessionID: string; hostToken: string; pairID: string }
   | { type: "viewer.revoke"; sessionID: string; hostToken: string; viewerID: string }
+  | {
+      type: "workspace.update"
+      sessionID: string
+      hostToken: string
+      workspace: RelayWorkspaceSnapshot
+    }
   | { type: "request.start"; id: string; method: string; path: string; headers: Record<string, string> }
   | { type: "request.chunk"; id: string; data: string }
   | { type: "request.end"; id: string }

@@ -50,7 +50,7 @@ import { LayoutProvider, useLayout } from "@/context/layout"
 import { ModelsProvider } from "@/context/models"
 import { NotificationProvider } from "@/context/notification"
 import { PermissionProvider } from "@/context/permission"
-import { usePlatform } from "@/context/platform"
+import { usePlatform, type RemoteWorkspaceSnapshot } from "@/context/platform"
 import { PromptProvider } from "@/context/prompt"
 import { ServerConnection, ServerProvider, serverName, useServer } from "@/context/server"
 import { SettingsProvider, useSettings } from "@/context/settings"
@@ -66,6 +66,7 @@ import { legacySessionHref, legacySessionServer, requireServerKey, sessionHref }
 import { createSessionLineage } from "@/pages/session/session-lineage"
 import { showToast } from "@/utils/toast"
 import { showOpenCodeImportDialog } from "@/utils/opencode-import-dialog"
+import { decode64 } from "@/utils/base64"
 
 import { SessionPage, SessionRouteErrorBoundary, TargetSessionRouteContent } from "@/pages/session"
 import { NewHome } from "@/pages/home"
@@ -633,6 +634,7 @@ export function AppInterface(props: {
   disableHealthCheck?: boolean
   startup?: Promise<void>
   serverScoped?: JSX.Element
+  remoteWorkspace?: RemoteWorkspaceSnapshot
 }) {
   // The visual new layout lives in the router root so it remains mounted across
   // route changes. Draft and session routes override only their server-bound data
@@ -651,6 +653,7 @@ export function AppInterface(props: {
       defaultServer={props.defaultServer}
       canonicalLocalServer={props.canonicalLocalServer}
       servers={props.servers}
+      remoteWorkspace={props.remoteWorkspace}
     >
       <GlobalProvider>
         <SettingsProvider>
@@ -659,7 +662,8 @@ export function AppInterface(props: {
               <Dynamic
                 component={props.router ?? Router}
                 root={(routerProps) => (
-                  <TabsProvider>
+                  <TabsProvider remoteWorkspace={props.remoteWorkspace}>
+                    <RemoteWorkspaceReporter />
                     <PermissionProvider>
                       <NotificationProvider>
                         <ServerShell>
@@ -680,6 +684,44 @@ export function AppInterface(props: {
       </GlobalProvider>
     </ServerProvider>
   )
+}
+
+function RemoteWorkspaceReporter() {
+  const platform = usePlatform()
+  const server = useServer()
+  const global = useGlobal()
+  const tabs = useTabs()
+  const location = useLocation()
+
+  createEffect(() => {
+    if (platform.platform !== "desktop" || !platform.remoteAccess) return
+    if (!server.ready() || !tabs.ready()) return
+    const connection = global.servers.list().find(ServerConnection.builtin)
+    if (!connection) return
+    const key = ServerConnection.key(connection)
+    const parts = location.pathname.split("/").filter(Boolean)
+    const activeSessionID =
+      parts[0] === "server" && parts[2] === "session" && parts[3] && decode64(parts[1]) === key ? parts[3] : undefined
+    const sessionIDs = tabs.store.flatMap((tab) =>
+      tab.type === "session" && tab.server === key ? [tab.sessionId] : [],
+    )
+    if (activeSessionID && !sessionIDs.includes(activeSessionID)) sessionIDs.push(activeSessionID)
+    const context = global.ensureServerCtx(connection)
+    const projects = context.projects.list().map((project) => ({
+      worktree: project.worktree,
+      expanded: project.expanded,
+    }))
+    const lastProject = context.projects.last()
+    const snapshot: RemoteWorkspaceSnapshot = {
+      projects,
+      ...(lastProject && projects.some((project) => project.worktree === lastProject) ? { lastProject } : {}),
+      sessionIDs,
+      activeSessionID,
+    }
+    platform.remoteAccess.updateWorkspace(snapshot)
+  })
+
+  return null
 }
 
 function Routes(props: { serverScoped?: JSX.Element }) {

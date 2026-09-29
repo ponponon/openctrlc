@@ -1,5 +1,5 @@
 import { decodeBase64, encodeBase64, randomToken, relayMessage } from "@openctrlc/remote-relay/protocol"
-import type { RemoteAccessPairRequest, RemoteAccessState } from "@openctrlc/app"
+import type { RemoteAccessPairRequest, RemoteAccessState, RemoteWorkspaceSnapshot } from "@openctrlc/app"
 import type { ServerReadyData } from "../preload/types"
 
 type InboundHTTP = {
@@ -36,6 +36,8 @@ export class RemoteAccessService {
   #reconnectUntil?: number
   #reconnectAttempt = 0
   #generation = 0
+  #workspace?: RemoteWorkspaceSnapshot
+  #workspaceJSON?: string
 
   constructor(
     private readonly getServer: () => Promise<ServerReadyData>,
@@ -44,6 +46,33 @@ export class RemoteAccessService {
 
   getState() {
     return this.#state
+  }
+
+  updateWorkspace(snapshot: RemoteWorkspaceSnapshot) {
+    if (!snapshot || !Array.isArray(snapshot.projects) || !Array.isArray(snapshot.sessionIDs)) return
+    const workspace: RemoteWorkspaceSnapshot = {
+      projects: snapshot.projects
+        .slice(0, 128)
+        .filter((project) => project && typeof project.worktree === "string" && project.worktree.length <= 4096)
+        .map((project) => ({ worktree: project.worktree, expanded: project.expanded === true })),
+      ...(typeof snapshot.lastProject === "string" && snapshot.lastProject.length <= 4096
+        ? { lastProject: snapshot.lastProject }
+        : {}),
+      sessionIDs: [
+        ...new Set(snapshot.sessionIDs.filter((id) => typeof id === "string" && id.length > 0 && id.length <= 200)),
+      ].slice(0, 128),
+      ...(typeof snapshot.activeSessionID === "string" && snapshot.activeSessionID.length <= 200
+        ? { activeSessionID: snapshot.activeSessionID }
+        : {}),
+    }
+    if (workspace.activeSessionID && !workspace.sessionIDs.includes(workspace.activeSessionID)) {
+      workspace.sessionIDs = [...workspace.sessionIDs.slice(0, 127), workspace.activeSessionID]
+    }
+    const serialized = JSON.stringify(workspace)
+    if (serialized.length > 64 * 1024 || serialized === this.#workspaceJSON) return
+    this.#workspace = workspace
+    this.#workspaceJSON = serialized
+    if (this.#state.status === "active") this.#send({ type: "workspace.update", workspace })
   }
 
   subscribe(listener: (state: RemoteAccessState) => void) {
@@ -225,6 +254,7 @@ export class RemoteAccessService {
         this.#clearReconnect()
         this.#setState({ status: "active", url, pendingRequests: [], authorizedDevices: 0 })
         this.#startHeartbeat(socket)
+        if (this.#workspace) this.#send({ type: "workspace.update", workspace: this.#workspace })
         resolve()
       }
       socket.addEventListener(

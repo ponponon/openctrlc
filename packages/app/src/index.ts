@@ -18,6 +18,7 @@ export {
   type RemoteAccessAuthorizedViewer,
   type RemoteAccessPlatform,
   type RemoteAccessState,
+  type RemoteWorkspaceSnapshot,
   PlatformProvider,
 } from "./context/platform"
 export { type UpdaterPlatform, type UpdaterState } from "./updater"

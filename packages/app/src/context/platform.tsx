@@ -23,6 +23,12 @@ type DesktopOS = "macos" | "windows" | "linux"
 
 export type RemoteAccessPairRequest = { id: string; device: string }
 export type RemoteAccessAuthorizedViewer = { id: string; device: string }
+export type RemoteWorkspaceSnapshot = {
+  projects: Array<{ worktree: string; expanded: boolean }>
+  lastProject?: string
+  sessionIDs: string[]
+  activeSessionID?: string
+}
 export type RemoteAccessState = {
   status: "stopped" | "connecting" | "reconnecting" | "active" | "error"
   url?: string
@@ -40,6 +46,7 @@ export type RemoteAccessPlatform = {
   revokeViewer(viewerID: string): Promise<void>
   approve(pairID: string): Promise<void> | void
   deny(pairID: string): Promise<void> | void
+  updateWorkspace(snapshot: RemoteWorkspaceSnapshot): void
 }
 
 export type DesktopDatabaseFile = {

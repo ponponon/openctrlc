@@ -4,6 +4,7 @@ import { createStore, type SetStoreFunction, type Store } from "solid-js/store"
 import { Persist, persisted } from "@/utils/persist"
 import { pathKey } from "@/utils/path-key"
 import { ServerScope } from "@/utils/server-scope"
+import type { RemoteWorkspaceSnapshot } from "./platform"
 
 type StoredProject = { worktree: string; expanded: boolean }
 type StoredServer = string | ServerConnection.HttpBase | ServerConnection.Http
@@ -259,6 +260,7 @@ export const { use: useServer, provider: ServerProvider } = createSimpleContext(
     defaultServer: ServerConnection.Key
     canonicalLocalServer?: ServerConnection.Key
     servers?: Array<ServerConnection.Any>
+    remoteWorkspace?: RemoteWorkspaceSnapshot
   }) => {
     const [store, setStore, _, ready] = persisted(
       {
@@ -272,6 +274,12 @@ export const { use: useServer, provider: ServerProvider } = createSimpleContext(
         recentlyClosed: {} as Record<string, string[]>,
       }),
     )
+
+    if (props.remoteWorkspace) {
+      const scope = ServerScope.fromServerKey(props.defaultServer, props.canonicalLocalServer)
+      setStore("projects", scope, props.remoteWorkspace.projects)
+      if (props.remoteWorkspace.lastProject) setStore("lastProject", scope, props.remoteWorkspace.lastProject)
+    }
 
     const url = (x: StoredServer) => (typeof x === "string" ? x : "type" in x ? x.http.url : x.url)
 
