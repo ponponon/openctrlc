@@ -718,28 +718,32 @@ bun run desktop:mac
 
 ### 功能目标
 
-让会话完成后默认收起最终回复之前的推理、工具调用和上下文探索过程，保留类似 Codex 的两级紧凑时间线；运行中的回合保持展开，用户也可以手动重新展开查看完整过程。
+让会话完成或中断后默认收起明确的推理、工具调用、上下文探索以及 provider 明确标记的分析/过程文本，保留类似 Codex 的两级紧凑时间线；运行中的回合保持展开，用户也可以手动重新展开查看完整过程。
 
 ### 实现范围
 
-- 时间线数据层目前按 assistant parts 的类型和顺序，把最后一个非 text 分组及其之前的 parts 聚合为 `AssistantSteps` 行；尾部 text 分组作为独立行渲染。这是位置启发式，不代表已经能准确识别语义上的最终答案。
+- assistant text Part 可选持久化 `channel: analysis | commentary | final`。没有该字段表示 `unknown`；旧消息和没有可靠协议标记的普通文本必须保持可见。
+- OpenAI Responses 适配器只从输出 message item 的结构化 `phase` 映射 channel（`analysis`、`commentary`、`final_answer`）；Chat Completions、Anthropic 等没有可靠文本语义标记的输出不猜测分类。provider 的未知 phase 同样降级为 `unknown`。
+- 有可见答复的回合只折叠非 text 活动以及显式 `analysis`/`commentary` 文本；`final` 和 `unknown` 文本始终独立、可见。按原始顺序将连续过程分组为 `AssistantSteps`，文本与过程交错时分成多个稳定步骤行，不再把过程之前的文本一并折叠。
 - `AssistantSteps` 展开后，连续的普通工具/思考步骤会再聚合成活动明细组；上下文探索继续复用已有的上下文组，用户可以独立收起第二级明细。
 - 折叠状态按 session 缓存在时间线缓存中；回合从运行态切换到完成态时自动收起，并在虚拟列表中触发尺寸重测，避免留下空白或遮挡后续内容。
 - 第一级回合折叠和第二级活动组折叠分别保存；完成回合默认只显示第一级摘要，用户重新展开回合时第二级默认可见，手动收起的活动组保持原状态。
-- 中断、错误和没有最终文本的回合保留原有逐段渲染路径，工具子折叠状态和搜索高亮逻辑继续复用现有实现。
+- 中断回合也折叠明确过程，且中断分隔线保留在原有时间顺序中；没有可见答复的普通工具-only/独立 shell 回合仍展示唯一结果，避免默认收起后整轮只剩空白。工具子折叠状态和搜索高亮逻辑继续复用现有实现。
 - 折叠触发器复用现有 UI `Collapsible`、步骤多语言文案和回合时长格式，不新增硬编码界面文案。
 
 ### 已知边界
 
-- `text` 只表示内容类型，不等于最终答案；`finish: "tool-calls"` 也只表示 assistant 接下来还要调用工具，不代表此前的文字只是过程。真实会话中，较长的结论文字可能出现在工具调用前，而最后 `finish: "stop"` 的文字只是一段补充；当前按最后一个非 text 分组切前缀会把主结论收进过程。
-- 因此目前不能承诺折叠边界总与语义上的“过程/结果”一致。后续调整应以保留用户可读的 assistant 文本为默认，折叠明确的工具/思考活动；不要仅凭 text 类型、消息最后位置或固定长度断言答案价值。
+- provider 没有发送结构化标记时，客户端无法可靠判断普通 assistant text 是过程说明还是答案；这类文本宁可可见，也不能靠 `finish`、消息尾部位置、长度或自然语言猜测后折叠。
+- OpenAI Responses 的 phase 仅适用于该协议真实输出的标记；不能将其推断推广到 OpenAI Chat Completions、Anthropic 或旧数据。
 
 ### 代码位置
 
-- `packages/app/src/pages/session/timeline/rows.ts`、`timeline-row.ts`：步骤行建模和回合分组。
+- `packages/schema/src/llm.ts`、`session-message.ts`、`session-event.ts`：统一 channel 与持久化消息/事件契约。
+- `packages/llm/src/protocols/openai-responses.ts`、`protocols/utils/lifecycle.ts`：读取结构化 phase 并将其带入文本流事件。
+- `packages/core/src/session/runner/publish-llm-event.ts`、`message-updater.ts`：将文本 channel 随事件投影并持久化。
+- `packages/app/src/utils/session-message.ts`、`pages/session/timeline/rows.ts`、`timeline-row.ts`：API 消息映射、按语义分组和稳定的步骤行身份。
 - `packages/app/src/pages/session/timeline/message-timeline.tsx`：折叠状态、触发器、自动收起和虚拟列表测量。
-- `packages/session-ui/src/components/session-turn.css`：步骤触发器和内容区样式。
-- `packages/app/src/pages/session/timeline/rows-current.test.ts`：中间步骤与最终回复分行的回归测试。
+- `packages/llm/test/provider/openai-responses.test.ts`、`packages/opencode/test/v2/session-message-updater.test.ts`、`packages/app/src/pages/session/timeline/rows-current.test.ts`：协议 channel、持久化和语义折叠回归测试。
 - `packages/app/e2e/regression/session-timeline-collapse-state.spec.ts`：两级折叠、默认状态和虚拟列表间距回归测试。
 
 ### 验证方式
@@ -2299,3 +2303,10 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 行为：`packages/app/src/context/server-sdk.tsx` 在事件流结束时输出 `console.warn("[global-sdk] event stream ended", …)`，带上 `reason`（`stream-complete` / `stream-error` / `pagehide` / `cleanup` / `closed`）、`stopping`、`url`、fetch 通道（platform/webview）和错误名；`stop("pagehide"|"cleanup")` 区分生命周期来源。桌面端 `electron-log` 开启了 `spyRendererConsole`，该日志会进入桌面日志。
 - 同步：`catchUpAfterReconnect` 在实际补拉时打 `reconnect catch-up` 日志，便于与断连时间线对齐。
 - 测试文件 `server-sdk.test.ts` 依赖 solid-js 的既有导入问题与本改动无关。
+
+## 会话假活（stall）时自动补拉消息
+
+- 背景：SSE 连接看起来正常、但事件丢失（或模型/工具长时间无输出）时，busy 会话的时间线会停在旧状态，用户误以为 agent 卡死或「说到一半就断」。
+- 行为：`packages/app/src/context/server-sync.tsx` 的 `inspectStalledSessions` 在 `diagnoseSessionStall` 判定假活（busy 且 90s 无进展，阈值见 `session-stall.ts`）后，除原有目录刷新外，对该会话执行一次 `session.sync(sessionID, { force: true })`，用服务端快照对齐时间线。
+- 去重：沿用 `reportedStalls` 的 diagnosis key，同一假活只补拉一次；状态变为 idle 或诊断 key 变化后才会再次触发。每 30s 检查一次。
+- 与重连补拉的关系：SSE 重连走 `catchUpAfterReconnect`（多会话、2s 全局防抖）；假活走单会话 force sync（单次、按 stall key 去重）。两条路径互补，覆盖「断连丢事件」与「假活丢事件」。

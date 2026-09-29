@@ -417,6 +417,10 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
       reportedStalls.set(sessionID, diagnosis.key)
       console.warn("[session-stall] session made no progress", diagnosis)
 
+      // Stall with a busy transcript can mean we dropped live events while the
+      // socket looked healthy. Force-sync once per stall so the open timeline
+      // cannot stay truncated.
+      void session.sync(sessionID, { force: true }).catch(() => {})
       const info = session.get(sessionID)
       if (info && children.active(info.directory)) queue.push(info.directory)
     }
