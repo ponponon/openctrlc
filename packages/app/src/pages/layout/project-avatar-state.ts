@@ -20,18 +20,22 @@ export function useSessionTabAvatarState(
   })
   const hasPermissions = createMemo(() => {
     const serverSync = sync()
-    if (!serverSync) return false
+    const dir = directory()
+    const id = sessionId()
+    if (!serverSync || !dir || !id) return false
     const permissionState = permission.ensureServerState(server())
-    const [store] = serverSync.child(directory(), { bootstrap: false })
-    return !!sessionPermissionRequest(store.session, serverSync.session.data.permission, sessionId(), (item) => {
-      return !permissionState.autoResponds(item, directory())
+    const [store] = serverSync.child(dir, { bootstrap: false })
+    return !!sessionPermissionRequest(store.session, serverSync.session.data.permission, id, (item) => {
+      return !permissionState.autoResponds(item, dir)
     })
   })
   const hasQuestions = createMemo(() => {
     const serverSync = sync()
-    if (!serverSync) return false
-    const [store] = serverSync.child(directory(), { bootstrap: false })
-    return !!sessionQuestionRequest(store.session, serverSync.session.data.question, sessionId())
+    const dir = directory()
+    const id = sessionId()
+    if (!serverSync || !dir || !id) return false
+    const [store] = serverSync.child(dir, { bootstrap: false })
+    return !!sessionQuestionRequest(store.session, serverSync.session.data.question, id)
   })
   const needsAttention = createMemo(() => hasPermissions() || hasQuestions())
   const notificationState = createMemo(() => {
