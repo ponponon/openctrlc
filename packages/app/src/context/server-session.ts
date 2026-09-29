@@ -892,6 +892,28 @@ export function createServerSession(
     await runInflight(inflight, sessionID, () => loadMessages(sessionID, limit))
   }
 
+  // SSE reconnect restores the live stream only; events published while the
+  // client was detached never arrive. Force-sync transcripts that still look
+  // active so a gap cannot leave the open timeline truncated. A short global
+  // debounce absorbs reconnect flaps without skipping a real gap.
+  let lastCatchUpAt = 0
+  const catchUpAfterReconnect = () => {
+    if (Date.now() - lastCatchUpAt <= 2_000) return Promise.resolve()
+    lastCatchUpAt = Date.now()
+    const targets = new Set<string>()
+    const hasCache = (sessionID: string) => data.message[sessionID] !== undefined
+    for (const [sessionID, status] of Object.entries(data.session_status)) {
+      if (status.type !== "idle" && hasCache(sessionID)) targets.add(sessionID)
+    }
+    for (const [sessionID, items] of Object.entries(data.permission)) {
+      if (items.length > 0 && hasCache(sessionID)) targets.add(sessionID)
+    }
+    for (const [sessionID, items] of Object.entries(data.question)) {
+      if (items.length > 0 && hasCache(sessionID)) targets.add(sessionID)
+    }
+    return Promise.all([...targets].map((sessionID) => sync(sessionID, { force: true })))
+  }
+
   const eventSessionID = (event: { type: string; properties?: unknown }) => {
     const properties = event.properties
     if (!properties || typeof properties !== "object") return
@@ -1362,6 +1384,7 @@ export function createServerSession(
     },
     sync,
     prefetch,
+    catchUpAfterReconnect,
     shouldPrefetch(sessionID: string, limit: number) {
       if (data.message[sessionID] === undefined) return true
       if (Date.now() - (meta.at[sessionID] ?? 0) > 15_000) return true

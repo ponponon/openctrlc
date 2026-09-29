@@ -2283,3 +2283,11 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 服务端在模型请求链路读取 `text_verbosity`。模型默认保留模型当前参数行为；手动选择低/中/高时，仅对兼容的 GPT-5 Responses 模型传入 `text.verbosity`，不修改系统提示词，也不改变推理强度。
 - V1 和 V2 会话执行链路都支持该设置；当前支持范围沿用 GPT-5 Responses 参数兼容性筛选，GPT-5 Codex 与 chat 模型不注入该字段。
 - 配置 schema 位于 `packages/core/src/v1/config/config.ts` 和 `packages/core/src/config.ts`，V1 到 V2 迁移保留该值；桌面设置分别位于 `packages/app/src/components/settings-general.tsx` 和 `packages/app/src/components/settings-v2/general.tsx`，输入区控制位于 `packages/app/src/components/prompt-input.tsx`、`packages/app/src/components/prompt-input-v2.tsx` 及 `packages/session-ui/src/v2/components/prompt-input/`。公开 schema 变动后需重生成 client SDK。
+
+## SSE 重连后自动补拉活跃会话消息
+
+- 背景：客户端 SSE（webview ↔ 本机 openctrlc server）断连后自动重连只恢复事件流，断连窗口内服务端发出的 message/part 事件不会回放；用户停在会话页时会看到时间线「说到一半就断」，需刷新或切走再切回才能变完整。
+- 行为：`server.connected` / `global.disposed` 后调用 `ServerSession.catchUpAfterReconnect()`，对已加载消息缓存且仍活跃（`session_status` 非 idle，或存在未决 permission/question）的会话执行 `sync({ force: true })`，用服务端快照对齐时间线。
+- 范围：只补已进入内存缓存的会话（`data.message[sessionID]` 存在），不给未打开的会话全量拉取；2 秒全局防抖吸收 SSE 重连抖动，避免反复 force sync。
+- 实现：`packages/app/src/context/server-session.ts` 的 `catchUpAfterReconnect`；调用点在 `packages/app/src/context/server-sync.tsx` 的 `server.connected` 处理分支。
+- 已知边界：本步不做 `Last-Event-ID` / `after=` 事件游标回放（服务端 SSE 帧目前 `id: undefined`），也不覆盖 TUI/ACP 客户端；超长断连仍以快照整页对账，成本与会话长度相关。

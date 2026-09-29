@@ -1664,4 +1664,66 @@ describe("server session", () => {
     expect(ctx.store.data.message.active?.map((message) => message.id)).toEqual(["message"])
     expect(ctx.store.data.session_status["session-0"]).toBeUndefined()
   })
+
+  test("catches up busy transcripts after an SSE reconnect", async () => {
+    const message = userMessage("message-1")
+    const client = messageClient(
+      response([{ info: message, parts: [textPart(message.id, { text: "before" })] }]),
+      response([{ info: message, parts: [textPart(message.id, { text: "after" })] }]),
+    )
+    const store = createServerSession(client)
+    await store.sync("child")
+    store.apply({ type: "session.status", properties: { sessionID: "child", status: { type: "busy" } } })
+
+    await store.catchUpAfterReconnect()
+
+    expect(client.requests).toHaveLength(2)
+    expect(store.data.part[message.id]).toEqual([textPart(message.id, { text: "after" })])
+  })
+
+  test("does not pull idle transcripts on reconnect", async () => {
+    const message = userMessage("message-1")
+    const client = messageClient(response([{ info: message, parts: [textPart(message.id)] }]))
+    const store = createServerSession(client)
+    await store.sync("child")
+    store.apply({ type: "session.status", properties: { sessionID: "child", status: { type: "idle" } } })
+
+    await store.catchUpAfterReconnect()
+
+    expect(client.requests).toHaveLength(1)
+  })
+
+  test("debounces rapid reconnect catch-ups", async () => {
+    const message = userMessage("message-1")
+    const client = messageClient(
+      response([{ info: message, parts: [textPart(message.id, { text: "before" })] }]),
+      response([{ info: message, parts: [textPart(message.id, { text: "after" })] }]),
+    )
+    const store = createServerSession(client)
+    await store.sync("child")
+    store.apply({ type: "session.status", properties: { sessionID: "child", status: { type: "busy" } } })
+
+    await Promise.all([store.catchUpAfterReconnect(), store.catchUpAfterReconnect()])
+
+    expect(client.requests).toHaveLength(2)
+  })
+
+  test("catches up sessions with pending permission requests", async () => {
+    const message = userMessage("message-1")
+    const client = messageClient(
+      response([{ info: message, parts: [textPart(message.id, { text: "before" })] }]),
+      response([{ info: message, parts: [textPart(message.id, { text: "after" })] }]),
+    )
+    const store = createServerSession(client)
+    await store.sync("child")
+    store.apply({
+      type: "permission.asked",
+      properties: { id: "per-1", sessionID: "child", pattern: "*" },
+    })
+
+    await store.catchUpAfterReconnect()
+
+    expect(client.requests).toHaveLength(2)
+    expect(store.data.part[message.id]).toEqual([textPart(message.id, { text: "after" })])
+  })
 })
