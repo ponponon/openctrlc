@@ -259,7 +259,9 @@ export function MetricChartPlot(props: {
   })
 
   const [hover, setHover] = createSignal<{ point: PlotPoint; left: number; top: number } | undefined>()
-  const [drag, setDrag] = createSignal<{ x0: number; x1: number } | undefined>()
+  const [drag, setDrag] = createSignal<
+    { kind: "new" | "start" | "end"; x0: number; x1: number; originX: number; moved: boolean } | undefined
+  >()
   const tooltipText = (point: PlotPoint) =>
     language.t("context.rawMessages.chart.pointTooltip", {
       index: point.sequence,
@@ -279,14 +281,13 @@ export function MetricChartPlot(props: {
   }
   const brushWindow = createMemo(() => {
     const active = props.brush?.()
-    const dragRange = drag()
+    const dragging = drag()
     const list = points()
     if (!list.length) return undefined
-    if (dragRange) {
-      return {
-        x0: Math.min(dragRange.x0, dragRange.x1),
-        x1: Math.max(dragRange.x0, dragRange.x1),
-      }
+    if (dragging) {
+      const x0 = dragging.kind === "end" ? dragging.x0 : Math.min(dragging.x0, dragging.x1)
+      const x1 = dragging.kind === "start" ? dragging.x0 : Math.max(dragging.x0, dragging.x1)
+      return { x0, x1 }
     }
     if (!active) return undefined
     const selected = list.filter(
@@ -302,6 +303,18 @@ export function MetricChartPlot(props: {
     const active = props.brush?.()
     if (!active) return true
     return point.sequence >= active.startSequence && point.sequence <= active.endSequence
+  }
+  const sequencesInXRange = (x0: number, x1: number) => {
+    const lo = Math.min(x0, x1)
+    const hi = Math.max(x0, x1)
+    const selected = points()
+      .filter((point) => point.x >= lo - 0.5 && point.x <= hi + 0.5)
+      .map((point) => point.sequence)
+    if (!selected.length) return undefined
+    return {
+      startSequence: Math.min(...selected),
+      endSequence: Math.max(...selected),
+    }
   }
   const hasData = createMemo(() => chartPoints().length > 0)
   const axisNumber = createMemo(
@@ -334,40 +347,47 @@ export function MetricChartPlot(props: {
           aria-label={`${metricLabel(language, props.metric)}. ${metricDescription(language, props.metric)}`}
           onMouseDown={(event) => {
             if (!props.onBrush || props.facet) return
-            if ((event.target as Element | null)?.closest?.("[data-chart-point]")) return
+            const target = event.target as Element | null
+            if (target?.closest?.("[data-chart-point]")) return
             const svg = event.currentTarget
             const x = toSvgX(event, svg)
-            setDrag({ x0: x, x1: x })
+            const handle = target?.closest?.("[data-brush-handle]")?.getAttribute("data-brush-handle")
+            const window = brushWindow()
+            const kind: "new" | "start" | "end" =
+              handle === "start" || handle === "end" ? handle : "new"
+            if (kind === "start" && window) setDrag({ kind, x0: window.x1, x1: x, originX: x, moved: false })
+            else if (kind === "end" && window) setDrag({ kind, x0: window.x0, x1: x, originX: x, moved: false })
+            else setDrag({ kind, x0: x, x1: x, originX: x, moved: false })
             event.preventDefault()
           }}
           onMouseMove={(event) => {
             const current = drag()
-            if (!current) {
-              return
-            }
-            setDrag({ x0: current.x0, x1: toSvgX(event, event.currentTarget) })
+            if (!current) return
+            const x = toSvgX(event, event.currentTarget)
+            setDrag({
+              kind: current.kind,
+              x0: current.x0,
+              x1: x,
+              originX: current.originX,
+              moved: current.moved || Math.abs(x - current.originX) > 3,
+            })
           }}
           onMouseUp={(event) => {
             const current = drag()
             setDrag(undefined)
             if (!current || !props.onBrush) return
-            const x0 = Math.min(current.x0, current.x1)
-            const x1 = Math.max(current.x0, current.x1)
-            if (x1 - x0 < 6) {
+            const x = toSvgX(event, event.currentTarget)
+            const x0 = current.kind === "end" ? current.x0 : Math.min(current.x0, current.kind === "new" ? x : current.x1)
+            const x1 = current.kind === "start" ? current.x0 : Math.max(current.x0, current.kind === "new" ? x : current.x1)
+            if (current.kind === "new" && !current.moved) {
               props.onBrush(undefined)
               return
             }
-            const selected = points()
-              .filter((point) => point.x >= x0 && point.x <= x1)
-              .map((point) => point.sequence)
-            if (!selected.length) {
+            if (current.kind === "new" && x1 - x0 < 8) {
               props.onBrush(undefined)
               return
             }
-            props.onBrush({
-              startSequence: Math.min(...selected),
-              endSequence: Math.max(...selected),
-            })
+            props.onBrush(sequencesInXRange(x0, x1))
           }}
           onMouseLeave={() => setDrag(undefined)}
         >
@@ -495,19 +515,41 @@ export function MetricChartPlot(props: {
             </For>
           </Show>
 
-          <Show when={brushWindow()}>
+          <Show when={props.onBrush && !props.facet ? brushWindow() : undefined}>
             {(window) => (
-              <rect
-                x={window().x0}
-                y={layout().top}
-                width={Math.max(2, window().x1 - window().x0)}
-                height={layout().height}
-                fill="var(--syntax-info)"
-                opacity="0.12"
-                stroke="var(--syntax-info)"
-                stroke-dasharray="4 3"
-                pointer-events="none"
-              />
+              <>
+                <rect
+                  x={window().x0}
+                  y={layout().top}
+                  width={Math.max(2, window().x1 - window().x0)}
+                  height={layout().height}
+                  fill="var(--syntax-info)"
+                  opacity="0.12"
+                  stroke="var(--syntax-info)"
+                  stroke-dasharray="4 3"
+                  pointer-events="none"
+                />
+                <rect
+                  data-brush-handle="start"
+                  x={window().x0 - 4}
+                  y={layout().top}
+                  width="8"
+                  height={layout().height}
+                  fill="var(--syntax-info)"
+                  opacity="0.85"
+                  class="cursor-ew-resize"
+                />
+                <rect
+                  data-brush-handle="end"
+                  x={window().x1 - 4}
+                  y={layout().top}
+                  width="8"
+                  height={layout().height}
+                  fill="var(--syntax-info)"
+                  opacity="0.85"
+                  class="cursor-ew-resize"
+                />
+              </>
             )}
           </Show>
 

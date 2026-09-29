@@ -518,6 +518,7 @@ export const dict = {
   "context.rawMessages.chart.modelStats.peak": "최고값",
   "context.rawMessages.chart.modelStats.tokens": "총 토큰",
   "context.rawMessages.chart.modelStats.cost": "총 비용",
+  "context.rawMessages.chart.modelStats.costShare": "비용 비중",
   "context.rawMessages.chart.modelStats.duration": "평균 소요 시간(s)",
   "context.rawMessages.duration": "소요 시간(s)",
   "context.rawMessages.costHeader": "비용 (USD)",

@@ -168,6 +168,9 @@ export function DialogSessionMetricChart(props: {
   )
   const summary = createMemo(() => summarizeMetric(selectedPoints()))
   const modelStats = createMemo(() => modelSummaries(analysisEntries(), MODEL_COLORS, state.metric))
+  const costShareTotal = createMemo(() =>
+    modelStats().reduce((sum, model) => sum + model.costTotal, 0),
+  )
   const facetModels = createMemo(() =>
     modelStats().filter((model) => state.selectedModels.includes(model.key)),
   )
@@ -984,6 +987,25 @@ export function DialogSessionMetricChart(props: {
                                 : formatMetric(model.durationAverage, "duration", language.intl())
                             }
                           />
+                        </div>
+                        <div class="mt-2">
+                          <div class="mb-1 flex items-center justify-between text-11-regular text-text-weak">
+                            <span>{language.t("context.rawMessages.chart.modelStats.costShare")}</span>
+                            <span class="tabular-nums">
+                              {costShareTotal() > 0
+                                ? `${((model.costTotal / costShareTotal()) * 100).toFixed(1)}%`
+                                : "—"}
+                            </span>
+                          </div>
+                          <div class="h-1.5 overflow-hidden rounded-full bg-surface-raised-base">
+                            <div
+                              class="h-full rounded-full"
+                              style={{
+                                width: `${costShareTotal() > 0 ? Math.max(2, (model.costTotal / costShareTotal()) * 100) : 0}%`,
+                                "background-color": model.color,
+                              }}
+                            />
+                          </div>
                         </div>
                       </button>
                     )}

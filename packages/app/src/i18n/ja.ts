@@ -719,6 +719,7 @@ export const dict = {
   "context.rawMessages.chart.modelStats.peak": "ピーク",
   "context.rawMessages.chart.modelStats.tokens": "合計トークン",
   "context.rawMessages.chart.modelStats.cost": "総コスト",
+  "context.rawMessages.chart.modelStats.costShare": "コスト割合",
   "context.rawMessages.chart.modelStats.duration": "平均所要時間(s)",
   "context.rawMessages.duration": "所要時間(s)",
   "context.rawMessages.costHeader": "コスト (USD)",

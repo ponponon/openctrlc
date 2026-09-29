@@ -138,6 +138,25 @@
 - 打开分析台：切到“分布”确认直方图柱和箱线行按模型渲染；拖拽刷选后统计卡样本数变小，清除后恢复。
 - 本地起 `packages/opencode` 与 `packages/app`，用多模型样本会话走通预览图 → 放大分析 → 分布/模型对比。
 
+## 会话图表刷选手势与成本占比
+
+### 功能目标
+
+让刷选好用、模型对比能直接回答“谁烧钱多”，并用 e2e 锁住分析台主路径。
+
+### 实现范围
+
+- 刷选手势：空白处单击清空选区；空白处拖拽新建选区；选区左右把手可独立缩放。移动超过阈值才算拖拽，避免误触清空。
+- 模型对比卡新增“成本占比”横条：各模型 `costTotal` 占当前筛选范围总成本百分比，颜色沿用模型色。
+- 新增 `packages/app/e2e/smoke/session-context-chart.fixture.ts` 与 `session-context-chart.spec.ts`：mock 三模型 18 条助手消息，断言预览图点位、放大分析指标/P90、分布直方图与箱线、模型成本占比、导出菜单。
+- 文案补 `modelStats.costShare`，四语言同步。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun typecheck` 与 `bun test src/components/session`。
+- 执行 `bunx playwright test e2e/smoke/session-context-chart.spec.ts`。
+- 手动：拖拽刷选后把手可微调，点空白恢复全量；模型对比卡显示成本占比条。
+
 ## 参考桌面项目能力审查与 Windows 系统托盘
 
 ### 参考结论

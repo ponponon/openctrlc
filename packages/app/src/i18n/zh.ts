@@ -741,6 +741,7 @@ export const dict = {
   "context.rawMessages.chart.modelStats.peak": "峰值",
   "context.rawMessages.chart.modelStats.tokens": "总 Token",
   "context.rawMessages.chart.modelStats.cost": "总成本",
+  "context.rawMessages.chart.modelStats.costShare": "成本占比",
   "context.rawMessages.chart.modelStats.duration": "平均耗时(s)",
   "context.rawMessages.duration": "耗时(s)",
   "context.rawMessages.costHeader": "成本（USD）",

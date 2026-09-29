@@ -651,6 +651,7 @@ export const dict = {
   "context.rawMessages.chart.modelStats.peak": "Peak",
   "context.rawMessages.chart.modelStats.tokens": "Total tokens",
   "context.rawMessages.chart.modelStats.cost": "Total cost",
+  "context.rawMessages.chart.modelStats.costShare": "Cost share",
   "context.rawMessages.chart.modelStats.duration": "Avg duration (s)",
   "context.rawMessages.duration": "Duration (s)",
   "context.rawMessages.costHeader": "Cost (USD)",
