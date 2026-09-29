@@ -28,6 +28,9 @@ const V1_MESSAGE_EVENT_TYPES = new Set([
   "message.part.removed",
 ])
 
+const SESSION_LOG_PAGE_LIMIT = 200
+const SESSION_LOG_PAGE_LIMIT_MAX = 1_000
+
 function isV1MessageEvent(event: EventV2.Payload) {
   return V1_MESSAGE_EVENT_TYPES.has(event.type)
 }
@@ -40,6 +43,12 @@ function logEventData(data: unknown): Sse.Event {
     data: JSON.stringify(data),
   }
 }
+
+const SSE_HEADERS = {
+  "Cache-Control": "no-cache, no-transform",
+  "X-Accel-Buffering": "no",
+  "X-Content-Type-Options": "nosniff",
+} as const
 
 function mapWorktreeError<A, R>(self: Effect.Effect<A, Worktree.Error, R>) {
   return self.pipe(
@@ -199,10 +208,14 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
 
     const sessionLog = Effect.fn("ExperimentalHttpApi.sessionLog")(function* (ctx: {
       params: { sessionID: SessionID }
-      query: { after?: string | number; follow?: string | boolean }
+      query: { after?: string | number; follow?: string | boolean; limit?: string | number }
     }) {
       const after = ctx.query.after === undefined ? -1 : Number(ctx.query.after)
       const follow = ctx.query.follow === undefined ? true : ctx.query.follow === true || ctx.query.follow === "true"
+      const limitRaw = ctx.query.limit === undefined ? SESSION_LOG_PAGE_LIMIT : Number(ctx.query.limit)
+      const limit = Number.isFinite(limitRaw)
+        ? Math.min(Math.max(Math.trunc(limitRaw), 1), SESSION_LOG_PAGE_LIMIT_MAX)
+        : SESSION_LOG_PAGE_LIMIT
       if (Number.isNaN(after) || after < -1) return yield* new HttpApiError.NotFound({})
 
       const sessionID = ctx.params.sessionID
@@ -211,21 +224,69 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
       // Capture the high-water mark so follow=false can close after the
       // historical page instead of hanging on the live tail.
       const startSeq = yield* EventV2.latestSequence(db, sessionID)
-      const empty = HttpServerResponse.stream(Stream.empty as Stream.Stream<Uint8Array>, {
-        contentType: "text/event-stream",
-        headers: {
-          "Cache-Control": "no-cache, no-transform",
-          "X-Accel-Buffering": "no",
-          "X-Content-Type-Options": "nosniff",
-        },
-      })
+      const sse = (source: Stream.Stream<Sse.Event>) =>
+        HttpServerResponse.stream(
+          source.pipe(Stream.pipeThroughChannel(Sse.encode()), Stream.encodeText),
+          { contentType: "text/event-stream", headers: SSE_HEADERS },
+        )
+
       if (!follow && startSeq <= after) {
-        yield* Effect.logInfo("session log connected", { sessionID, after, follow, empty: true })
-        return empty
+        yield* Effect.logInfo("session log connected", { sessionID, after, follow, empty: true, limit })
+        return sse(
+          Stream.make(
+            logEventData({ type: "log.synced", aggregateID: sessionID, seq: after, more: false }),
+          ) as Stream.Stream<Sse.Event>,
+        )
+      }
+
+      if (!follow) {
+        // Page the historical gap and close with log.synced.more so the client
+        // can fetch the next page without holding a live SSE open.
+        const state = { emitted: 0, lastSeq: after, more: false }
+        const items = yield* events
+          .durable({ aggregateID: sessionID, after })
+          .pipe(
+            Stream.takeUntil((event) => (event.durable?.seq ?? -1) >= startSeq),
+            Stream.filter(isV1MessageEvent),
+            Stream.filter((event) => {
+              if (state.emitted >= limit) {
+                state.more = true
+                return false
+              }
+              state.emitted++
+              state.lastSeq = event.durable?.seq ?? state.lastSeq
+              return true
+            }),
+            Stream.map((event) => ({
+              id: event.id,
+              type: event.type,
+              data: event.data,
+              durable: event.durable,
+            })),
+            Stream.runCollect,
+          )
+        yield* Effect.logInfo("session log connected", {
+          sessionID,
+          after,
+          follow,
+          limit,
+          emitted: state.emitted,
+          more: state.more,
+        })
+        return sse(
+          Stream.fromIterable([
+            ...items.map(logEventData),
+            logEventData({
+              type: "log.synced",
+              aggregateID: sessionID,
+              seq: state.lastSeq,
+              more: state.more,
+            }),
+          ]) as Stream.Stream<Sse.Event>,
+        )
       }
 
       const source = events.durable({ aggregateID: sessionID, after }).pipe(
-        Stream.takeUntil((event) => !follow && (event.durable?.seq ?? -1) >= startSeq),
         Stream.filter(isV1MessageEvent),
         Stream.map((event) => ({
           id: event.id,
@@ -234,20 +295,10 @@ export const experimentalHandlers = HttpApiBuilder.group(InstanceHttpApi, "exper
           durable: event.durable,
         })),
         Stream.map(logEventData),
-        Stream.pipeThroughChannel(Sse.encode()),
-        Stream.encodeText,
-        Stream.ensuring(Effect.logInfo("session log disconnected", { sessionID, after, follow })),
+        Stream.ensuring(Effect.logInfo("session log disconnected", { sessionID, after, follow, limit })),
       )
-
-      yield* Effect.logInfo("session log connected", { sessionID, after, follow })
-      return HttpServerResponse.stream(source, {
-        contentType: "text/event-stream",
-        headers: {
-          "Cache-Control": "no-cache, no-transform",
-          "X-Accel-Buffering": "no",
-          "X-Content-Type-Options": "nosniff",
-        },
-      })
+      yield* Effect.logInfo("session log connected", { sessionID, after, follow, limit })
+      return sse(source as Stream.Stream<Sse.Event>)
     })
 
     const resource = Effect.fn("ExperimentalHttpApi.resource")(function* () {

@@ -252,6 +252,7 @@ export const ExperimentalApi = HttpApi.make("experimental")
             ...WorkspaceRoutingQueryFields,
             after: Schema.optional(Schema.NumberFromString),
             follow: Schema.optional(QueryBoolean),
+            limit: Schema.optional(Schema.NumberFromString),
           },
           success: Schema.String.pipe(HttpApiSchema.asText({ contentType: "text/event-stream" })),
           error: HttpApiError.NotFound,
@@ -260,7 +261,7 @@ export const ExperimentalApi = HttpApi.make("experimental")
             identifier: "experimental.session.log",
             summary: "Replay session message log",
             description:
-              "Replay durable V1 session message events after an exclusive aggregate sequence, then optionally continue with new events.",
+              "Replay durable V1 session message events after an exclusive aggregate sequence, then optionally continue with new events. When follow is false, at most `limit` events are returned and a trailing `log.synced` marker reports whether more remain.",
           }),
         ),
         HttpApiEndpoint.get("resource", ExperimentalPaths.resource, {

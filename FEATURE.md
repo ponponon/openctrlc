@@ -1975,17 +1975,18 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/opencode` 执行 MCP lifecycle 定向测试。
 - 使用 `lsof -nP -iTCP:<端口> -sTCP:LISTEN` 核对实际占用进程，不自动杀掉其他项目的 MCP 进程。
 
-## Cloudflare AI Gateway 模型默认关闭
+## Cloudflare 模型 provider 默认关闭与统一开关
 
 ### 功能目标
 
-避免仅因为运行环境存在 `CLOUDFLARE_ACCOUNT_ID`，就把 Cloudflare AI Gateway 的大量模型默认放进模型选择器，影响只使用 Cloudflare 其他服务的用户。
+避免仅因为运行环境存在 `CLOUDFLARE_ACCOUNT_ID`，就把 Cloudflare AI Gateway 和 Cloudflare Workers AI 的大量模型默认放进模型选择器，影响只使用 Cloudflare 其他服务的用户。
 
 ### 实现范围
 
-- 在模型可见性状态中增加 Cloudflare AI Gateway provider 开关，首次默认关闭，并持久化用户选择。
-- 关闭时从模型选择器、模型管理列表和模型设置页隐藏该 provider 的模型，但保留 Cloudflare provider 的凭据与其他能力。
-- 在旧版和 V2 模型管理界面提供独立的 Cloudflare AI Gateway 开关；打开后可继续按模型控制显示状态。
+- 在模型可见性状态中增加 Cloudflare 模型 provider 开关，首次默认关闭，并持久化用户选择。
+- 关闭时从模型选择器、模型管理列表和模型设置页隐藏两个 Cloudflare provider 的模型，但保留 Cloudflare provider 的凭据与其他能力。
+- 在旧版和 V2 模型管理界面提供一个统一的 Cloudflare AI 开关；打开后可继续按模型控制显示状态。
+- provider 开关关闭时直接决定列表数据源过滤结果，不能只改变开关外观或单个模型可见性状态。
 - 禁止关闭状态的 Cloudflare 模型参与默认模型、最近模型和新会话模型回退选择。
 
 ### 代码位置
@@ -2000,8 +2001,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 ### 验证方式
 
 - 在 `packages/app` 执行 `bun run typecheck`。
-- 执行 Cloudflare 模型默认状态定向单元测试，确认 Cloudflare 默认关闭且其他 provider 默认行为不变。
-- 手动确认开关关闭时模型选择器不再出现 Cloudflare AI Gateway 大量模型，打开后可恢复显示。
+- 执行 Cloudflare 模型默认状态定向单元测试，确认两个 Cloudflare provider 默认关闭且其他 provider 默认行为不变。
+- 手动确认统一开关关闭时模型选择器不再出现两个 Cloudflare provider 的模型，打开后可恢复显示。
 
 ## 排队消息支持删除
 
@@ -2344,6 +2345,13 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 补拉顺序：`catchUpAfterReconnect` 对活跃会话优先 `sessionApi.log({ after: lastSeq, follow: false })` 增量回放并 `apply()`；无 lastSeq、无 log API、协议为 v1、或回放失败时回退 `sync({ force: true })` 整页快照。
 - 防抖与范围不变：仍是「有消息缓存且活跃」+ 2s 全局防抖；日志 `reconnect catch-up` 现在带 `replayed` / `snapshot` 计数，可区分走了哪条路径。
 - 单条事件 apply 失败不中断整段回放，避免一条脏事件把缺口补拉打成快照回退。
+
+## 会话日志分页与 more 游标
+
+- 服务端 `session.log` 增加 `limit` 查询（默认 200，最大 1000）。`follow=false` 时最多返回 `limit` 条 V1 message 事件，末尾追加 `log.synced`：`{ type: "log.synced", aggregateID, seq, more }`，`more=true` 表示后面还有。
+- 客户端 `replayMessageLog` 按 `log.synced.more` 翻页：每页用更新后的 `after` 再拉，直到 `more=false`；最多 100 页防死循环。无 `log.synced` 的旧服务端按单页处理（`more` 视为 false）。
+- `follow=true` 仍为不截断的实时流（catch-up 不用该模式）；`limit` 只约束 `follow=false` 的历史页。
+- 测试：`httpapi-experimental.test.ts`（limit=2 只出 2 条且 `more:true`）、`server-session.test.ts`（两页 logCalls after=5→6）。
 
 ## 官网用户交流群入口
 

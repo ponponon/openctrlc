@@ -301,6 +301,41 @@ describe("experimental HttpApi", () => {
         expect(body).toContain("message.updated")
         expect(body).toContain("msg-log-1")
         expect(body).toContain('"seq"')
+        expect(body).toContain('"type":"log.synced"')
+        expect(body).toContain('"more":false')
+      }),
+    { config: { formatter: false, lsp: false } },
+  )
+
+  it.instance(
+    "caps session log pages and reports remaining events",
+    () =>
+      Effect.gen(function* () {
+        const tmp = yield* TestInstance
+        const session = yield* createSession({ title: "log-page" })
+        const events = yield* EventV2Bridge.Service
+        for (let index = 0; index < 3; index++) {
+          yield* events.publish(SessionV1.Event.MessageUpdated, {
+            sessionID: session.id,
+            info: {
+              id: `msg-page-${index}`,
+              sessionID: session.id,
+              role: "user",
+              time: { created: 1 },
+              agent: "build",
+              model: { providerID: "provider", modelID: "model" },
+            },
+          } as never)
+        }
+
+        const path = ExperimentalPaths.sessionLog.replace(":sessionID", session.id)
+        const response = yield* request(`${path}?follow=false&limit=2`, tmp.directory)
+        expect(response.status).toBe(200)
+        const body = yield* response.text
+        expect(body).toContain("msg-page-0")
+        expect(body).toContain("msg-page-1")
+        expect(body).not.toContain("msg-page-2")
+        expect(body).toContain('"more":true')
       }),
     { config: { formatter: false, lsp: false } },
   )

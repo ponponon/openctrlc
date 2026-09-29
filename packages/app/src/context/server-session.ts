@@ -899,25 +899,43 @@ export function createServerSession(
   // no cursor yet or the log endpoint is unavailable so the caller can fall back
   // to a full snapshot sync.
   const replayMessageLog = async (sessionID: string) => {
-    const after = lastSeq.get(sessionID)
-    if (after === undefined) return false
+    const start = lastSeq.get(sessionID)
+    if (start === undefined) return false
     if (!sessionApi?.log) return false
     if ((await options?.protocol) === "v1") return false
     try {
-      for await (const item of sessionApi.log({ sessionID, after, follow: false })) {
-        const candidate = item as { type?: unknown; data?: unknown; durable?: { seq?: unknown } }
-        const seq = candidate.durable?.seq
-        if (typeof seq === "number") {
-          const previous = lastSeq.get(sessionID) ?? -1
-          if (seq > previous) lastSeq.set(sessionID, seq)
-        }
-        if (typeof candidate.type === "string" && candidate.data && typeof candidate.data === "object") {
-          try {
-            apply({ type: candidate.type, properties: candidate.data })
-          } catch {
-            // Keep replaying the remaining gap even if one event is stale.
+      let after = start
+      // Guard against a runaway more:true loop from a buggy server.
+      for (let page = 0; page < 100; page++) {
+        let more = false
+        for await (const item of sessionApi.log({ sessionID, after, follow: false })) {
+          const candidate = item as {
+            type?: unknown
+            data?: unknown
+            durable?: { seq?: unknown }
+            seq?: unknown
+            more?: unknown
+          }
+          if (candidate.type === "log.synced") {
+            if (typeof candidate.seq === "number") after = candidate.seq
+            more = candidate.more === true
+            continue
+          }
+          const seq = candidate.durable?.seq
+          if (typeof seq === "number") {
+            const previous = lastSeq.get(sessionID) ?? -1
+            if (seq > previous) lastSeq.set(sessionID, seq)
+            after = Math.max(after, seq)
+          }
+          if (typeof candidate.type === "string" && candidate.data && typeof candidate.data === "object") {
+            try {
+              apply({ type: candidate.type, properties: candidate.data })
+            } catch {
+              // Keep replaying the remaining gap even if one event is stale.
+            }
           }
         }
+        if (!more) break
       }
       return true
     } catch {

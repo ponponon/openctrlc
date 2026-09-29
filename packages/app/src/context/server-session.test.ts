@@ -1771,6 +1771,64 @@ describe("server session", () => {
     expect(listCalls).toHaveLength(1)
   })
 
+  test("pages the message log while log.synced.more is true", async () => {
+    const requests: unknown[] = []
+    const logCalls: unknown[] = []
+    const messageApi = {
+      list: async (input: unknown) => {
+        requests.push(input)
+        return { data: [], cursor: { previous: null, next: null } }
+      },
+    } as unknown as MessageApi
+    const sessionApi = {
+      async get() {
+        return session("root")
+      },
+      log(input: unknown) {
+        const after = (input as { after?: number }).after ?? -1
+        logCalls.push(input)
+        return (async function* () {
+          if (after < 6) {
+            yield {
+              id: "evt-6",
+              type: "message.updated",
+              data: { sessionID: "root", info: userMessage("message-1", { sessionID: "root" }) },
+              durable: { aggregateID: "root", seq: 6, version: 1 },
+            }
+            yield { type: "log.synced", aggregateID: "root", seq: 6, more: true }
+            return
+          }
+          yield {
+            id: "evt-7",
+            type: "message.updated",
+            data: { sessionID: "root", info: userMessage("message-2", { sessionID: "root" }) },
+            durable: { aggregateID: "root", seq: 7, version: 1 },
+          }
+          yield { type: "log.synced", aggregateID: "root", seq: 7, more: false }
+        })()
+      },
+    } as unknown as SessionApi
+    const store = createServerSession({} as OpencodeClient, sessionApi, messageApi)
+    store.remember(session("root"))
+    await store.sync("root")
+    store.applyV2({
+      id: "evt-5",
+      type: "session.text.ended",
+      created: 10,
+      data: { sessionID: "root", assistantMessageID: "a", textID: "t", text: "x" },
+      durable: { aggregateID: "root", seq: 5, version: 1 },
+    } as never)
+    store.apply({ type: "session.status", properties: { sessionID: "root", status: { type: "busy" } } })
+
+    await store.catchUpAfterReconnect()
+
+    expect(logCalls).toEqual([
+      { sessionID: "root", after: 5, follow: false },
+      { sessionID: "root", after: 6, follow: false },
+    ])
+    expect(requests).toHaveLength(1)
+  })
+
   test("falls back to snapshot sync when the message log is unavailable", async () => {
     const user = { id: "msg_user", type: "user", text: "hello", time: { created: 1 } }
     const listCalls: unknown[] = []
