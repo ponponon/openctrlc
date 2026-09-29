@@ -168,12 +168,8 @@ export function DialogSessionMetricChart(props: {
   )
   const summary = createMemo(() => summarizeMetric(selectedPoints()))
   const modelStats = createMemo(() => modelSummaries(analysisEntries(), MODEL_COLORS, state.metric))
-  const costShareTotal = createMemo(() =>
-    modelStats().reduce((sum, model) => sum + model.costTotal, 0),
-  )
-  const facetModels = createMemo(() =>
-    modelStats().filter((model) => state.selectedModels.includes(model.key)),
-  )
+  const costShareTotal = createMemo(() => modelStats().reduce((sum, model) => sum + model.costTotal, 0))
+  const facetModels = createMemo(() => modelStats().filter((model) => state.selectedModels.includes(model.key)))
   const distributionModels = createMemo(() =>
     modelList(analysisEntries(), MODEL_COLORS).map((model) => ({
       key: model.key,
@@ -279,8 +275,7 @@ export function DialogSessionMetricChart(props: {
       count: list.length,
     })
   }
-  const exportAllLabel = () =>
-    language.t("context.rawMessages.chart.exportCsvAllCount", { count: entries().length })
+  const exportAllLabel = () => language.t("context.rawMessages.chart.exportCsvAllCount", { count: entries().length })
 
   const summaryText = () => {
     const lines = [
@@ -513,9 +508,7 @@ export function DialogSessionMetricChart(props: {
                       {(range) => (
                         <DropdownMenu.RadioItem value={range}>
                           <DropdownMenu.ItemLabel>
-                            {language.t(
-                              `context.rawMessages.chart.range.${range}` as Parameters<typeof language.t>[0],
-                            )}
+                            {language.t(`context.rawMessages.chart.range.${range}` as Parameters<typeof language.t>[0])}
                           </DropdownMenu.ItemLabel>
                           <DropdownMenu.ItemIndicator>
                             <Icon name="check-small" size="small" class="text-icon-weak" />
@@ -612,9 +605,7 @@ export function DialogSessionMetricChart(props: {
               <DropdownMenu.Portal>
                 <DropdownMenu.Content>
                   <DropdownMenu.Group>
-                    <DropdownMenu.GroupLabel>
-                      {language.t("context.rawMessages.chart.models")}
-                    </DropdownMenu.GroupLabel>
+                    <DropdownMenu.GroupLabel>{language.t("context.rawMessages.chart.models")}</DropdownMenu.GroupLabel>
                     <For each={models()}>
                       {(model) => (
                         <DropdownMenu.CheckboxItem
@@ -714,12 +705,7 @@ export function DialogSessionMetricChart(props: {
             </DropdownMenu>
 
             <Show when={state.brush}>
-              <Button
-                size="small"
-                variant="secondary"
-                class="gap-1.5 px-2"
-                onClick={() => setBrush(undefined)}
-              >
+              <Button size="small" variant="secondary" class="gap-1.5 px-2" onClick={() => setBrush(undefined)}>
                 <Icon name="circle-x" size="small" />
                 <span>{language.t("context.rawMessages.chart.clearBrush")}</span>
               </Button>
@@ -930,252 +916,266 @@ export function DialogSessionMetricChart(props: {
             </div>
           </Show>
           <Show when={state.bottomTab !== "distribution"}>
-          <Show
-            when={state.bottomTab === "detail"}
-            fallback={
+            <Show
+              when={state.bottomTab === "detail"}
+              fallback={
+                <Show
+                  when={state.bottomTab === "models"}
+                  fallback={
+                    <div class="overflow-x-auto">
+                      <table class="w-full min-w-[720px] text-11-regular">
+                        <thead>
+                          <tr class="text-text-weak">
+                            <TableHead
+                              label={language.t("context.rawMessages.chart.column.sequence")}
+                              active={state.tableSort === "sequence"}
+                              desc={state.tableDesc}
+                              onClick={() => sortTable("sequence")}
+                            />
+                            <TableHead
+                              label={language.t("context.rawMessages.chart.column.time")}
+                              active={state.tableSort === "time"}
+                              desc={state.tableDesc}
+                              onClick={() => sortTable("time")}
+                            />
+                            <TableHead
+                              label={language.t("context.rawMessages.chart.column.model")}
+                              active={false}
+                              desc={false}
+                              onClick={() => {}}
+                            />
+                            <TableHead
+                              label={metricLabel(language, state.metric)}
+                              active={state.tableSort === "metric"}
+                              desc={state.tableDesc}
+                              onClick={() => sortTable("metric")}
+                            />
+                            <TableHead
+                              label={language.t("context.rawMessages.chart.column.duration")}
+                              active={state.tableSort === "duration"}
+                              desc={state.tableDesc}
+                              onClick={() => sortTable("duration")}
+                            />
+                            <TableHead
+                              label={language.t("context.rawMessages.chart.column.total")}
+                              active={state.tableSort === "total"}
+                              desc={state.tableDesc}
+                              onClick={() => sortTable("total")}
+                            />
+                            <TableHead
+                              label={language.t("context.rawMessages.chart.column.cost")}
+                              active={state.tableSort === "cost"}
+                              desc={state.tableDesc}
+                              onClick={() => sortTable("cost")}
+                            />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <For each={tableRows()}>
+                            {(row) => (
+                              <tr
+                                class="border-t border-border-weak-base text-text-base hover:bg-surface-raised-base-hover"
+                                classList={{
+                                  "bg-surface-raised-base": activePoint()?.message.id === row.entry.message.id,
+                                }}
+                              >
+                                <td class="px-2 py-1.5 tabular-nums">{row.entry.sequence}</td>
+                                <td class="px-2 py-1.5 tabular-nums">
+                                  {formatter().time(row.entry.message.time.created)}
+                                </td>
+                                <td class="max-w-[180px] truncate px-2 py-1.5" title={row.entry.modelLabel}>
+                                  {row.entry.modelLabel}
+                                </td>
+                                <td class="px-2 py-1.5 text-right tabular-nums">
+                                  {row.metric === undefined
+                                    ? "—"
+                                    : formatMetric(row.metric, state.metric, language.intl())}
+                                </td>
+                                <td class="px-2 py-1.5 text-right tabular-nums">
+                                  {row.duration === undefined
+                                    ? "—"
+                                    : formatMetric(row.duration, "duration", language.intl())}
+                                </td>
+                                <td class="px-2 py-1.5 text-right tabular-nums">
+                                  {formatCount(row.entry.total, language.intl())}
+                                </td>
+                                <td class="px-2 py-1.5 text-right tabular-nums">
+                                  {formatMetric(row.entry.cost, "cost", language.intl())}
+                                </td>
+                              </tr>
+                            )}
+                          </For>
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                >
+                  <div class="grid grid-cols-1 gap-2 @[52rem]:grid-cols-2 @[80rem]:grid-cols-3">
+                    <For each={modelStats()}>
+                      {(model) => (
+                        <button
+                          type="button"
+                          class="rounded-md border border-border-weak-base px-3 py-2 text-left hover:bg-surface-raised-base-hover"
+                          onClick={() => toggleModel(model.key, !state.selectedModels.includes(model.key))}
+                        >
+                          <div class="mb-1.5 flex items-center gap-2">
+                            <span class="size-2 rounded-full" style={{ "background-color": model.color }} />
+                            <span class="truncate text-12-medium text-text-strong" title={model.label}>
+                              {model.label}
+                            </span>
+                            <span class="ml-auto text-11-regular text-text-weaker">
+                              {language.t("context.rawMessages.chart.modelStats.messages")}: {model.count}
+                            </span>
+                          </div>
+                          <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-11-regular">
+                            <Detail
+                              label={language.t("context.rawMessages.chart.modelStats.avg")}
+                              value={
+                                model.average === undefined
+                                  ? "—"
+                                  : formatMetric(model.average, state.metric, language.intl())
+                              }
+                            />
+                            <Detail
+                              label={language.t("context.rawMessages.chart.modelStats.median")}
+                              value={
+                                model.median === undefined
+                                  ? "—"
+                                  : formatMetric(model.median, state.metric, language.intl())
+                              }
+                            />
+                            <Detail
+                              label={language.t("context.rawMessages.chart.modelStats.peak")}
+                              value={
+                                model.peak === undefined ? "—" : formatMetric(model.peak, state.metric, language.intl())
+                              }
+                            />
+                            <Detail
+                              label={language.t("context.rawMessages.chart.modelStats.tokens")}
+                              value={formatCount(model.tokenTotal, language.intl())}
+                            />
+                            <Detail
+                              label={language.t("context.rawMessages.chart.modelStats.cost")}
+                              value={formatMetric(model.costTotal, "cost", language.intl())}
+                            />
+                            <Detail
+                              label={language.t("context.rawMessages.chart.modelStats.duration")}
+                              value={
+                                model.durationAverage === undefined
+                                  ? "—"
+                                  : formatMetric(model.durationAverage, "duration", language.intl())
+                              }
+                            />
+                          </div>
+                          <div class="mt-2">
+                            <div class="mb-1 flex items-center justify-between text-11-regular text-text-weak">
+                              <span>{language.t("context.rawMessages.chart.modelStats.costShare")}</span>
+                              <span class="tabular-nums">
+                                {costShareTotal() > 0
+                                  ? `${((model.costTotal / costShareTotal()) * 100).toFixed(1)}%`
+                                  : "—"}
+                              </span>
+                            </div>
+                            <div class="h-1.5 overflow-hidden rounded-full bg-surface-raised-base">
+                              <div
+                                class="h-full rounded-full"
+                                style={{
+                                  width: `${costShareTotal() > 0 ? Math.max(2, (model.costTotal / costShareTotal()) * 100) : 0}%`,
+                                  "background-color": model.color,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </button>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              }
+            >
               <Show
-                when={state.bottomTab === "models"}
+                when={activePoint()}
                 fallback={
-                  <div class="overflow-x-auto">
-                    <table class="w-full min-w-[720px] text-11-regular">
-                      <thead>
-                        <tr class="text-text-weak">
-                          <TableHead
-                            label={language.t("context.rawMessages.chart.column.sequence")}
-                            active={state.tableSort === "sequence"}
-                            desc={state.tableDesc}
-                            onClick={() => sortTable("sequence")}
-                          />
-                          <TableHead
-                            label={language.t("context.rawMessages.chart.column.time")}
-                            active={state.tableSort === "time"}
-                            desc={state.tableDesc}
-                            onClick={() => sortTable("time")}
-                          />
-                          <TableHead
-                            label={language.t("context.rawMessages.chart.column.model")}
-                            active={false}
-                            desc={false}
-                            onClick={() => {}}
-                          />
-                          <TableHead
-                            label={metricLabel(language, state.metric)}
-                            active={state.tableSort === "metric"}
-                            desc={state.tableDesc}
-                            onClick={() => sortTable("metric")}
-                          />
-                          <TableHead
-                            label={language.t("context.rawMessages.chart.column.duration")}
-                            active={state.tableSort === "duration"}
-                            desc={state.tableDesc}
-                            onClick={() => sortTable("duration")}
-                          />
-                          <TableHead
-                            label={language.t("context.rawMessages.chart.column.total")}
-                            active={state.tableSort === "total"}
-                            desc={state.tableDesc}
-                            onClick={() => sortTable("total")}
-                          />
-                          <TableHead
-                            label={language.t("context.rawMessages.chart.column.cost")}
-                            active={state.tableSort === "cost"}
-                            desc={state.tableDesc}
-                            onClick={() => sortTable("cost")}
-                          />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <For each={tableRows()}>
-                          {(row) => (
-                            <tr
-                              class="border-t border-border-weak-base text-text-base hover:bg-surface-raised-base-hover"
-                              classList={{ "bg-surface-raised-base": activePoint()?.message.id === row.entry.message.id }}
-                            >
-                              <td class="px-2 py-1.5 tabular-nums">{row.entry.sequence}</td>
-                              <td class="px-2 py-1.5 tabular-nums">{formatter().time(row.entry.message.time.created)}</td>
-                              <td class="max-w-[180px] truncate px-2 py-1.5" title={row.entry.modelLabel}>
-                                {row.entry.modelLabel}
-                              </td>
-                              <td class="px-2 py-1.5 text-right tabular-nums">
-                                {row.metric === undefined ? "—" : formatMetric(row.metric, state.metric, language.intl())}
-                              </td>
-                              <td class="px-2 py-1.5 text-right tabular-nums">
-                                {row.duration === undefined ? "—" : formatMetric(row.duration, "duration", language.intl())}
-                              </td>
-                              <td class="px-2 py-1.5 text-right tabular-nums">{formatCount(row.entry.total, language.intl())}</td>
-                              <td class="px-2 py-1.5 text-right tabular-nums">{formatMetric(row.entry.cost, "cost", language.intl())}</td>
-                            </tr>
-                          )}
-                        </For>
-                      </tbody>
-                    </table>
+                  <div class="text-11-regular text-text-weaker">
+                    {language.t("context.rawMessages.chart.pointHint")}
                   </div>
                 }
               >
-                <div class="grid grid-cols-1 gap-2 @[52rem]:grid-cols-2 @[80rem]:grid-cols-3">
-                  <For each={modelStats()}>
-                    {(model) => (
-                      <button
-                        type="button"
-                        class="rounded-md border border-border-weak-base px-3 py-2 text-left hover:bg-surface-raised-base-hover"
-                        onClick={() => toggleModel(model.key, !state.selectedModels.includes(model.key))}
+                {(point) => (
+                  <div>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div class="min-w-0">
+                        <div class="text-12-medium text-text-strong">
+                          {language.t("context.rawMessages.chart.pointTitle", { index: point().sequence })}
+                          {` · ${formatter().time(point().message.time.created)}`}
+                        </div>
+                        <div class="truncate text-11-regular text-text-weak" title={point().modelLabel}>
+                          {point().modelLabel}
+                        </div>
+                      </div>
+                      <Button
+                        size="small"
+                        variant="secondary"
+                        class="gap-1.5 px-2"
+                        onClick={() => selectMessage(point().message.id)}
                       >
-                        <div class="mb-1.5 flex items-center gap-2">
-                          <span class="size-2 rounded-full" style={{ "background-color": model.color }} />
-                          <span class="truncate text-12-medium text-text-strong" title={model.label}>
-                            {model.label}
-                          </span>
-                          <span class="ml-auto text-11-regular text-text-weaker">
-                            {language.t("context.rawMessages.chart.modelStats.messages")}: {model.count}
-                          </span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-11-regular">
-                          <Detail
-                            label={language.t("context.rawMessages.chart.modelStats.avg")}
-                            value={
-                              model.average === undefined
-                                ? "—"
-                                : formatMetric(model.average, state.metric, language.intl())
-                            }
-                          />
-                          <Detail
-                            label={language.t("context.rawMessages.chart.modelStats.median")}
-                            value={
-                              model.median === undefined
-                                ? "—"
-                                : formatMetric(model.median, state.metric, language.intl())
-                            }
-                          />
-                          <Detail
-                            label={language.t("context.rawMessages.chart.modelStats.peak")}
-                            value={
-                              model.peak === undefined ? "—" : formatMetric(model.peak, state.metric, language.intl())
-                            }
-                          />
-                          <Detail
-                            label={language.t("context.rawMessages.chart.modelStats.tokens")}
-                            value={formatCount(model.tokenTotal, language.intl())}
-                          />
-                          <Detail
-                            label={language.t("context.rawMessages.chart.modelStats.cost")}
-                            value={formatMetric(model.costTotal, "cost", language.intl())}
-                          />
-                          <Detail
-                            label={language.t("context.rawMessages.chart.modelStats.duration")}
-                            value={
-                              model.durationAverage === undefined
-                                ? "—"
-                                : formatMetric(model.durationAverage, "duration", language.intl())
-                            }
-                          />
-                        </div>
-                        <div class="mt-2">
-                          <div class="mb-1 flex items-center justify-between text-11-regular text-text-weak">
-                            <span>{language.t("context.rawMessages.chart.modelStats.costShare")}</span>
-                            <span class="tabular-nums">
-                              {costShareTotal() > 0
-                                ? `${((model.costTotal / costShareTotal()) * 100).toFixed(1)}%`
-                                : "—"}
-                            </span>
-                          </div>
-                          <div class="h-1.5 overflow-hidden rounded-full bg-surface-raised-base">
-                            <div
-                              class="h-full rounded-full"
-                              style={{
-                                width: `${costShareTotal() > 0 ? Math.max(2, (model.costTotal / costShareTotal()) * 100) : 0}%`,
-                                "background-color": model.color,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </button>
-                    )}
-                  </For>
-                </div>
-              </Show>
-            }
-          >
-            <Show
-              when={activePoint()}
-              fallback={
-                <div class="text-11-regular text-text-weaker">{language.t("context.rawMessages.chart.pointHint")}</div>
-              }
-            >
-              {(point) => (
-                <div>
-                  <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <div class="min-w-0">
-                      <div class="text-12-medium text-text-strong">
-                        {language.t("context.rawMessages.chart.pointTitle", { index: point().sequence })}
-                        {` · ${formatter().time(point().message.time.created)}`}
-                      </div>
-                      <div class="truncate text-11-regular text-text-weak" title={point().modelLabel}>
-                        {point().modelLabel}
-                      </div>
+                        <Icon name="arrow-down-to-line" size="small" />
+                        <span>{language.t("context.rawMessages.chart.openMessage")}</span>
+                      </Button>
                     </div>
-                    <Button
-                      size="small"
-                      variant="secondary"
-                      class="gap-1.5 px-2"
-                      onClick={() => selectMessage(point().message.id)}
-                    >
-                      <Icon name="arrow-down-to-line" size="small" />
-                      <span>{language.t("context.rawMessages.chart.openMessage")}</span>
-                    </Button>
-                  </div>
-                  <div class="grid grid-cols-2 gap-x-5 gap-y-2 text-11-regular @[48rem]:grid-cols-4">
-                    <Detail
-                      label={metricLabel(language, state.metric)}
-                      value={formatMetric(metricValue(point(), state.metric) ?? 0, state.metric, language.intl())}
-                    />
-                    <Show when={state.compareMetric}>
+                    <div class="grid grid-cols-2 gap-x-5 gap-y-2 text-11-regular @[48rem]:grid-cols-4">
                       <Detail
-                        label={metricLabel(language, state.compareMetric as ChartMetric)}
-                        value={formatMetric(
-                          metricValue(point(), state.compareMetric as ChartMetric) ?? 0,
-                          state.compareMetric as ChartMetric,
-                          language.intl(),
-                        )}
+                        label={metricLabel(language, state.metric)}
+                        value={formatMetric(metricValue(point(), state.metric) ?? 0, state.metric, language.intl())}
                       />
-                    </Show>
-                    <Detail label={language.t("context.rawMessages.duration")} value={activeDuration(point())} />
-                    <Detail
-                      label={language.t("context.rawMessages.chart.metric.genDuration")}
-                      value={secondsText(point().generationMs, "genDuration")}
-                    />
-                    <Detail
-                      label={language.t("context.rawMessages.chart.metric.ttft")}
-                      value={secondsText(point().ttftMs, "ttft")}
-                    />
-                    <Detail
-                      label={language.t("context.stats.inputTokens")}
-                      value={formatCount(point().input, language.intl())}
-                    />
-                    <Detail
-                      label={language.t("context.stats.outputTokens")}
-                      value={formatCount(point().output, language.intl())}
-                    />
-                    <Detail
-                      label={language.t("context.stats.reasoningTokens")}
-                      value={formatCount(point().reasoning, language.intl())}
-                    />
-                    <Detail
-                      label={language.t("context.stats.cacheTokens")}
-                      value={`${formatCount(point().cacheRead, language.intl())} / ${formatCount(
-                        point().cacheWrite,
-                        language.intl(),
-                      )}`}
-                    />
-                    <Detail label={language.t("context.rawMessages.costHeader")} value={activeCost(point())} />
-                    <Detail
-                      label={language.t("context.rawMessages.chart.totalTokens")}
-                      value={formatCount(point().total, language.intl())}
-                    />
+                      <Show when={state.compareMetric}>
+                        <Detail
+                          label={metricLabel(language, state.compareMetric as ChartMetric)}
+                          value={formatMetric(
+                            metricValue(point(), state.compareMetric as ChartMetric) ?? 0,
+                            state.compareMetric as ChartMetric,
+                            language.intl(),
+                          )}
+                        />
+                      </Show>
+                      <Detail label={language.t("context.rawMessages.duration")} value={activeDuration(point())} />
+                      <Detail
+                        label={language.t("context.rawMessages.chart.metric.genDuration")}
+                        value={secondsText(point().generationMs, "genDuration")}
+                      />
+                      <Detail
+                        label={language.t("context.rawMessages.chart.metric.ttft")}
+                        value={secondsText(point().ttftMs, "ttft")}
+                      />
+                      <Detail
+                        label={language.t("context.stats.inputTokens")}
+                        value={formatCount(point().input, language.intl())}
+                      />
+                      <Detail
+                        label={language.t("context.stats.outputTokens")}
+                        value={formatCount(point().output, language.intl())}
+                      />
+                      <Detail
+                        label={language.t("context.stats.reasoningTokens")}
+                        value={formatCount(point().reasoning, language.intl())}
+                      />
+                      <Detail
+                        label={language.t("context.stats.cacheTokens")}
+                        value={`${formatCount(point().cacheRead, language.intl())} / ${formatCount(
+                          point().cacheWrite,
+                          language.intl(),
+                        )}`}
+                      />
+                      <Detail label={language.t("context.rawMessages.costHeader")} value={activeCost(point())} />
+                      <Detail
+                        label={language.t("context.rawMessages.chart.totalTokens")}
+                        value={formatCount(point().total, language.intl())}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </Show>
             </Show>
-          </Show>
           </Show>
         </div>
       </div>

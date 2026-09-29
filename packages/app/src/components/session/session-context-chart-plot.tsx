@@ -64,7 +64,10 @@ function niceMaximum(value: number) {
 }
 
 function seriesPath(points: { x: number; value: number }[], layout: Layout, maximum: number, smooth: ChartSmoothMode) {
-  const values = movingAverage(points.map((point) => point.value), smooth === "off" ? 1 : Number(smooth))
+  const values = movingAverage(
+    points.map((point) => point.value),
+    smooth === "off" ? 1 : Number(smooth),
+  )
   let path = ""
   points.forEach((point, index) => {
     const value = values[index]
@@ -113,7 +116,9 @@ export function MetricChartPlot(props: {
   const allEntries = createMemo(() => props.entries())
   const rangeEntries = createMemo(() => applyRange(allEntries(), props.range ?? "all"))
   const visibleEntries = createMemo(() =>
-    rangeEntries().filter((entry) => props.selectedModels === undefined || props.selectedModels.includes(entry.modelKey)),
+    rangeEntries().filter(
+      (entry) => props.selectedModels === undefined || props.selectedModels.includes(entry.modelKey),
+    ),
   )
   const models = createMemo(() => modelList(allEntries(), MODEL_COLORS))
   const modelColor = createMemo(() => {
@@ -145,9 +150,7 @@ export function MetricChartPlot(props: {
     })
   })
 
-  const chartPoints = createMemo(() =>
-    points().filter((point): point is RankedPoint => point.value !== undefined),
-  )
+  const chartPoints = createMemo(() => points().filter((point): point is RankedPoint => point.value !== undefined))
   const comparePoints = createMemo(() =>
     props.compareMetric
       ? points().filter((point): point is PlotPoint & { compare: number } => point.compare !== undefined)
@@ -179,10 +182,7 @@ export function MetricChartPlot(props: {
       const point = list[index]
       return {
         x: point?.x ?? layout().left,
-        label:
-          xAxis() === "time"
-            ? formatter().time(point?.message.time.created)
-            : String(point?.sequence ?? ""),
+        label: xAxis() === "time" ? formatter().time(point?.message.time.created) : String(point?.sequence ?? ""),
       }
     })
   })
@@ -195,7 +195,7 @@ export function MetricChartPlot(props: {
   const primarySeries = createMemo(() => {
     const series = chartPoints()
     if (props.facet) {
-      const color = series[0] ? modelColor().get(series[0].modelKey) ?? MODEL_COLORS[0] : MODEL_COLORS[0]
+      const color = series[0] ? (modelColor().get(series[0].modelKey) ?? MODEL_COLORS[0]) : MODEL_COLORS[0]
       return [{ color, points: series }]
     }
     const byModel = new Map<string, RankedPoint[]>()
@@ -320,7 +320,17 @@ export function MetricChartPlot(props: {
   const axisNumber = createMemo(
     () =>
       new Intl.NumberFormat(language.intl(), {
-        maximumFractionDigits: props.metric === "cost" ? 3 : props.metric === "ttft" ? 2 : props.metric === "duration" || props.metric === "genDuration" || props.metric === "rate" || props.metric === "genRate" ? 1 : 0,
+        maximumFractionDigits:
+          props.metric === "cost"
+            ? 3
+            : props.metric === "ttft"
+              ? 2
+              : props.metric === "duration" ||
+                  props.metric === "genDuration" ||
+                  props.metric === "rate" ||
+                  props.metric === "genRate"
+                ? 1
+                : 0,
       }),
   )
 
@@ -353,8 +363,7 @@ export function MetricChartPlot(props: {
             const x = toSvgX(event, svg)
             const handle = target?.closest?.("[data-brush-handle]")?.getAttribute("data-brush-handle")
             const window = brushWindow()
-            const kind: "new" | "start" | "end" =
-              handle === "start" || handle === "end" ? handle : "new"
+            const kind: "new" | "start" | "end" = handle === "start" || handle === "end" ? handle : "new"
             if (kind === "start" && window) setDrag({ kind, x0: window.x1, x1: x, originX: x, moved: false })
             else if (kind === "end" && window) setDrag({ kind, x0: window.x0, x1: x, originX: x, moved: false })
             else setDrag({ kind, x0: x, x1: x, originX: x, moved: false })
@@ -377,8 +386,10 @@ export function MetricChartPlot(props: {
             setDrag(undefined)
             if (!current || !props.onBrush) return
             const x = toSvgX(event, event.currentTarget)
-            const x0 = current.kind === "end" ? current.x0 : Math.min(current.x0, current.kind === "new" ? x : current.x1)
-            const x1 = current.kind === "start" ? current.x0 : Math.max(current.x0, current.kind === "new" ? x : current.x1)
+            const x0 =
+              current.kind === "end" ? current.x0 : Math.min(current.x0, current.kind === "new" ? x : current.x1)
+            const x1 =
+              current.kind === "start" ? current.x0 : Math.max(current.x0, current.kind === "new" ? x : current.x1)
             if (current.kind === "new" && !current.moved) {
               props.onBrush(undefined)
               return
@@ -437,7 +448,13 @@ export function MetricChartPlot(props: {
                     stroke-dasharray={line.dash}
                     stroke-width="1.5"
                   />
-                  <text x={layout().left + layout().width - 6} y={y - 6} fill={line.color} font-size="10" text-anchor="end">
+                  <text
+                    x={layout().left + layout().width - 6}
+                    y={y - 6}
+                    fill={line.color}
+                    font-size="10"
+                    text-anchor="end"
+                  >
                     {line.label}
                   </text>
                 </g>
@@ -478,7 +495,11 @@ export function MetricChartPlot(props: {
                     rx="2"
                     fill={modelColor().get(point.modelKey) ?? MODEL_COLORS[0]}
                     opacity={
-                      !inBrush(point) ? 0.22 : props.activeMessageID && props.activeMessageID !== point.message.id ? 0.45 : 0.9
+                      !inBrush(point)
+                        ? 0.22
+                        : props.activeMessageID && props.activeMessageID !== point.message.id
+                          ? 0.45
+                          : 0.9
                     }
                     data-chart-bar=""
                   />
@@ -628,7 +649,9 @@ export function MetricChartPlot(props: {
                         if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
                           event.preventDefault()
                           const list = Array.from(
-                            event.currentTarget.ownerSVGElement?.querySelectorAll<SVGCircleElement>("[data-chart-point]") ?? [],
+                            event.currentTarget.ownerSVGElement?.querySelectorAll<SVGCircleElement>(
+                              "[data-chart-point]",
+                            ) ?? [],
                           )
                           const current = list.indexOf(event.currentTarget)
                           list[current + (event.key === "ArrowRight" ? 1 : -1)]?.focus()
@@ -668,7 +691,13 @@ export function MetricChartPlot(props: {
                   fill="var(--surface-base)"
                   stroke="var(--border-weak-base)"
                 />
-                <text x={callout().x + 8} y={callout().y + 14} fill="var(--text-strong)" font-size="11" font-weight="600">
+                <text
+                  x={callout().x + 8}
+                  y={callout().y + 14}
+                  fill="var(--text-strong)"
+                  font-size="11"
+                  font-weight="600"
+                >
                   {callout().label}
                 </text>
               </g>
@@ -696,9 +725,7 @@ export function MetricChartPlot(props: {
             text-anchor="middle"
           >
             {language.t(
-              xAxis() === "time"
-                ? "context.rawMessages.chart.xAxis.time"
-                : "context.rawMessages.speedChart.axis",
+              xAxis() === "time" ? "context.rawMessages.chart.xAxis.time" : "context.rawMessages.speedChart.axis",
             )}
           </text>
         </svg>
@@ -725,10 +752,13 @@ export function MetricChartPlot(props: {
                   <span>{formatter().time(point.message.time.created)}</span>
                   <span>
                     {language.t("context.rawMessages.duration")}:{" "}
-                    {point.durationMs === undefined ? "—" : formatMetric(point.durationMs / 1000, "duration", language.intl())}
+                    {point.durationMs === undefined
+                      ? "—"
+                      : formatMetric(point.durationMs / 1000, "duration", language.intl())}
                   </span>
                   <span>
-                    {language.t("context.rawMessages.chart.totalTokens")}: {formatMetric(point.total, "total", language.intl())}
+                    {language.t("context.rawMessages.chart.totalTokens")}:{" "}
+                    {formatMetric(point.total, "total", language.intl())}
                   </span>
                   <span>
                     {language.t("context.rawMessages.costHeader")}: {formatMetric(point.cost, "cost", language.intl())}
@@ -799,21 +829,13 @@ export function HistogramPlot(props: {
                 <Show
                   when={segments.length > 0}
                   fallback={
-                    <rect
-                      x={x}
-                      y={layout.top + layout.height}
-                      width={width}
-                      height={0}
-                      fill="var(--syntax-comment)"
-                    />
+                    <rect x={x} y={layout.top + layout.height} width={width} height={0} fill="var(--syntax-comment)" />
                   }
                 >
                   <For each={segments}>
                     {([key, count], segmentIndex) => {
                       const height = (count / maxCount()) * layout.height
-                      const stackedFrom = segments
-                        .slice(0, segmentIndex())
-                        .reduce((sum, [, value]) => sum + value, 0)
+                      const stackedFrom = segments.slice(0, segmentIndex()).reduce((sum, [, value]) => sum + value, 0)
                       const yOffset = (stackedFrom / maxCount()) * layout.height
                       return (
                         <rect
@@ -866,11 +888,14 @@ export function BoxPlot(props: {
 }) {
   const language = useLanguage()
   const rows = createMemo(() =>
-    props.models()
+    props
+      .models()
       .map((model) => ({ ...model, stats: boxStats(model.values) }))
       .filter((row): row is typeof row & { stats: BoxStats } => row.stats !== undefined),
   )
-  const maxValue = createMemo(() => rows().reduce((value, row) => Math.max(value, row.stats.max, ...row.stats.outliers), 0) || 1)
+  const maxValue = createMemo(
+    () => rows().reduce((value, row) => Math.max(value, row.stats.max, ...row.stats.outliers), 0) || 1,
+  )
 
   return (
     <Show
@@ -893,7 +918,10 @@ export function BoxPlot(props: {
                 <div class="relative h-8 flex-1">
                   <div
                     class="absolute top-1/2 h-0.5 -translate-y-1/2 bg-border-weak-base"
-                    style={{ left: `${scale(row.stats.min)}%`, width: `${Math.max(scale(row.stats.max) - scale(row.stats.min), 0.5)}%` }}
+                    style={{
+                      left: `${scale(row.stats.min)}%`,
+                      width: `${Math.max(scale(row.stats.max) - scale(row.stats.min), 0.5)}%`,
+                    }}
                   />
                   <div
                     class="absolute top-1/2 h-4 -translate-y-1/2 rounded border"
@@ -913,7 +941,11 @@ export function BoxPlot(props: {
                     {(outlier) => (
                       <span
                         class="absolute top-1/2 size-1.5 -translate-y-1/2 rounded-full"
-                        style={{ left: `calc(${scale(outlier)}% - 3px)`, "background-color": row.color, opacity: "0.7" }}
+                        style={{
+                          left: `calc(${scale(outlier)}% - 3px)`,
+                          "background-color": row.color,
+                          opacity: "0.7",
+                        }}
                         title={formatMetric(outlier, props.metric, language.intl())}
                       />
                     )}
@@ -929,8 +961,8 @@ export function BoxPlot(props: {
         <div class="flex justify-between px-30 text-10-regular text-text-weaker">
           <span>
             {language.t("context.rawMessages.chart.box.min")} · {language.t("context.rawMessages.chart.box.q1")} ·{" "}
-            {language.t("context.rawMessages.chart.summary.median")} · {language.t("context.rawMessages.chart.box.q3")} ·{" "}
-            {language.t("context.rawMessages.chart.box.max")}
+            {language.t("context.rawMessages.chart.summary.median")} · {language.t("context.rawMessages.chart.box.q3")}{" "}
+            · {language.t("context.rawMessages.chart.box.max")}
           </span>
           <span>{language.t("context.rawMessages.chart.box.medianLabel")}</span>
         </div>
