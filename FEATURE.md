@@ -2310,3 +2310,5 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 行为：`packages/app/src/context/server-sync.tsx` 的 `inspectStalledSessions` 在 `diagnoseSessionStall` 判定假活（busy 且 90s 无进展，阈值见 `session-stall.ts`）后，除原有目录刷新外，对该会话执行一次 `session.sync(sessionID, { force: true })`，用服务端快照对齐时间线。
 - 去重：沿用 `reportedStalls` 的 diagnosis key，同一假活只补拉一次；状态变为 idle 或诊断 key 变化后才会再次触发。每 30s 检查一次。
 - 与重连补拉的关系：SSE 重连走 `catchUpAfterReconnect`（多会话、2s 全局防抖）；假活走单会话 force sync（单次、按 stall key 去重）。两条路径互补，覆盖「断连丢事件」与「假活丢事件」。
+- 可观测：补拉完成后输出 `[session-stall] catch-up`，带上 `kind` / `ageMs` / 补拉前后消息数，便于用日志验证恢复是否真的拉齐了时间线。
+- 游标补空窗的阻塞点（待后续）：`GET /api/session/:id/history` 返回 `SessionEvent.Durable`（`session.next.*`），而桌面端 `applyV2` / `server-session-v2-reducer` 消费的是 vendored `OpenCodeEvent`（`session.*`），两套事件契约的 type 与字段均不一致，不能直接回放。需先完成事件契约统一（或写一层兼容映射），才能把 `history?after=seq` 接到补拉路径上。

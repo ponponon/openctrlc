@@ -420,7 +420,20 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
       // Stall with a busy transcript can mean we dropped live events while the
       // socket looked healthy. Force-sync once per stall so the open timeline
       // cannot stay truncated.
-      void session.sync(sessionID, { force: true }).catch(() => {})
+      const before = session.data.message[sessionID]?.length ?? 0
+      void session.sync(sessionID, { force: true }).then(
+        () => {
+          const after = session.data.message[sessionID]?.length ?? 0
+          console.warn("[session-stall] catch-up", {
+            sessionID,
+            kind: diagnosis.kind,
+            ageMs: diagnosis.ageMs,
+            messagesBefore: before,
+            messagesAfter: after,
+          })
+        },
+        () => {},
+      )
       const info = session.get(sessionID)
       if (info && children.active(info.directory)) queue.push(info.directory)
     }
