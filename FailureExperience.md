@@ -936,7 +936,7 @@ Linux 与 Windows 的文件遍历顺序不同，直接把 Glob 扫描结果按�
 
 ## 新增 E2E 用例时必须同步更新持久化清单
 
-跨平台排序修复后，CI 又指出 `session-timeline-scroll-restore.spec.ts` 已开始读写 server 和 tabs 持久化键，但没有登记到身份残留清单；随后又发现 `session-search-tool-hit.spec.ts` 与 `session-timeline-follow-pause.spec.ts` 没有任何持久化读写，却也未登记为 `expectedNoPersistence`。新增或调整 E2E 用例时，必须同时更新 `identity-residuals.test.ts` 中的 `expectedPersistence` / `expectedNoPersistence`，确保每个文件都明确归类，并根据实际读写行为选择类别。
+跨平台排序修复后，CI 又指出 `session-timeline-scroll-restore.spec.ts` 已开始读写 server 和 tabs 持久化键，但没有登记到身份残留清单；随后又发现 `session-search-tool-hit.spec.ts` 与 `session-timeline-follow-pause.spec.ts` 没有任何持久化读写，却也未登记为 `expectedNoPersistence`。清单扫描的是全部 `e2e/**/*.ts`，所以 fixture 和 helper 文件也必须登记；例如无持久化访问的 `session-context-chart.fixture.ts` 应归入 `expectedNoPersistence`。新增或调整 E2E 用例时，必须同时更新 `identity-residuals.test.ts` 中的 `expectedPersistence` / `expectedNoPersistence`，确保每个文件都明确归类，并根据实际读写行为选择类别。
 
 ## 新增 HttpApi 路由必须补齐覆盖场景
 

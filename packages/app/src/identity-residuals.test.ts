@@ -199,6 +199,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     "e2e/regression/session-timeline-file-state.spec.ts",
     "e2e/regression/session-timeline-tool-state.spec.ts",
     "e2e/regression/terminal-hidden.spec.ts",
+    "e2e/smoke/session-context-chart.fixture.ts",
     "e2e/smoke/session-timeline.fixture.ts",
     "e2e/utils/errors.ts",
     "e2e/utils/mock-server.ts",
