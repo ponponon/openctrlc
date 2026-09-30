@@ -18,6 +18,29 @@ const emptyState: RemoteAccessState = {
   viewerLimitSupported: false,
 }
 
+function normalizeRemoteAccessState(next: Partial<RemoteAccessState>): RemoteAccessState {
+  const viewerLimit = isViewerLimit(next.viewerLimit) ? next.viewerLimit : emptyState.viewerLimit
+  const reportedEffectiveViewerLimit = isViewerLimit(next.effectiveViewerLimit) ? next.effectiveViewerLimit : undefined
+  const authorizedDevices =
+    typeof next.authorizedDevices === "number" && Number.isSafeInteger(next.authorizedDevices) && next.authorizedDevices >= 0
+      ? next.authorizedDevices
+      : emptyState.authorizedDevices
+
+  return {
+    ...emptyState,
+    ...next,
+    pendingRequests: Array.isArray(next.pendingRequests) ? next.pendingRequests : emptyState.pendingRequests,
+    authorizedDevices,
+    viewerLimit,
+    effectiveViewerLimit: reportedEffectiveViewerLimit ?? emptyState.effectiveViewerLimit,
+    viewerLimitSupported: next.viewerLimitSupported === true && reportedEffectiveViewerLimit !== undefined,
+  }
+}
+
+function isViewerLimit(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100
+}
+
 export function DialogRemoteAccess() {
   const language = useLanguage()
   const platform = usePlatform()
@@ -41,7 +64,7 @@ export function DialogRemoteAccess() {
   onMount(() => {
     if (!remoteAccess) return
     void remoteAccess
-      .subscribe((next) => setState(reconcile(next)))
+      .subscribe((next) => setState(reconcile(normalizeRemoteAccessState(next))))
       .then((stop) => {
         if (disposed) return stop()
         unsubscribe = stop
@@ -131,7 +154,7 @@ export function DialogRemoteAccess() {
                 step={1}
                 inputMode="numeric"
                 numeric
-                class="w-20"
+                style={{ width: "96px" }}
                 aria-label={language.t("remoteAccess.viewerLimitLabel")}
                 aria-describedby="remote-access-viewer-limit-help"
                 invalid={viewerLimitInvalid()}
