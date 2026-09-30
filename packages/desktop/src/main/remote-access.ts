@@ -975,9 +975,7 @@ export class RemoteAccessService {
 }
 
 function readPersistedSession() {
-  const raw = getStore().get(REMOTE_ACCESS_SESSION_KEY) as
-    | { sessionID?: unknown; hostToken?: unknown }
-    | undefined
+  const raw = getStore().get(REMOTE_ACCESS_SESSION_KEY) as { sessionID?: unknown; hostToken?: unknown } | undefined
   if (!raw || typeof raw.sessionID !== "string" || typeof raw.hostToken !== "string") return undefined
   if (!raw.sessionID || !raw.hostToken) return undefined
   return { sessionID: raw.sessionID, hostToken: raw.hostToken }

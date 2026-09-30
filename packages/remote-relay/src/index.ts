@@ -950,9 +950,12 @@ function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketDa
   session.resumeUntil = Date.now() + grace
   if (session.resumeTimer) clearTimeout(session.resumeTimer)
   // setTimeout delays are 32-bit; cap the timer and let the minute sweeper finish long expirations.
-  session.resumeTimer = setTimeout(() => {
-    if (!session.host && session.resumeUntil && session.resumeUntil <= Date.now()) deleteSession(session)
-  }, Math.min(grace, 2_147_483_647))
+  session.resumeTimer = setTimeout(
+    () => {
+      if (!session.host && session.resumeUntil && session.resumeUntil <= Date.now()) deleteSession(session)
+    },
+    Math.min(grace, 2_147_483_647),
+  )
 
   for (const pair of session.pairs.values()) {
     pair.socket.send(JSON.stringify({ type: "pair.error" } satisfies RelayServerMessage))
