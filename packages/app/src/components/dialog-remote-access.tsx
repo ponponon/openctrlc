@@ -136,50 +136,52 @@ export function DialogRemoteAccess() {
       </DialogHeader>
       <DialogBody class="gap-3 px-4 py-4">
         <Show when={remoteAccess}>
-          <section class="flex min-w-0 flex-wrap items-end justify-between gap-3 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-3">
-            <div class="min-w-0 flex-1">
-              <label for="remote-access-viewer-limit" class="text-14-medium text-v2-text-text-strong">
-                {language.t("remoteAccess.viewerLimitLabel")}
-              </label>
-              <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">
-                {language.t("remoteAccess.viewerLimitDescription")}
-              </p>
+          <section class="flex min-w-0 flex-col gap-3 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-4">
+            <div class="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-3">
+              <div class="min-w-0 flex-1">
+                <label for="remote-access-viewer-limit" class="text-14-medium text-v2-text-text-strong">
+                  {language.t("remoteAccess.viewerLimitLabel")}
+                </label>
+                <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">
+                  {language.t("remoteAccess.viewerLimitDescription")}
+                </p>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <TextInputV2
+                  id="remote-access-viewer-limit"
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  inputMode="numeric"
+                  numeric
+                  class="!w-[88px]"
+                  aria-label={language.t("remoteAccess.viewerLimitLabel")}
+                  aria-describedby="remote-access-viewer-limit-help"
+                  invalid={viewerLimitInvalid()}
+                  value={viewerLimitDraft()}
+                  onInput={(event) => {
+                    setViewerLimitDraft(event.currentTarget.value)
+                    setViewerLimitInvalid(false)
+                    setViewerLimitSaveFailed(false)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return
+                    event.preventDefault()
+                    void saveViewerLimit()
+                  }}
+                />
+                <ButtonV2
+                  size="normal"
+                  variant="outline"
+                  disabled={savingViewerLimit() || Number(viewerLimitDraft()) === state.viewerLimit}
+                  onClick={() => void saveViewerLimit()}
+                >
+                  {language.t(savingViewerLimit() ? "remoteAccess.viewerLimitSaving" : "remoteAccess.viewerLimitSave")}
+                </ButtonV2>
+              </div>
             </div>
-            <div class="flex shrink-0 items-center gap-2">
-              <TextInputV2
-                id="remote-access-viewer-limit"
-                type="number"
-                min={1}
-                max={100}
-                step={1}
-                inputMode="numeric"
-                numeric
-                style={{ width: "96px" }}
-                aria-label={language.t("remoteAccess.viewerLimitLabel")}
-                aria-describedby="remote-access-viewer-limit-help"
-                invalid={viewerLimitInvalid()}
-                value={viewerLimitDraft()}
-                onInput={(event) => {
-                  setViewerLimitDraft(event.currentTarget.value)
-                  setViewerLimitInvalid(false)
-                  setViewerLimitSaveFailed(false)
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter") return
-                  event.preventDefault()
-                  void saveViewerLimit()
-                }}
-              />
-              <ButtonV2
-                size="small"
-                variant="outline"
-                disabled={savingViewerLimit() || Number(viewerLimitDraft()) === state.viewerLimit}
-                onClick={() => void saveViewerLimit()}
-              >
-                {language.t(savingViewerLimit() ? "remoteAccess.viewerLimitSaving" : "remoteAccess.viewerLimitSave")}
-              </ButtonV2>
-            </div>
-            <p id="remote-access-viewer-limit-help" class="w-full text-12-regular leading-5 text-v2-text-text-muted">
+            <p id="remote-access-viewer-limit-help" class="text-12-regular leading-5 text-v2-text-text-muted">
               {language.t("remoteAccess.viewerLimitRange")}
             </p>
             <Show when={viewerLimitInvalid()}>
