@@ -1029,3 +1029,7 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 ## 桌面退出不能销毁手机访问会话
 
 `stopSidecars` 在应用退出时调用 `remoteAccess.stop()`，向 Relay 发送 `session.stop` 并删除会话，导致所有浏览器授权作废，每次重启都要重新扫码批准。以后退出/重启用 `detach()` 只断开 WSS；`sessionID`/`hostToken` 写入 electron-store，启动时优先 `session.resume`；用户显式“停止手机访问”才 `session.stop` 并清凭据。Relay 侧 `hostReconnectGrace` 原先只有 3 分钟，必须按是否有已授权浏览器区分保留期（有则对齐 30 天授权寿命，空会话 1 小时），并注意 `setTimeout` 32 位上限对超长宽限的溢出，用分钟清扫兜底。
+
+## 中继出口 gzip 后不能再让 OpenResty 剥掉 Content-Encoding
+
+`infra/remote-relay/openresty.conf` 里的 `proxy_hide_header Content-Encoding` 会把 Relay 刚写入的 gzip 标记剥掉，浏览器拿到压缩字节却按 identity 解析，页面直接损坏。该 hide_header 是为了挡历史泄漏的错误编码头；一旦 Relay 主动对文本响应重新 gzip，必须同步删除它，让 `Content-Encoding` 原样传给浏览器。以后凡是链路上新增压缩/解压，都要把桌面转发、Relay 出口、OpenResty 三层的 Content-Encoding 处理串起来检查，不能只改一层。
