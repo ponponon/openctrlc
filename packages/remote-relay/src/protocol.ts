@@ -156,7 +156,11 @@ export function encodeBinaryFrame(kind: number, id: string, payload: Uint8Array,
 export function decodeBinaryFrame(value: Uint8Array) {
   if (value.length < BINARY_FRAME_HEADER || value[0] !== BINARY_FRAME_MAGIC) return
   const kind = value[1]
-  if (kind !== BinaryFrameKind.RequestChunk && kind !== BinaryFrameKind.ResponseChunk && kind !== BinaryFrameKind.SocketMessage)
+  if (
+    kind !== BinaryFrameKind.RequestChunk &&
+    kind !== BinaryFrameKind.ResponseChunk &&
+    kind !== BinaryFrameKind.SocketMessage
+  )
     return
   const id = new TextDecoder().decode(value.subarray(3, BINARY_FRAME_HEADER)).replace(/\0+$/, "")
   if (!id) return

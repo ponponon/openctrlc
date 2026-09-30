@@ -421,7 +421,12 @@ export class RemoteAccessService {
             socket.send(
               JSON.stringify(
                 resume
-                  ? { type: "session.resume", sessionID: this.#sessionID, hostToken: this.#hostToken, binaryChunks: true }
+                  ? {
+                      type: "session.resume",
+                      sessionID: this.#sessionID,
+                      hostToken: this.#hostToken,
+                      binaryChunks: true,
+                    }
                   : { type: "session.create", viewerLimit: this.#viewerLimit, binaryChunks: true },
               ),
             )
@@ -963,7 +968,15 @@ export class RemoteAccessService {
               : undefined
       if (this.#binaryChunks) {
         const payload = typeof value === "string" ? new TextEncoder().encode(value) : bytes
-        if (payload && this.#sendBinary(BinaryFrameKind.SocketMessage, message.id as string, payload, binary ? BinaryFrameFlag.PayloadBinary : 0)) {
+        if (
+          payload &&
+          this.#sendBinary(
+            BinaryFrameKind.SocketMessage,
+            message.id as string,
+            payload,
+            binary ? BinaryFrameFlag.PayloadBinary : 0,
+          )
+        ) {
           return
         }
       }

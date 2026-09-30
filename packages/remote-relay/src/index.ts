@@ -302,7 +302,11 @@ const server = Bun.serve<SocketData>({
           const bytes =
             raw instanceof ArrayBuffer
               ? new Uint8Array(raw)
-              : new Uint8Array((raw as ArrayBufferView).buffer, (raw as ArrayBufferView).byteOffset, (raw as ArrayBufferView).byteLength)
+              : new Uint8Array(
+                  (raw as ArrayBufferView).buffer,
+                  (raw as ArrayBufferView).byteOffset,
+                  (raw as ArrayBufferView).byteLength,
+                )
           const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
           if (!session) return socket.close(4404, "Session not found")
           session.traffic.hostIn += bytes.byteLength
@@ -344,7 +348,15 @@ const server = Bun.serve<SocketData>({
           return
         }
         if (session.binaryChunks) {
-          if (!sendHostBinary(session, BinaryFrameKind.SocketMessage, id, payload, binary ? BinaryFrameFlag.PayloadBinary : 0))
+          if (
+            !sendHostBinary(
+              session,
+              BinaryFrameKind.SocketMessage,
+              id,
+              payload,
+              binary ? BinaryFrameFlag.PayloadBinary : 0,
+            )
+          )
             socket.close(1011, "Desktop is disconnected")
           return
         }
@@ -981,7 +993,11 @@ function sendViewerState(session: RelaySession) {
 
 function sendHost(session: RelaySession, message: RelayServerMessage) {
   if (!session.host || session.host.readyState !== 1) return false
-  const encoded = JSON.stringify({ ...message, sessionID: session.id, hostToken: session.hostToken } satisfies RelayServerMessage & {
+  const encoded = JSON.stringify({
+    ...message,
+    sessionID: session.id,
+    hostToken: session.hostToken,
+  } satisfies RelayServerMessage & {
     sessionID: string
     hostToken: string
   })
