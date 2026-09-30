@@ -2254,6 +2254,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `infra/remote-relay/monitor/remote-smoke.sh` 一键冒烟：healthz 形状、`x-openctrlc-ui: embedded`、入口 JS 含 `openctrlc.remote-workspace`；带 `--cookie` 可测已授权会话。授权列表在最近使用超过 25 天时标黄提示重新连接。
 - UI 来源可探测：响应头 `x-openctrlc-ui: embedded|upstream`；monitor 探测到非 embedded 时告警。join 对已授权浏览器显示「已授权，正在打开工作区」后进入 `/`。授权列表展示批准时间与最近使用（`createdAt`/`lastSeenAt` 随 viewer.list 下发并落盘）。
 
+- 远程只恢复「当前会话」为 Tab；历史会话保留在首页列表可点开，避免一次预开十几个 Tab 把 5Mbps 打满。底部工具栏（模型/深度/详略/权限）可 `flex-wrap` 多行，并预留发送键空间，禁止控件叠在发送按钮下。免费模型走 LLM 请求 `User-Agent: opencode/...` 伪装，与 Web UI 是否代理上游无关，禁止用 UI 壳伪装替代。
+
 - 远程首屏验收：侧栏项目数与桌面一致（或至少 > 0），首页会话列表非空；新开标签页/强刷后仍能看到项目与会话。改动 workspace 同步、bootstrap 或 tabs 恢复后必须复验这三条。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - Renderer 收到旧版桌面主进程 IPC 状态时，缺失的授权上限字段回退为默认 10 和旧 Relay 容量 3，避免数字输入为空或显示 `undefined`。

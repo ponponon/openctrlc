@@ -665,6 +665,7 @@ export function AppInterface(props: {
                 component={props.router ?? Router}
                 root={(routerProps) => (
                   <TabsProvider remoteWorkspace={props.remoteWorkspace}>
+                    <RemoteTabsHydrator />
                     <PermissionProvider>
                       <NotificationProvider>
                         <ServerShell>
@@ -687,7 +688,63 @@ export function AppInterface(props: {
   )
 }
 
+function pickRemoteConnection(global: ReturnType<typeof useGlobal>) {
+  return (
+    global.servers.list().find(ServerConnection.builtin) ??
+    global.servers.list().find(ServerConnection.local) ??
+    global.servers.list()[0]
+  )
+}
+
 function RemoteWorkspaceHydrator() {
+  const platform = usePlatform()
+  const server = useServer()
+  const global = useGlobal()
+
+  // Desktop publishes the project/workspace snapshot (session tabs are added by RemoteTabsHydrator).
+  createEffect(() => {
+    if (platform.platform !== "desktop" || !platform.remoteAccess) return
+    if (!server.ready()) return
+    const connection = pickRemoteConnection(global)
+    if (!connection) return
+    const context = global.ensureServerCtx(connection)
+    const projects = context.projects.list().map((project) => ({
+      worktree: project.worktree,
+      expanded: project.expanded,
+    }))
+    const lastProject = context.projects.last()
+    const snapshot: RemoteWorkspaceSnapshot = {
+      projects,
+      ...(lastProject && projects.some((project) => project.worktree === lastProject) ? { lastProject } : {}),
+      sessionIDs: [],
+    }
+    platform.remoteAccess.updateWorkspace(snapshot)
+  })
+
+  // Fresh remote browsers have empty local storage; restore the sidebar from the
+  // backend project list so the page is not blank before/independent of a snapshot.
+  createEffect(() => {
+    if (platform.platform !== "web") return
+    if (!server.ready()) return
+    const connection = pickRemoteConnection(global)
+    if (!connection) return
+    const context = global.ensureServerCtx(connection)
+    const known = context.sync.data.project ?? []
+    if (known.length === 0) return
+    const open = context.projects.list()
+    if (open.length > 0) return
+    for (const project of known) {
+      if (!project.worktree) continue
+      context.projects.open(project.worktree)
+    }
+    const first = known.find((project) => project.worktree)
+    if (first?.worktree) context.projects.touch(first.worktree)
+  })
+
+  return null
+}
+
+function RemoteTabsHydrator() {
   const platform = usePlatform()
   const server = useServer()
   const global = useGlobal()
@@ -696,20 +753,16 @@ function RemoteWorkspaceHydrator() {
 
   createEffect(() => {
     if (platform.platform !== "desktop" || !platform.remoteAccess) return
-    if (!server.ready()) return
-    const connection =
-      global.servers.list().find(ServerConnection.builtin) ??
-      global.servers.list().find(ServerConnection.local) ??
-      global.servers.list()[0]
+    if (!server.ready() || !tabs.ready()) return
+    const connection = pickRemoteConnection(global)
     if (!connection) return
     const key = ServerConnection.key(connection)
     const parts = location.pathname.split("/").filter(Boolean)
     const activeSessionID =
       parts[0] === "server" && parts[2] === "session" && parts[3] && decode64(parts[1]) === key ? parts[3] : undefined
-    const sessionIDs =
-      tabs.ready() && tabs.store
-        ? tabs.store.flatMap((tab) => (tab.type === "session" && tab.server === key ? [tab.sessionId] : []))
-        : []
+    const sessionIDs = tabs.store.flatMap((tab) =>
+      tab.type === "session" && tab.server === key ? [tab.sessionId] : [],
+    )
     if (activeSessionID && !sessionIDs.includes(activeSessionID)) sessionIDs.push(activeSessionID)
     const context = global.ensureServerCtx(connection)
     const projects = context.projects.list().map((project) => ({
@@ -726,59 +779,17 @@ function RemoteWorkspaceHydrator() {
     platform.remoteAccess.updateWorkspace(snapshot)
   })
 
-  // Fresh remote browsers have empty local storage; restore the sidebar from the
-  // backend project list so the page is not blank before/independent of a snapshot.
-  createEffect(() => {
-    if (platform.platform !== "web") return
-    if (!server.ready()) return
-    const connection =
-      global.servers.list().find(ServerConnection.builtin) ??
-      global.servers.list().find(ServerConnection.local) ??
-      global.servers.list()[0]
-    if (!connection) return
-    const context = global.ensureServerCtx(connection)
-    const known = context.sync.data.project ?? []
-    if (known.length === 0) return
-    const open = context.projects.list()
-    if (open.length > 0) return
-    for (const project of known) {
-      if (!project.worktree) continue
-      context.projects.open(project.worktree)
-    }
-    const first = known.find((project) => project.worktree)
-    if (first?.worktree) context.projects.touch(first.worktree)
-  })
-
-  // Restore open session tabs from the backend when the snapshot did not carry any.
+  // Do not pre-open historical sessions as tabs on remote — only the active
+  // session is restored; the rest stay browsable from the home session list.
   createEffect(() => {
     if (platform.platform !== "web" || !tabs.ready()) return
-    if (!server.ready()) return
     if (tabs.store.some((tab) => tab.type === "session")) return
-    const connection =
-      global.servers.list().find(ServerConnection.builtin) ??
-      global.servers.list().find(ServerConnection.local) ??
-      global.servers.list()[0]
+    const parts = location.pathname.split("/").filter(Boolean)
+    const active = parts[0] === "server" && parts[2] === "session" ? parts[3] : undefined
+    if (!active) return
+    const connection = pickRemoteConnection(global)
     if (!connection) return
-    const key = ServerConnection.key(connection)
-    const context = global.ensureServerCtx(connection)
-    let cancelled = false
-    void context.sdk.client.v2.session
-      .list({ limit: 12, order: "desc" })
-      .then((response) => {
-        if (cancelled) return
-        const sessions = (response.data?.data ?? []).filter((session) => session?.id)
-        if (sessions.length === 0) return
-        if (tabs.store.some((tab) => tab.type === "session")) return
-        const created = sessions.map((session) => tabs.addSessionTab({ server: key, sessionId: session.id }))
-        const latest = created[0]
-        if (latest && location.pathname === "/") {
-          void startTransition(() => tabs.select(latest))
-        }
-      })
-      .catch(() => undefined)
-    onCleanup(() => {
-      cancelled = true
-    })
+    tabs.addSessionTab({ server: ServerConnection.key(connection), sessionId: active })
   })
 
   return null
