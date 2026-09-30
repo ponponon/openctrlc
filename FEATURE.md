@@ -2256,6 +2256,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - TLS 覆盖桌面到 Relay 和手机到 Relay 两段链路，不是端到端加密；Relay 在转发时能查看请求内容，但不会主动持久化工作区内容。UI、README 和文档必须明确这个信任边界。
 - Relay 出口对可压缩文本响应（text/*、application/json|javascript|xml 等）按浏览器 `Accept-Encoding` 重新 gzip，SSE 除外；桌面侧 `fetch` 会解压上游响应，若不再压缩会让 JS/HTML 以原始体积经中继转发。App 全局事件流重连采用 250ms 起步的指数退避（上限 5s），连接稳定超过 5 秒后重置，避免断线时每 250ms 打一次中继。
 - 桌面↔Relay 批量数据（请求体、响应体、PTY WebSocket）在双方协商 `binaryChunks: true` 后改用二进制 WebSocket 帧（magic 0xC1 + kind + flags + 12 字节流 ID + 原始载荷），不再 base64 进 JSON，省约 33% 载荷；控制消息仍走 JSON。旧 Relay 忽略未知字段时桌面回退 JSON，保持兼容。Relay `/healthz`（仅本机可达）暴露按会话的 `hostIn/hostOut/viewerIn/viewerOut` 流量计数与汇总，便于核对出入网来源。
+- `infra/remote-relay/monitor/relay-watch.sh` 由 crontab 每小时把 healthz 快照追加到 `logs/relay-traffic-YYYY-MM-DD.jsonl`，并按阈值检查会话数与 hostOut/viewerOut 增量；触发时写入 `logs/relay-alerts.log` 并投递 RabbitMQ 队列 `openctrlc.remote.alerts`（base64 JSON 载荷，durable）。`relay-report.sh` 汇总当日样本、峰值与告警。凭据写在服务器 `monitor/monitor.env`（600 权限），不进仓库；阈值可由 `RELAY_SESSION_ALERT_THRESHOLD`、`RELAY_HOST_OUT_ALERT_BYTES` 等覆盖。
 - 当前公开示例 `openctrlc-remote.quniv.cn` 是单实例、有限容量部署。Relay 重启会中断连接，不具备多区域高可用或横向扩展能力。
 
 ### 代码位置
