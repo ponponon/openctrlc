@@ -2258,6 +2258,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 桌面↔Relay 批量数据（请求体、响应体、PTY WebSocket）在双方协商 `binaryChunks: true` 后改用二进制 WebSocket 帧（magic 0xC1 + kind + flags + 12 字节流 ID + 原始载荷），不再 base64 进 JSON，省约 33% 载荷；控制消息仍走 JSON。旧 Relay 忽略未知字段时桌面回退 JSON，保持兼容。Relay `/healthz`（仅本机可达）暴露按会话的 `hostIn/hostOut/viewerIn/viewerOut` 流量计数与汇总，便于核对出入网来源。
 - `infra/remote-relay/monitor/relay-watch.sh` 由 crontab 每小时把 healthz 快照追加到 `logs/relay-traffic-YYYY-MM-DD.jsonl`，并按阈值检查会话数与 hostOut/viewerOut 增量；触发时写入 `logs/relay-alerts.log` 并投递 RabbitMQ 队列 `openctrlc.remote.alerts`（base64 JSON 载荷，durable）。`relay-report.sh` 汇总当日样本、峰值与告警。凭据写在服务器 `monitor/monitor.env`（600 权限），不进仓库；阈值可由 `RELAY_SESSION_ALERT_THRESHOLD`、`RELAY_HOST_OUT_ALERT_BYTES` 等覆盖。
 - 当前公开示例 `openctrlc-remote.quniv.cn` 是单实例、有限容量部署。Relay 重启会中断连接，不具备多区域高可用或横向扩展能力。
+- 桌面安装包尚未包含此功能时，用户需先使用带有这些改动的开发版或正式版本；正式发版按 `docs/release.md` 的流程另行完成。
 
 ### 代码位置
 
@@ -2273,7 +2274,12 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 和 `packages/desktop` 分别执行 `bun typecheck`；桌面包若仍出现 `window.api` 全局类型合并错误，需确认是否属于既有问题并单独记录。
 - 用 `git diff --check` 检查补丁格式；通过 relay 健康检查、Nginx 配置校验、公开 HTTPS 页面和 WebSocket 握手验证部署。
 - 手动端到端验证必须覆盖：扫码后桌面批准；桌面拒绝；二维码刷新后旧链接失效；停止后已批准设备失效；手机可加载并通过 WebSocket 与本地桌面工作区交互。
-- 桌面安装包尚未包含此功能时，用户需先使用带有这些改动的开发版或正式版本；正式发版按 `docs/release.md` 的流程另行完成。
+
+## Relay 会话上限与运行状态计数
+
+- Relay 的进程内会话硬上限提高到 10,000；另有独立的来源 IP 创建频率限制：滚动一小时内最多创建 60 个会话。两者都是保护阈值，不代表单实例经过容量验证可承载对应数量的活跃用户。
+- 私有 `/healthz` 快照新增运行汇总：已连接桌面、获批浏览器授权、活动浏览器 WebSocket 隧道、未完成浏览器请求和待审批配对数。授权浏览器数不等于当前在线浏览器数；没有账号或可信设备身份时，不能准确统计真人在线数。
+- 运行状态只能从 Relay 主机本机访问；公网 `/healthz` 继续返回 404。服务器可用 `curl -fsS http://127.0.0.1:4097/healthz | jq '{sessions, usage, traffic}'` 查看实时快照；现有监控脚本继续保存每小时历史样本。
 
 ## Desktop 更新说明预览
 

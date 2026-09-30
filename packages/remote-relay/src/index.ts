@@ -79,6 +79,9 @@ const maxRequestBytes = 16 * 1024 * 1024
 const maxPendingRequests = 64
 const maxSockets = 32
 const maxSocketQueueBytes = 512 * 1024
+const maxSessionCreationsPerIPPerHour = 60
+const maxSessions = 10_000
+const sessionCreationWindow = 60 * 60 * 1000
 const legacyViewerLimit = 3
 const viewerLifetime = 30 * 24 * 60 * 60 * 1000
 const viewerCookieLifetimeSeconds = Math.floor(viewerLifetime / 1000)
@@ -361,8 +364,8 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       return socket.close(4400, "Invalid browser limit")
     }
     const address = socket.data.clientIP ?? "unknown"
-    const attempts = (createRates.get(address) ?? []).filter((time) => Date.now() - time < 60 * 60 * 1000)
-    if (attempts.length >= 60 || sessions.size >= 2000) {
+    const attempts = (createRates.get(address) ?? []).filter((time) => Date.now() - time < sessionCreationWindow)
+    if (attempts.length >= maxSessionCreationsPerIPPerHour || sessions.size >= maxSessions) {
       socket.send(JSON.stringify({ type: "pair.error" }))
       return socket.close(4429, "Relay limit reached")
     }
@@ -912,12 +915,24 @@ function sendViewerSocket(session: RelaySession, id: string, payload: Uint8Array
 
 function healthSnapshot() {
   const totals: SessionTraffic = { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 }
+  const usage = {
+    connectedDesktops: 0,
+    authorizedBrowsers: 0,
+    activeViewerSockets: 0,
+    pendingViewerRequests: 0,
+    pendingPairings: 0,
+  }
   const active: Array<{ id: string } & SessionTraffic & { viewers: number; binaryChunks: boolean }> = []
   for (const session of sessions.values()) {
     totals.hostIn += session.traffic.hostIn
     totals.hostOut += session.traffic.hostOut
     totals.viewerIn += session.traffic.viewerIn
     totals.viewerOut += session.traffic.viewerOut
+    if (session.host?.readyState === 1) usage.connectedDesktops += 1
+    usage.authorizedBrowsers += session.viewers.size
+    usage.activeViewerSockets += session.sockets.size
+    usage.pendingViewerRequests += session.responses.size
+    usage.pendingPairings += session.pairs.size
     active.push({
       id: session.id.slice(0, 6),
       viewers: session.viewers.size,
@@ -925,7 +940,7 @@ function healthSnapshot() {
       ...session.traffic,
     })
   }
-  return { ok: true, sessions: sessions.size, traffic: totals, active }
+  return { ok: true, sessions: sessions.size, usage, traffic: totals, active }
 }
 
 function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketData>) {
@@ -1141,7 +1156,7 @@ setInterval(() => {
     }
   }
   for (const [address, times] of createRates) {
-    const fresh = times.filter((time) => now - time < 60 * 60 * 1000)
+    const fresh = times.filter((time) => now - time < sessionCreationWindow)
     if (fresh.length === 0) createRates.delete(address)
     else createRates.set(address, fresh)
   }

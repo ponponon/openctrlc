@@ -31,4 +31,14 @@ For another domain, change `OPENCTRLC_REMOTE_PUBLIC_URL`, the OpenResty `server_
 
 ## Operational limits
 
+The relay accepts at most 10,000 in-memory sessions and at most 60 session creations per source IP in a rolling hour. These are abuse/capacity guards, not a benchmark or a promise that one instance can serve that many active users. New desktop clients allow 10 authorized browsers per session by default (configurable from 1 to 100); the relay separately allows at most 32 active viewer WebSocket tunnels per session.
+
 All session state is process-local; this version is a single relay instance and does not support horizontal scaling or session failover. A relay restart disconnects all desktops and viewers. Set production capacity and regions based on measured traffic, and do not describe one small instance as global high-availability service.
+
+The health endpoint is private and is intentionally blocked by the public OpenResty virtual host. On the relay host, inspect a live snapshot with:
+
+```bash
+curl -fsS http://127.0.0.1:4097/healthz | jq '{sessions, usage, traffic}'
+```
+
+`usage.connectedDesktops` counts currently connected desktop clients; `usage.authorizedBrowsers` counts grants that can reconnect, not browsers currently online; `usage.activeViewerSockets` counts open viewer WebSocket tunnels (one browser may open multiple tunnels); `usage.pendingViewerRequests` and `usage.pendingPairings` count in-flight work. There is no account or physical-device identity, so the relay cannot report an exact number of people currently using it. The monitoring scripts retain hourly snapshots under `/home/pon/openctrlc-remote/logs/`.
