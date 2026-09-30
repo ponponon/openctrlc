@@ -1,6 +1,6 @@
 <h1 align="center">OpenCtrlC</h1>
 
-<p align="center">面向终端和桌面工作流的开源 AI 编程 Agent。</p>
+<p align="center">基于 OpenCode 持续开发的开源 AI 编程 Agent，带来更完整的桌面与远程工作流。</p>
 
 <p align="center">
   <a href="https://github.com/ponponon/openctrlc/actions/workflows/publish.yml"><img alt="构建状态" src="https://img.shields.io/github/actions/workflow/status/ponponon/openctrlc/publish.yml?style=flat-square&branch=dev" /></a>
@@ -14,7 +14,18 @@
   <a href="README.ko.md">한국어</a>
 </p>
 
-OpenCtrlC 帮助你探索代码仓库、理解陌生代码、编辑文件、运行命令并审查变更。它面向希望把 AI 编程工作流保持在终端、项目文件和现有工具附近的开发者。
+OpenCtrlC 是基于 [OpenCode](https://github.com/anomalyco/opencode) 独立维护的开源分支。我们开发这个项目，是希望在 OpenCode 的 AI 编程能力基础上，提供更顺手的桌面体验、清晰直观的会话管理，以及跨设备远程访问能力。
+
+## 为什么开发 OpenCtrlC
+
+OpenCode 为 AI 辅助编程提供了扎实的基础。OpenCtrlC 在此之上重点打磨桌面使用、会话理解和多设备协作：
+
+- **更完整的桌面工作流**：提供 macOS、Windows 和 Linux 原生桌面应用，同时保留 CLI 和 TUI。桌面版与 CLI 共用本地项目和会话模型，并提供会话搜索、轮次跳转、上下文查看，以及 Token 用量、成本和耗时的可视化分析。
+- **用手机访问工作区**：扫描二维码配对，在桌面端批准浏览器后，即可从手机打开当前工作区。桌面端通过中继主动建立连接，无需向公网开放本机端口。中继转发流量时可以查看内容，因此这不是端到端加密连接。
+- **过程清晰、模型自选**：可以查看工具调用、文件变更和命令结果；按需连接模型供应商或本地模型；同时把项目规则和 Skills 放在代码工作流中。
+- **兼容 OpenCode 会话**：可以导出可读的对话记录，并按 ID 导入兼容的 OpenCode 会话。
+
+OpenCode 是 OpenCtrlC 的技术基础；OpenCtrlC 在此基础上发展自己的桌面体验、远程工作流、产品方向和发布流程。OpenCtrlC 与 OpenCode 团队不存在隶属、代理或背书关系。
 
 ## 快速入口
 
@@ -47,14 +58,13 @@ macOS 和 Linux 用户也可以通过 OpenCtrlC 项目的 Homebrew tap 安装：
 brew install ponponon/tap/openctrlc
 ```
 
-这是项目维护的第三方 tap，不属于 `homebrew/core`，也不会自动进入清华的 Homebrew 官方镜像。
+这个 Formula 由 OpenCtrlC 项目的 tap 维护，与 `homebrew/core` 分开管理。
 
 安装器支持通过 `OPENCTRLC_INSTALL_DIR` 或 `XDG_BIN_DIR` 自定义安装路径，默认回退到 `$HOME/.openctrlc/bin`。
 
 ### 桌面版
 
-从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新桌面安装包。稳定版在
-可用时优先通过项目的 Cloudflare R2 镜像提供，失败时会自动回退到 GitHub Release：
+从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新桌面安装包。稳定版在可用时优先通过项目的 Cloudflare R2 镜像提供，失败时会自动回退到 GitHub Release：
 
 | 平台    | 架构          | 格式               |
 | ------- | ------------- | ------------------ |
@@ -62,30 +72,13 @@ brew install ponponon/tap/openctrlc
 | Windows | x64、ARM64    | NSIS 安装程序      |
 | Linux   | x64、ARM64    | DEB、AppImage、RPM |
 
-桌面版和 CLI 使用相同的本地项目与会话模型。桌面安装包会包含与目标平台匹配的 CLI 二进制文件。
-
-## OpenCtrlC 能做什么
-
-- **终端与桌面工作流**：在 TUI 或原生桌面应用中工作，不改变项目目录结构。
-- **自由选择模型供应商**：连接适合自己工作流和安全要求的远程供应商或本地模型。
-- **Skills 与项目规则**：查看可用技能，让项目约定和代码一起维护。
-- **会话导航**：搜索会话、跳转到指定轮次并检查本次回复使用的上下文。
-- **透明的执行过程**：查看工具调用、生成的变更和命令结果，不把 Agent 当作黑盒。
-- **会话导出与导入**：导出可读的对话记录，并按 ID 导入兼容的 OpenCode 会话。
-- **手机访问**：扫码后经桌面端批准，即可在手机浏览器中打开工作区；流量会经过公共中继，中继运营方在转发时可以查看内容。
-- **跨平台发布**：CLI 和桌面版面向 macOS、Windows、Linux 发布；发布流程覆盖 x64 与 ARM64 架构。
+桌面版和 CLI 共用本地项目与会话模型；桌面安装包会包含与目标平台匹配的 CLI 二进制文件。
 
 ## 数据与模型供应商
 
 OpenCtrlC 是客户端软件，不是托管模型服务。应用在本地运行，并按照你选择的供应商配置发送请求。具体供应商的条款、数据保留策略和费用规则适用于这些请求。
 
-可选的分享功能是显式触发的：只有你主动选择分享的会话才会发送到配置的分享服务。如果不适合分享，可以在项目配置中关闭它。
-
-## 与 OpenCode 的关系
-
-OpenCtrlC 是基于 [OpenCode](https://github.com/anomalyco/opencode) 独立维护的开源分支。OpenCode 为终端 AI 编程提供了坚实的技术基础；OpenCtrlC 在此基础上采用独立的产品方向和发布流程。
-
-OpenCtrlC 与 OpenCode 团队不存在隶属、代理或背书关系。
+可选的分享功能需要你主动触发：只有你选择分享的会话才会发送到配置的分享服务。如果不适合分享，可以在项目配置中关闭它。
 
 ## 开发
 

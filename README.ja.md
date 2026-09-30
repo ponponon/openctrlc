@@ -1,12 +1,25 @@
 # OpenCtrlC
 
-ターミナルとデスクトップで使える、オープンソースの AI コーディングエージェントです。プロジェクトを調査し、ファイルを編集し、コマンドを実行し、変更内容を確認できます。利用するモデルとプロバイダーは自分で選べます。
+OpenCode を基盤に開発した、デスクトップとリモートアクセスを強化するオープンソースの AI コーディングエージェントです。
+
+OpenCtrlC は [OpenCode](https://github.com/anomalyco/opencode) を基盤とする、独立してメンテナンスされているフォークです。OpenCode の AI コーディング機能を活かしながら、日常的に使いやすいデスクトップ体験、見やすいセッション管理、複数デバイスからのリモートアクセスを提供するために開発しています。
+
+## OpenCtrlC を開発する理由
+
+OpenCode は AI を活用したコーディングの強固な基盤です。OpenCtrlC はその上に、デスクトップでの操作性、セッションの把握しやすさ、デバイスをまたいだ作業環境を加えています。
+
+- **より充実したデスクトップワークフロー** — macOS、Windows、Linux のネイティブアプリに加え、CLI と TUI も利用できます。デスクトップと CLI はローカルのプロジェクトおよびセッションを共有し、セッション検索、ターン移動、コンテキスト確認、Token 使用量・コスト・時間の可視化に対応します。
+- **スマートフォンからワークスペースにアクセス** — QR コードでペアリングし、デスクトップでブラウザーを承認すると、スマートフォンから現在のワークスペースを開けます。デスクトップからリレーへ接続するため、PC のポートをインターネットに公開する必要はありません。通信はエンドツーエンド暗号化ではなく、リレー運営者は転送中の内容を確認できます。
+- **作業の透明性とモデル選択** — ツール呼び出し、ファイル変更、コマンド結果を確認できます。用途に合うモデルプロバイダーやローカルモデルを選び、プロジェクトのルールや Skills を作業中に参照できます。
+- **OpenCode セッションとの互換性** — 読みやすい会話記録をエクスポートし、互換性のある OpenCode セッションを ID でインポートできます。
+
+OpenCode は技術的な基盤です。OpenCtrlC は独自のデスクトップ体験、リモートワークフロー、製品方針、リリースプロセスを開発しています。OpenCode チームとの提携や承認を意味するものではありません。
 
 ## まずはこちら
 
 - [公式サイト](https://openctrlc.pages.dev/)
 - [ドキュメント](https://openctrlc.pages.dev/docs/)
-- [ダウンロード](https://github.com/ponponon/openctrlc/releases)
+- [ダウンロード](https://openctrlc.pages.dev/download/) · [GitHub Releases](https://github.com/ponponon/openctrlc/releases)
 - [GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
 
 ## インストール
@@ -37,7 +50,7 @@ brew install ponponon/tap/openctrlc
 
 ### デスクトップ
 
-最新のインストーラーは [GitHub Releases](https://github.com/ponponon/openctrlc/releases) からダウンロードしてください。
+最新のインストーラーは [ダウンロードページ](https://openctrlc.pages.dev/download/)から入手できます。
 
 | プラットフォーム | アーキテクチャ | 形式                |
 | ---------------- | -------------- | ------------------- |
@@ -45,21 +58,13 @@ brew install ponponon/tap/openctrlc
 | Windows          | x64, ARM64     | NSIS インストーラー |
 | Linux            | x64, ARM64     | DEB, AppImage, RPM  |
 
-## OpenCtrlC の特徴
-
-- ターミナルとネイティブデスクトップの同じセッションモデル
-- OpenAI、Anthropic、Google、ローカルモデルなど、選択したプロバイダーに接続
-- プロジェクトのルールと Skills を確認しながら作業
-- セッション検索、ターン間の移動、コンテキスト確認
-- ツール呼び出し、生成された変更、コマンド結果を追跡可能
-- セッションのエクスポートと、互換性のある OpenCode セッションのインポート
-- スマートフォンで QR ペアリングし、デスクトップで承認してワークスペースにアクセス（通信は公開リレーを経由し、転送中は運営者が内容を確認できます）
+デスクトップアプリと CLI は同じローカルプロジェクトおよびセッションを使用します。デスクトップパッケージには対象プラットフォーム用の CLI バイナリが含まれます。
 
 ## データとモデルプロバイダー
 
 OpenCtrlC はホスト型モデルサービスではありません。アプリケーションはローカルで動作し、設定したプロバイダーへリクエストを送信します。データの保存、料金、利用規約は選択したプロバイダーに従います。
 
-共有機能は明示的に選択した場合だけ使用してください。共有サービスを利用しない場合は、プロジェクト設定で無効にできます。
+共有機能は明示的に選択した場合だけ使用します。共有サービスを利用しない場合は、プロジェクト設定で無効にできます。
 
 ## 開発
 
@@ -77,7 +82,5 @@ bun run --cwd packages/console/app typecheck
 bun run --cwd packages/console/app build
 bun run --cwd packages/web build
 ```
-
-OpenCtrlC は [OpenCode](https://github.com/anomalyco/opencode) を基盤とする、独立してメンテナンスされているフォークです。OpenCode チームとの提携や承認を意味するものではありません。
 
 貢献する場合は [CONTRIBUTING.md](./CONTRIBUTING.md) と [リリース手順](./docs/release.md) を確認してください。
