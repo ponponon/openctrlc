@@ -2256,6 +2256,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 远程只恢复「当前会话」为 Tab；历史会话保留在首页列表可点开，避免一次预开十几个 Tab 把 5Mbps 打满。底部工具栏（模型/深度/详略/权限）可 `flex-wrap` 多行，并预留发送键空间，禁止控件叠在发送按钮下。免费模型走 LLM 请求 `User-Agent: opencode/...` 伪装，与 Web UI 是否代理上游无关，禁止用 UI 壳伪装替代。
 
+- 多桌面共用一个手机浏览器：Cookie 改为 `__Host-oc_remote_<sessionID>` 按会话隔离，并设 `__Host-oc_active` 选择当前桌面；配对 token 先写 sessionStorage 再抹 hash，刷新/重载不丢 join 凭证。工作区快照带 `hostName`，远程顶栏显示电脑名。首页会话行显示约略存储体量（token×4 字节估算）。
+
 - 远程首屏验收：侧栏项目数与桌面一致（或至少 > 0），首页会话列表非空；新开标签页/强刷后仍能看到项目与会话。改动 workspace 同步、bootstrap 或 tabs 恢复后必须复验这三条。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - Renderer 收到旧版桌面主进程 IPC 状态时，缺失的授权上限字段回退为默认 10 和旧 Relay 容量 3，避免数字输入为空或显示 `undefined`。

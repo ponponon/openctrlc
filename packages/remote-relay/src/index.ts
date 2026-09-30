@@ -786,7 +786,7 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
   try {
     const result = await headersPromise
     const responseHeaders = sanitizeResponseHeaders(result.headers)
-    responseHeaders.set("set-cookie", viewerCookie(viewerToken))
+    for (const cookie of viewerCookie(viewerToken, session.id)) responseHeaders.append("set-cookie", cookie)
     if ([204, 205, 304].includes(result.status)) {
       return new Response(null, { status: result.status, headers: responseHeaders })
     }
@@ -887,13 +887,9 @@ async function claimViewer(request: Request) {
     sendViewerState(grant.session)
     return new Response("Pairing expired", { status: 403 })
   }
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "set-cookie": viewerCookie(body.viewerToken),
-      ...noStore,
-    },
-  })
+  const headers = new Headers({ ...noStore })
+  for (const cookie of viewerCookie(body.viewerToken, grant.session.id)) headers.append("set-cookie", cookie)
+  return new Response(null, { status: 204, headers })
 }
 
 function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | undefined {
@@ -921,11 +917,13 @@ function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | und
       input.activeSessionID.length > 200)
   )
     return
+  if (input.hostName !== undefined && (typeof input.hostName !== "string" || input.hostName.length > 120)) return
   const workspace = {
     projects,
     ...(typeof input.lastProject === "string" ? { lastProject: input.lastProject } : {}),
     sessionIDs,
     ...(typeof input.activeSessionID === "string" ? { activeSessionID: input.activeSessionID } : {}),
+    ...(typeof input.hostName === "string" ? { hostName: input.hostName } : {}),
   } satisfies RelayWorkspaceSnapshot
   if (JSON.stringify(workspace).length > 64 * 1024) return
   return workspace
@@ -956,21 +954,50 @@ function workspaceBootstrapResponse(workspace: RelayWorkspaceSnapshot | undefine
 }
 
 function sessionFor(request: Request) {
-  const token = request.headers
-    .get("cookie")
-    ?.split(";")
-    .map((item) => item.trim())
-    .find((item) => item.startsWith("__Host-oc_remote="))
-    ?.slice("__Host-oc_remote=".length)
-  if (!token) return
+  const cookies = parseCookies(request.headers.get("cookie"))
+  const active = cookies["__Host-oc_active"]
+  if (active) {
+    const hit = viewerForToken(cookies[viewerCookieName(active)])
+    if (hit) return hit
+  }
+  // Fall back to any authorized browser cookie (legacy single-session name included).
+  for (const [name, value] of Object.entries(cookies)) {
+    if (name !== "__Host-oc_remote" && !name.startsWith(VIEWER_COOKIE_PREFIX)) continue
+    const hit = viewerForToken(value)
+    if (hit) return hit
+  }
+  return undefined
+}
+
+function viewerForToken(token: string | undefined) {
+  if (!token) return undefined
   const grant = viewerTokens.get(token)
-  if (!grant || !grant.session.viewers.has(token)) return
-  if (!touchViewer(grant.session, token)) return
+  if (!grant || !grant.session.viewers.has(token)) return undefined
+  if (!touchViewer(grant.session, token)) return undefined
   return { session: grant.session, token }
 }
 
-function viewerCookie(token: string) {
-  return `__Host-oc_remote=${token}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; HttpOnly; Secure; SameSite=Strict`
+function parseCookies(header: string | null) {
+  const out: Record<string, string> = {}
+  for (const part of (header ?? "").split(";")) {
+    const idx = part.indexOf("=")
+    if (idx <= 0) continue
+    out[part.slice(0, idx).trim()] = part.slice(idx + 1).trim()
+  }
+  return out
+}
+
+const VIEWER_COOKIE_PREFIX = "__Host-oc_remote_"
+
+function viewerCookieName(sessionID: string) {
+  return `${VIEWER_COOKIE_PREFIX}${sessionID}`
+}
+
+function viewerCookie(token: string, sessionID: string) {
+  return [
+    `${viewerCookieName(sessionID)}=${token}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; HttpOnly; Secure; SameSite=Strict`,
+    `__Host-oc_active=${sessionID}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; Secure; SameSite=Strict`,
+  ]
 }
 
 function removeViewer(session: RelaySession, token: string, reason = "Browser authorization expired") {
@@ -1299,7 +1326,7 @@ function pairPage(mode: "pair" | "expired" | "home" | "already") {
   const socketOrigin = `${publicURL.protocol === "https:" ? "wss:" : "ws:"}//${publicURL.host}`
   return {
     policy: `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'self' ${socketOrigin}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
-    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status" role="status" aria-live="polite"></div></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="already"){show(t.already,true);setTimeout(()=>location.replace("/"),400)}else if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);const token=location.hash.slice(1);history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.connecting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));let deliveryTimeout;const handshakeTimeout=setTimeout(()=>show(t.connectingSlow,true),8000);socket.onopen=()=>{show(t.requesting,true);socket.send(JSON.stringify({type:"pair",joinToken:token}))};socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting"){clearTimeout(handshakeTimeout);show(t.sent,true);deliveryTimeout=setTimeout(()=>show(t.deliverySlow,true),8000)}if(data.type==="pair.delivered"){clearTimeout(deliveryTimeout);show(t.waiting,true)}if(data.type==="pair.approved"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.denied)}if(data.type==="pair.error"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.error)}};socket.onclose=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);if(!completed)show(t.error)};socket.onerror=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);show(t.error)}}}</script></html>`,
+    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status" role="status" aria-live="polite"></div></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="already"){show(t.already,true);setTimeout(()=>location.replace("/"),400)}else if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);let token=location.hash.slice(1);try{const k="openctrlc.join-token."+sessionID;if(token)sessionStorage.setItem(k,token);else token=sessionStorage.getItem(k)||""}catch{};history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.connecting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));let deliveryTimeout;const handshakeTimeout=setTimeout(()=>show(t.connectingSlow,true),8000);socket.onopen=()=>{show(t.requesting,true);socket.send(JSON.stringify({type:"pair",joinToken:token}))};socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting"){clearTimeout(handshakeTimeout);show(t.sent,true);deliveryTimeout=setTimeout(()=>show(t.deliverySlow,true),8000)}if(data.type==="pair.delivered"){clearTimeout(deliveryTimeout);show(t.waiting,true)}if(data.type==="pair.approved"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.denied)}if(data.type==="pair.error"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.error)}};socket.onclose=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);if(!completed)show(t.error)};socket.onerror=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);show(t.error)}}}</script></html>`,
   }
 }
 

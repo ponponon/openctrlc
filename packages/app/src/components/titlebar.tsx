@@ -30,6 +30,7 @@ import { useLanguage } from "@/context/language"
 import { useSettings } from "@/context/settings"
 import { WindowsAppMenu } from "./windows-app-menu"
 import { applyPath, backPath, forwardPath } from "./titlebar-history"
+import { remoteHostName } from "@/utils/remote-workspace"
 import { TitlebarTabStrip } from "@/components/titlebar-tab-strip"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
@@ -836,17 +837,29 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
 
 function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void } }) {
   const channel = import.meta.env.VITE_OPENCTRLC_CHANNEL
+  const host = remoteHostName()
+  const hostChip = host ? (
+    <div
+      class="max-w-[160px] truncate rounded-sm bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
+      title={host}
+    >
+      {host}
+    </div>
+  ) : null
   if (channel === "dev" && props.debugTools) {
     return (
-      <button
-        type="button"
-        class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono cursor-pointer"
-        onClick={props.debugTools.toggle}
-        aria-label="Toggle debug tools"
-        aria-pressed={props.debugTools.visible}
-      >
-        DEV
-      </button>
+      <>
+        <button
+          type="button"
+          class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono cursor-pointer"
+          onClick={props.debugTools.toggle}
+          aria-label="Toggle debug tools"
+          aria-pressed={props.debugTools.visible}
+        >
+          DEV
+        </button>
+        {hostChip}
+      </>
     )
   }
 
@@ -857,6 +870,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           {channel.toUpperCase()}
         </div>
       )}
+      {hostChip}
     </>
   )
 }

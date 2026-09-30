@@ -33,6 +33,7 @@ export type RemoteWorkspaceSnapshot = {
   lastProject?: string
   sessionIDs: string[]
   activeSessionID?: string
+  hostName?: string
 }
 export type RemoteAccessState = {
   status: "stopped" | "connecting" | "reconnecting" | "active" | "error"

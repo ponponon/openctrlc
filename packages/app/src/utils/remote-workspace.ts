@@ -1,10 +1,13 @@
 import type { RemoteWorkspaceSnapshot } from "@/context/platform"
 
 const storageKey = "openctrlc.remote-workspace"
+const hostNameKey = "openctrlc.remote-host-name"
 const maxProjects = 128
 const maxSessions = 128
 const maxPathLength = 4096
 const maxSessionIDLength = 200
+
+let cachedHostName: string | undefined
 
 export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSnapshot | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return
@@ -35,11 +38,13 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
       input.activeSessionID.length > maxSessionIDLength)
   )
     return
+  if (input.hostName !== undefined && (typeof input.hostName !== "string" || input.hostName.length > 120)) return
   return {
     projects,
     ...(typeof input.lastProject === "string" ? { lastProject: input.lastProject } : {}),
     sessionIDs,
     ...(typeof input.activeSessionID === "string" ? { activeSessionID: input.activeSessionID } : {}),
+    ...(typeof input.hostName === "string" ? { hostName: input.hostName } : {}),
   }
 }
 
@@ -59,10 +64,26 @@ export function takeRemoteWorkspaceSnapshot() {
   }
   if (!value || value.length > 64 * 1024) return
   try {
-    return parseRemoteWorkspaceSnapshot(JSON.parse(value))
+    const parsed = parseRemoteWorkspaceSnapshot(JSON.parse(value))
+    const name = parsed?.hostName
+    if (name) {
+      cachedHostName = name
+      try {
+        localStorage.setItem(hostNameKey, name)
+      } catch {}
+    }
+    return parsed
   } catch {
     return
   }
+}
+
+export function remoteHostName() {
+  if (cachedHostName) return cachedHostName
+  try {
+    cachedHostName = localStorage.getItem(hostNameKey) ?? undefined
+  } catch {}
+  return cachedHostName
 }
 
 export function remoteWorkspaceStorageKey() {

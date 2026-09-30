@@ -3,6 +3,7 @@ export type RelayWorkspaceSnapshot = {
   lastProject?: string
   sessionIDs: string[]
   activeSessionID?: string
+  hostName?: string
 }
 
 export const DEFAULT_VIEWER_LIMIT = 10

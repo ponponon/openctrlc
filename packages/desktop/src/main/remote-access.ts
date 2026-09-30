@@ -12,6 +12,7 @@ import {
 } from "@openctrlc/remote-relay/protocol"
 import type { RemoteAccessPairRequest, RemoteAccessState, RemoteWorkspaceSnapshot } from "@openctrlc/app"
 import type { ServerReadyData } from "../preload/types"
+import { hostname } from "node:os"
 import { getStore } from "./store"
 import { REMOTE_ACCESS_ENABLED_KEY, REMOTE_ACCESS_SESSION_KEY, REMOTE_ACCESS_VIEWER_LIMIT_KEY } from "./store-keys"
 
@@ -112,6 +113,7 @@ export class RemoteAccessService {
       ...(typeof snapshot.activeSessionID === "string" && snapshot.activeSessionID.length <= 200
         ? { activeSessionID: snapshot.activeSessionID }
         : {}),
+      hostName: hostname().slice(0, 120),
     }
     if (workspace.activeSessionID && !workspace.sessionIDs.includes(workspace.activeSessionID)) {
       workspace.sessionIDs = [...workspace.sessionIDs.slice(0, 127), workspace.activeSessionID]

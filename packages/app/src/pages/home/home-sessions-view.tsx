@@ -10,6 +10,7 @@ import { useLanguage } from "@/context/language"
 import { ServerConnection } from "@/context/server"
 import { SessionTabAvatarView } from "@/pages/layout/session-tab-avatar"
 import { sessionTitle } from "@/utils/session-title"
+import { estimateSessionStorageBytes, formatStorageBytes } from "@/utils/session-storage-size"
 import { shouldOpenSessionInBackground } from "../home-session-open"
 import {
   HomeSessionStatusController,
@@ -386,6 +387,7 @@ function HomeSessionSearchResultRow(
         <HomeSessionTitle title={title()} showProjectName={!!showProjectName()} search />
         <Show when={showProjectName()}>
           <HomeSessionProjectName name={props.record.projectName} search />
+          <HomeSessionStorage session={props.record.session} />
         </Show>
       </div>
     </button>
@@ -452,6 +454,7 @@ function HomeSessionRow(props: HomeSessionsViewProps & { record: HomeSessionReco
         <Show when={showProjectName()}>
           <HomeSessionProjectName name={props.record.projectName} />
         </Show>
+        <HomeSessionStorage session={props.record.session} />
       </button>
       <Show when={SHOW_HOME_SESSION_ARCHIVE}>
         <div
@@ -503,6 +506,17 @@ function HomeSessionProjectName(props: { name: string; search?: boolean }) {
     >
       {props.name}
     </span>
+  )
+}
+
+function HomeSessionStorage(props: { session: Session }) {
+  const label = createMemo(() => formatStorageBytes(estimateSessionStorageBytes(props.session)))
+  return (
+    <Show when={label()}>
+      <span class="shrink-0 text-v2-text-text-faint text-12-regular tabular-nums" title={label()}>
+        {label()}
+      </span>
+    </Show>
   )
 }
 
