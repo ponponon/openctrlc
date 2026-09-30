@@ -70,10 +70,10 @@ latest stable release's installer assets and serves them when available, with
 an automatic GitHub Release fallback. Older versions and their assets remain
 in [GitHub Releases](https://github.com/ponponon/openctrlc/releases).
 
-| Platform | Architectures | Formats        |
-| -------- | ------------- | -------------- |
-| macOS    | Apple Silicon | DMG, ZIP       |
-| Windows  | x64, ARM64    | NSIS installer |
+| Platform | Architectures | Formats            |
+| -------- | ------------- | ------------------ |
+| macOS    | Apple Silicon | DMG, ZIP           |
+| Windows  | x64, ARM64    | NSIS installer     |
 | Linux    | x64, ARM64    | DEB, AppImage, RPM |
 
 The desktop app and CLI use the same local project and session model. The desktop package includes a matching CLI binary for its target platform.

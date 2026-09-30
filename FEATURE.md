@@ -2254,7 +2254,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - App 的旧版侧栏和新版标题栏都有更醒目的手机入口：标题栏采用强调色和浅色底，旧侧栏采用有底色按钮；对话框的未开启状态按“开启、扫码、桌面批准”三步引导，并展示中继隐私边界。开启后，待审批设备显示在二维码和隐私说明之前的全宽警示卡片中；设备浏览器标识明确标注为参考信息，不能用于验证真实设备身份。每种目标语言都说明首次批准要求及连续 30 天未使用后授权过期。
 - Relay 采用内存会话状态和限额，反向代理关闭访问日志；代码和部署示例位于 `packages/remote-relay` 与 `infra/remote-relay`。部署脚本支持 `--config-only`，仅平滑重载受管 OpenResty 虚拟主机配置，不重启 Relay 或中断内存会话。
 - TLS 覆盖桌面到 Relay 和手机到 Relay 两段链路，不是端到端加密；Relay 在转发时能查看请求内容，但不会主动持久化工作区内容。UI、README 和文档必须明确这个信任边界。
-- Relay 出口对可压缩文本响应（text/*、application/json|javascript|xml 等）按浏览器 `Accept-Encoding` 重新 gzip，SSE 除外；桌面侧 `fetch` 会解压上游响应，若不再压缩会让 JS/HTML 以原始体积经中继转发。App 全局事件流重连采用 250ms 起步的指数退避（上限 5s），连接稳定超过 5 秒后重置，避免断线时每 250ms 打一次中继。
+- Relay 出口对可压缩文本响应（text/\*、application/json|javascript|xml 等）按浏览器 `Accept-Encoding` 重新 gzip，SSE 除外；桌面侧 `fetch` 会解压上游响应，若不再压缩会让 JS/HTML 以原始体积经中继转发。App 全局事件流重连采用 250ms 起步的指数退避（上限 5s），连接稳定超过 5 秒后重置，避免断线时每 250ms 打一次中继。
 - 当前公开示例 `openctrlc-remote.quniv.cn` 是单实例、有限容量部署。Relay 重启会中断连接，不具备多区域高可用或横向扩展能力。
 
 ### 代码位置
