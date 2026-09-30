@@ -8,6 +8,7 @@ import {
   isViewerLimit,
   randomToken,
   relayMessage,
+  streamID,
   type RelayServerMessage,
   type RelayWorkspaceSnapshot,
 } from "./protocol"
@@ -98,6 +99,8 @@ const server = Bun.serve<SocketData>({
   hostname: process.env.HOST ?? "0.0.0.0",
   port,
   maxRequestBodySize: maxRequestBytes + 1024,
+  // Proxied app responses and SSE streams can pause longer than Bun's 10s default.
+  idleTimeout: 120,
   fetch(request, server) {
     const url = new URL(request.url)
     if (url.pathname === "/healthz") return Response.json(healthSnapshot())
@@ -157,7 +160,7 @@ const server = Bun.serve<SocketData>({
             sessionID: session.id,
             mode: "proxy",
             viewerToken: viewer.token,
-            id: randomToken(12),
+            id: streamID(),
             path: url.pathname + url.search,
             protocols,
             device: deviceLabel(request.headers.get("user-agent")),
@@ -583,7 +586,7 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     return new Response("Too many remote requests", { status: 429, headers: noStore })
   const contentLength = Number(request.headers.get("content-length") ?? 0)
   if (contentLength > maxRequestBytes) return new Response("Request body is too large", { status: 413 })
-  const id = randomToken(12)
+  const id = streamID()
   let resolveHeaders!: PendingResponse["resolveHeaders"]
   let rejectHeaders!: PendingResponse["rejectHeaders"]
   const headersPromise = new Promise<{ status: number; headers: Record<string, string> }>((resolve, reject) => {

@@ -110,6 +110,14 @@ export function randomToken(bytes = 32) {
     .replaceAll("=", "")
 }
 
+/**
+ * Stream IDs travel in fixed 12-byte binary-frame headers.
+ * 9 random bytes base64-encode to exactly 12 characters.
+ */
+export function streamID() {
+  return randomToken(9)
+}
+
 export function encodeBase64(value: Uint8Array) {
   return btoa(String.fromCharCode(...value))
 }
@@ -121,6 +129,7 @@ export function decodeBase64(value: string) {
 /** Bulk payload frames on the host WebSocket. Control messages stay JSON. */
 export const BINARY_FRAME_MAGIC = 0xc1
 export const BINARY_FRAME_HEADER = 15
+/** Stream IDs must fit here; generate them with `streamID()` (12 chars). */
 export const BINARY_FRAME_ID_BYTES = 12
 
 export const BinaryFrameKind = {

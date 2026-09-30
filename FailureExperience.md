@@ -1033,3 +1033,7 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 ## 中继出口 gzip 后不能再让 OpenResty 剥掉 Content-Encoding
 
 `infra/remote-relay/openresty.conf` 里的 `proxy_hide_header Content-Encoding` 会把 Relay 刚写入的 gzip 标记剥掉，浏览器拿到压缩字节却按 identity 解析，页面直接损坏。该 hide_header 是为了挡历史泄漏的错误编码头；一旦 Relay 主动对文本响应重新 gzip，必须同步删除它，让 `Content-Encoding` 原样传给浏览器。以后凡是链路上新增压缩/解压，都要把桌面转发、Relay 出口、OpenResty 三层的 Content-Encoding 处理串起来检查，不能只改一层。
+
+## 二进制帧 ID 字段必须装下 streamID 全文
+
+`randomToken(12)` 是 12 个随机字节，base64 后是 16 个字符；`encodeBinaryFrame` 按 `BINARY_FRAME_ID_BYTES=12` 硬截断，Relay 拿截断 ID 去 `responses.get(id)` 永远查不到，响应分片被静默丢弃，浏览器拿到空 HTML 白屏。healthz 上 `viewerOut=0` 而 `hostIn` 正常增长就是这个特征。以后凡是把 ID 放进定长帧头，必须先量 `id.length`，并让生成函数保证长度（`streamID()` = `randomToken(9)` = 12 字符），编解码两侧共用同一常量；发现帧查不到目标时要打日志，不能静默 return。
