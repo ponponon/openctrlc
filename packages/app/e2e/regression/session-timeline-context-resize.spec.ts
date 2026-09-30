@@ -50,11 +50,17 @@ test.describe("regression: session timeline context group resize", () => {
 
   test("paints a stable exploring to explored transition", async ({ page }) => {
     const events: { directory: string; payload: Record<string, unknown> }[] = []
+    const deliveredPartIDs = new Set<string>()
     await page.setViewportSize({ width: 1400, height: 900 })
-    await mockServer(page, events, [
-      ...Array.from({ length: 8 }, (_, index) => turn(index, false)).flat(),
-      ...turn(10, true, "running"),
-    ])
+    await mockServer(
+      page,
+      events,
+      [...Array.from({ length: 8 }, (_, index) => turn(index, false)).flat(), ...turn(10, true, "running")],
+      (event) => {
+        const partID = (event.payload.properties as { part?: { id?: unknown } } | undefined)?.part?.id
+        if (typeof partID === "string") deliveredPartIDs.add(partID)
+      },
+    )
     await configurePage(page)
 
     await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
@@ -82,7 +88,28 @@ test.describe("regression: session timeline context group resize", () => {
       },
     })
     await startVisualProbe(page, regions)
-    for (const [index, delay] of [120, 350, 80, 500].entries()) {
+    const readiness = page.evaluate(
+      (selector) =>
+        new Promise<string[]>((resolve, reject) => {
+          const status = document.querySelector<HTMLElement>(selector)
+          if (!status) {
+            reject(new Error("missing context status title"))
+            return
+          }
+          const states: string[] = []
+          const observer = new MutationObserver(() => {
+            const value = status.getAttribute("data-ready") ?? ""
+            if (states.at(-1) !== value) states.push(value)
+            if (states.includes("true") && value === "false") {
+              observer.disconnect()
+              resolve(states)
+            }
+          })
+          observer.observe(status, { attributes: true, attributeFilter: ["data-ready"] })
+        }),
+      `${contextSelector} [data-component="tool-status-title"]`,
+    )
+    for (const [index, partID] of contextIDs.entries()) {
       events.push({
         directory,
         payload: {
@@ -102,11 +129,14 @@ test.describe("regression: session timeline context group resize", () => {
           },
         },
       })
-      await page.waitForTimeout(delay)
+      await expect.poll(() => deliveredPartIDs.has(partID)).toBe(true)
     }
 
-    await expect(context.locator('[data-component="tool-status-title"]')).toHaveAttribute("aria-label", "Explored")
-    await page.waitForTimeout(700)
+    const status = context.locator('[data-component="tool-status-title"]')
+    await expect(status).toHaveAttribute("aria-label", "Explored")
+    const readinessStates = await readiness
+    expect(readinessStates).toContain("true")
+    expect(readinessStates.at(-1)).toBe("false")
     const trace = await stopVisualProbe<keyof typeof regions>(page)
     const labels = trace.samples
       .map((sample) => sample.regions.status?.label)
@@ -320,6 +350,7 @@ async function mockServer(
   page: Page,
   events: { directory: string; payload: Record<string, unknown> }[] = [],
   fixtureMessages = messages,
+  onEventDelivered?: (event: { directory: string; payload: Record<string, unknown> }) => void,
 ) {
   await mockOpenCodeServer(page, {
     directory,
@@ -327,7 +358,11 @@ async function mockServer(
     provider: provider(),
     sessions: [session()],
     pageMessages: () => ({ items: fixtureMessages }),
-    events: () => events.splice(0, 1),
+    events: () => {
+      const next = events.splice(0, 1)
+      next.forEach((event) => onEventDelivered?.(event))
+      return next
+    },
     eventRetry: 50,
   })
 }

@@ -692,11 +692,39 @@ async function expectSessionTimelineReady(
 }
 
 async function expandVisibleSteps(page: Page) {
-  const toggles = page.getByRole("button", { name: /Show steps/ })
-  const count = await toggles.count()
-  for (let index = 0; index < count; index++) {
-    const toggle = toggles.nth(index)
-    if (await toggle.isVisible()) await toggle.click()
+  const rows = page.locator('[data-timeline-row="AssistantSteps"]')
+  while (await rows.count()) {
+    let expanded = false
+    const count = await rows.count()
+    for (let index = 0; index < count; index++) {
+      const row = rows.nth(index)
+      const toggle = row.getByRole("button", { name: /Show steps/ })
+      if (!(await toggle.count()) || !(await toggle.isVisible())) continue
+      const timelineKey = await row.evaluate(
+        (element) => element.closest<HTMLElement>("[data-timeline-key]")?.dataset.timelineKey,
+      )
+      expect(timelineKey).toBeTruthy()
+      const inViewport = await toggle.evaluate((element) => {
+        const scroller = element.closest<HTMLElement>(".scroll-view__viewport")
+        if (!scroller) return false
+        const bounds = element.getBoundingClientRect()
+        const viewport = scroller.getBoundingClientRect()
+        return (
+          bounds.bottom > viewport.top &&
+          bounds.top < viewport.bottom &&
+          bounds.right > viewport.left &&
+          bounds.left < viewport.right
+        )
+      })
+      if (!inViewport) continue
+      await toggle.click()
+      await expect(
+        page.locator(`[data-timeline-key="${timelineKey}"] [data-slot="session-turn-steps-content"]`),
+      ).toBeVisible()
+      expanded = true
+      break
+    }
+    if (!expanded) return
   }
 }
 

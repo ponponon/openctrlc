@@ -83,19 +83,14 @@ test.describe("session timeline projection", () => {
           },
         }),
         userText("Continue after the comment", { id: "prt_visible_user" }),
+        { id: "prt_compaction", type: "compaction", auto: true },
       ],
       { summary: { diffs: Array.from({ length: 11 }, (_, index) => summaryDiff(index)) } },
     )
-    const aborted = assistantMessage(
-      [
-        { id: "prt_before_abort", type: "text", text: "Before interruption" },
-        { id: "prt_compaction", type: "compaction", auto: true },
-      ],
-      {
-        id: "msg_1001_assistant_aborted",
-        error: { name: "MessageAbortedError", data: { message: "Stopped" } },
-      },
-    )
+    const aborted = assistantMessage([{ id: "prt_before_abort", type: "text", text: "Before interruption" }], {
+      id: "msg_1001_assistant_aborted",
+      error: { name: "MessageAbortedError", data: { message: "Stopped" } },
+    })
     const failed = assistantMessage([{ id: "prt_after_abort", type: "text", text: "After interruption" }], {
       id: "msg_1002_assistant_failed",
       error: {

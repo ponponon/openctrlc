@@ -26,6 +26,7 @@ test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: "no-preference
 test("animates todo lifecycle without replaying it across session tabs", async ({ page }) => {
   test.setTimeout(90_000)
   const events: EventPayload[] = []
+  let deliveredTodoEvents = 0
   const todos: Record<string, typeof activeTodos> = { [sourceID]: [], [otherID]: [] }
   const sessionStatus: Record<string, { type: "busy" | "idle" }> = {}
 
@@ -59,7 +60,11 @@ test("animates todo lifecycle without replaying it across session tabs", async (
     sessions: [session(sourceID, sourceTitle, 1700000000000), session(otherID, otherTitle, 1700000001000)],
     sessionStatus: { [sourceID]: { type: "busy" } },
     pageMessages: () => ({ items: [] }),
-    events: () => events.splice(0, 1),
+    events: () => {
+      const next = events.splice(0, 1)
+      if (next[0]?.payload.type === "todo.updated") deliveredTodoEvents++
+      return next
+    },
     eventRetry: 16,
     sessionStatus: () => sessionStatus,
     todos: (sessionID) => todos[sessionID] ?? [],
@@ -75,18 +80,18 @@ test("animates todo lifecycle without replaying it across session tabs", async (
   events.push(statusEvent(sourceID, "busy"))
   await expect(page.getByRole("button", { name: "Stop" })).toBeVisible()
 
-  await page.waitForTimeout(700)
-  const opening = sampleDock(page, 1_000)
+  const opening = sampleDock(page, "open")
   todos[sourceID] = activeTodos
   events.push(todoEvent(sourceID, activeTodos))
   await expect(dock).toBeVisible()
   await expect(dock.locator('[data-state="in_progress"]')).toHaveCount(1)
+  await expect.poll(() => deliveredTodoEvents).toBe(1)
   expect((await opening).some((sample) => sample.opacity > 0.05 && sample.opacity < 0.95)).toBe(true)
 
   await switchSession(page, otherID, otherTitle)
   await expect(dock).toHaveCount(0)
 
-  const returningOpen = sampleDock(page, 2_000)
+  const returningOpen = sampleDock(page, "open")
   await switchSession(page, sourceID, sourceTitle)
   await expect(dock).toBeVisible()
   const openSamples = (await returningOpen).filter((sample) => sample.present)
@@ -96,16 +101,17 @@ test("animates todo lifecycle without replaying it across session tabs", async (
   await expect(dock.locator('[data-state="in_progress"]')).toHaveCount(1)
 
   const completedTodos = activeTodos.map((todo) => ({ ...todo, status: "completed" }))
-  const closing = sampleDock(page, 1_000)
+  const closing = sampleDock(page, "closed")
   todos[sourceID] = completedTodos
   events.push(todoEvent(sourceID, completedTodos))
   await expect(dock).toHaveCount(0)
+  await expect.poll(() => deliveredTodoEvents).toBe(2)
   expect((await closing).some((sample) => sample.opacity > 0.05 && sample.opacity < 0.95)).toBe(true)
   todos[sourceID] = []
   events.push(todoEvent(sourceID, []))
 
   await switchSession(page, otherID, otherTitle)
-  const returningEmpty = sampleDock(page, 700)
+  const returningEmpty = sampleDock(page, "closed")
   await switchSession(page, sourceID, sourceTitle)
   await expect(dock).toHaveCount(0)
   expect((await returningEmpty).every((sample) => !sample.present)).toBe(true)
@@ -171,21 +177,22 @@ async function switchSession(page: Page, sessionID: string, title: string) {
   await expectSessionTitle(page, title)
 }
 
-function sampleDock(page: Page, duration: number) {
-  return page.evaluate(async (duration) => {
+function sampleDock(page: Page, target: "open" | "closed") {
+  return page.evaluate(async (target) => {
     const samples: { present: boolean; height: number; opacity: number }[] = []
-    const start = performance.now()
-    while (performance.now() - start < duration) {
+    while (true) {
       const dock = document.querySelector<HTMLElement>('[data-component="session-todo-dock"]')
       const clip = dock?.parentElement?.parentElement
       const label = dock?.querySelector<HTMLElement>('[data-action="session-todo-toggle"] span[aria-label]')
-      samples.push({
+      const sample = {
         present: !!dock,
         height: clip?.getBoundingClientRect().height ?? 0,
         opacity: label ? Number.parseFloat(getComputedStyle(label).opacity) : 0,
-      })
+      }
+      samples.push(sample)
+      if (target === "open" && sample.present && sample.height > 70 && sample.opacity > 0.98) return samples
+      if (target === "closed" && !sample.present) return samples
       await new Promise(requestAnimationFrame)
     }
-    return samples
-  }, duration)
+  }, target)
 }
