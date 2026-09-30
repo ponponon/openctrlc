@@ -77,7 +77,8 @@ async function fetchLatestRelease({ repository, githubToken }) {
     headers: githubHeaders(githubToken),
   })
   const payload = await readJsonResponse(response, "Latest GitHub release")
-  if (payload.draft || payload.prerelease) throw new Error("The latest GitHub release must be published and non-prerelease")
+  if (payload.draft || payload.prerelease)
+    throw new Error("The latest GitHub release must be published and non-prerelease")
   return payload
 }
 
