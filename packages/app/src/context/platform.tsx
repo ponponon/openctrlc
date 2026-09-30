@@ -22,7 +22,12 @@ type PlatformName = "web" | "desktop"
 type DesktopOS = "macos" | "windows" | "linux"
 
 export type RemoteAccessPairRequest = { id: string; device: string }
-export type RemoteAccessAuthorizedViewer = { id: string; device: string }
+export type RemoteAccessAuthorizedViewer = {
+  id: string
+  device: string
+  createdAt?: number
+  lastSeenAt?: number
+}
 export type RemoteWorkspaceSnapshot = {
   projects: Array<{ worktree: string; expanded: boolean }>
   lastProject?: string

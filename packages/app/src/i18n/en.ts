@@ -1070,6 +1070,10 @@ export const dict = {
     "This relay does not support custom browser limits yet. The saved limit will apply after the relay is updated.",
   "remoteAccess.viewerLimitOverCapacity":
     "Existing approvals are kept when you lower the limit. Revoke a browser or raise the limit before approving another.",
+  "remoteAccess.viewerMeta": "Approved {{created}} · Last used {{seen}}",
+  "remote.desktop.offlineTitle": "Desktop is offline",
+  "remote.desktop.offlineDescription":
+    "Mobile access is on, but the desktop app is unreachable. Showing the last synced projects and sessions.",
   "remoteAccess.authorizedTitle": "Approved browsers",
   "remoteAccess.authorizedDescription":
     "Browser details are only a hint and can be spoofed; they do not verify a physical device.",

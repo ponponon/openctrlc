@@ -101,4 +101,13 @@ if [ "$viewer_out_delta" -ge "$viewer_out_alert_bytes" ]; then
     "Relay viewerOut grew $viewer_out_delta bytes in one hour"
 fi
 
+# Catch the upstream OpenCode shell being served instead of embedded OpenCtrlC UI.
+ui_probe=${RELAY_UI_PROBE_URL:-}
+if [ -n "$ui_probe" ]; then
+  ui_mode=$(curl --fail --silent --max-time 5 -D - -o /dev/null "$ui_probe" | awk -F': ' 'tolower($1)=="x-openctrlc-ui"{print $2}' | tr -d '\r' | tail -1)
+  if [ -n "$ui_mode" ] && [ "$ui_mode" != "embedded" ]; then
+    record_alert critical remote-ui "{\"ui\":\"$ui_mode\"}" "Remote UI source is $ui_mode, expected embedded OpenCtrlC UI"
+  fi
+fi
+
 echo "$now collected sessions=$sessions hostIn=$host_in hostOut=$host_out viewerIn=$viewer_in viewerOut=$viewer_out hostOutDelta=$host_out_delta viewerOutDelta=$viewer_out_delta"

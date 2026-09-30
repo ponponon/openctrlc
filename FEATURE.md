@@ -2251,6 +2251,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 远程浏览器必须加载 sidecar 内嵌的 OpenCtrlC Web UI（`build-node.ts` → `openctrlc-web-ui.gen.ts`）。桌面 main 不得设置 `OPENCTRLC_DISABLE_EMBEDDED_WEB_UI`，否则 UI 会代理到上游 `app.opencode.ai`，远程永远无法消费 workspace 快照。排查远程空白时先验证入口 JS 包含 `openctrlc` 标识。
 - 同一浏览器保持授权：凭据是 `__Host-oc_remote` Cookie + 会话 resume，不是 UA 指纹。访问 `/join/<session>` 时若已有该会话有效 Cookie 则 302 到 `/`，禁止再签发新 viewer 编号。只有新会话、Cookie 丢失或显式撤销才需要重新批准。
 
+- UI 来源可探测：响应头 `x-openctrlc-ui: embedded|upstream`；monitor 探测到非 embedded 时告警。join 对已授权浏览器显示「已授权，正在打开工作区」后进入 `/`。授权列表展示批准时间与最近使用（`createdAt`/`lastSeenAt` 随 viewer.list 下发并落盘）。
+
 - 远程首屏验收：侧栏项目数与桌面一致（或至少 > 0），首页会话列表非空；新开标签页/强刷后仍能看到项目与会话。改动 workspace 同步、bootstrap 或 tabs 恢复后必须复验这三条。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - Renderer 收到旧版桌面主进程 IPC 状态时，缺失的授权上限字段回退为默认 10 和旧 Relay 容量 3，避免数字输入为空或显示 `undefined`。

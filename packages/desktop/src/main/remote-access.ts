@@ -675,7 +675,14 @@ export class RemoteAccessService {
         const device = item as Record<string, unknown>
         if (typeof device.id !== "string" || !/^[A-Za-z0-9_-]{8,24}$/.test(device.id)) return []
         if (typeof device.device !== "string" || device.device.length > 80) return []
-        return [{ id: device.id, device: device.device }]
+        return [
+          {
+            id: device.id,
+            device: device.device,
+            createdAt: typeof device.createdAt === "number" ? device.createdAt : undefined,
+            lastSeenAt: typeof device.lastSeenAt === "number" ? device.lastSeenAt : undefined,
+          },
+        ]
       })
       this.#setState({ ...this.#state, authorizedDevices: authorizedViewers.length, authorizedViewers })
       return

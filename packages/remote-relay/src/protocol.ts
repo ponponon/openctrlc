@@ -69,7 +69,7 @@ export type RelayServerMessage =
   | { type: "session.stopped" }
   | { type: "session.pong"; pingID?: string }
   | { type: "viewer.count"; count: number }
-  | { type: "viewer.list"; devices: Array<{ id: string; device: string }> }
+  | { type: "viewer.list"; devices: Array<{ id: string; device: string; createdAt?: number; lastSeenAt?: number }> }
   | { type: "viewer.revoked"; viewerID: string }
   | { type: "viewer.revoke.error"; viewerID: string }
   | { type: "pair.rotated"; joinToken: string; url: string }

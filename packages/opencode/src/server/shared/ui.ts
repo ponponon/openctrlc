@@ -54,7 +54,7 @@ function notFound() {
 
 function embeddedUIResponse(file: string, body: Uint8Array) {
   const mime = FSUtil.mimeType(file)
-  const headers = new Headers({ "content-type": mime })
+  const headers = new Headers({ "content-type": mime, "x-openctrlc-ui": "embedded" })
   if (mime.startsWith("text/html")) {
     headers.set("content-security-policy", cspForHtml(new TextDecoder().decode(body)))
   }
@@ -85,6 +85,10 @@ export function serveUIEffect(
 
     if (embeddedWebUI) return yield* serveEmbeddedUIEffect(path, services.fs, embeddedWebUI)
 
+    // Upstream proxy is a last resort: remote browsers then run the stock OpenCode
+    // shell and never consume OpenCtrlC workspace snapshots.
+    console.warn(`[ui] embedded web UI unavailable; proxying ${path} to ${UI_UPSTREAM.host}`)
+
     const response = yield* services.client.execute(
       HttpClientRequest.make(request.method)(upstreamURL(path), {
         headers: ProxyUtil.headers(request.headers, { host: UI_UPSTREAM.host }),
@@ -92,6 +96,7 @@ export function serveUIEffect(
       }),
     )
     const headers = proxyResponseHeaders(response.headers)
+    headers.set("x-openctrlc-ui", "upstream")
 
     if (response.headers["content-type"]?.includes("text/html")) {
       const body = yield* response.text

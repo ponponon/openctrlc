@@ -43,6 +43,15 @@ function isViewerLimit(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100
 }
 
+function formatViewerTime(value?: number) {
+  if (!value || !Number.isFinite(value)) return "—"
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+  } catch {
+    return "—"
+  }
+}
+
 export function DialogRemoteAccess() {
   const language = useLanguage()
   const platform = usePlatform()
@@ -334,6 +343,14 @@ export function DialogRemoteAccess() {
                               >
                                 {viewer.device} · #{viewer.id.slice(0, 6)}
                               </div>
+                              <Show when={viewer.createdAt || viewer.lastSeenAt}>
+                                <div class="mt-0.5 truncate text-12-regular text-v2-text-text-muted">
+                                  {language.t("remoteAccess.viewerMeta", {
+                                    created: formatViewerTime(viewer.createdAt),
+                                    seen: formatViewerTime(viewer.lastSeenAt),
+                                  })}
+                                </div>
+                              </Show>
                             </div>
                             <ButtonV2
                               size="small"

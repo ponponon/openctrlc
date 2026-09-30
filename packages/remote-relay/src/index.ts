@@ -73,6 +73,8 @@ type ViewerGrant = {
   id: string
   device: string
   expiresAt: number
+  createdAt: number
+  lastSeenAt: number
 }
 
 const port = Number(process.env.PORT ?? 4097)
@@ -125,6 +127,8 @@ function persistState() {
         id: grant.id,
         device: grant.device,
         expiresAt: grant.expiresAt,
+        createdAt: grant.createdAt,
+        lastSeenAt: grant.lastSeenAt,
       })),
     })),
   }
@@ -155,7 +159,14 @@ function restoreState() {
         viewerLimit?: number
         binaryChunks?: boolean
         workspace?: RelayWorkspaceSnapshot
-        viewers?: Array<{ token?: string; id?: string; device?: string; expiresAt?: number }>
+        viewers?: Array<{
+          token?: string
+          id?: string
+          device?: string
+          expiresAt?: number
+          createdAt?: number
+          lastSeenAt?: number
+        }>
       }>
     }
     const now = Date.now()
@@ -182,6 +193,8 @@ function restoreState() {
           id: viewer.id,
           device: viewer.device ?? "Browser",
           expiresAt: viewer.expiresAt,
+          createdAt: viewer.createdAt ?? now,
+          lastSeenAt: viewer.lastSeenAt ?? now,
         }
         session.viewers.set(viewer.token, grant)
         viewerTokens.set(viewer.token, grant)
@@ -229,7 +242,7 @@ const server = Bun.serve<SocketData>({
       // Already-approved browsers should reuse their cookie instead of minting a new grant.
       const existing = sessionFor(request)
       if (existing?.session.id === sessionID) {
-        return new Response(null, { status: 302, headers: { location: "/", ...noStore } })
+        return htmlResponse(pairPage("already"))
       }
       return htmlResponse(pairPage("pair"))
     }
@@ -595,6 +608,8 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       id: randomToken(8),
       device: pair.device,
       expiresAt,
+      createdAt: Date.now(),
+      lastSeenAt: Date.now(),
     }
     session.viewers.set(pair.viewerToken, grant)
     viewerTokens.set(pair.viewerToken, grant)
@@ -976,6 +991,7 @@ function touchViewer(session: RelaySession, token: string) {
     return false
   }
   grant.expiresAt = Date.now() + viewerLifetime
+  grant.lastSeenAt = Date.now()
   schedulePersist()
   return true
 }
@@ -995,7 +1011,12 @@ function sendViewerState(session: RelaySession) {
   sendHost(session, { type: "viewer.count", count: session.viewers.size })
   sendHost(session, {
     type: "viewer.list",
-    devices: [...session.viewers.values()].map((grant) => ({ id: grant.id, device: grant.device })),
+    devices: [...session.viewers.values()].map((grant) => ({
+      id: grant.id,
+      device: grant.device,
+      createdAt: grant.createdAt,
+      lastSeenAt: grant.lastSeenAt,
+    })),
   })
 }
 
@@ -1205,7 +1226,7 @@ function htmlResponse(page: ReturnType<typeof pairPage>) {
   })
 }
 
-function pairPage(mode: "pair" | "expired" | "home") {
+function pairPage(mode: "pair" | "expired" | "home" | "already") {
   const copy = {
     en: {
       title: "OpenCtrlC Remote",
@@ -1220,6 +1241,7 @@ function pairPage(mode: "pair" | "expired" | "home") {
       approved: "Connected. Opening your workspace…",
       denied: "The desktop declined this request.",
       expired: "This link has expired. Create a new QR code on your desktop.",
+      already: "This browser is already approved. Opening your workspace…",
       error: "Could not connect. Check the connection and scan again.",
     },
     zh: {
@@ -1235,6 +1257,7 @@ function pairPage(mode: "pair" | "expired" | "home") {
       approved: "已连接，正在打开工作区…",
       denied: "桌面端拒绝了此次连接。",
       expired: "此链接已过期，请在桌面端重新生成二维码。",
+      already: "这台浏览器已授权，正在打开工作区…",
       error: "连接失败，请检查网络后重新扫码。",
     },
     ja: {
@@ -1250,6 +1273,7 @@ function pairPage(mode: "pair" | "expired" | "home") {
       approved: "接続しました。ワークスペースを開いています…",
       denied: "デスクトップで接続が拒否されました。",
       expired: "このリンクの有効期限が切れました。デスクトップで新しい QR コードを作成してください。",
+      already: "このブラウザーは承認済みです。ワークスペースを開いています…",
       error: "接続できません。ネットワークを確認して再度スキャンしてください。",
     },
     ko: {
@@ -1265,6 +1289,7 @@ function pairPage(mode: "pair" | "expired" | "home") {
       approved: "연결되었습니다. 작업 공간을 여는 중…",
       denied: "데스크톱에서 연결이 거부되었습니다.",
       expired: "링크가 만료되었습니다. 데스크톱에서 새 QR 코드를 만드세요.",
+      already: "이 브라우저는 이미 승인되어 있습니다. 작업 공간을 여는 중…",
       error: "연결할 수 없습니다. 네트워크를 확인하고 다시 스캔하세요.",
     },
   }
@@ -1272,7 +1297,7 @@ function pairPage(mode: "pair" | "expired" | "home") {
   const socketOrigin = `${publicURL.protocol === "https:" ? "wss:" : "ws:"}//${publicURL.host}`
   return {
     policy: `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'self' ${socketOrigin}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
-    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status" role="status" aria-live="polite"></div></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);const token=location.hash.slice(1);history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.connecting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));let deliveryTimeout;const handshakeTimeout=setTimeout(()=>show(t.connectingSlow,true),8000);socket.onopen=()=>{show(t.requesting,true);socket.send(JSON.stringify({type:"pair",joinToken:token}))};socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting"){clearTimeout(handshakeTimeout);show(t.sent,true);deliveryTimeout=setTimeout(()=>show(t.deliverySlow,true),8000)}if(data.type==="pair.delivered"){clearTimeout(deliveryTimeout);show(t.waiting,true)}if(data.type==="pair.approved"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.denied)}if(data.type==="pair.error"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.error)}};socket.onclose=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);if(!completed)show(t.error)};socket.onerror=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);show(t.error)}}}</script></html>`,
+    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status" role="status" aria-live="polite"></div></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="already"){show(t.already,true);setTimeout(()=>location.replace("/"),400)}else if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);const token=location.hash.slice(1);history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.connecting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));let deliveryTimeout;const handshakeTimeout=setTimeout(()=>show(t.connectingSlow,true),8000);socket.onopen=()=>{show(t.requesting,true);socket.send(JSON.stringify({type:"pair",joinToken:token}))};socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting"){clearTimeout(handshakeTimeout);show(t.sent,true);deliveryTimeout=setTimeout(()=>show(t.deliverySlow,true),8000)}if(data.type==="pair.delivered"){clearTimeout(deliveryTimeout);show(t.waiting,true)}if(data.type==="pair.approved"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.denied)}if(data.type==="pair.error"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.error)}};socket.onclose=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);if(!completed)show(t.error)};socket.onerror=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);show(t.error)}}}</script></html>`,
   }
 }
 

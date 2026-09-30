@@ -795,6 +795,10 @@ export const dict = {
     "현재 Relay는 브라우저 수 사용자 지정 제한을 지원하지 않습니다. Relay를 업데이트하면 저장한 제한이 적용됩니다.",
   "remoteAccess.viewerLimitOverCapacity":
     "제한을 낮춰도 기존 승인은 유지됩니다. 새 브라우저를 승인하려면 기존 승인을 취소하거나 제한을 높이세요.",
+  "remoteAccess.viewerMeta": "승인 {{created}} · 최근 사용 {{seen}}",
+  "remote.desktop.offlineTitle": "데스크톱 연결 끊김",
+  "remote.desktop.offlineDescription":
+    "모바일 액세스는 켜져 있지만 데스크톱 앱에 연결할 수 없습니다. 마지막으로 동기화된 프로젝트와 세션을 표시합니다。",
   "remoteAccess.authorizedTitle": "승인된 브라우저",
   "remoteAccess.authorizedDescription": "브라우저 정보는 위조할 수 있는 참고 정보이며 실제 기기를 인증하지 않습니다.",
   "remoteAccess.authorizedEmpty": "아직 승인된 브라우저가 없습니다.",
