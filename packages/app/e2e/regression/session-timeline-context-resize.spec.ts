@@ -22,6 +22,10 @@ type Message = {
   parts: Record<string, unknown>[]
 }
 
+type ContextResizeWindow = Window & {
+  __contextResizeReadiness?: { states: string[]; observer: MutationObserver }
+}
+
 const messages = [...Array.from({ length: 8 }, (_, index) => turn(index, false)).flat(), ...turn(10, true)]
 
 test.describe("regression: session timeline context group resize", () => {
@@ -88,27 +92,19 @@ test.describe("regression: session timeline context group resize", () => {
       },
     })
     await startVisualProbe(page, regions)
-    const readiness = page.evaluate(
-      (selector) =>
-        new Promise<string[]>((resolve, reject) => {
-          const status = document.querySelector<HTMLElement>(selector)
-          if (!status) {
-            reject(new Error("missing context status title"))
-            return
-          }
-          const states: string[] = []
-          const observer = new MutationObserver(() => {
-            const value = status.getAttribute("data-ready") ?? ""
-            if (states.at(-1) !== value) states.push(value)
-            if (states.includes("true") && value === "false") {
-              observer.disconnect()
-              resolve(states)
-            }
-          })
-          observer.observe(status, { attributes: true, attributeFilter: ["data-ready"] })
+    await page.evaluate((selector) => {
+      const status = document.querySelector<HTMLElement>(selector)
+      if (!status) throw new Error("missing context status title")
+      const probe = {
+        states: [status.getAttribute("data-ready") ?? ""],
+        observer: new MutationObserver(() => {
+          const value = status.getAttribute("data-ready") ?? ""
+          if (probe.states.at(-1) !== value) probe.states.push(value)
         }),
-      `${contextSelector} [data-component="tool-status-title"]`,
-    )
+      }
+      probe.observer.observe(status, { attributes: true, attributeFilter: ["data-ready"] })
+      ;(window as ContextResizeWindow).__contextResizeReadiness = probe
+    }, `${contextSelector} [data-component="tool-status-title"]`)
     for (const [index, partID] of contextIDs.entries()) {
       events.push({
         directory,
@@ -134,7 +130,19 @@ test.describe("regression: session timeline context group resize", () => {
 
     const status = context.locator('[data-component="tool-status-title"]')
     await expect(status).toHaveAttribute("aria-label", "Explored")
-    const readinessStates = await readiness
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const states = (window as ContextResizeWindow).__contextResizeReadiness?.states ?? []
+          return states.includes("true") && states.at(-1) === "false"
+        }),
+      )
+      .toBe(true)
+    const readinessStates = await page.evaluate(() => {
+      const probe = (window as ContextResizeWindow).__contextResizeReadiness
+      probe?.observer.disconnect()
+      return probe?.states ?? []
+    })
     expect(readinessStates).toContain("true")
     expect(readinessStates.at(-1)).toBe("false")
     const trace = await stopVisualProbe<keyof typeof regions>(page)

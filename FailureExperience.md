@@ -1041,3 +1041,11 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 ## Relay 会话与浏览器授权不能只放内存
 
 把 session/viewers 只存在 Relay 进程内存里，任何发版、容器重建、进程重启都会清空全部浏览器授权；桌面 resume 会拿到 `session.resume.error` 并新建会话，用户表现就是“每次重启 Desktop 都要重新扫码”。以后凡是“设备授权应当跨进程存活”的状态，必须在 Relay 落盘（本项目是 `remote-sessions.json`）并在 SIGTERM 时先写盘再退出；compose 要挂可写数据卷，且注意容器 `user=65532` 对宿主目录的写权限。桌面端 `#endReconnect` 清掉内存凭据后，`start()` 必须能从 store 再读回来，否则一次失败就会永久丢掉 resume 能力。
+
+## E2E 观察器不要返回未完成的 page.evaluate Promise
+
+在 `page.evaluate` 里创建 MutationObserver 时，如果把一个等待状态变化的 Promise 返回给 Playwright，页面导航或测试超时会销毁执行上下文，错误可能只显示为“Execution context was destroyed”，遮住真正未完成的断言。以后让 `page.evaluate` 同步安装观察器并立即返回，把采样写到页面内的状态对象，再用 `expect.poll` 或 `waitForFunction` 等待终态并读取样本。
+
+## 虚拟列表滚到顶部不代表所有折叠步骤都已展开
+
+时间线到达 `scrollTop === 0` 时，首屏下方仍可能有已挂载但在视口外的 AssistantSteps 折叠组；只点当前可见按钮会漏掉其中的工具 part。完整性回归要对挂载的折叠组使用 Playwright locator 点击，让 Playwright 自动滚动定位，再用稳定的时间线行 key 验证展开，不能把“已到顶部”当作“已访问全部内容”。

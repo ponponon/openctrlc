@@ -523,7 +523,7 @@ async function expectCanScrollToStart(
 
     const before = current
     const changed = await scrollTimelineUp(page, current)
-    await expandVisibleSteps(page)
+    await expandSteps(page)
     await waitForTimelineStable(page)
     current = await timelineState(page)
     if (!changed && current.signature === before.signature && current.scrollTop <= 1) unchangedAtTop++
@@ -680,7 +680,7 @@ async function expectSessionTimelineReady(
   expectedMessageIDs: string[],
   errors: string[],
 ) {
-  await expandVisibleSteps(page)
+  await expandSteps(page, { visibleOnly: true })
   await waitForTimelineStable(page)
   for (const text of forbiddenText) await expect(page.getByText(text)).toHaveCount(0)
   const currentState = await timelineState(page)
@@ -691,7 +691,7 @@ async function expectSessionTimelineReady(
   expectOrderedIDs(expectedMessageIDs, unique(currentState.visibleMessageIds), "visible message")
 }
 
-async function expandVisibleSteps(page: Page) {
+async function expandSteps(page: Page, options: { visibleOnly?: boolean } = {}) {
   const rows = page.locator('[data-timeline-row="AssistantSteps"]')
   while (await rows.count()) {
     let expanded = false
@@ -704,19 +704,21 @@ async function expandVisibleSteps(page: Page) {
         (element) => element.closest<HTMLElement>("[data-timeline-key]")?.dataset.timelineKey,
       )
       expect(timelineKey).toBeTruthy()
-      const inViewport = await toggle.evaluate((element) => {
-        const scroller = element.closest<HTMLElement>(".scroll-view__viewport")
-        if (!scroller) return false
-        const bounds = element.getBoundingClientRect()
-        const viewport = scroller.getBoundingClientRect()
-        return (
-          bounds.bottom > viewport.top &&
-          bounds.top < viewport.bottom &&
-          bounds.right > viewport.left &&
-          bounds.left < viewport.right
-        )
-      })
-      if (!inViewport) continue
+      if (options.visibleOnly) {
+        const inViewport = await toggle.evaluate((element) => {
+          const scroller = element.closest<HTMLElement>(".scroll-view__viewport")
+          if (!scroller) return false
+          const bounds = element.getBoundingClientRect()
+          const viewport = scroller.getBoundingClientRect()
+          return (
+            bounds.bottom > viewport.top &&
+            bounds.top < viewport.bottom &&
+            bounds.right > viewport.left &&
+            bounds.left < viewport.right
+          )
+        })
+        if (!inViewport) continue
+      }
       await toggle.click()
       await expect(
         page.locator(`[data-timeline-key="${timelineKey}"] [data-slot="session-turn-steps-content"]`),
