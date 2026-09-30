@@ -617,6 +617,9 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     if (workspace) {
       session.workspace = workspace
       schedulePersist()
+      console.log(
+        `workspace.update session=${session.id.slice(0, 6)} projects=${workspace.projects.length} sessions=${workspace.sessionIDs.length}`,
+      )
     }
     return
   }
