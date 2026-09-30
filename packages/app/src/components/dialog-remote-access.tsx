@@ -22,7 +22,9 @@ function normalizeRemoteAccessState(next: Partial<RemoteAccessState>): RemoteAcc
   const viewerLimit = isViewerLimit(next.viewerLimit) ? next.viewerLimit : emptyState.viewerLimit
   const reportedEffectiveViewerLimit = isViewerLimit(next.effectiveViewerLimit) ? next.effectiveViewerLimit : undefined
   const authorizedDevices =
-    typeof next.authorizedDevices === "number" && Number.isSafeInteger(next.authorizedDevices) && next.authorizedDevices >= 0
+    typeof next.authorizedDevices === "number" &&
+    Number.isSafeInteger(next.authorizedDevices) &&
+    next.authorizedDevices >= 0
       ? next.authorizedDevices
       : emptyState.authorizedDevices
 
