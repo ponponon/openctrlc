@@ -1,3 +1,31 @@
+## 首页会话列表显示上下文窗口占用
+
+### 功能目标
+
+首页“最近会话”右侧原来的体积数字来自“累计计费 token × 4 字节”的估算，量的是模型每一轮重读上下文的累计流量，与磁盘占用无关；同一列还会因为客户端是否缓存了会话而在“估算”和“实测 payload”之间跳变。改为显示该会话最近一次已完成步骤的上下文占用，让用户直接看出这个会话多重、还能聊多久。
+
+### 实现范围
+
+- `SessionV2.Info` 新增可选 `context: { tokens }`，只表示最近一次已完成模型步骤的 token 总量，也就是下一次请求会重新发送的上下文。
+- 服务端 `SessionV2.list` / `get` 从消息投影里按 `(session_id, time_created desc, id desc)` 读取最新一条 token 总量大于 0 的 assistant 消息，走索引点查，不累加历史。
+- 首页列表显示“当前 / 上限”（例如 `636K / 1M`），悬停显示精确 token 数和占用百分比；模型上下文上限来自客户端 provider 目录，未知时只显示当前值。
+- 会话事件（`session.updated`）不携带上下文大小，列表保留上一次由列表接口报告的值，避免数字在两种来源之间跳变。
+- 删除 `session-storage-size.ts` 中估算与实测混用的逻辑。
+
+### 代码位置
+
+- `packages/schema/src/session.ts`：`SessionV2.Info.context`。
+- `packages/core/src/session.ts`：`contextTokensFor` / `withContext`，以及在 `list`、`get` 中的接线。
+- `packages/app/src/context/global-sync/home-session-index.ts`：`HomeSession` 类型，事件回放时保留上下文。
+- `packages/app/src/pages/home/home-sessions-controller.tsx`、`home-sessions-view.tsx`、`packages/app/src/utils/session-context-usage.ts`：首页展示与格式化。
+- `packages/app/src/components/session/session-context-metrics.ts`：会话内既有口径，列表与其保持一致。
+
+### 验证方式
+
+- 在 `packages/core` 执行 `bun test test/session-create.test.ts`，覆盖“最近步骤上下文”和“尚无步骤时省略”两个用例。
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts src/context/global-sync src/utils` 和 `bun run typecheck`。
+- 协议变更后重新生成 SDK：`packages/client` 执行 `bun run generate`，仓库根执行 `./packages/sdk/js/script/build.ts`。
+
 ## Relay 短时断线自动恢复
 
 ### 功能目标

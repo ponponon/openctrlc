@@ -5,6 +5,10 @@ import { pathKey } from "@/utils/path-key"
 
 export const HOME_V2_SESSION_PAGE_LIMIT = 5_000
 
+/** Current context window size, which only the V2 list reports and the legacy Session shape cannot carry. */
+export type HomeSessionContext = NonNullable<SessionV2Info["context"]>
+export type HomeSession = Session & { context?: HomeSessionContext }
+
 export type HomeSessionEvent = {
   type: "session.created" | "session.updated" | "session.deleted"
   properties: { sessionID: string; info: Session }
@@ -14,7 +18,7 @@ export type HomeSessionEvents = {
   entries: Array<{ sequence: number; event: HomeSessionEvent }>
 }
 export type HomeSessionIndex = {
-  sessions: Session[]
+  sessions: HomeSession[]
   eventSequence: number
 }
 
@@ -142,19 +146,19 @@ export function createHomeSessionIndexCache(queryClient: QueryClient, server: st
 // multiple directories. A bounded page could omit an old session updated today.
 // Once released, use client.v2.project.list() and client.v2.session.list({
 // parentID: null, order: "desc" }), then remove this adapter and its V1 fields.
-export function parseHomeSessionIndex(sessions: SessionV2Info[]): Session[] {
+export function parseHomeSessionIndex(sessions: SessionV2Info[]): HomeSession[] {
   return sessions.flatMap((item) => {
     if (item.parentID || typeof item.time.archived === "number") return []
     return [toLegacySummary(item)]
   })
 }
 
-export function retainHomeSessions(sessions: Session[], limit: number, now: number) {
+export function retainHomeSessions(sessions: HomeSession[], limit: number, now: number): HomeSession[] {
   const grouped = Map.groupBy(sessions, (session) => pathKey(session.directory))
   return [...grouped.values()].flatMap((items) => trimSessions(items, { limit, permission: {}, now }))
 }
 
-export function applyHomeSessionEvent(sessions: Session[], event: HomeSessionEvent) {
+export function applyHomeSessionEvent(sessions: HomeSession[], event: HomeSessionEvent): HomeSession[] {
   const info = event.properties.info
   const index = sessions.findIndex((session) => session.id === info.id)
   if (event.type === "session.deleted" || info.parentID || typeof info.time.archived === "number") {
@@ -163,10 +167,11 @@ export function applyHomeSessionEvent(sessions: Session[], event: HomeSessionEve
   }
   if (event.type !== "session.created" && event.type !== "session.updated") return sessions
   if (index === -1) return [...sessions, info]
-  return sessions.with(index, info)
+  // Session events never carry the context window size, so keep the last value the list reported.
+  return sessions.with(index, { ...info, context: sessions[index]?.context })
 }
 
-function toLegacySummary(session: SessionV2Info): Session {
+function toLegacySummary(session: SessionV2Info): HomeSession {
   return {
     id: session.id,
     slug: session.id,
@@ -177,6 +182,7 @@ function toLegacySummary(session: SessionV2Info): Session {
     parentID: session.parentID,
     cost: session.cost,
     tokens: session.tokens,
+    context: session.context,
     title: session.title,
     agent: session.agent,
     model: session.model,

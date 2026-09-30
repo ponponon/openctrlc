@@ -17,12 +17,14 @@ const session = (input: {
   parentID?: string
   archived?: number
   updated?: number
+  context?: { tokens: number }
 }) => ({
   id: input.id,
   parentID: input.parentID,
   projectID: "project",
   cost: 0,
   tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+  context: input.context,
   time: { created: 1, updated: input.updated ?? 1, archived: input.archived },
   title: input.id,
   location: { directory: input.directory ?? "/project" },
@@ -127,6 +129,25 @@ describe("Home V2 session index", () => {
         properties: { sessionID: initial[0]!.id, info: initial[0]! },
       }),
     ).toEqual([created])
+  })
+
+  test("carries the V2 context window size into the legacy session shape", () => {
+    const [parsed] = parseHomeSessionIndex([session({ id: "root", context: { tokens: 636_000 } })])
+
+    expect(parsed?.context).toEqual({ tokens: 636_000 })
+  })
+
+  test("keeps the last reported context across session events", () => {
+    const initial = parseHomeSessionIndex([session({ id: "root", context: { tokens: 636_000 } })])
+    const updated = { ...initial[0]!, title: "renamed" }
+
+    const sessions = applyHomeSessionEvent(initial, {
+      type: "session.updated",
+      properties: { sessionID: updated.id, info: updated },
+    })
+
+    expect(sessions[0]?.title).toBe("renamed")
+    expect(sessions[0]?.context).toEqual({ tokens: 636_000 })
   })
 
   test("applies only events newer than the index baseline", () => {

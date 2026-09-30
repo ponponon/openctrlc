@@ -8,9 +8,10 @@ import { IconButtonV2 } from "@openctrlc/ui/v2/icon-button-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
 import { useLanguage } from "@/context/language"
 import { ServerConnection } from "@/context/server"
+import { useProviders } from "@/hooks/use-providers"
 import { SessionTabAvatarView } from "@/pages/layout/session-tab-avatar"
+import { contextUsagePercent, formatContextUsage } from "@/utils/session-context-usage"
 import { sessionTitle } from "@/utils/session-title"
-import { formatStorageBytes } from "@/utils/session-storage-size"
 import { shouldOpenSessionInBackground } from "../home-session-open"
 import {
   HomeSessionStatusController,
@@ -387,7 +388,7 @@ function HomeSessionSearchResultRow(
         <HomeSessionTitle title={title()} showProjectName={!!showProjectName()} search />
         <Show when={showProjectName()}>
           <HomeSessionProjectName name={props.record.projectName} search />
-          <HomeSessionStorage record={props.record} />
+          <HomeSessionContextUsage record={props.record} />
         </Show>
       </div>
     </button>
@@ -454,7 +455,7 @@ function HomeSessionRow(props: HomeSessionsViewProps & { record: HomeSessionReco
         <Show when={showProjectName()}>
           <HomeSessionProjectName name={props.record.projectName} />
         </Show>
-        <HomeSessionStorage record={props.record} />
+        <HomeSessionContextUsage record={props.record} />
       </button>
       <Show when={SHOW_HOME_SESSION_ARCHIVE}>
         <div
@@ -509,13 +510,53 @@ function HomeSessionProjectName(props: { name: string; search?: boolean }) {
   )
 }
 
-function HomeSessionStorage(props: { record: HomeSessionRecord }) {
-  const label = createMemo(() => formatStorageBytes(props.record.storageBytes))
+function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
+  const language = useLanguage()
+  const providers = useProviders(() => props.record.session.directory)
+  const limit = createMemo(() => {
+    const model = props.record.session.model
+    if (!model) return undefined
+    return providers.all().get(model.providerID)?.models[model.id]?.limit.context
+  })
+  const usage = createMemo(() => {
+    const tokens = props.record.context?.tokens
+    return {
+      tokens,
+      limit: limit(),
+      label: formatContextUsage(tokens, limit()),
+      percent: contextUsagePercent(tokens, limit()),
+    }
+  })
+  const tooltip = () => {
+    const count = (value: number) => value.toLocaleString(language.intl())
+    const current = usage()
+    return (
+      <div class="flex w-[120px] flex-col gap-2">
+        <div class="flex min-w-0 items-center gap-4">
+          <span class="shrink-0 text-v2-text-text-muted">{language.t("context.usage.tokens")}</span>
+          <span class="ml-auto min-w-0 truncate text-right text-v2-text-text-base">
+            {current.limit
+              ? `${count(current.tokens ?? 0)} / ${count(current.limit)}`
+              : count(current.tokens ?? 0)}
+          </span>
+        </div>
+        <Show when={current.percent}>
+          {(percent) => (
+            <div class="flex min-w-0 items-center gap-4">
+              <span class="shrink-0 text-v2-text-text-muted">{language.t("context.usage.usage")}</span>
+              <span class="ml-auto min-w-0 truncate text-right text-v2-text-text-base">{percent()}%</span>
+            </div>
+          )}
+        </Show>
+      </div>
+    )
+  }
+
   return (
-    <Show when={label()}>
-      <span class="shrink-0 text-v2-text-text-faint text-12-regular tabular-nums" title={label()}>
-        {label()}
-      </span>
+    <Show when={usage().label}>
+      <TooltipV2 placement="top" value={tooltip()}>
+        <span class="shrink-0 text-v2-text-text-faint text-12-regular tabular-nums">{usage().label}</span>
+      </TooltipV2>
     </Show>
   )
 }
