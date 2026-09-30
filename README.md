@@ -59,9 +59,10 @@ fallback is `$HOME/.openctrlc/bin`.
 ### Desktop
 
 Download the latest desktop installer from the [OpenCtrlC download
-page](https://openctrlc.pages.dev/download/). Stable assets are served through the
-project's Cloudflare R2 mirror when available, with an automatic GitHub Release
-fallback.
+page](https://openctrlc.pages.dev/download/). R2 stores only the latest stable
+release's installer assets and serves them when available, with an automatic
+GitHub Release fallback. Older versions and their assets remain in
+[GitHub Releases](https://github.com/ponponon/openctrlc/releases).
 
 | Platform | Architectures | Formats            |
 | -------- | ------------- | ------------------ |

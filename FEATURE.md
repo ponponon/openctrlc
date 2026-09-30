@@ -1295,8 +1295,8 @@ OpenCode 的本地标签页数据。
   `openctrlc-releases.quniv.cn` 下的 HTTPS 资产地址。
 - R2 清单缺失、格式异常、网络超时或资产不存在时，稳定版下载自动回退到 GitHub
   `releases/latest/download`；Beta 下载继续使用 GitHub beta Release。
-- 正式发布工作流在 GitHub Release 发布后自动执行 R2 同步；保留手动
-  `sync-downloads` 工作流用于历史版本补传和失败重试。
+- 正式发布工作流在 GitHub Release 发布后自动执行 R2 同步；手动
+  `sync-downloads` 工作流只重新同步 GitHub 当前 latest stable 并清理 R2 旧对象，历史版本资产由 GitHub Releases 保存。
 - Cloudflare Account ID 同时兼容 Repository Variable 和 Repository Secret，避免
   因凭据放置位置不同而阻断同步。
 

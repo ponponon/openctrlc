@@ -5,6 +5,13 @@
 - Local `main` ref may not exist; use `dev` or `origin/dev` for diffs.
 - When publishing a new version, follow `docs/release.md` for the required build, npm publish, CDN verification, and desktop validation steps.
 
+### Release download retention
+
+- Keep only the latest stable release's installer assets and `download-manifest.json` in Cloudflare R2. GitHub Releases remains the archive for every historical release and its assets.
+- The website serves the latest stable download from R2 when available and falls back to GitHub Releases; historical versions must link to GitHub Releases.
+- Keep the R2 sync limited to GitHub's current latest stable release. Cleanup must list all matching objects, delete obsolete version objects, list again, and fail if any obsolete object remains.
+- Follow `docs/release.md` when changing release publishing, download routing, or storage retention.
+
 ## Branch Names
 
 Use a short branch name of at most three words, separated by hyphens. Do not use slashes or type prefixes such as `feat/` or `fix/`.

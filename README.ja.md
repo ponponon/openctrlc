@@ -6,7 +6,7 @@
 
 - [公式サイト](https://openctrlc.pages.dev/)
 - [ドキュメント](https://openctrlc.pages.dev/docs/)
-- [ダウンロード](https://github.com/ponponon/openctrlc/releases)
+- [ダウンロードページ](https://openctrlc.pages.dev/download/) · [過去のバージョン（GitHub Releases）](https://github.com/ponponon/openctrlc/releases)
 - [GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
 
 ## インストール
@@ -37,7 +37,7 @@ brew install ponponon/tap/openctrlc
 
 ### デスクトップ
 
-最新のインストーラーは [GitHub Releases](https://github.com/ponponon/openctrlc/releases) からダウンロードしてください。
+最新のデスクトップインストーラーは[公式ダウンロードページ](https://openctrlc.pages.dev/download/)から入手できます。R2 には最新安定版のインストーラーのみを保存し、利用可能な場合は R2 から配信します。R2 が利用できない場合は GitHub Release に自動でフォールバックします。過去のバージョンとそのインストーラーは[GitHub Releases](https://github.com/ponponon/openctrlc/releases)に保存されます。
 
 | プラットフォーム | アーキテクチャ | 形式                |
 | ---------------- | -------------- | ------------------- |

@@ -6,7 +6,7 @@
 
 - [공식 웹사이트](https://openctrlc.pages.dev/)
 - [문서](https://openctrlc.pages.dev/docs/)
-- [다운로드](https://github.com/ponponon/openctrlc/releases)
+- [다운로드 페이지](https://openctrlc.pages.dev/download/) · [이전 버전(GitHub Releases)](https://github.com/ponponon/openctrlc/releases)
 - [GitHub Discussions](https://github.com/ponponon/openctrlc/discussions)
 
 ## 설치
@@ -37,7 +37,7 @@ brew install ponponon/tap/openctrlc
 
 ### 데스크톱
 
-최신 설치 파일은 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)에서 다운로드하세요.
+최신 데스크톱 설치 파일은 [공식 다운로드 페이지](https://openctrlc.pages.dev/download/)에서 받을 수 있습니다. R2에는 최신 안정 버전의 설치 파일만 저장하며, 사용 가능하면 R2에서 제공하고 문제가 있으면 GitHub Release로 자동 전환합니다. 이전 버전과 설치 파일은 [GitHub Releases](https://github.com/ponponon/openctrlc/releases)에 보관합니다.
 
 | 플랫폼  | 아키텍처      | 형식               |
 | ------- | ------------- | ------------------ |
