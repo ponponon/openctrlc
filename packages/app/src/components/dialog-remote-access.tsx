@@ -107,10 +107,16 @@ export function DialogRemoteAccess() {
     setTimeout(() => setCopied(false), 1800)
   }
 
+  // Show the pairing hash (truncated). The visible text used to drop `#…`, so
+  // users who copied the box by hand lost the join token and re-paired every time.
   const shortLink = () => {
     if (!state.url) return ""
     const url = new URL(state.url)
-    return `${url.origin}${url.pathname}`
+    const hash = url.hash.slice(1)
+    if (!hash) return `${url.origin}${url.pathname}`
+    const head = hash.slice(0, 6)
+    const tail = hash.slice(-6)
+    return `${url.origin}${url.pathname}#${head}…${tail}`
   }
 
   const revokeViewer = async (viewerID: string) => {
@@ -298,8 +304,13 @@ export function DialogRemoteAccess() {
               </Show>
               <p class="text-center text-14-medium text-v2-text-text-strong">{language.t("remoteAccess.scan")}</p>
               <p
-                class="w-full truncate rounded-md bg-v2-background-bg-base px-2.5 py-2 text-center text-12-regular text-v2-text-text-muted"
-                title={shortLink()}
+                class="w-full break-all rounded-md bg-v2-background-bg-base px-2.5 py-2 text-center text-12-regular text-v2-text-text-muted"
+                title={state.url}
+                onCopy={(event) => {
+                  if (!state.url || !event.clipboardData) return
+                  event.preventDefault()
+                  event.clipboardData.setData("text/plain", state.url)
+                }}
               >
                 {shortLink()}
               </p>
