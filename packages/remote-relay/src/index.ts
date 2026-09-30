@@ -226,6 +226,11 @@ const server = Bun.serve<SocketData>({
     if (request.method === "GET" && url.pathname.startsWith("/join/")) {
       const sessionID = url.pathname.slice("/join/".length)
       if (!sessions.has(sessionID)) return htmlResponse(pairPage("expired"))
+      // Already-approved browsers should reuse their cookie instead of minting a new grant.
+      const existing = sessionFor(request)
+      if (existing?.session.id === sessionID) {
+        return new Response(null, { status: 302, headers: { location: "/", ...noStore } })
+      }
       return htmlResponse(pairPage("pair"))
     }
     if (request.method === "POST" && url.pathname === "/_remote/claim") return claimViewer(request)

@@ -132,7 +132,8 @@ const main = Effect.gen(function* () {
     process.chdir(homedir())
   } catch {}
 
-  process.env.OPENCTRLC_DISABLE_EMBEDDED_WEB_UI = "true"
+  // Remote browsers load the sidecar's HTTP UI. Keep the embedded OpenCtrlC web
+  // build enabled so they do not fall back to the upstream app.opencode.ai shell.
 
   const appId = app.isPackaged ? APP_IDS[CHANNEL] : `${Brand.desktopAppId}.dev`
   const onboardingTestRoot = ((): string | undefined => {

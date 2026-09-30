@@ -2248,6 +2248,9 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 桌面退出/重启不再销毁 Relay 会话：`sessionID`/`hostToken` 持久化在桌面设置中，退出时仅断开 WSS（detach），Relay 将带已授权浏览器的会话保留最长 30 天（无授权浏览器的空会话保留 1 小时）。下次启动若手机访问曾开启或存在已存会话则自动 `session.resume` 恢复原会话，已授权浏览器无需重新扫码批准；`session.resume.error` 或旧 Relay 超时后回退新建会话。`start()` 一被调用就写入 `remoteAccessEnabled=true`，避免连接失败导致重启后又变成关闭。
 - Relay 会话与浏览器授权落盘到 `OPENCTRLC_REMOTE_DATA_DIR`（部署为 `/home/pon/openctrlc-remote/data/remote-sessions.json`），SIGTERM 时先写盘再停服，重启后自动恢复授权；不再因 Relay 发版/重启而强制所有浏览器重新扫码。
 - 远程页首屏与桌面端对齐：桌面 `RemoteWorkspaceHydrator` 上报项目/打开会话快照；Relay bootstrap 同时写入 sessionStorage 与 localStorage（新标签页 Cookie 已存在时仍能恢复）。web 端若侧栏为空，自动从后端 `GET /project` 水合 `server.projects`；若顶部会话标签为空，自动从 `session.list` 恢复最近会话标签。水合器挂在所有布局上，不再只挂新布局。
+- 远程浏览器必须加载 sidecar 内嵌的 OpenCtrlC Web UI（`build-node.ts` → `openctrlc-web-ui.gen.ts`）。桌面 main 不得设置 `OPENCTRLC_DISABLE_EMBEDDED_WEB_UI`，否则 UI 会代理到上游 `app.opencode.ai`，远程永远无法消费 workspace 快照。排查远程空白时先验证入口 JS 包含 `openctrlc` 标识。
+- 同一浏览器保持授权：凭据是 `__Host-oc_remote` Cookie + 会话 resume，不是 UA 指纹。访问 `/join/<session>` 时若已有该会话有效 Cookie 则 302 到 `/`，禁止再签发新 viewer 编号。只有新会话、Cookie 丢失或显式撤销才需要重新批准。
+
 - 远程首屏验收：侧栏项目数与桌面一致（或至少 > 0），首页会话列表非空；新开标签页/强刷后仍能看到项目与会话。改动 workspace 同步、bootstrap 或 tabs 恢复后必须复验这三条。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - Renderer 收到旧版桌面主进程 IPC 状态时，缺失的授权上限字段回退为默认 10 和旧 Relay 容量 3，避免数字输入为空或显示 `undefined`。

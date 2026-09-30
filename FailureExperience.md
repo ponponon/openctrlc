@@ -1053,3 +1053,11 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 ## 远程工作区快照不能只依赖 sessionStorage
 
 Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 `__Host-oc_remote_boot` Cookie 注入桌面项目/会话快照。sessionStorage 是标签页隔离的，Cookie 却是跨标签共享：用户在已有 Cookie 的新标签页打开远程链接时会跳过 bootstrap，拿不到快照，侧栏和会话列表全空。另外 web 端 `server.projects` 只从快照恢复、不看后端 `GET /project`，快照一丢整页就空白。以后远程首屏必须双通道：快照（sessionStorage+localStorage）+ 后端项目 API 兜底；桌面端 `RemoteWorkspaceReporter` 也要挂在所有布局上，不能只挂新布局，且不能只认 `ServerConnection.builtin`。
+
+## 远程 Web 必须吃内嵌 OpenCtrlC UI，不能回退 app.opencode.ai
+
+桌面 main 里写死 `OPENCTRLC_DISABLE_EMBEDDED_WEB_UI=true` 会让 sidecar 的 UI 代理到上游 `https://app.opencode.ai`。远程浏览器加载到的是 OpenCode 壳（bundle 里只有 `OpenCode`/`opencode.ai`，没有 `openctrlc.remote-workspace`），桌面下发的 workspace 快照再完整也永远不会被消费，表现为远程整页空白。以后改远程 UI/同步前，先在浏览器里 fetch 入口 JS 断言含 `openctrlc` 字符串；禁止用「HTML 标题对了」当 UI 选对了——标题可能是 Relay bootstrap 页写的。
+
+## 复制配对链接不能给已授权浏览器发新编号
+
+`/join/<session>#<token>` 无条件走新设备配对，claim 每次 `randomToken(8)` 生成新 viewer id。用户复制二维码/链接在新标签打开就会再次「允许」，界面出现新编号。同一会话已持有 `__Host-oc_remote` Cookie 时 join 必须 302 到 `/`。设备身份不能靠 UA 字符串，持久性靠会话 resume + Cookie；文档要写清「新会话才需重新配对」。
