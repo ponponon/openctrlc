@@ -32,6 +32,16 @@ export const Info = Schema.Struct({
       write: Schema.Finite,
     }),
   }),
+  /**
+   * Token total of the most recent completed step, which is what the next request resends.
+   * `tokens` accumulates every step of the whole session for billing, so it keeps growing
+   * even while the context window stays the same and cannot describe the current session size.
+   */
+  context: optional(
+    Schema.Struct({
+      tokens: Schema.Finite,
+    }),
+  ),
   time: Schema.Struct({
     created: DateTimeUtcFromMillis,
     updated: DateTimeUtcFromMillis,

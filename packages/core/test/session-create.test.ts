@@ -21,7 +21,7 @@ import { SessionProjector } from "@openctrlc/core/session/projector"
 import { SessionExecution } from "@openctrlc/core/session/execution"
 import { SessionInput } from "@openctrlc/core/session/input"
 import { SessionEvent } from "@openctrlc/core/session/event"
-import { SessionTable } from "@openctrlc/core/session/sql"
+import { SessionTable, MessageTable } from "@openctrlc/core/session/sql"
 import { SessionStore } from "@openctrlc/core/session/store"
 import { WorkspaceV2 } from "@openctrlc/core/workspace"
 import { testEffect } from "./lib/effect"
@@ -420,6 +420,57 @@ describe("SessionV2.create", () => {
             Effect.map((error) => error._tag),
           ),
       ).toBe("Session.NotFoundError")
+    }),
+  )
+
+  it.effect("reports the context of the most recent completed step", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionV2.Service
+      const created = yield* session.create({ location })
+      const { db } = yield* Database.Service
+      const assistant = (input: { id: string; created: number; input: number; output: number }) => ({
+        id: SessionV1.MessageID.make(input.id),
+        session_id: created.id,
+        time_created: input.created,
+        time_updated: input.created,
+        data: {
+          role: "assistant" as const,
+          time: { created: input.created },
+          parentID: SessionV1.MessageID.make(`${input.id}_parent`),
+          modelID: ModelV2.ID.make("test-model"),
+          providerID: ProviderV2.ID.make("test-provider"),
+          mode: "build",
+          agent: "build",
+          path: { cwd: location.directory, root: location.directory },
+          cost: 0,
+          tokens: { input: input.input, output: input.output, reasoning: 0, cache: { read: 0, write: 0 } },
+        },
+      })
+
+      yield* db
+        .insert(MessageTable)
+        .values([
+          assistant({ id: "msg_context_first", created: 1, input: 10, output: 20 }),
+          assistant({ id: "msg_context_second", created: 2, input: 30, output: 40 }),
+          assistant({ id: "msg_context_empty", created: 3, input: 0, output: 0 }),
+        ])
+        .run()
+        .pipe(Effect.orDie)
+
+      expect(yield* session.get(created.id)).toMatchObject({ context: { tokens: 70 } })
+      expect(yield* session.list()).toMatchObject([{ id: created.id, context: { tokens: 70 } }])
+    }),
+  )
+
+  it.effect("omits the context before any step completes", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionV2.Service
+      const created = yield* session.create({ location })
+
+      const [listed] = yield* session.list()
+
+      expect(listed?.context).toBeUndefined()
+      expect((yield* session.get(created.id)).context).toBeUndefined()
     }),
   )
 })

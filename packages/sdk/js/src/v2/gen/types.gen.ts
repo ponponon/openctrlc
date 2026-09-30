@@ -3930,6 +3930,9 @@ export type SessionV2Info = {
       write: number
     }
   }
+  context?: {
+    tokens: number
+  }
   time: {
     created: number
     updated: number

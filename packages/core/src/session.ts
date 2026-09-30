@@ -3,7 +3,7 @@ export * from "./session/schema"
 
 import { DateTime, Effect, Layer, Schema, Context, Stream } from "effect"
 import { ListAnchor } from "@openctrlc/schema/session"
-import { and, asc, desc, eq, gt, like, lt, or, type SQL } from "drizzle-orm"
+import { and, asc, desc, eq, gt, inArray, like, lt, or, sql, type SQL } from "drizzle-orm"
 import { ProjectV2 } from "./project"
 import { WorkspaceV2 } from "./workspace"
 import { ModelV2 } from "./model"
@@ -14,7 +14,7 @@ import { PromptInput } from "@openctrlc/schema/prompt-input"
 import { EventV2 } from "./event"
 import { Database } from "./database/database"
 import { SessionProjector } from "./session/projector"
-import { SessionMessageTable, SessionTable } from "./session/sql"
+import { MessageTable, SessionMessageTable, SessionTable } from "./session/sql"
 import { SessionSchema } from "./session/schema"
 import { AbsolutePath, PositiveInt, RelativePath } from "./schema"
 import { AgentV2 } from "./agent"
@@ -265,7 +265,8 @@ const layer = Layer.effect(
       get: Effect.fn("V2Session.get")(function* (sessionID) {
         const session = yield* store.get(sessionID)
         if (!session) return yield* new NotFoundError({ sessionID })
-        return session
+        const context = yield* contextTokensFor(db, [sessionID])
+        return withContext(session, context.get(sessionID))
       }),
       getSystemPromptSnapshot: Effect.fn("V2Session.getSystemPromptSnapshot")(function* (sessionID) {
         const session = yield* store.get(sessionID)
@@ -306,7 +307,12 @@ const layer = Layer.effect(
         const rows = yield* (input.limit === undefined ? query.all() : query.limit(input.limit).all()).pipe(
           Effect.orDie,
         )
-        return (direction === "previous" ? rows.toReversed() : rows).map((row) => fromRow(row))
+        const sessions = (direction === "previous" ? rows.toReversed() : rows).map((row) => fromRow(row))
+        const context = yield* contextTokensFor(
+          db,
+          sessions.map((session) => session.id),
+        )
+        return sessions.map((session) => withContext(session, context.get(session.id)))
       }),
       messages: Effect.fn("V2Session.messages")(function* (input) {
         yield* result.get(input.sessionID)
@@ -463,6 +469,46 @@ const layer = Layer.effect(
     return result
   }),
 )
+
+// `session.tokens_*` accumulates every step of the whole session for billing, so it keeps
+// growing even while the context window stays the same. The current session size is the most
+// recent completed step instead: read it from the message projection per requested Session.
+const stepTokenTotal = sql.raw(`coalesce(json_extract(context_message.data, '$.tokens.input'), 0)
+  + coalesce(json_extract(context_message.data, '$.tokens.output'), 0)
+  + coalesce(json_extract(context_message.data, '$.tokens.reasoning'), 0)
+  + coalesce(json_extract(context_message.data, '$.tokens.cache.read'), 0)
+  + coalesce(json_extract(context_message.data, '$.tokens.cache.write'), 0)`)
+
+// A Column interpolated into `sql` renders unqualified, which inside this subquery would resolve
+// to the subquery's own table. Nesting the reference keeps it bound to the outer Session row.
+const outerSessionID = sql`${SessionTable.id}`
+
+const contextTokens = sql<number | null>`(
+  select ${stepTokenTotal}
+  from ${MessageTable} context_message
+  where context_message.session_id = ${outerSessionID}
+    and json_extract(context_message.data, '$.role') = 'assistant'
+    and ${stepTokenTotal} > 0
+  order by context_message.time_created desc, context_message.id desc
+  limit 1
+)`
+
+const contextTokensFor = Effect.fnUntraced(function* (
+  db: Database.Interface["db"],
+  sessionIDs: ReadonlyArray<SessionSchema.ID>,
+) {
+  if (sessionIDs.length === 0) return new Map<SessionSchema.ID, number>()
+  const rows = yield* db
+    .select({ id: SessionTable.id, tokens: contextTokens })
+    .from(SessionTable)
+    .where(inArray(SessionTable.id, [...sessionIDs]))
+    .all()
+    .pipe(Effect.orDie)
+  return new Map(rows.flatMap((row) => (row.tokens === null ? [] : [[row.id, row.tokens] as const])))
+})
+
+const withContext = (session: SessionSchema.Info, tokens: number | undefined) =>
+  tokens === undefined ? session : { ...session, context: { tokens } }
 
 const resolvePrompt = (input: PromptInput.Prompt) =>
   Prompt.make({
