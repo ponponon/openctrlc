@@ -796,6 +796,7 @@ export const dict = {
   "remoteAccess.viewerLimitOverCapacity":
     "제한을 낮춰도 기존 승인은 유지됩니다. 새 브라우저를 승인하려면 기존 승인을 취소하거나 제한을 높이세요.",
   "remoteAccess.viewerMeta": "승인 {{created}} · 최근 사용 {{seen}}",
+  "remoteAccess.viewerExpiring": "오랫동안 사용하지 않았습니다. 승인을 유지하려면 곧 다시 연결하세요",
   "remote.desktop.offlineTitle": "데스크톱 연결 끊김",
   "remote.desktop.offlineDescription":
     "모바일 액세스는 켜져 있지만 데스크톱 앱에 연결할 수 없습니다. 마지막으로 동기화된 프로젝트와 세션을 표시합니다。",

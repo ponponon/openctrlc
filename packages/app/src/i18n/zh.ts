@@ -1077,6 +1077,7 @@ export const dict = {
   "remoteAccess.viewerLimitRelayUnsupported": "当前中继版本暂不支持自定义浏览器上限；更新中继后，保存的设置才会生效。",
   "remoteAccess.viewerLimitOverCapacity": "调低上限不会撤销已有授权。若要批准新浏览器，请先撤销一个授权或调高上限。",
   "remoteAccess.viewerMeta": "批准于 {{created}} · 最近使用 {{seen}}",
+  "remoteAccess.viewerExpiring": "已有一段时间未使用，请尽快重连以免授权过期",
   "remote.desktop.offlineTitle": "桌面端未连接",
   "remote.desktop.offlineDescription": "手机访问已开启，但桌面应用当前不可达。下方显示的是最近同步的项目和会话。",
   "remoteAccess.authorizedTitle": "已授权浏览器",

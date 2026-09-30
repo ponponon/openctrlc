@@ -52,6 +52,12 @@ function formatViewerTime(value?: number) {
   }
 }
 
+function viewerExpiringSoon(viewer: { lastSeenAt?: number; createdAt?: number }) {
+  const last = viewer.lastSeenAt ?? viewer.createdAt
+  if (!last || !Number.isFinite(last)) return false
+  return Date.now() - last > 25 * 24 * 60 * 60 * 1000
+}
+
 export function DialogRemoteAccess() {
   const language = useLanguage()
   const platform = usePlatform()
@@ -344,11 +350,20 @@ export function DialogRemoteAccess() {
                                 {viewer.device} · #{viewer.id.slice(0, 6)}
                               </div>
                               <Show when={viewer.createdAt || viewer.lastSeenAt}>
-                                <div class="mt-0.5 truncate text-12-regular text-v2-text-text-muted">
+                                <div
+                                  class="mt-0.5 truncate text-12-regular"
+                                  classList={{
+                                    "text-v2-state-fg-warning": viewerExpiringSoon(viewer),
+                                    "text-v2-text-text-muted": !viewerExpiringSoon(viewer),
+                                  }}
+                                >
                                   {language.t("remoteAccess.viewerMeta", {
                                     created: formatViewerTime(viewer.createdAt),
                                     seen: formatViewerTime(viewer.lastSeenAt),
                                   })}
+                                  <Show when={viewerExpiringSoon(viewer)}>
+                                    <span class="ml-1">· {language.t("remoteAccess.viewerExpiring")}</span>
+                                  </Show>
                                 </div>
                               </Show>
                             </div>

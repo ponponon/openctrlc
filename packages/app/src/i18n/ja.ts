@@ -1038,6 +1038,7 @@ export const dict = {
   "remoteAccess.viewerLimitOverCapacity":
     "上限を下げても既存の許可は維持されます。新しいブラウザーを許可するには、既存の許可を取り消すか上限を上げてください。",
   "remoteAccess.viewerMeta": "承認 {{created}} · 最終使用 {{seen}}",
+  "remoteAccess.viewerExpiring": "しばらく未使用です。承認を維持するには早く再接続してください",
   "remote.desktop.offlineTitle": "デスクトップがオフラインです",
   "remote.desktop.offlineDescription":
     "モバイルアクセスは有効ですが、デスクトップアプリに到達できません。最後に同期したプロジェクトとセッションを表示しています。",
