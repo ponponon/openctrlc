@@ -303,6 +303,11 @@ export function DialogRemoteAccess() {
                 )}
               </Show>
               <p class="text-center text-14-medium text-v2-text-text-strong">{language.t("remoteAccess.scan")}</p>
+              <Show when={state.hostName}>
+                <p class="w-full truncate text-center text-12-regular text-v2-text-text-muted" title={state.hostName}>
+                  {state.hostName}
+                </p>
+              </Show>
               <p
                 class="w-full break-all rounded-md bg-v2-background-bg-base px-2.5 py-2 text-center text-12-regular text-v2-text-text-muted"
                 title={state.url}

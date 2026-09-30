@@ -44,6 +44,7 @@ export type RemoteAccessState = {
   effectiveViewerLimit: number
   viewerLimitSupported: boolean
   authorizedViewers?: RemoteAccessAuthorizedViewer[]
+  hostName?: string
   error?: string
 }
 export type RemoteAccessPlatform = {

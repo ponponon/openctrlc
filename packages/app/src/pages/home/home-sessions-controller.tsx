@@ -18,6 +18,7 @@ import { sessionHasOpenTab, useTabs } from "@/context/tabs"
 import { compareSessionTime, displayName, errorMessage, projectForSession } from "@/pages/layout/helpers"
 import { useSessionTabAvatarState } from "@/pages/layout/project-avatar-state"
 import { pathKey } from "@/utils/path-key"
+import { estimateSessionStorageBytes, messagePayloadBytes } from "@/utils/session-storage-size"
 import { showToast } from "@/utils/toast"
 import { Binary } from "@openctrlc/core/util/binary"
 import { archiveHomeSession } from "../home-session-archive"
@@ -28,6 +29,8 @@ export type HomeSessionRecord = {
   session: Session
   project: LocalProject
   projectName: string
+  /** Real transcript bytes when messages are cached; otherwise use estimate. */
+  storageBytes?: number
 }
 
 export type HomeSessionGroup = {
@@ -92,6 +95,14 @@ export function createHomeSessionsController(home: HomeController) {
       projectDirectories,
       projects: home.project.list,
       projectByID,
+      cachedBytes: (sessionID) => {
+        const ctx = home.server.focusedContext()
+        if (!ctx) return undefined
+        const messages = ctx.sync.session.data.message[sessionID]
+        if (!messages?.length) return undefined
+        const parts = messages.flatMap((message) => ctx.sync.session.data.part[message.id] ?? [])
+        return messagePayloadBytes(messages) + messagePayloadBytes(parts)
+      },
     }),
   )
   const records = createMemo(() => allRecords().slice(0, HOME_SESSION_LIMIT))
@@ -252,6 +263,7 @@ function buildHomeSessionRecords(input: {
   projectDirectories: () => string[]
   projects: () => LocalProject[]
   projectByID: () => Map<string, LocalProject>
+  cachedBytes?: (sessionID: string) => number | undefined
 }) {
   const directories = new Set(input.projectDirectories().map(pathKey))
   const sessions = input.sessions().filter((session) => directories.has(pathKey(session.directory)))
@@ -267,7 +279,12 @@ function buildHomeSessionRecords(input: {
               pathKey(item.worktree) === directory || item.sandboxes?.some((sandbox) => pathKey(sandbox) === directory),
           ) ?? projectForSession(session, input.projects(), input.projectByID())
       if (!project) return []
-      return { session, project, projectName: displayName(project) }
+      return {
+        session,
+        project,
+        projectName: displayName(project),
+        storageBytes: input.cachedBytes?.(session.id) ?? estimateSessionStorageBytes(session),
+      }
     })
 }
 

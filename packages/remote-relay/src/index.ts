@@ -955,7 +955,9 @@ function workspaceBootstrapResponse(workspace: RelayWorkspaceSnapshot | undefine
 
 function sessionFor(request: Request) {
   const cookies = parseCookies(request.headers.get("cookie"))
-  const active = cookies["__Host-oc_active"]
+  // `oc_active` is readable/writable by the page so the remote UI can switch desktops;
+  // `__Host-oc_active` remains the server-set default.
+  const active = cookies["oc_active"] ?? cookies["__Host-oc_active"]
   if (active) {
     const hit = viewerForToken(cookies[viewerCookieName(active)])
     if (hit) return hit

@@ -94,7 +94,7 @@ export class RemoteAccessService {
   }
 
   getState() {
-    return this.#state
+    return { ...this.#state, hostName: hostname().slice(0, 120) }
   }
 
   updateWorkspace(snapshot: RemoteWorkspaceSnapshot) {
@@ -1023,7 +1023,8 @@ export class RemoteAccessService {
 
   #setState(state: RemoteAccessState) {
     this.#state = state
-    for (const listener of this.#listeners) listener(state)
+    const withHost = { ...state, hostName: hostname().slice(0, 120) }
+    for (const listener of this.#listeners) listener(withHost)
   }
 }
 

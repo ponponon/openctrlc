@@ -72,10 +72,20 @@ export function takeRemoteWorkspaceSnapshot() {
         localStorage.setItem(hostNameKey, name)
       } catch {}
     }
+    const relaySession =
+      readCookie("oc_active") ??
+      readCookie("__Host-oc_active") ??
+      (parsed?.activeSessionID ? `ses-${parsed.activeSessionID.slice(-12)}` : undefined)
+    if (relaySession && name) rememberRemoteDesktop(relaySession, name)
     return parsed
   } catch {
     return
   }
+}
+
+function readCookie(name: string) {
+  const hit = document.cookie.split(";").find((part) => part.trim().startsWith(`${name}=`))
+  return hit?.slice(hit.indexOf("=") + 1).trim()
 }
 
 export function remoteHostName() {
@@ -84,6 +94,47 @@ export function remoteHostName() {
     cachedHostName = localStorage.getItem(hostNameKey) ?? undefined
   } catch {}
   return cachedHostName
+}
+
+const desktopsKey = "openctrlc.remote-desktops"
+
+export type RemoteDesktopRef = { sessionID: string; hostName: string }
+
+export function rememberRemoteDesktop(sessionID: string, hostName: string | undefined) {
+  if (!sessionID || !hostName) return
+  try {
+    const raw = localStorage.getItem(desktopsKey)
+    const list: RemoteDesktopRef[] = raw ? JSON.parse(raw) : []
+    const next = [{ sessionID, hostName }, ...list.filter((item) => item.sessionID !== sessionID)].slice(0, 8)
+    localStorage.setItem(desktopsKey, JSON.stringify(next))
+    localStorage.setItem(`${desktopsKey}.active`, sessionID)
+  } catch {}
+}
+
+export function listRemoteDesktops(): RemoteDesktopRef[] {
+  try {
+    const raw = localStorage.getItem(desktopsKey)
+    return raw ? (JSON.parse(raw) as RemoteDesktopRef[]) : []
+  } catch {
+    return []
+  }
+}
+
+export function activeRemoteSessionID() {
+  try {
+    return localStorage.getItem(`${desktopsKey}.active`) ?? undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Switch which desktop session this browser talks to; token cookies stay per-session. */
+export function switchRemoteDesktop(sessionID: string) {
+  document.cookie = `oc_active=${sessionID}; Path=/; Secure; SameSite=Strict; max-age=${60 * 60 * 24 * 30}`
+  try {
+    localStorage.setItem(`${desktopsKey}.active`, sessionID)
+  } catch {}
+  location.reload()
 }
 
 export function remoteWorkspaceStorageKey() {

@@ -30,7 +30,7 @@ import { useLanguage } from "@/context/language"
 import { useSettings } from "@/context/settings"
 import { WindowsAppMenu } from "./windows-app-menu"
 import { applyPath, backPath, forwardPath } from "./titlebar-history"
-import { remoteHostName } from "@/utils/remote-workspace"
+import { remoteHostName, listRemoteDesktops, switchRemoteDesktop, activeRemoteSessionID } from "@/utils/remote-workspace"
 import { TitlebarTabStrip } from "@/components/titlebar-tab-strip"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
@@ -838,14 +838,33 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
 function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void } }) {
   const channel = import.meta.env.VITE_OPENCTRLC_CHANNEL
   const host = remoteHostName()
-  const hostChip = host ? (
-    <div
-      class="max-w-[160px] truncate rounded-sm bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
-      title={host}
-    >
-      {host}
-    </div>
-  ) : null
+  const desktops = listRemoteDesktops()
+  const activeId = activeRemoteSessionID()
+  const hostChip =
+    desktops.length > 1 ? (
+      <select
+        class="max-w-[180px] truncate rounded-sm border-0 bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
+        title={host}
+        value={activeId ?? ""}
+        onChange={(event) => {
+          const id = event.currentTarget.value
+          if (id) switchRemoteDesktop(id)
+        }}
+      >
+        {desktops.map((item) => (
+          <option value={item.sessionID} selected={item.sessionID === activeId}>
+            {item.hostName}
+          </option>
+        ))}
+      </select>
+    ) : host ? (
+      <div
+        class="max-w-[160px] truncate rounded-sm bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
+        title={host}
+      >
+        {host}
+      </div>
+    ) : null
   if (channel === "dev" && props.debugTools) {
     return (
       <>
