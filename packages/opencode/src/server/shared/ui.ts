@@ -2,11 +2,23 @@ import { FSUtil } from "@openctrlc/core/fs-util"
 import { Effect, Stream } from "effect"
 import { HttpBody, HttpClient, HttpClientRequest, HttpServerRequest, HttpServerResponse } from "effect/unstable/http"
 import { createHash } from "node:crypto"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { ProxyUtil } from "../proxy-util"
 
 let embeddedUIPromise: Promise<Record<string, string> | null> | undefined
 
 export const UI_UPSTREAM = new URL("https://app.opencode.ai")
+
+// File-import URLs emitted by Bun are bundle-relative (./index-*.html). Resolve
+// them against this module's location so cwd (homedir on macOS desktop) cannot
+// break embedded UI reads.
+const bundleDir = path.dirname(fileURLToPath(import.meta.url))
+
+function resolveEmbeddedFile(file: string) {
+  if (file.startsWith("./") || file.startsWith("../")) return path.join(bundleDir, file)
+  return file
+}
 
 export const csp = (hash = "") =>
   `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${hash ? ` 'sha256-${hash}'` : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; media-src 'self' data:; connect-src * data: blob:`
@@ -66,8 +78,9 @@ export function serveEmbeddedUIEffect(
   fs: FSUtil.Interface,
   embeddedWebUI: Record<string, string>,
 ) {
-  const file = embeddedWebUI[requestPath.replace(/^\//, "")] ?? embeddedWebUI["index.html"] ?? null
-  if (!file) return Effect.succeed(notFound())
+  const mapped = embeddedWebUI[requestPath.replace(/^\//, "")] ?? embeddedWebUI["index.html"] ?? null
+  if (!mapped) return Effect.succeed(notFound())
+  const file = resolveEmbeddedFile(mapped)
 
   return fs.readFile(file).pipe(
     Effect.map((body) => embeddedUIResponse(file, body)),

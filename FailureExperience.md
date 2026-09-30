@@ -1065,3 +1065,7 @@ Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 `__Host-oc_remote_boot
 ## 不能静默回退到上游 OpenCode 壳
 
 内嵌 UI 未构建或 `OPENCTRLC_DISABLE_EMBEDDED_WEB_UI` 打开时，`serveUIEffect` 曾代理 `app.opencode.ai`。远程页看起来「能打开」但完全没有 OpenCtrlC 的 workspace 恢复逻辑，项目/会话永远空白，排查极贵。默认必须返回带 `x-openctrlc-ui: missing` 的 503 明确报错；只有 `OPENCTRLC_UI_ALLOW_UPSTREAM=1` 才允许代理调试。改远程 UI 后要用 `remote-smoke.sh` 或浏览器 fetch 入口 JS，确认含 `openctrlc.remote-workspace`，不能只看页面能加载。
+
+## 内嵌 UI 的 file 导入路径必须相对模块定位
+
+Bun `with { type: "file" }` 打进 bundle 后是 `./index-*.html` 相对路径。`fs.readFile` 若按 cwd 解析，桌面进程 `chdir(homedir())` 后就变成读家目录，`NotFound` 再包成 `{"error":"Not Found"}` 404。必须 `path.join(dirname(fileURLToPath(import.meta.url)), file)` 解析。electron-vite 会把 `dist/node/*` 整目录拷到 `out/main/chunks/`，资源与 node.js 同级时该解析成立。测试里要用带 `./` 的相对映射覆盖这条路径，不能只用 `$bunfs` 绝对路径。
