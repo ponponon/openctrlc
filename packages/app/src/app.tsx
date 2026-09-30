@@ -35,6 +35,7 @@ import {
   onCleanup,
   type ParentProps,
   Show,
+  startTransition,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import { makeEventListener } from "@solid-primitives/event-listener"
@@ -746,6 +747,38 @@ function RemoteWorkspaceHydrator() {
     }
     const first = known.find((project) => project.worktree)
     if (first?.worktree) context.projects.touch(first.worktree)
+  })
+
+  // Restore open session tabs from the backend when the snapshot did not carry any.
+  createEffect(() => {
+    if (platform.platform !== "web" || !tabs.ready()) return
+    if (!server.ready()) return
+    if (tabs.store.some((tab) => tab.type === "session")) return
+    const connection =
+      global.servers.list().find(ServerConnection.builtin) ??
+      global.servers.list().find(ServerConnection.local) ??
+      global.servers.list()[0]
+    if (!connection) return
+    const key = ServerConnection.key(connection)
+    const context = global.ensureServerCtx(connection)
+    let cancelled = false
+    void context.sdk.client.v2.session
+      .list({ limit: 12, order: "desc" })
+      .then((response) => {
+        if (cancelled) return
+        const sessions = (response.data?.data ?? []).filter((session) => session?.id)
+        if (sessions.length === 0) return
+        if (tabs.store.some((tab) => tab.type === "session")) return
+        const created = sessions.map((session) => tabs.addSessionTab({ server: key, sessionId: session.id }))
+        const latest = created[0]
+        if (latest && location.pathname === "/") {
+          void startTransition(() => tabs.select(latest))
+        }
+      })
+      .catch(() => undefined)
+    onCleanup(() => {
+      cancelled = true
+    })
   })
 
   return null
