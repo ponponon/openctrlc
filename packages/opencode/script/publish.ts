@@ -27,17 +27,33 @@ async function publish(dir: string, name: string, version: string) {
     console.log(`already published ${name}@${version}`)
     return
   }
-  await $`bun pm pack`.cwd(dir)
-  await $`npm publish *.tgz --access public --tag ${npmPublishTag(Script.channel)}`.cwd(dir)
+  const filename = `${name}-${version}.tgz`
+  await $`bun pm pack --filename ${filename}`.cwd(dir)
+  await $`npm publish ${filename} --access public --tag ${npmPublishTag(Script.channel)}`.cwd(dir)
 }
 
 const binaries: Record<string, string> = {}
-for (const filepath of new Bun.Glob("*/package.json").scanSync({ cwd: "./dist" })) {
+const binaryPackages = new Bun.Glob("*/package.json").scanSync({ cwd: "./dist" })
+for (const filepath of binaryPackages) {
   const pkg = await Bun.file(`./dist/${filepath}`).json()
-  if (![ProductPackageName, LegacyProductPackageName].includes(pkg.name)) binaries[pkg.name] = pkg.version
+  if ([ProductPackageName, LegacyProductPackageName].includes(pkg.name)) continue
+  if (!pkg.name.startsWith(`${ProductPackageName}-`)) continue
+  const directory = filepath.split("/")[0]
+  if (pkg.name !== directory) throw new Error(`CLI package name does not match its directory: ${filepath}`)
+  if (pkg.version !== Script.version) {
+    throw new Error(
+      `Refusing to publish ${pkg.name}@${pkg.version}; expected ${Script.version}. Rebuild the CLI first.`,
+    )
+  }
+  binaries[pkg.name] = pkg.version
 }
 console.log("binaries", binaries)
-const version = Object.values(binaries)[0]
+if (Object.keys(binaries).length !== 12) {
+  throw new Error(
+    `Expected all 12 CLI platform packages, found ${Object.keys(binaries).length}. Rebuild the CLI first.`,
+  )
+}
+const version = Script.version
 async function prepareProductPackage(name: string) {
   const directory = `./dist/${name}`
   await $`mkdir -p ${directory}/bin`

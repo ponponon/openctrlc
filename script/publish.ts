@@ -10,6 +10,11 @@ const dir = fileURLToPath(new URL("..", import.meta.url))
 process.chdir(dir)
 const tag = Script.channel === "beta" ? "beta" : `v${Script.version}`
 
+if (process.env.OPENCTRLC_NPM_ONLY === "1") {
+  await $`bun ./packages/opencode/script/publish.ts`
+  process.exit(0)
+}
+
 const pkgjsons = await Array.fromAsync(
   new Bun.Glob("**/package.json").scan({
     absolute: true,

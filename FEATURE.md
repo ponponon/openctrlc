@@ -2410,3 +2410,21 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 生产会话标签切换基准：改动前冷/热首个正确画面中位数为 13.0 ms / 34.3 ms，稳定画面为 33.7 ms / 43.6 ms；改动后分别为 12.8 ms / 30.7 ms 和 32.8 ms / 44.7 ms，没有观察到明显回退。基准中的另一个 review pane 场景仍因既有 `#review-panel` 缺失而失败，与本功能无关。
 - Relay 已部署到 `openctrlc-remote.quniv.cn`；生产容器状态为 healthy，私有 `/healthz` 返回成功，公网 HTTPS 页面返回 200 且证书验证通过。
 - 手动端到端验收仍需在 1.1.1 桌面端运行后完成：桌面打开多个项目和会话，用新配对的空浏览器确认项目、会话标签和当前会话恢复；确认消息与运行状态来自同一服务器；刷新手机后仍拿到最新桌面快照。当前桌面进程尚未升级或重启，因此不能声称此项已经通过。
+
+## CLI npm 发布版本校验
+
+### 功能目标
+
+避免发布脚本从陈旧的 `dist` 目录读取旧版本，导致 npm 的 `latest` 指向错误版本；CLI-only 发布也不应触发无关的 SDK、插件和 UI 包发布。
+
+### 实现范围
+
+- npm-only 入口只调用 CLI 发布，不改写仓库全部 package.json，也不继续进入未配置的 `@openctrlc/sdk` 发布步骤。
+- CLI 发布前要求 12 个平台二进制包的目录名、manifest 包名和版本一致，且都匹配 `OPENCTRLC_VERSION`。
+- `npm publish` 使用 `bun pm pack --filename` 生成的精确 tarball 文件名，避免通配符带入陈旧包。
+- 发布文档先构建目标版本的 CLI，再执行 CLI-only npm 发布命令。
+
+### 验证方式
+
+- 对照发行版本检查 12 个平台构建产物的 package name 和 version。
+- 发布后核对 `openctrlc`、`openctrlc-ai` 和全部平台包的 npm `latest` 标签。

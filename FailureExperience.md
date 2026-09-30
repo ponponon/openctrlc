@@ -1005,3 +1005,7 @@ Relay 代理到的是同一个桌面本地服务器，会话记录和消息并�
 ## 新增 HttpApi 路由必须同步加入 exerciser
 
 发布 CI 的 `test:httpapi --fail-on-missing` 因 `GET /experimental/session/{sessionID}/log` 没有对应 scenario 失败。实现并公开新的 `HttpApi` 路由时，不能只更新 handler、schema 和生成客户端；必须在 `packages/opencode/test/server/httpapi-exercise/index.ts` 里添加与路由契约匹配的覆盖场景。本次 session log 场景验证 SSE content type 和终止同步标记 `log.synced`。新增路由后应在 `packages/opencode` 目录运行 `bun run test:httpapi`，并检查 coverage 模式的 `missing=0`。
+
+## npm 发布前必须校验构建产物版本，且 CLI-only 流程不能串入 SDK
+
+本次 `OPENCTRLC_NPM_ONLY=1 bun ./script/publish.ts` 没有真正限制为 CLI-only：根脚本仍先重写仓库 package.json 版本、随后继续发布 SDK/插件/UI；CLI 发布器又从陈旧的 `packages/opencode/dist` manifest 读取 `0.1.3`，未与目标 `1.1.1` 比对，导致三个旧版本包被重新发布并错误更新 npm `latest`。以后 npm-only 必须在根入口最早分流；CLI 发布前验证完整平台集合、manifest 名称和每个版本；打包与发布必须使用精确 tarball 文件名，不能使用 `*.tgz`。发布失败后须同时检查所有包的 npm 版本历史和 dist-tags，不能只看一两个查询的结果或命令行“发布成功”日志。撤销版本也不能想当然：当前粒度化 npm token 不允许绕过 2FA unpublish；若无法删除错误版本，至少立即恢复 `latest`，并确认后续正确版本覆盖默认标签。

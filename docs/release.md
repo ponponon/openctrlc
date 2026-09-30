@@ -126,13 +126,19 @@ npm view openctrlc-ai version
 ```bash
 OPENCTRLC_VERSION=<version> \
 OPENCTRLC_CHANNEL=prod \
-OPENCTRLC_RELEASE=1 \
+bun ./packages/opencode/script/build.ts
+
+OPENCTRLC_VERSION=<version> \
+OPENCTRLC_CHANNEL=prod \
 OPENCTRLC_NPM_ONLY=1 \
 bun ./script/publish.ts
 ```
 
-`OPENCTRLC_NPM_ONLY=1` 仅发布 npm 包。Docker、AUR 和 Homebrew 需要各自仓库与凭据，
-不由该命令触发。
+构建步骤会为全部 12 个目标平台生成与指定版本一致的 CLI 二进制。此步骤不要设置
+`OPENCTRLC_RELEASE`，否则构建脚本会尝试覆盖已发布的 GitHub Release 资产。发布脚本会在发布前
+拒绝缺失、混用版本或目录/包名不匹配的构建产物，并只发布刚生成的对应版本 tarball。
+`OPENCTRLC_NPM_ONLY=1` 只发布 CLI、平台二进制包和迁移期兼容别名，不会尝试发布未配置
+npm scope 的 SDK，也不会运行 Docker、AUR 或 Homebrew 发布流程。
 
 ## Homebrew tap
 
