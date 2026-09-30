@@ -85,29 +85,41 @@ export function serveUIEffect(
 
     if (embeddedWebUI) return yield* serveEmbeddedUIEffect(path, services.fs, embeddedWebUI)
 
-    // Upstream proxy is a last resort: remote browsers then run the stock OpenCode
-    // shell and never consume OpenCtrlC workspace snapshots.
-    console.warn(`[ui] embedded web UI unavailable; proxying ${path} to ${UI_UPSTREAM.host}`)
+    // Optional upstream proxy is only for explicit debugging. The default is a
+    // loud error so remote browsers never load the stock OpenCode shell and
+    // silently fail to restore OpenCtrlC workspaces.
+    if (process.env.OPENCTRLC_UI_ALLOW_UPSTREAM === "1") {
+      console.warn(`[ui] embedded web UI unavailable; proxying ${path} to ${UI_UPSTREAM.host}`)
+      const response = yield* services.client.execute(
+        HttpClientRequest.make(request.method)(upstreamURL(path), {
+          headers: ProxyUtil.headers(request.headers, { host: UI_UPSTREAM.host }),
+          body: requestBody(request),
+        }),
+      )
+      const headers = proxyResponseHeaders(response.headers)
+      headers.set("x-openctrlc-ui", "upstream")
 
-    const response = yield* services.client.execute(
-      HttpClientRequest.make(request.method)(upstreamURL(path), {
-        headers: ProxyUtil.headers(request.headers, { host: UI_UPSTREAM.host }),
-        body: requestBody(request),
-      }),
-    )
-    const headers = proxyResponseHeaders(response.headers)
-    headers.set("x-openctrlc-ui", "upstream")
+      if (response.headers["content-type"]?.includes("text/html")) {
+        const body = yield* response.text
+        headers.set("Content-Security-Policy", cspForHtml(body))
+        return HttpServerResponse.text(body, { status: response.status, headers })
+      }
 
-    if (response.headers["content-type"]?.includes("text/html")) {
-      const body = yield* response.text
-      headers.set("Content-Security-Policy", cspForHtml(body))
-      return HttpServerResponse.text(body, { status: response.status, headers })
+      headers.set("Content-Security-Policy", csp())
+      return HttpServerResponse.stream(response.stream.pipe(Stream.catchCause(() => Stream.empty)), {
+        status: response.status,
+        headers,
+      })
     }
 
-    headers.set("Content-Security-Policy", csp())
-    return HttpServerResponse.stream(response.stream.pipe(Stream.catchCause(() => Stream.empty)), {
-      status: response.status,
-      headers,
+    console.error(`[ui] embedded OpenCtrlC web UI unavailable for ${path}`)
+    const body = `<!doctype html><html><meta charset="utf-8"><title>OpenCtrlC</title><body style="font:16px system-ui;padding:40px;max-width:40rem;margin:10vh auto"><h1>OpenCtrlC Web UI 未构建</h1><p>本地服务没有打包 OpenCtrlC 前端，远程页面会因此空白。请在 <code>packages/opencode</code> 运行 <code>bun script/build-node.ts</code>（桌面 <code>predev</code>/<code>prebuild</code> 会自动做），然后重启桌面端。</p></body></html>`
+    return HttpServerResponse.text(body, {
+      status: 503,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "x-openctrlc-ui": "missing",
+      },
     })
   })
 }

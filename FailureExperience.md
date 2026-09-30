@@ -1061,3 +1061,7 @@ Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 `__Host-oc_remote_boot
 ## 复制配对链接不能给已授权浏览器发新编号
 
 `/join/<session>#<token>` 无条件走新设备配对，claim 每次 `randomToken(8)` 生成新 viewer id。用户复制二维码/链接在新标签打开就会再次「允许」，界面出现新编号。同一会话已持有 `__Host-oc_remote` Cookie 时 join 必须 302 到 `/`。设备身份不能靠 UA 字符串，持久性靠会话 resume + Cookie；文档要写清「新会话才需重新配对」。
+
+## 不能静默回退到上游 OpenCode 壳
+
+内嵌 UI 未构建或 `OPENCTRLC_DISABLE_EMBEDDED_WEB_UI` 打开时，`serveUIEffect` 曾代理 `app.opencode.ai`。远程页看起来「能打开」但完全没有 OpenCtrlC 的 workspace 恢复逻辑，项目/会话永远空白，排查极贵。默认必须返回带 `x-openctrlc-ui: missing` 的 503 明确报错；只有 `OPENCTRLC_UI_ALLOW_UPSTREAM=1` 才允许代理调试。改远程 UI 后要用 `remote-smoke.sh` 或浏览器 fetch 入口 JS，确认含 `openctrlc.remote-workspace`，不能只看页面能加载。

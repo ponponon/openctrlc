@@ -184,8 +184,9 @@ function responseText(response: Response) {
 }
 
 describe("HttpApi UI fallback", () => {
-  it.live("serves the web UI through the HTTP API app", () =>
+  it.live("returns a loud 503 when embedded UI is missing", () =>
     Effect.gen(function* () {
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = ""
       let proxiedUrl: string | undefined
 
       const response = yield* uiApp({
@@ -198,6 +199,31 @@ describe("HttpApi UI fallback", () => {
         ),
       }).request("/")
 
+      expect(response.status).toBe(503)
+      expect(response.headers.get("x-openctrlc-ui")).toBe("missing")
+      expect(proxiedUrl).toBeUndefined()
+      expect(yield* responseText(response)).toContain("OpenCtrlC Web UI")
+    }),
+  )
+
+  it.live("serves the web UI through the HTTP API app", () =>
+    Effect.gen(function* () {
+      const previous = process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = "1"
+      let proxiedUrl: string | undefined
+
+      const response = yield* uiApp({
+        disableEmbeddedWebUi: true,
+        client: httpClient(
+          new Response("<html>opencode</html>", { headers: { "content-type": "text/html" } }),
+          (request) => {
+            proxiedUrl = request.url
+          },
+        ),
+      }).request("/")
+      if (previous === undefined) delete process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      else process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = previous
+
       expect(response.status).toBe(200)
       expect(response.headers.get("content-type")).toContain("text/html")
       expect(yield* responseText(response)).toBe("<html>opencode</html>")
@@ -207,6 +233,8 @@ describe("HttpApi UI fallback", () => {
 
   it.live("strips upstream transfer encoding headers from proxied assets", () =>
     Effect.gen(function* () {
+      const previous = process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = "1"
       let proxiedUrl: string | undefined
 
       const response = yield* Effect.gen(function* () {
@@ -244,6 +272,8 @@ describe("HttpApi UI fallback", () => {
         ),
         Effect.map(HttpServerResponse.toWeb),
       )
+      if (previous === undefined) delete process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      else process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = previous
 
       expect(response.status).toBe(200)
       expect(proxiedUrl).toBe("https://app.opencode.ai/assets/app.js")
@@ -259,6 +289,8 @@ describe("HttpApi UI fallback", () => {
   // causing browsers to fail with `ERR_INVALID_CHUNKED_ENCODING`.
   it.live("strips upstream transfer-encoding header from proxied assets", () =>
     Effect.gen(function* () {
+      const previous = process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = "1"
       const response = yield* Effect.gen(function* () {
         const fs = yield* FSUtil.Service
         const client = yield* HttpClient.HttpClient
@@ -292,6 +324,8 @@ describe("HttpApi UI fallback", () => {
         ),
         Effect.map(HttpServerResponse.toWeb),
       )
+      if (previous === undefined) delete process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      else process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = previous
 
       expect(response.status).toBe(200)
       expect(response.headers.get("transfer-encoding")).toBeNull()
@@ -381,12 +415,16 @@ describe("HttpApi UI fallback", () => {
 
   it.live("accepts auth token for the web UI", () =>
     Effect.gen(function* () {
+      const previous = process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = "1"
       const response = yield* uiApp({
         password: "secret",
         username: "opencode",
         disableEmbeddedWebUi: true,
         client: httpClient(new Response("<html>opencode</html>", { headers: { "content-type": "text/html" } })),
       }).request(`/?auth_token=${btoa("opencode:secret")}`)
+      if (previous === undefined) delete process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      else process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = previous
 
       expect(response.status).toBe(200)
       expect(yield* responseText(response)).toBe("<html>opencode</html>")
@@ -395,6 +433,8 @@ describe("HttpApi UI fallback", () => {
 
   it.live("accepts basic auth for the web UI", () =>
     Effect.gen(function* () {
+      const previous = process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = "1"
       const response = yield* uiApp({
         password: "secret",
         username: "opencode",
@@ -402,6 +442,8 @@ describe("HttpApi UI fallback", () => {
       }).request("/", {
         headers: { authorization: `Basic ${btoa("opencode:secret")}` },
       })
+      if (previous === undefined) delete process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      else process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = previous
 
       expect(response.status).toBe(200)
     }),
@@ -409,6 +451,8 @@ describe("HttpApi UI fallback", () => {
 
   it.live("accepts basic auth passwords containing colons for the web UI", () =>
     Effect.gen(function* () {
+      const previous = process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = "1"
       const response = yield* uiApp({
         password: "sec:ret",
         username: "opencode",
@@ -416,6 +460,8 @@ describe("HttpApi UI fallback", () => {
       }).request("/", {
         headers: { authorization: `Basic ${btoa("opencode:sec:ret")}` },
       })
+      if (previous === undefined) delete process.env.OPENCTRLC_UI_ALLOW_UPSTREAM
+      else process.env.OPENCTRLC_UI_ALLOW_UPSTREAM = previous
 
       expect(response.status).toBe(200)
     }),
