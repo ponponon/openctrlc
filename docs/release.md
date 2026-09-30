@@ -76,7 +76,7 @@ CLOUDFLARE_ACCOUNT_ID  # Variable 或 Secret，Cloudflare Account ID
 `https://openctrlc-releases.quniv.cn/openctrlc/releases`。发布工作流会使用
 同一组 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID` 凭据同步清单和资产；
 账号 ID 可以配置为 Repository Variable，也可以配置为 Secret。`sync-downloads`
-工作流保留手动触发入口，用于补传历史 Release 或修复一次同步失败。
+工作流保留无参数手动触发入口，用于重新同步 GitHub 当前 latest stable Release 并清理 R2 中的旧版本对象。R2 只保留该最新版及 `download-manifest.json`；历史版本与资产继续由 GitHub Releases 保存。发布工作流同步时也会校验待发布标签就是 GitHub 当前 latest stable，避免手动补传旧版本覆盖 R2 最新版。
 
 ## GitHub Actions 必需 Secrets
 
@@ -105,8 +105,9 @@ APPLE_TEAM_ID
    ```
 
 3. 检查 GitHub Actions workflow 文件、下载资产名和发布说明中的链接一致。
-4. 检查 R2 `download-manifest.json` 已包含新版本，并抽查官网稳定版下载路由是否
-   重定向到 R2；R2 同步失败时确认官网仍能回退到 GitHub。
+4. 检查 R2 `download-manifest.json` 仅包含最新版本，并确认 R2 只保留该版本的对象；
+   抽查官网稳定版下载路由是否重定向到 R2，历史版本入口是否跳转到 GitHub Releases。
+   R2 同步失败时确认官网仍能回退到 GitHub latest。
 5. 检查 staged diff，确认没有 API key、账号密码、证书私钥或本地配置。
 6. 发布后验证 Release 页面、官网首页、`/download`、`/changelog` 和 `/docs/`。
 

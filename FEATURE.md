@@ -2445,3 +2445,22 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 在 `packages/opencode` 执行 `bun run build-node.ts`，确认 Web UI 构建和 Node bundle 成功。
 - 检查开发服务产物含当前 app 的远程工作区恢复代码；真实桌面重启验收受 `packages/app/AGENTS.md` 的禁止重启要求约束。
+
+## R2 仅保存最新桌面发行版
+
+### 功能目标
+
+R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Releases 长期保存，避免 R2 累积每个历史版本的安装包。
+
+### 实现范围
+
+- R2 同步脚本始终读取 GitHub 当前 latest stable Release，并拒绝同步不是 latest 的指定标签；清单固定只保留一个版本。
+- 每次同步后清理 R2 `openctrlc/releases/` 前缀下除最新版资产和下载清单之外的旧对象；发布流程和无参数手动修复流程共用此行为。
+- 官网稳定版下载继续优先重定向到 R2 最新版，R2 清单或资产不可用时回退 GitHub latest；下载页提供指向 GitHub Releases 的历史版本入口。
+- 下载页历史版本提示同步英文、简体中文、日文和韩文。
+
+### 验证方式
+
+- 在发布后检查 R2 `download-manifest.json` 只有一个版本，且版本目录下只有该版本资产。
+- 手动运行 `Sync OpenCtrlC Downloads` 工作流，确认无输入并且仍只同步 GitHub 当前 latest stable。
+- 抽查官网平台下载路由重定向到 R2 最新资产，历史版本入口直达 GitHub Releases；确认 R2 不可用时仍回退 GitHub latest。

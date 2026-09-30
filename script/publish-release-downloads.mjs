@@ -72,12 +72,12 @@ function r2ListUrl({ accountId, bucket, prefix, cursor }) {
   return `${CLOUDFLARE_API_BASE_URL}/accounts/${encodeURIComponent(accountId)}/r2/buckets/${encodeURIComponent(bucket)}/objects?${params}`
 }
 
-async function fetchRelease({ repository, tag, githubToken }) {
-  const response = await fetch(`${GITHUB_API_BASE_URL}/repos/${repository}/releases/tags/${encodeURIComponent(tag)}`, {
+async function fetchLatestRelease({ repository, githubToken }) {
+  const response = await fetch(`${GITHUB_API_BASE_URL}/repos/${repository}/releases/latest`, {
     headers: githubHeaders(githubToken),
   })
-  const payload = await readJsonResponse(response, `GitHub release ${tag}`)
-  if (payload.draft || payload.prerelease) throw new Error(`Release ${tag} must be published and non-prerelease`)
+  const payload = await readJsonResponse(response, "Latest GitHub release")
+  if (payload.draft || payload.prerelease) throw new Error("The latest GitHub release must be published and non-prerelease")
   return payload
 }
 
@@ -181,20 +181,6 @@ async function deleteR2Object({ accountId, bucket, key, token }) {
   await readJsonResponse(response, `Cloudflare R2 delete ${key}`)
 }
 
-async function readExistingManifest({ accountId, bucket, key, token }) {
-  const response = await fetch(r2ObjectUrl({ accountId, bucket, key }), {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (response.status === 404) return undefined
-  if (!response.ok) throw new Error(`Cloudflare R2 read ${key} failed (${response.status})`)
-  const body = await response.text()
-  try {
-    return JSON.parse(body)
-  } catch {
-    throw new Error(`Cloudflare R2 read ${key} returned invalid JSON`)
-  }
-}
-
 function publicObjectUrl(baseUrl, key, releasePrefix) {
   const relativeKey = key.startsWith(`${releasePrefix}/`) ? key.slice(releasePrefix.length + 1) : key
   return `${trimTrailingSlash(baseUrl)}/${relativeKey.split("/").map(encodeURIComponent).join("/")}`
@@ -221,7 +207,6 @@ function parseOptions(argv) {
     if (argument === "--bucket") options.bucket = value
     if (argument === "--release-prefix") options.releasePrefix = value
     if (argument === "--public-base-url") options.publicBaseUrl = value
-    if (argument === "--retention") options.retention = Number.parseInt(value, 10)
     index += 1
   }
   return options
@@ -236,15 +221,15 @@ export async function publishReleaseDownloads(options = {}) {
   const bucket = options.bucket ?? process.env.R2_BUCKET ?? DEFAULT_R2_BUCKET
   const releasePrefix = options.releasePrefix ?? process.env.R2_RELEASE_PREFIX ?? DEFAULT_R2_RELEASE_PREFIX
   const publicBaseUrl = options.publicBaseUrl ?? process.env.R2_PUBLIC_BASE_URL ?? DEFAULT_R2_PUBLIC_BASE_URL
-  const retention = options.retention ?? Number.parseInt(process.env.R2_RELEASE_RETENTION ?? "3", 10)
 
-  if (!tag) throw new Error("RELEASE_TAG or --tag is required")
   if (!repository || !/^[^/]+\/[^/]+$/.test(repository))
     throw new Error("GITHUB_REPOSITORY or --repository must be owner/name")
   if (!accountId || !token) throw new Error("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required")
-  if (!Number.isInteger(retention) || retention < 1) throw new Error("R2 release retention must be a positive integer")
 
-  const release = await fetchRelease({ repository, tag, githubToken })
+  const release = await fetchLatestRelease({ repository, githubToken })
+  if (tag && tag !== release.tag_name) {
+    throw new Error(`Only the latest GitHub release (${release.tag_name}) can be synced to R2; received ${tag}`)
+  }
   const version = normalizeVersion(release.tag_name)
   const assets = selectInstallerAssets(release)
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "openctrlc-releases-"))
@@ -289,7 +274,6 @@ export async function publishReleaseDownloads(options = {}) {
     }
 
     const manifestKey = `${releasePrefix}/${DOWNLOAD_MANIFEST_NAME}`
-    const existingManifest = await readExistingManifest({ accountId, bucket, key: manifestKey, token })
     const releases = [
       {
         tag: release.tag_name,
@@ -298,14 +282,13 @@ export async function publishReleaseDownloads(options = {}) {
         publishedAt: release.published_at,
         assets: publishedAssets,
       },
-      ...(existingManifest?.releases ?? []).filter((item) => item.version !== version),
-    ].slice(0, retention)
+    ]
 
     const manifest = {
       schemaVersion: 1,
       repository,
       generatedAt: new Date().toISOString(),
-      retention,
+      retention: 1,
       releases,
     }
     await uploadR2Json({
