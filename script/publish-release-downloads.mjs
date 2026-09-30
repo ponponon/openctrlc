@@ -168,7 +168,10 @@ async function listR2Objects({ accountId, bucket, prefix, token }) {
       headers: { Authorization: `Bearer ${token}` },
     })
     const payload = await readJsonResponse(response, `Cloudflare R2 list ${prefix}`)
-    objects.push(...(payload.result?.objects ?? []))
+    if (!Array.isArray(payload.result)) {
+      throw new Error(`Cloudflare R2 list ${prefix} returned an unexpected object list`)
+    }
+    objects.push(...payload.result)
     cursor = payload.result_info?.cursor || undefined
   } while (cursor)
   return objects
@@ -303,13 +306,22 @@ export async function publishReleaseDownloads(options = {}) {
 
     const keepPrefixes = releases.map((item) => `${releasePrefix}/${item.version}/`)
     const objects = await listR2Objects({ accountId, bucket, prefix: `${releasePrefix}/`, token })
-    await Promise.all(
-      objects
-        .map((object) => object.key)
-        .filter((key) => key !== manifestKey && !keepPrefixes.some((prefix) => key.startsWith(prefix)))
-        .map((key) => deleteR2Object({ accountId, bucket, key, token })),
-    )
+    const obsoleteKeys = objects
+      .map((object) => object.key)
+      .filter((key) => key !== manifestKey && !keepPrefixes.some((prefix) => key.startsWith(prefix)))
+    await Promise.all(obsoleteKeys.map((key) => deleteR2Object({ accountId, bucket, key, token })))
 
+    const remainingObjects = await listR2Objects({ accountId, bucket, prefix: `${releasePrefix}/`, token })
+    const remainingObsoleteKeys = remainingObjects
+      .map((object) => object.key)
+      .filter((key) => key !== manifestKey && !keepPrefixes.some((prefix) => key.startsWith(prefix)))
+    if (remainingObsoleteKeys.length) {
+      throw new Error(
+        `R2 cleanup left ${remainingObsoleteKeys.length} obsolete object(s): ${remainingObsoleteKeys.slice(0, 5).join(", ")}`,
+      )
+    }
+
+    console.log(`Removed ${obsoleteKeys.length} obsolete R2 object(s)`)
     console.log(`Published ${releases.length} release(s) to ${trimTrailingSlash(publicBaseUrl)}`)
     return manifest
   } finally {
