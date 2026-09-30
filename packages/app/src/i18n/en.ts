@@ -1057,7 +1057,19 @@ export const dict = {
   "remoteAccess.waitingDescription": "Scan the QR code. New devices will appear here for approval.",
   "remoteAccess.approve": "Allow",
   "remoteAccess.deny": "Deny",
-  "remoteAccess.deviceCount": "Approved browsers: {{count}} / 3",
+  "remoteAccess.deviceCount": "Approved browsers: {{count}} / {{limit}}",
+  "remoteAccess.viewerLimitLabel": "Browser limit",
+  "remoteAccess.viewerLimitDescription":
+    "Choose how many browsers can be approved at once. Lowering this limit won't revoke existing approvals.",
+  "remoteAccess.viewerLimitRange": "Enter a number from 1 to 100. The default is 10.",
+  "remoteAccess.viewerLimitSave": "Save",
+  "remoteAccess.viewerLimitSaving": "Saving…",
+  "remoteAccess.viewerLimitInvalid": "Enter a whole number from 1 to 100.",
+  "remoteAccess.viewerLimitSaveFailed": "Could not save the browser limit. Try again.",
+  "remoteAccess.viewerLimitRelayUnsupported":
+    "This relay does not support custom browser limits yet. The saved limit will apply after the relay is updated.",
+  "remoteAccess.viewerLimitOverCapacity":
+    "Existing approvals are kept when you lower the limit. Revoke a browser or raise the limit before approving another.",
   "remoteAccess.authorizedTitle": "Approved browsers",
   "remoteAccess.authorizedDescription":
     "Browser details are only a hint and can be spoofed; they do not verify a physical device.",

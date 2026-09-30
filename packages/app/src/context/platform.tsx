@@ -34,6 +34,9 @@ export type RemoteAccessState = {
   url?: string
   pendingRequests: RemoteAccessPairRequest[]
   authorizedDevices: number
+  viewerLimit: number
+  effectiveViewerLimit: number
+  viewerLimitSupported: boolean
   authorizedViewers?: RemoteAccessAuthorizedViewer[]
   error?: string
 }
@@ -41,6 +44,7 @@ export type RemoteAccessPlatform = {
   getState(): Promise<RemoteAccessState>
   subscribe(callback: (state: RemoteAccessState) => void): Promise<() => void>
   start(): Promise<RemoteAccessState>
+  setViewerLimit(limit: number): Promise<void>
   stop(): Promise<void>
   rotatePairingLink(): Promise<void>
   revokeViewer(viewerID: string): Promise<void>
