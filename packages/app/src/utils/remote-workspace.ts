@@ -44,13 +44,18 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
 }
 
 export function takeRemoteWorkspaceSnapshot() {
-  if (typeof sessionStorage === "undefined") return
-  let value: string | null
+  if (typeof sessionStorage === "undefined" && typeof localStorage === "undefined") return
+  let value: string | null = null
   try {
     value = sessionStorage.getItem(storageKey)
     sessionStorage.removeItem(storageKey)
-  } catch {
-    return
+  } catch {}
+  // New tabs share the boot cookie with the first tab but not sessionStorage;
+  // keep a localStorage fallback so they still restore the desktop workspace.
+  if (!value) {
+    try {
+      value = localStorage.getItem(storageKey)
+    } catch {}
   }
   if (!value || value.length > 64 * 1024) return
   try {

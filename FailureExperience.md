@@ -1049,3 +1049,7 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 ## 虚拟列表滚到顶部不代表所有折叠步骤都已展开
 
 时间线到达 `scrollTop === 0` 时，首屏下方仍可能有已挂载但在视口外的 AssistantSteps 折叠组；只点当前可见按钮会漏掉其中的工具 part。完整性回归要对挂载的折叠组使用 Playwright locator 点击，让 Playwright 自动滚动定位，再用稳定的时间线行 key 验证展开，不能把“已到顶部”当作“已访问全部内容”。
+
+## 远程工作区快照不能只依赖 sessionStorage
+
+Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 `__Host-oc_remote_boot` Cookie 注入桌面项目/会话快照。sessionStorage 是标签页隔离的，Cookie 却是跨标签共享：用户在已有 Cookie 的新标签页打开远程链接时会跳过 bootstrap，拿不到快照，侧栏和会话列表全空。另外 web 端 `server.projects` 只从快照恢复、不看后端 `GET /project`，快照一丢整页就空白。以后远程首屏必须双通道：快照（sessionStorage+localStorage）+ 后端项目 API 兜底；桌面端 `RemoteWorkspaceReporter` 也要挂在所有布局上，不能只挂新布局，且不能只认 `ServerConnection.builtin`。

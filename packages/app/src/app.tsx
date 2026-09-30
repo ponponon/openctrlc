@@ -658,12 +658,12 @@ export function AppInterface(props: {
       <GlobalProvider>
         <SettingsProvider>
           <ConnectionGate disableHealthCheck={props.disableHealthCheck} startup={props.startup}>
+            <RemoteWorkspaceHydrator />
             <Show when={useSettings().general.newLayoutDesigns().toString()} keyed>
               <Dynamic
                 component={props.router ?? Router}
                 root={(routerProps) => (
                   <TabsProvider remoteWorkspace={props.remoteWorkspace}>
-                    <RemoteWorkspaceReporter />
                     <PermissionProvider>
                       <NotificationProvider>
                         <ServerShell>
@@ -686,7 +686,7 @@ export function AppInterface(props: {
   )
 }
 
-function RemoteWorkspaceReporter() {
+function RemoteWorkspaceHydrator() {
   const platform = usePlatform()
   const server = useServer()
   const global = useGlobal()
@@ -695,16 +695,20 @@ function RemoteWorkspaceReporter() {
 
   createEffect(() => {
     if (platform.platform !== "desktop" || !platform.remoteAccess) return
-    if (!server.ready() || !tabs.ready()) return
-    const connection = global.servers.list().find(ServerConnection.builtin)
+    if (!server.ready()) return
+    const connection =
+      global.servers.list().find(ServerConnection.builtin) ??
+      global.servers.list().find(ServerConnection.local) ??
+      global.servers.list()[0]
     if (!connection) return
     const key = ServerConnection.key(connection)
     const parts = location.pathname.split("/").filter(Boolean)
     const activeSessionID =
       parts[0] === "server" && parts[2] === "session" && parts[3] && decode64(parts[1]) === key ? parts[3] : undefined
-    const sessionIDs = tabs.store.flatMap((tab) =>
-      tab.type === "session" && tab.server === key ? [tab.sessionId] : [],
-    )
+    const sessionIDs =
+      tabs.ready() && tabs.store
+        ? tabs.store.flatMap((tab) => (tab.type === "session" && tab.server === key ? [tab.sessionId] : []))
+        : []
     if (activeSessionID && !sessionIDs.includes(activeSessionID)) sessionIDs.push(activeSessionID)
     const context = global.ensureServerCtx(connection)
     const projects = context.projects.list().map((project) => ({
@@ -719,6 +723,29 @@ function RemoteWorkspaceReporter() {
       activeSessionID,
     }
     platform.remoteAccess.updateWorkspace(snapshot)
+  })
+
+  // Fresh remote browsers have empty local storage; restore the sidebar from the
+  // backend project list so the page is not blank before/independent of a snapshot.
+  createEffect(() => {
+    if (platform.platform !== "web") return
+    if (!server.ready()) return
+    const connection =
+      global.servers.list().find(ServerConnection.builtin) ??
+      global.servers.list().find(ServerConnection.local) ??
+      global.servers.list()[0]
+    if (!connection) return
+    const context = global.ensureServerCtx(connection)
+    const known = context.sync.data.project ?? []
+    if (known.length === 0) return
+    const open = context.projects.list()
+    if (open.length > 0) return
+    for (const project of known) {
+      if (!project.worktree) continue
+      context.projects.open(project.worktree)
+    }
+    const first = known.find((project) => project.worktree)
+    if (first?.worktree) context.projects.touch(first.worktree)
   })
 
   return null

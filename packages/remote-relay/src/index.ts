@@ -918,7 +918,7 @@ function workspaceBootstrapResponse(workspace: RelayWorkspaceSnapshot | undefine
   const snapshot = JSON.stringify(workspace ?? null).replaceAll("<", "\\u003c")
   const target = JSON.stringify(destination).replaceAll("<", "\\u003c")
   return new Response(
-    `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCtrlC</title><body><script nonce="${nonce}">try{const workspace=${snapshot};const key="openctrlc.remote-workspace";if(workspace)sessionStorage.setItem(key,JSON.stringify(workspace));else sessionStorage.removeItem(key)}catch{}location.replace(${target})</script></body></html>`,
+    `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCtrlC</title><body><script nonce="${nonce}">try{const workspace=${snapshot};const key="openctrlc.remote-workspace";if(workspace){const raw=JSON.stringify(workspace);sessionStorage.setItem(key,raw);try{localStorage.setItem(key,raw)}catch{}}else{sessionStorage.removeItem(key);try{localStorage.removeItem(key)}catch{}}}catch{}location.replace(${target})</script></body></html>`,
     {
       headers: {
         ...noStore,
