@@ -184,7 +184,7 @@ const main = Effect.gen(function* () {
   powerMonitor.on("suspend", () => remoteAccess.suspendHeartbeat())
   powerMonitor.on("resume", () => remoteAccess.resumeHeartbeat())
   const stopSidecars = async () => {
-    await remoteAccess.stop()
+    await remoteAccess.detach()
     await killSidecar()
     wslServers.stopAll()
   }
@@ -286,6 +286,7 @@ const main = Effect.gen(function* () {
   app.setAsDefaultProtocolClient(Brand.urlScheme)
   registerRendererProtocol()
   setDockIcon()
+  if (remoteAccess.isEnabled()) void remoteAccess.start().catch(() => undefined)
   const updater = setupAutoUpdater(stopSidecars)
   const menuDeps = {
     trigger: (id: string) => {

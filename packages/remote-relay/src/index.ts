@@ -70,7 +70,10 @@ const legacyViewerLimit = 3
 const viewerLifetime = 30 * 24 * 60 * 60 * 1000
 const viewerCookieLifetimeSeconds = Math.floor(viewerLifetime / 1000)
 const pairLifetime = 5 * 60 * 1000
-const hostReconnectGrace = 3 * 60 * 1000
+// Keep a host-disconnected session resumable long enough to survive desktop restarts.
+// Sessions with authorized browsers stay for the full viewer lifetime; empty ones clean up sooner.
+const hostReconnectGrace = 60 * 60 * 1000
+const hostReconnectGraceWithViewers = viewerLifetime
 const sessions = new Map<string, RelaySession>()
 const viewerTokens = new Map<string, ViewerGrant>()
 const createRates = new Map<string, number[]>()
@@ -588,13 +591,32 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     const result = await headersPromise
     const responseHeaders = sanitizeResponseHeaders(result.headers)
     responseHeaders.set("set-cookie", viewerCookie(viewerToken))
-    return new Response([204, 205, 304].includes(result.status) ? null : body, {
+    if ([204, 205, 304].includes(result.status)) {
+      return new Response(null, { status: result.status, headers: responseHeaders })
+    }
+    // Local fetch decompresses upstream bodies, so text assets leave the Relay
+    // uncompressed unless we compress again for the browser leg.
+    if (shouldGzipToViewer(request, responseHeaders)) {
+      responseHeaders.set("content-encoding", "gzip")
+      return new Response(body.pipeThrough(new CompressionStream("gzip")), {
+        status: result.status,
+        headers: responseHeaders,
+      })
+    }
+    return new Response(body, {
       status: result.status,
       headers: responseHeaders,
     })
   } catch {
     return new Response("Desktop request failed", { status: 502 })
   }
+}
+
+function shouldGzipToViewer(request: Request, responseHeaders: Headers) {
+  if (!/\bgzip\b/.test(request.headers.get("accept-encoding") ?? "")) return false
+  const contentType = (responseHeaders.get("content-type") ?? "").toLowerCase()
+  if (contentType.includes("text/event-stream")) return false
+  return /^(text\/|application\/(json|javascript|xml|jsonml|xhtml|x-ndjson))/.test(contentType)
 }
 
 async function sendRequestBody(session: RelaySession, request: Request, id: string) {
@@ -805,11 +827,13 @@ function sendHost(session: RelaySession, message: RelayServerMessage) {
 function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketData>) {
   if (session.host !== socket) return
   session.host = undefined
-  session.resumeUntil = Date.now() + hostReconnectGrace
+  const grace = session.viewers.size > 0 ? hostReconnectGraceWithViewers : hostReconnectGrace
+  session.resumeUntil = Date.now() + grace
   if (session.resumeTimer) clearTimeout(session.resumeTimer)
+  // setTimeout delays are 32-bit; cap the timer and let the minute sweeper finish long expirations.
   session.resumeTimer = setTimeout(() => {
     if (!session.host && session.resumeUntil && session.resumeUntil <= Date.now()) deleteSession(session)
-  }, hostReconnectGrace)
+  }, Math.min(grace, 2_147_483_647))
 
   for (const pair of session.pairs.values()) {
     pair.socket.send(JSON.stringify({ type: "pair.error" } satisfies RelayServerMessage))

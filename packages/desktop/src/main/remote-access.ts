@@ -9,7 +9,7 @@ import {
 import type { RemoteAccessPairRequest, RemoteAccessState, RemoteWorkspaceSnapshot } from "@openctrlc/app"
 import type { ServerReadyData } from "../preload/types"
 import { getStore } from "./store"
-import { REMOTE_ACCESS_VIEWER_LIMIT_KEY } from "./store-keys"
+import { REMOTE_ACCESS_ENABLED_KEY, REMOTE_ACCESS_SESSION_KEY, REMOTE_ACCESS_VIEWER_LIMIT_KEY } from "./store-keys"
 
 type InboundHTTP = {
   controller?: ReadableStreamDefaultController<Uint8Array>
@@ -61,9 +61,19 @@ export class RemoteAccessService {
     private readonly getServer: () => Promise<ServerReadyData>,
     private readonly onError: (error: unknown) => void,
   ) {
-    const savedLimit = getStore().get(REMOTE_ACCESS_VIEWER_LIMIT_KEY)
+    const store = getStore()
+    const savedLimit = store.get(REMOTE_ACCESS_VIEWER_LIMIT_KEY)
     this.#viewerLimit = isViewerLimit(savedLimit) ? savedLimit : DEFAULT_VIEWER_LIMIT
     this.#state = { ...this.#state, viewerLimit: this.#viewerLimit }
+    const savedSession = readPersistedSession()
+    if (savedSession) {
+      this.#sessionID = savedSession.sessionID
+      this.#hostToken = savedSession.hostToken
+    }
+  }
+
+  isEnabled() {
+    return getStore().get(REMOTE_ACCESS_ENABLED_KEY) === true
   }
 
   getState() {
@@ -157,7 +167,36 @@ export class RemoteAccessService {
     this.#requests.clear()
     this.#localSockets.clear()
     if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, "Remote access stopped")
+    persistSession(undefined)
+    getStore().set(REMOTE_ACCESS_ENABLED_KEY, false)
     await stopRequest
+  }
+
+  /** Disconnect without revoking the Relay session so authorized browsers survive an app restart. */
+  detach() {
+    const socket = this.#socket
+    ++this.#generation
+    this.#clearReconnect()
+    if (this.#heartbeat) clearInterval(this.#heartbeat)
+    this.#heartbeat = undefined
+    this.#pendingPings.clear()
+    this.#rejectPendingRevocations(new Error("Mobile access detached"))
+    this.#setState({
+      status: "stopped",
+      pendingRequests: [],
+      authorizedDevices: 0,
+      viewerLimit: this.#viewerLimit,
+      effectiveViewerLimit: legacyViewerLimit,
+      viewerLimitSupported: false,
+    })
+    this.#socket = undefined
+    this.#server = undefined
+    this.#notifiedPairRequests.clear()
+    for (const request of this.#requests.values()) request.aborted.abort()
+    for (const local of this.#localSockets.values()) local.close(1000, "Desktop is closing")
+    this.#requests.clear()
+    this.#localSockets.clear()
+    if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, "Desktop is closing")
   }
 
   setViewerLimit(limit: number) {
@@ -259,7 +298,27 @@ export class RemoteAccessService {
       this.#server = await this.getServer()
       if (generation !== this.#generation || this.#state.status === "stopped") return this.#state
       const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+      if (this.#sessionID && this.#hostToken) {
+        try {
+          await this.#connect(relay, generation, true)
+          getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
+          return this.#state
+        } catch (error) {
+          const sessionGone = error instanceof RemoteSessionUnavailable
+          const resumeTimedOut = error instanceof Error && error.message === "Relay connection timed out"
+          if (!sessionGone && !resumeTimedOut) throw error
+          // A missing session drops the saved credentials; a timeout may be an older
+          // Relay that ignores resume, so keep them until a new session is created.
+          if (sessionGone) {
+            this.#sessionID = undefined
+            this.#hostToken = undefined
+            persistSession(undefined)
+          }
+          if (generation !== this.#generation) return this.#state
+        }
+      }
       await this.#connect(relay, generation, false)
+      getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
       return this.#state
     } catch (error) {
       if (this.#state.status === "connecting") {
@@ -367,6 +426,7 @@ export class RemoteAccessService {
           }
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
+          persistSession({ sessionID: message.sessionID, hostToken: message.hostToken })
           activate(message.url, message.viewerLimit)
           return
         }
@@ -852,4 +912,19 @@ export class RemoteAccessService {
     this.#state = state
     for (const listener of this.#listeners) listener(state)
   }
+}
+
+function readPersistedSession() {
+  const raw = getStore().get(REMOTE_ACCESS_SESSION_KEY) as
+    | { sessionID?: unknown; hostToken?: unknown }
+    | undefined
+  if (!raw || typeof raw.sessionID !== "string" || typeof raw.hostToken !== "string") return undefined
+  if (!raw.sessionID || !raw.hostToken) return undefined
+  return { sessionID: raw.sessionID, hostToken: raw.hostToken }
+}
+
+function persistSession(session: { sessionID: string; hostToken: string } | undefined) {
+  const store = getStore()
+  if (session) store.set(REMOTE_ACCESS_SESSION_KEY, session)
+  else store.delete(REMOTE_ACCESS_SESSION_KEY)
 }

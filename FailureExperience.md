@@ -1021,3 +1021,11 @@ Renderer 热更新后可能先运行新界面，而 Electron 主进程仍是旧�
 ## Cloudflare R2 列对象接口的 result 是数组
 
 Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 数组中，并非 `result.objects`。按对象包装读取会得到空列表；如果清理脚本把空列表当成成功，就会只更新下载清单而留下所有旧安装包。以后接入外部 API 必须核对该接口本身的响应 schema；对清理任务还要检查列表类型、记录删除数量，并在删除后重新列举确认保留策略确实生效，不能只凭工作流绿色或清单已更新宣称清理完成。
+
+## TextInputV2 的 style 会落到内层 input 而不是外层壳
+
+给 `TextInputV2` 传 `style={{ width }}` 时，`splitProps` 把 `style` 并进 `inputProps` 转发给内层 `<input>`，外层 wrapper 仍固定 `width: 280px`，表现为输入框外壳过宽、数值和原生 spinner 挤在左侧小区域里。以后给 TextInputV2 设宽度必须用 `class="!w-[...]"` 作用在外层 wrapper（组件 CSS 的 `width: 280px` 需要 `!` 覆盖），数字输入还要隐藏 WebKit/Gecko spinner；同类表单行用 `items-start` + 与输入框等高的 `ButtonV2 size="normal"`（28px），避免 `size="small"` 造成的高度错位。
+
+## 桌面退出不能销毁手机访问会话
+
+`stopSidecars` 在应用退出时调用 `remoteAccess.stop()`，向 Relay 发送 `session.stop` 并删除会话，导致所有浏览器授权作废，每次重启都要重新扫码批准。以后退出/重启用 `detach()` 只断开 WSS；`sessionID`/`hostToken` 写入 electron-store，启动时优先 `session.resume`；用户显式“停止手机访问”才 `session.stop` 并清凭据。Relay 侧 `hostReconnectGrace` 原先只有 3 分钟，必须按是否有已授权浏览器区分保留期（有则对齐 30 天授权寿命，空会话 1 小时），并注意 `setTimeout` 32 位上限对超长宽限的溢出，用分钟清扫兜底。
