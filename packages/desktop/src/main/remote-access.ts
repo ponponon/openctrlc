@@ -1,7 +1,11 @@
 import {
+  BinaryFrameFlag,
+  BinaryFrameKind,
   decodeBase64,
+  decodeBinaryFrame,
   DEFAULT_VIEWER_LIMIT,
   encodeBase64,
+  encodeBinaryFrame,
   isViewerLimit,
   randomToken,
   relayMessage,
@@ -44,6 +48,7 @@ export class RemoteAccessService {
   >()
   #sessionID?: string
   #hostToken?: string
+  #binaryChunks = false
   #server?: ServerReadyData
   #requests = new Map<string, InboundHTTP>()
   #localSockets = new Map<string, WebSocket>()
@@ -158,6 +163,7 @@ export class RemoteAccessService {
       viewerLimitSupported: false,
     })
     this.#socket = undefined
+    this.#binaryChunks = false
     this.#sessionID = undefined
     this.#hostToken = undefined
     this.#server = undefined
@@ -190,6 +196,7 @@ export class RemoteAccessService {
       viewerLimitSupported: false,
     })
     this.#socket = undefined
+    this.#binaryChunks = false
     this.#server = undefined
     this.#notifiedPairRequests.clear()
     for (const request of this.#requests.values()) request.aborted.abort()
@@ -339,6 +346,7 @@ export class RemoteAccessService {
   #connect(relay: string, generation: number, resume: boolean) {
     return new Promise<void>((resolve, reject) => {
       const socket = new WebSocket(relay)
+      socket.binaryType = "arraybuffer"
       this.#socket = socket
       let connected = false
       let settled = false
@@ -352,7 +360,7 @@ export class RemoteAccessService {
         reject(error)
       }
       timeout = setTimeout(() => fail(new Error("Relay connection timed out")), resume ? 12_000 : 20_000)
-      const activate = (url: string, relayViewerLimit: unknown) => {
+      const activate = (url: string, relayViewerLimit: unknown, binaryChunks: boolean) => {
         if (generation !== this.#generation || this.#state.status === "stopped") {
           fail(new Error("Mobile access stopped"))
           return
@@ -360,6 +368,7 @@ export class RemoteAccessService {
         connected = true
         settled = true
         clearTimeout(timeout)
+        this.#binaryChunks = binaryChunks
         this.#notifiedPairRequests.clear()
         this.#clearReconnect()
         const viewerLimitSupported = isViewerLimit(relayViewerLimit)
@@ -390,8 +399,8 @@ export class RemoteAccessService {
             socket.send(
               JSON.stringify(
                 resume
-                  ? { type: "session.resume", sessionID: this.#sessionID, hostToken: this.#hostToken }
-                  : { type: "session.create", viewerLimit: this.#viewerLimit },
+                  ? { type: "session.resume", sessionID: this.#sessionID, hostToken: this.#hostToken, binaryChunks: true }
+                  : { type: "session.create", viewerLimit: this.#viewerLimit, binaryChunks: true },
               ),
             )
           } catch {
@@ -402,6 +411,16 @@ export class RemoteAccessService {
       )
       socket.addEventListener("message", (event) => {
         if (settled && !connected) return
+        if (typeof event.data !== "string") {
+          const bytes =
+            event.data instanceof ArrayBuffer
+              ? new Uint8Array(event.data)
+              : event.data instanceof Uint8Array
+                ? event.data
+                : undefined
+          if (bytes) this.#handleBinary(bytes)
+          return
+        }
         const message = relayMessage(event.data)
         if (!message || typeof message.type !== "string") return
         if (!resume && message.type === "session.created") {
@@ -427,7 +446,7 @@ export class RemoteAccessService {
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
           persistSession({ sessionID: message.sessionID, hostToken: message.hostToken })
-          activate(message.url, message.viewerLimit)
+          activate(message.url, message.viewerLimit, message.binaryChunks === true)
           return
         }
         if (resume && message.type === "session.resumed") {
@@ -439,7 +458,7 @@ export class RemoteAccessService {
             fail(new RemoteSessionUnavailable("The relay could not restore the previous session"))
             return
           }
-          activate(message.url, message.viewerLimit)
+          activate(message.url, message.viewerLimit, message.binaryChunks === true)
           return
         }
         if (resume && message.type === "session.resume.error") {
@@ -476,6 +495,7 @@ export class RemoteAccessService {
     this.#heartbeat = undefined
     this.#pendingPings.clear()
     this.#socket = undefined
+    this.#binaryChunks = false
     const error = new Error("Remote relay disconnected")
     this.#rejectPendingRevocations(error)
     for (const request of this.#requests.values()) {
@@ -547,6 +567,7 @@ export class RemoteAccessService {
   #endReconnect(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
     this.#clearReconnect()
+    this.#binaryChunks = false
     this.#sessionID = undefined
     this.#hostToken = undefined
     this.#server = undefined
@@ -717,6 +738,35 @@ export class RemoteAccessService {
     }
   }
 
+  #handleBinary(bytes: Uint8Array) {
+    const frame = decodeBinaryFrame(bytes)
+    if (!frame) return
+    if (frame.kind === BinaryFrameKind.RequestChunk) {
+      const request = this.#requests.get(frame.id)
+      if (!request?.controller) return
+      try {
+        request.controller.enqueue(frame.payload)
+      } catch {
+        request.aborted.abort()
+        this.#requests.delete(frame.id)
+      }
+      return
+    }
+    if (frame.kind === BinaryFrameKind.SocketMessage) {
+      const socket = this.#localSockets.get(frame.id)
+      if (!socket || socket.readyState !== WebSocket.OPEN) return
+      const binary = (frame.flags & BinaryFrameFlag.PayloadBinary) !== 0
+      socket.send(binary ? frame.payload : new TextDecoder().decode(frame.payload))
+    }
+  }
+
+  #sendBinary(kind: number, id: string, payload: Uint8Array, flags = 0) {
+    const socket = this.#socket
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false
+    socket.send(encodeBinaryFrame(kind, id, payload, flags))
+    return true
+  }
+
   #startLocalRequest(message: Record<string, unknown>) {
     if (typeof message.id !== "string" || typeof message.path !== "string" || typeof message.method !== "string") return
     const server = this.#server
@@ -816,10 +866,14 @@ export class RemoteAccessService {
           const chunk = await reader.read()
           if (chunk.done) break
           for (let start = 0; start < chunk.value.length; start += 24 * 1024) {
+            const slice = chunk.value.subarray(start, start + 24 * 1024)
+            if (this.#binaryChunks && this.#sendBinary(BinaryFrameKind.ResponseChunk, message.id as string, slice)) {
+              continue
+            }
             this.#send({
               type: "response.chunk",
               id: message.id as string,
-              data: encodeBase64(chunk.value.subarray(start, start + 24 * 1024)),
+              data: encodeBase64(slice),
             })
           }
         }
@@ -876,6 +930,12 @@ export class RemoteAccessService {
             : value instanceof Uint8Array
               ? value
               : undefined
+      if (this.#binaryChunks) {
+        const payload = typeof value === "string" ? new TextEncoder().encode(value) : bytes
+        if (payload && this.#sendBinary(BinaryFrameKind.SocketMessage, message.id as string, payload, binary ? BinaryFrameFlag.PayloadBinary : 0)) {
+          return
+        }
+      }
       this.#send({
         type: "socket.message",
         id: message.id as string,

@@ -14,8 +14,8 @@ export function isViewerLimit(value: unknown): value is number {
 }
 
 export type RelayHostMessage =
-  | { type: "session.create"; viewerLimit: number }
-  | { type: "session.resume"; sessionID: string; hostToken: string }
+  | { type: "session.create"; viewerLimit: number; binaryChunks?: boolean }
+  | { type: "session.resume"; sessionID: string; hostToken: string; binaryChunks?: boolean }
   | { type: "session.limit.update"; sessionID: string; hostToken: string; viewerLimit: number }
   | { type: "session.ping"; pingID?: string }
   | { type: "session.stop"; sessionID: string; hostToken: string }
@@ -50,8 +50,16 @@ export type RelayServerMessage =
       joinToken: string
       url: string
       viewerLimit: number
+      binaryChunks?: boolean
     }
-  | { type: "session.resumed"; sessionID: string; hostToken: string; url: string; viewerLimit: number }
+  | {
+      type: "session.resumed"
+      sessionID: string
+      hostToken: string
+      url: string
+      viewerLimit: number
+      binaryChunks?: boolean
+    }
   | { type: "session.limit.updated"; viewerLimit: number }
   | { type: "session.resume.error"; reason: "unavailable" | "invalid" }
   | { type: "pair.request"; pairID: string; device: string }
@@ -108,4 +116,45 @@ export function encodeBase64(value: Uint8Array) {
 
 export function decodeBase64(value: string) {
   return Uint8Array.from(atob(value), (character) => character.charCodeAt(0))
+}
+
+/** Bulk payload frames on the host WebSocket. Control messages stay JSON. */
+export const BINARY_FRAME_MAGIC = 0xc1
+export const BINARY_FRAME_HEADER = 15
+export const BINARY_FRAME_ID_BYTES = 12
+
+export const BinaryFrameKind = {
+  RequestChunk: 1,
+  ResponseChunk: 2,
+  SocketMessage: 3,
+} as const
+
+export const BinaryFrameFlag = {
+  PayloadBinary: 1,
+} as const
+
+export function encodeBinaryFrame(kind: number, id: string, payload: Uint8Array, flags = 0) {
+  const frame = new Uint8Array(BINARY_FRAME_HEADER + payload.length)
+  frame[0] = BINARY_FRAME_MAGIC
+  frame[1] = kind
+  frame[2] = flags
+  const encodedID = new TextEncoder().encode(id.slice(0, BINARY_FRAME_ID_BYTES))
+  frame.set(encodedID, 3)
+  frame.set(payload, BINARY_FRAME_HEADER)
+  return frame
+}
+
+export function decodeBinaryFrame(value: Uint8Array) {
+  if (value.length < BINARY_FRAME_HEADER || value[0] !== BINARY_FRAME_MAGIC) return
+  const kind = value[1]
+  if (kind !== BinaryFrameKind.RequestChunk && kind !== BinaryFrameKind.ResponseChunk && kind !== BinaryFrameKind.SocketMessage)
+    return
+  const id = new TextDecoder().decode(value.subarray(3, BINARY_FRAME_HEADER)).replace(/\0+$/, "")
+  if (!id) return
+  return {
+    kind,
+    flags: value[2],
+    id,
+    payload: value.subarray(BINARY_FRAME_HEADER),
+  }
 }

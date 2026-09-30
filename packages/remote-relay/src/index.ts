@@ -1,6 +1,10 @@
 import {
+  BinaryFrameFlag,
+  BinaryFrameKind,
   decodeBase64,
+  decodeBinaryFrame,
   encodeBase64,
+  encodeBinaryFrame,
   isViewerLimit,
   randomToken,
   relayMessage,
@@ -20,7 +24,7 @@ type SocketData = {
   clientIP?: string
   viewerToken?: string
   ready?: boolean
-  queue?: Array<{ data: string; binary: boolean; size: number }>
+  queue?: Array<{ data: string; binary: boolean; size: number; payload: Uint8Array }>
 }
 
 type PendingPair = {
@@ -37,11 +41,20 @@ type PendingResponse = {
   closed: boolean
 }
 
+type SessionTraffic = {
+  hostIn: number
+  hostOut: number
+  viewerIn: number
+  viewerOut: number
+}
+
 type RelaySession = {
   id: string
   hostToken: string
   joinToken: string
   viewerLimit: number
+  binaryChunks: boolean
+  traffic: SessionTraffic
   host?: Bun.ServerWebSocket<SocketData>
   pairingSockets: Set<Bun.ServerWebSocket<SocketData>>
   pairs: Map<string, PendingPair>
@@ -84,7 +97,7 @@ const server = Bun.serve<SocketData>({
   maxRequestBodySize: maxRequestBytes + 1024,
   fetch(request, server) {
     const url = new URL(request.url)
-    if (url.pathname === "/healthz") return Response.json({ ok: true, sessions: sessions.size })
+    if (url.pathname === "/healthz") return Response.json(healthSnapshot())
     if (url.pathname === "/v1/host" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
       if (request.headers.has("origin") && !sameOrigin(request)) return new Response("Origin rejected", { status: 403 })
       if (server.upgrade(request, { data: { role: "host", clientIP: request.headers.get("x-real-ip") ?? "unknown" } }))
@@ -178,6 +191,19 @@ const server = Bun.serve<SocketData>({
     },
     async message(socket, raw) {
       if (socket.data.role === "host") {
+        if (typeof raw !== "string") {
+          const bytes =
+            raw instanceof ArrayBuffer
+              ? new Uint8Array(raw)
+              : new Uint8Array((raw as ArrayBufferView).buffer, (raw as ArrayBufferView).byteOffset, (raw as ArrayBufferView).byteLength)
+          const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
+          if (!session) return socket.close(4404, "Session not found")
+          session.traffic.hostIn += bytes.byteLength
+          handleHostBinary(session, bytes)
+          return
+        }
+        const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
+        if (session) session.traffic.hostIn += new TextEncoder().encode(raw).byteLength
         const message = relayMessage(raw)
         if (!message || typeof message.type !== "string") return socket.close(4400, "Invalid message")
         await handleHostMessage(socket, message)
@@ -193,22 +219,26 @@ const server = Bun.serve<SocketData>({
           return socket.close(4401, "Browser authorization expired")
         }
         const binary = typeof raw !== "string"
-        const data =
+        const payload =
           typeof raw === "string"
-            ? raw
-            : encodeBase64(
-                raw instanceof ArrayBuffer
-                  ? new Uint8Array(raw)
-                  : new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength),
-              )
+            ? new TextEncoder().encode(raw)
+            : raw instanceof ArrayBuffer
+              ? new Uint8Array(raw)
+              : new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+        session.traffic.viewerIn += payload.byteLength
+        const data = typeof raw === "string" ? raw : encodeBase64(payload)
         if (!socket.data.ready) {
-          const size = typeof raw === "string" ? new TextEncoder().encode(raw).byteLength : raw.byteLength
           const queue = socket.data.queue ?? (socket.data.queue = [])
-          if (queue.reduce((total, frame) => total + frame.size, 0) + size > maxSocketQueueBytes) {
+          if (queue.reduce((total, frame) => total + frame.size, 0) + payload.byteLength > maxSocketQueueBytes) {
             socket.close(1009, "WebSocket buffer limit exceeded")
             return
           }
-          queue.push({ data, binary, size })
+          queue.push({ data, binary, size: payload.byteLength, payload })
+          return
+        }
+        if (session.binaryChunks) {
+          if (!sendHostBinary(session, BinaryFrameKind.SocketMessage, id, payload, binary ? BinaryFrameFlag.PayloadBinary : 0))
+            socket.close(1011, "Desktop is disconnected")
           return
         }
         if (!sendHost(session, { type: "socket.message", id, data, binary }))
@@ -309,6 +339,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     session.resumeTimer = undefined
     session.resumeUntil = undefined
     session.host = socket
+    session.binaryChunks = value.binaryChunks === true
     socket.data.sessionID = session.id
     socket.send(
       JSON.stringify({
@@ -317,6 +348,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         hostToken: session.hostToken,
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
         viewerLimit: session.viewerLimit,
+        binaryChunks: session.binaryChunks,
       } satisfies RelayServerMessage),
     )
     if (!pruneExpiredViewers(session)) sendViewerState(session)
@@ -341,6 +373,8 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       hostToken: randomToken(),
       joinToken: randomToken(),
       viewerLimit: isViewerLimit(value.viewerLimit) ? value.viewerLimit : legacyViewerLimit,
+      binaryChunks: value.binaryChunks === true,
+      traffic: { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 },
       host: socket,
       pairingSockets: new Set(),
       pairs: new Map(),
@@ -358,6 +392,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         joinToken: session.joinToken,
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
         viewerLimit: session.viewerLimit,
+        binaryChunks: session.binaryChunks,
       } satisfies RelayServerMessage),
     )
     sendViewerState(session)
@@ -473,7 +508,16 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     if (!viewer) return
     viewer.data.ready = true
     for (const frame of viewer.data.queue ?? []) {
-      if (!sendHost(session, { type: "socket.message", id: value.id, data: frame.data, binary: frame.binary })) {
+      const sent = session.binaryChunks
+        ? sendHostBinary(
+            session,
+            BinaryFrameKind.SocketMessage,
+            value.id,
+            frame.payload,
+            frame.binary ? BinaryFrameFlag.PayloadBinary : 0,
+          )
+        : sendHost(session, { type: "socket.message", id: value.id, data: frame.data, binary: frame.binary })
+      if (!sent) {
         viewer.close(1011, "Desktop is disconnected")
         session.sockets.delete(value.id)
         return
@@ -491,7 +535,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   if (value.type === "response.chunk") {
     const response = session.responses.get(value.id)
     if (!response?.controller || typeof value.data !== "string") return
-    response.controller.enqueue(Uint8Array.from(atob(value.data), (character) => character.charCodeAt(0)))
+    enqueueResponseChunk(session, response, decodeBase64(value.data))
     return
   }
   if (value.type === "response.end") {
@@ -516,7 +560,9 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     const viewer = session.sockets.get(value.id)
     if (!viewer || typeof value.data !== "string") return
     const binary = value.binary === true
-    viewer.send(binary ? decodeBase64(value.data) : value.data, binary)
+    const payload = binary ? decodeBase64(value.data) : new TextEncoder().encode(value.data)
+    session.traffic.viewerOut += payload.byteLength
+    viewer.send(binary ? payload : value.data, binary)
     return
   }
   if (value.type === "socket.close") {
@@ -631,6 +677,7 @@ async function sendRequestBody(session: RelaySession, request: Request, id: stri
       const item = await reader.read()
       if (item.done) break
       size += item.value.byteLength
+      session.traffic.viewerIn += item.value.byteLength
       if (size > maxRequestBytes) {
         sendHost(session, { type: "request.cancel", id })
         const pending = session.responses.get(id)
@@ -645,6 +692,10 @@ async function sendRequestBody(session: RelaySession, request: Request, id: stri
       }
       for (let start = 0; start < item.value.length; start += 24 * 1024) {
         const chunk = item.value.subarray(start, start + 24 * 1024)
+        if (session.binaryChunks) {
+          if (!sendHostBinary(session, BinaryFrameKind.RequestChunk, id, chunk)) return
+          continue
+        }
         sendHost(session, { type: "request.chunk", id, data: btoa(String.fromCharCode(...chunk)) })
       }
     }
@@ -815,13 +866,66 @@ function sendViewerState(session: RelaySession) {
 
 function sendHost(session: RelaySession, message: RelayServerMessage) {
   if (!session.host || session.host.readyState !== 1) return false
-  session.host.send(
-    JSON.stringify({ ...message, sessionID: session.id, hostToken: session.hostToken } satisfies RelayServerMessage & {
-      sessionID: string
-      hostToken: string
-    }),
-  )
+  const encoded = JSON.stringify({ ...message, sessionID: session.id, hostToken: session.hostToken } satisfies RelayServerMessage & {
+    sessionID: string
+    hostToken: string
+  })
+  session.traffic.hostOut += new TextEncoder().encode(encoded).byteLength
+  session.host.send(encoded)
   return true
+}
+
+function sendHostBinary(session: RelaySession, kind: number, id: string, payload: Uint8Array, flags = 0) {
+  if (!session.host || session.host.readyState !== 1) return false
+  const frame = encodeBinaryFrame(kind, id, payload, flags)
+  session.traffic.hostOut += frame.byteLength
+  session.host.send(frame)
+  return true
+}
+
+function handleHostBinary(session: RelaySession, bytes: Uint8Array) {
+  const frame = decodeBinaryFrame(bytes)
+  if (!frame) return
+  if (frame.kind === BinaryFrameKind.ResponseChunk) {
+    const response = session.responses.get(frame.id)
+    if (!response?.controller) return
+    enqueueResponseChunk(session, response, frame.payload)
+    return
+  }
+  if (frame.kind === BinaryFrameKind.SocketMessage) {
+    sendViewerSocket(session, frame.id, frame.payload, (frame.flags & BinaryFrameFlag.PayloadBinary) !== 0)
+  }
+}
+
+function enqueueResponseChunk(session: RelaySession, response: PendingResponse, payload: Uint8Array) {
+  if (!response.controller || response.closed) return
+  session.traffic.viewerOut += payload.byteLength
+  response.controller.enqueue(payload)
+}
+
+function sendViewerSocket(session: RelaySession, id: string, payload: Uint8Array, binary: boolean) {
+  const viewer = session.sockets.get(id)
+  if (!viewer) return
+  session.traffic.viewerOut += payload.byteLength
+  viewer.send(binary ? payload : new TextDecoder().decode(payload), binary)
+}
+
+function healthSnapshot() {
+  const totals: SessionTraffic = { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 }
+  const active: Array<{ id: string } & SessionTraffic & { viewers: number; binaryChunks: boolean }> = []
+  for (const session of sessions.values()) {
+    totals.hostIn += session.traffic.hostIn
+    totals.hostOut += session.traffic.hostOut
+    totals.viewerIn += session.traffic.viewerIn
+    totals.viewerOut += session.traffic.viewerOut
+    active.push({
+      id: session.id.slice(0, 6),
+      viewers: session.viewers.size,
+      binaryChunks: session.binaryChunks,
+      ...session.traffic,
+    })
+  }
+  return { ok: true, sessions: sessions.size, traffic: totals, active }
 }
 
 function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketData>) {
