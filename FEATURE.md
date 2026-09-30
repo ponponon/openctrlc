@@ -2244,7 +2244,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 ### 实现范围
 
 - Desktop 主进程通过 WSS 建立 Relay 会话，并由主进程把获批浏览器的 HTTP 流和 WebSocket 流转发到本机回环地址；本地 Basic Auth 凭据只在桌面主进程与本地服务器之间使用。WebSocket 本地连接使用 OpenCtrlC 的 `auth_token` 查询参数认证，不把凭据发给手机或 Relay。
-- Relay 提供短时配对链接；配对秘密只放在 URL fragment 中。新浏览器必须在桌面端批准后才获得 HttpOnly、Secure、SameSite=Strict 的 bearer cookie。单个会话最多允许三个浏览器授权；桌面保持手机访问开启时，会话随主机 WSS 连接持续有效。桌面每 30 秒发送带 ID 的应用心跳，90 秒未收到匹配响应就关闭失联连接并显示错误；系统睡眠期间暂停心跳，唤醒后立即重新探测，避免睡眠时间被误判为网络故障。浏览器授权采用 30 天未使用过期策略，每次请求都会续期；停止访问、桌面退出或 Relay 重启会撤销会话授权。
+- Relay 提供短时配对链接；配对秘密只放在 URL fragment 中。新浏览器必须在桌面端批准后才获得 HttpOnly、Secure、SameSite=Strict 的 bearer cookie。每个会话默认允许 10 个浏览器授权，桌面端可自定义 1–100 个；降低上限不会撤销已有授权，但达到上限后 Relay 会阻止新的配对和批准。旧版桌面客户端未发送上限时仍使用 3 个浏览器的兼容限制。桌面保持手机访问开启时，会话随主机 WSS 连接持续有效。桌面每 30 秒发送带 ID 的应用心跳，90 秒未收到匹配响应就关闭失联连接并显示错误；系统睡眠期间暂停心跳，唤醒后立即重新探测，避免睡眠时间被误判为网络故障。浏览器授权采用 30 天未使用过期策略，每次请求都会续期；停止访问、桌面退出或 Relay 重启会撤销会话授权。
+- 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - 桌面可查看已批准浏览器并逐个撤销授权。Relay 仅向桌面提供随机授权 ID 和根据 User-Agent 生成的浏览器提示，不向 UI 暴露 bearer token；浏览器提示可伪造，不能作为真实设备身份验证。撤销后 Relay 会删除对应授权并关闭该浏览器现有 WebSocket。
 - 首次配对时 Relay 先显示连接/送达状态；桌面审批界面的订阅回调收到待审批状态后，preload 经 IPC 回传 `pair.received`，Relay 再通知手机端“桌面已收到”。慢请求显示连接诊断提示；整个流程由 WebSocket 推送驱动，不做轮询。
 - 刷新二维码会轮换链接并取消待处理请求；停止访问会关闭 Relay 会话并撤销全部获批设备。桌面端退出时自动停止 Relay 会话。
@@ -2428,3 +2429,22 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 对照发行版本检查 12 个平台构建产物的 package name 和 version。
 - 发布后核对 `openctrlc`、`openctrlc-ai` 和全部平台包的 npm `latest` 标签。
+
+## R2 仅保存最新桌面发行版
+
+### 功能目标
+
+R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Releases 长期保存，避免 R2 累积每个历史版本的安装包。
+
+### 实现范围
+
+- R2 同步脚本始终读取 GitHub 当前 latest stable Release，并拒绝同步不是 latest 的指定标签；清单固定只保留一个版本。
+- 每次同步后清理 R2 `openctrlc/releases/` 前缀下除最新版资产和下载清单之外的旧对象；发布流程和无参数手动修复流程共用此行为。
+- 官网稳定版下载继续优先重定向到 R2 最新版，R2 清单或资产不可用时回退 GitHub latest；下载页提供指向 GitHub Releases 的历史版本入口。
+- 下载页历史版本提示同步英文、简体中文、日文和韩文。
+
+### 验证方式
+
+- 在发布后检查 R2 `download-manifest.json` 只有一个版本，且版本目录下只有该版本资产。
+- 手动运行 `Sync OpenCtrlC Downloads` 工作流，确认无输入并且仍只同步 GitHub 当前 latest stable。
+- 抽查官网平台下载路由重定向到 R2 最新资产，历史版本入口直达 GitHub Releases；确认 R2 不可用时仍回退 GitHub latest。

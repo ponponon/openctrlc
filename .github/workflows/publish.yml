@@ -348,7 +348,7 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: Sync published release assets to R2
-        run: node script/publish-release-downloads.mjs --tag "${{ needs.publish.outputs.tag }}" --repository "${{ needs.publish.outputs.repo }}" --retention 3
+        run: node script/publish-release-downloads.mjs --tag "${{ needs.publish.outputs.tag }}" --repository "${{ needs.publish.outputs.repo }}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}

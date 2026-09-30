@@ -410,6 +410,16 @@
         line-height: 1.5;
         margin: 0;
         max-width: 32rem;
+
+        a {
+          color: var(--color-text);
+          text-decoration: underline;
+          text-underline-offset: 2px;
+
+          &:hover {
+            color: var(--color-text-strong);
+          }
+        }
       }
     }
   }

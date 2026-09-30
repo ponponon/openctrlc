@@ -110,6 +110,10 @@ export default function Download() {
                   </a>
                 )}
               </Show>
+              <p data-component="download-note">
+                {i18n.t("download.releases.history")}{" "}
+                <a href="https://github.com/ponponon/openctrlc/releases">{i18n.t("download.releases.link")}</a>
+              </p>
               <Show when={detectedOS() === "macOS"}>
                 <p data-component="download-note">{i18n.t("download.platform.macosIntelNote")}</p>
               </Show>
