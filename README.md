@@ -64,7 +64,11 @@ The installer respects `OPENCTRLC_INSTALL_DIR` and `XDG_BIN_DIR`. The default fa
 
 ### Desktop
 
-Download the latest desktop installer from the [OpenCtrlC download page](https://openctrlc.pages.dev/download/). Stable assets are served through the project's Cloudflare R2 mirror when available, with an automatic GitHub Release fallback.
+Download the latest desktop installer from the [OpenCtrlC download
+page](https://openctrlc.pages.dev/download/). Cloudflare R2 stores only the
+latest stable release's installer assets and serves them when available, with
+an automatic GitHub Release fallback. Older versions and their assets remain
+in [GitHub Releases](https://github.com/ponponon/openctrlc/releases).
 
 | Platform | Architectures | Formats        |
 | -------- | ------------- | -------------- |

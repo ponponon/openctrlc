@@ -64,7 +64,9 @@ brew install ponponon/tap/openctrlc
 
 ### 桌面版
 
-从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新桌面安装包。稳定版在可用时优先通过项目的 Cloudflare R2 镜像提供，失败时会自动回退到 GitHub Release：
+从[官网软件下载页](https://openctrlc.pages.dev/download/)下载最新桌面安装包。R2 只保留
+最新稳定版的安装包；可用时优先从 R2 下载，失败时自动回退到 GitHub Release。历史版本及其安装包都保留在
+[GitHub Releases](https://github.com/ponponon/openctrlc/releases)：
 
 | 平台    | 架构          | 格式               |
 | ------- | ------------- | ------------------ |

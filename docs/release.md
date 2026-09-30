@@ -76,7 +76,7 @@ CLOUDFLARE_ACCOUNT_ID  # Variable 或 Secret，Cloudflare Account ID
 `https://openctrlc-releases.quniv.cn/openctrlc/releases`。发布工作流会使用
 同一组 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID` 凭据同步清单和资产；
 账号 ID 可以配置为 Repository Variable，也可以配置为 Secret。`sync-downloads`
-工作流保留无参数手动触发入口，用于重新同步 GitHub 当前 latest stable Release 并清理 R2 中的旧版本对象。R2 只保留该最新版及 `download-manifest.json`；历史版本与资产继续由 GitHub Releases 保存。发布工作流同步时也会校验待发布标签就是 GitHub 当前 latest stable，避免手动补传旧版本覆盖 R2 最新版。
+工作流保留无参数手动触发入口，用于重新同步 GitHub 当前 latest stable Release 并清理 R2 中的旧版本对象。R2 只保留该最新版资产及 `download-manifest.json`；所有历史版本与资产继续由 GitHub Releases 保存。同步脚本会完整读取 R2 对象列表、删除旧版本对象、再次读取并核对；如果对象列表响应异常或删除后仍有旧对象，工作流必须失败。发布工作流同步时也会校验待发布标签就是 GitHub 当前 latest stable，避免手动补传旧版本覆盖 R2 最新版。
 
 ## GitHub Actions 必需 Secrets
 
