@@ -2428,3 +2428,20 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 对照发行版本检查 12 个平台构建产物的 package name 和 version。
 - 发布后核对 `openctrlc`、`openctrlc-ai` 和全部平台包的 npm `latest` 标签。
+
+## 桌面开发版远程页面使用本地 Web UI
+
+### 功能目标
+
+运行 `bun run dev:desktop` 时，手机远程访问也使用当前工作区构建的 OpenCtrlC Web UI，避免落到上游 OpenCode 页面而缺失本地开发功能。
+
+### 实现范围
+
+- `packages/opencode/script/build-node.ts` 在构建开发用 Node 服务前，先构建 `packages/app` 并把生成的 Web 资源映射嵌入本地服务。
+- 发布构建和开发 Node 服务共用 Web UI 资源映射生成逻辑，保持资源清单与路径处理一致。
+- 本地服务存在嵌入式 UI 时直接提供本地资源，不再回退到 `app.opencode.ai`。
+
+### 验证方式
+
+- 在 `packages/opencode` 执行 `bun run build-node.ts`，确认 Web UI 构建和 Node bundle 成功。
+- 检查开发服务产物含当前 app 的远程工作区恢复代码；真实桌面重启验收受 `packages/app/AGENTS.md` 的禁止重启要求约束。

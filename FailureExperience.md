@@ -1009,3 +1009,7 @@ Relay 代理到的是同一个桌面本地服务器，会话记录和消息并�
 ## npm 发布前必须校验构建产物版本，且 CLI-only 流程不能串入 SDK
 
 本次 `OPENCTRLC_NPM_ONLY=1 bun ./script/publish.ts` 没有真正限制为 CLI-only：根脚本仍先重写仓库 package.json 版本、随后继续发布 SDK/插件/UI；CLI 发布器又从陈旧的 `packages/opencode/dist` manifest 读取 `0.1.3`，未与目标 `1.1.1` 比对，导致三个旧版本包被重新发布并错误更新 npm `latest`。以后 npm-only 必须在根入口最早分流；CLI 发布前验证完整平台集合、manifest 名称和每个版本；打包与发布必须使用精确 tarball 文件名，不能使用 `*.tgz`。发布失败后须同时检查所有包的 npm 版本历史和 dist-tags，不能只看一两个查询的结果或命令行“发布成功”日志。撤销版本也不能想当然：当前粒度化 npm token 不允许绕过 2FA unpublish；若无法删除错误版本，至少立即恢复 `latest`，并确认后续正确版本覆盖默认标签。
+
+## 开发桌面版的远程 UI 必须由本地 app 构建提供
+
+用户使用 `bun run dev:desktop` 时，桌面 Electron 界面虽然来自本地 Vite 源码，但远程手机页实际请求的是本地 OpenCode HTTP 服务。`predev` 原先只调用 `build-node.ts`，并给动态嵌入的 Web UI 写入空模块；服务端因此透明回退到 `https://app.opencode.ai`，使线上 UI 外壳正常加载却没有本地工作区恢复功能。以后排查远程 UI 空状态，必须检查 `/global/health`、本地快照是否到达、实际前端资源来源和构建清单；不能仅凭桌面使用 dev 命令就断言手机也在运行本地前端，也不要先让用户切换正式版掩盖开发构建缺口。

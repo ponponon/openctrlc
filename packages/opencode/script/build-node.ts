@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { Script } from "@openctrlc/script"
+import { createEmbeddedWebUIBundle } from "./embed-web-ui"
 import path from "path"
 import { fileURLToPath } from "url"
 
@@ -11,6 +12,7 @@ const dir = path.resolve(__dirname, "..")
 process.chdir(dir)
 
 const generated = await import("./generate.ts")
+const embeddedFileMap = await createEmbeddedWebUIBundle(Script.channel)
 
 await Bun.build({
   target: "node",
@@ -24,9 +26,7 @@ await Bun.build({
     OPENCTRLC_VERSION: `'${Script.version}'`,
     OPENCTRLC_CHANNEL: `'${Script.channel}'`,
   },
-  files: {
-    "openctrlc-web-ui.gen.ts": "",
-  },
+  files: { "openctrlc-web-ui.gen.ts": embeddedFileMap },
 })
 
 console.log("Build complete")
