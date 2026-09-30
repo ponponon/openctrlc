@@ -81,6 +81,10 @@ export function registerIpcHandlers(deps: Deps) {
   ipcMain.handle("await-initialization", () => deps.awaitInitialization())
   ipcMain.handle("remote-access-state", () => deps.remoteAccess.getState())
   ipcMain.handle("remote-access-start", () => deps.remoteAccess.start())
+  ipcMain.handle("remote-access-set-viewer-limit", (_event: IpcMainInvokeEvent, limit: unknown) => {
+    if (typeof limit !== "number") throw new Error("Invalid browser limit")
+    return deps.remoteAccess.setViewerLimit(limit)
+  })
   ipcMain.on("remote-access-workspace", (_event, value: unknown) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return
     deps.remoteAccess.updateWorkspace(value as Parameters<RemoteAccessService["updateWorkspace"]>[0])

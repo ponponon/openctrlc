@@ -782,7 +782,19 @@ export const dict = {
   "remoteAccess.waitingDescription": "QR 코드를 스캔하세요. 새 기기가 여기에 표시되면 승인할 수 있습니다.",
   "remoteAccess.approve": "허용",
   "remoteAccess.deny": "거부",
-  "remoteAccess.deviceCount": "승인된 브라우저: {{count}} / 3",
+  "remoteAccess.deviceCount": "승인된 브라우저: {{count}} / {{limit}}",
+  "remoteAccess.viewerLimitLabel": "브라우저 수 제한",
+  "remoteAccess.viewerLimitDescription":
+    "동시에 승인할 브라우저 수를 설정합니다. 제한을 낮춰도 기존 승인은 취소되지 않습니다.",
+  "remoteAccess.viewerLimitRange": "1~100 사이의 정수를 입력하세요. 기본값은 10입니다.",
+  "remoteAccess.viewerLimitSave": "저장",
+  "remoteAccess.viewerLimitSaving": "저장 중…",
+  "remoteAccess.viewerLimitInvalid": "1~100 사이의 정수를 입력하세요.",
+  "remoteAccess.viewerLimitSaveFailed": "브라우저 수 제한을 저장하지 못했습니다. 다시 시도하세요.",
+  "remoteAccess.viewerLimitRelayUnsupported":
+    "현재 Relay는 브라우저 수 사용자 지정 제한을 지원하지 않습니다. Relay를 업데이트하면 저장한 제한이 적용됩니다.",
+  "remoteAccess.viewerLimitOverCapacity":
+    "제한을 낮춰도 기존 승인은 유지됩니다. 새 브라우저를 승인하려면 기존 승인을 취소하거나 제한을 높이세요.",
   "remoteAccess.authorizedTitle": "승인된 브라우저",
   "remoteAccess.authorizedDescription": "브라우저 정보는 위조할 수 있는 참고 정보이며 실제 기기를 인증하지 않습니다.",
   "remoteAccess.authorizedEmpty": "아직 승인된 브라우저가 없습니다.",

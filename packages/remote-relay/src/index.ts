@@ -1,6 +1,7 @@
 import {
   decodeBase64,
   encodeBase64,
+  isViewerLimit,
   randomToken,
   relayMessage,
   type RelayServerMessage,
@@ -40,6 +41,7 @@ type RelaySession = {
   id: string
   hostToken: string
   joinToken: string
+  viewerLimit: number
   host?: Bun.ServerWebSocket<SocketData>
   pairingSockets: Set<Bun.ServerWebSocket<SocketData>>
   pairs: Map<string, PendingPair>
@@ -64,7 +66,7 @@ const maxRequestBytes = 16 * 1024 * 1024
 const maxPendingRequests = 64
 const maxSockets = 32
 const maxSocketQueueBytes = 512 * 1024
-const maxViewers = 3
+const legacyViewerLimit = 3
 const viewerLifetime = 30 * 24 * 60 * 60 * 1000
 const viewerCookieLifetimeSeconds = Math.floor(viewerLifetime / 1000)
 const pairLifetime = 5 * 60 * 1000
@@ -158,7 +160,8 @@ const server = Bun.serve<SocketData>({
       const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
       if (!session) return socket.close(4404, "Session not found")
       if (socket.data.mode === "pair") {
-        if (session.pairingSockets.size >= maxViewers + 2) return socket.close(4429, "Too many pairing attempts")
+        if (session.pairingSockets.size >= session.viewerLimit + 2)
+          return socket.close(4429, "Too many pairing attempts")
         session.pairingSockets.add(socket)
         return
       }
@@ -215,7 +218,7 @@ const server = Bun.serve<SocketData>({
       }
       if (message.joinToken !== session.joinToken) return socket.close(4403, "Invalid pairing link")
       pruneExpiredViewers(session)
-      if (session.viewers.size + session.pairs.size >= maxViewers) {
+      if (session.viewers.size + session.pairs.size >= session.viewerLimit) {
         socket.send(JSON.stringify({ type: "pair.error" }))
         return socket.close(4429, "Too many devices")
       }
@@ -310,6 +313,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         sessionID: session.id,
         hostToken: session.hostToken,
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
+        viewerLimit: session.viewerLimit,
       } satisfies RelayServerMessage),
     )
     if (!pruneExpiredViewers(session)) sendViewerState(session)
@@ -318,6 +322,9 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
 
   if (value.type === "session.create") {
     if (socket.data.sessionID) return socket.close(4400, "Session already exists")
+    if (value.viewerLimit !== undefined && !isViewerLimit(value.viewerLimit)) {
+      return socket.close(4400, "Invalid browser limit")
+    }
     const address = socket.data.clientIP ?? "unknown"
     const attempts = (createRates.get(address) ?? []).filter((time) => Date.now() - time < 60 * 60 * 1000)
     if (attempts.length >= 60 || sessions.size >= 2000) {
@@ -330,6 +337,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       id: randomToken(12),
       hostToken: randomToken(),
       joinToken: randomToken(),
+      viewerLimit: isViewerLimit(value.viewerLimit) ? value.viewerLimit : legacyViewerLimit,
       host: socket,
       pairingSockets: new Set(),
       pairs: new Map(),
@@ -346,6 +354,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         hostToken: session.hostToken,
         joinToken: session.joinToken,
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
+        viewerLimit: session.viewerLimit,
       } satisfies RelayServerMessage),
     )
     sendViewerState(session)
@@ -364,6 +373,14 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         type: "session.pong",
         ...(typeof value.pingID === "string" ? { pingID: value.pingID } : {}),
       } satisfies RelayServerMessage),
+    )
+    return
+  }
+  if (value.type === "session.limit.update") {
+    if (!isViewerLimit(value.viewerLimit)) return
+    session.viewerLimit = value.viewerLimit
+    socket.send(
+      JSON.stringify({ type: "session.limit.updated", viewerLimit: session.viewerLimit } satisfies RelayServerMessage),
     )
     return
   }
@@ -397,6 +414,14 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     if (value.type === "pair.deny") {
       pair.socket.send(JSON.stringify({ type: "pair.denied", pairID: value.pairID } satisfies RelayServerMessage))
       pair.socket.close(4403, "Request denied")
+      socket.send(JSON.stringify({ type: "pair.denied", pairID: value.pairID } satisfies RelayServerMessage))
+      return
+    }
+    if (session.viewers.size >= session.viewerLimit) {
+      pair.socket.send(
+        JSON.stringify({ type: "pair.error", message: "Browser limit reached" } satisfies RelayServerMessage),
+      )
+      pair.socket.close(4429, "Browser limit reached")
       socket.send(JSON.stringify({ type: "pair.denied", pairID: value.pairID } satisfies RelayServerMessage))
       return
     }

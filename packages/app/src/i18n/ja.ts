@@ -1024,7 +1024,19 @@ export const dict = {
   "remoteAccess.waitingDescription": "QR コードをスキャンしてください。新しい端末はここに表示され、承認を待ちます。",
   "remoteAccess.approve": "許可",
   "remoteAccess.deny": "拒否",
-  "remoteAccess.deviceCount": "許可済みブラウザー：{{count}} / 3",
+  "remoteAccess.deviceCount": "許可済みブラウザー：{{count}} / {{limit}}",
+  "remoteAccess.viewerLimitLabel": "ブラウザーの上限",
+  "remoteAccess.viewerLimitDescription":
+    "同時に許可するブラウザー数を設定します。上限を下げても既存の許可は取り消されません。",
+  "remoteAccess.viewerLimitRange": "1～100 の整数を入力してください。初期値は 10 です。",
+  "remoteAccess.viewerLimitSave": "保存",
+  "remoteAccess.viewerLimitSaving": "保存中…",
+  "remoteAccess.viewerLimitInvalid": "1～100 の整数を入力してください。",
+  "remoteAccess.viewerLimitSaveFailed": "ブラウザー数の上限を保存できませんでした。もう一度お試しください。",
+  "remoteAccess.viewerLimitRelayUnsupported":
+    "現在の Relay はブラウザー数のカスタム上限に対応していません。Relay を更新すると保存した上限が適用されます。",
+  "remoteAccess.viewerLimitOverCapacity":
+    "上限を下げても既存の許可は維持されます。新しいブラウザーを許可するには、既存の許可を取り消すか上限を上げてください。",
   "remoteAccess.authorizedTitle": "許可済みブラウザー",
   "remoteAccess.authorizedDescription":
     "ブラウザー情報は偽装できる参考情報であり、実際の端末を認証するものではありません。",

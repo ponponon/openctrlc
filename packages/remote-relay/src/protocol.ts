@@ -5,9 +5,18 @@ export type RelayWorkspaceSnapshot = {
   activeSessionID?: string
 }
 
+export const DEFAULT_VIEWER_LIMIT = 10
+export const MIN_VIEWER_LIMIT = 1
+export const MAX_VIEWER_LIMIT = 100
+
+export function isViewerLimit(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= MIN_VIEWER_LIMIT && value <= MAX_VIEWER_LIMIT
+}
+
 export type RelayHostMessage =
-  | { type: "session.create" }
+  | { type: "session.create"; viewerLimit: number }
   | { type: "session.resume"; sessionID: string; hostToken: string }
+  | { type: "session.limit.update"; sessionID: string; hostToken: string; viewerLimit: number }
   | { type: "session.ping"; pingID?: string }
   | { type: "session.stop"; sessionID: string; hostToken: string }
   | { type: "pair.rotate"; sessionID: string; hostToken: string }
@@ -34,8 +43,16 @@ export type RelayHostMessage =
   | { type: "socket.close"; id: string; code: number; reason: string }
 
 export type RelayServerMessage =
-  | { type: "session.created"; sessionID: string; hostToken: string; joinToken: string; url: string }
-  | { type: "session.resumed"; sessionID: string; hostToken: string; url: string }
+  | {
+      type: "session.created"
+      sessionID: string
+      hostToken: string
+      joinToken: string
+      url: string
+      viewerLimit: number
+    }
+  | { type: "session.resumed"; sessionID: string; hostToken: string; url: string; viewerLimit: number }
+  | { type: "session.limit.updated"; viewerLimit: number }
   | { type: "session.resume.error"; reason: "unavailable" | "invalid" }
   | { type: "pair.request"; pairID: string; device: string }
   | { type: "pair.approved"; pairID: string }

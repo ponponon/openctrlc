@@ -1,9 +1,10 @@
 import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
 import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitleGroup } from "@openctrlc/ui/v2/dialog-v2"
 import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
-import { createResource, For, onCleanup, onMount, Show, createSignal } from "solid-js"
+import { createEffect, createResource, For, on, onCleanup, onMount, Show, createSignal } from "solid-js"
 import { createStore, reconcile } from "solid-js/store"
 import QRCode from "qrcode"
+import { TextInputV2 } from "@openctrlc/ui/v2/text-input-v2"
 import { useLanguage } from "@/context/language"
 import { usePlatform, type RemoteAccessState } from "@/context/platform"
 import { useDialog } from "@openctrlc/ui/context/dialog"
@@ -12,6 +13,9 @@ const emptyState: RemoteAccessState = {
   status: "stopped",
   pendingRequests: [],
   authorizedDevices: 0,
+  viewerLimit: 10,
+  effectiveViewerLimit: 3,
+  viewerLimitSupported: false,
 }
 
 export function DialogRemoteAccess() {
@@ -23,6 +27,10 @@ export function DialogRemoteAccess() {
   const [copied, setCopied] = createSignal(false)
   const [revokingViewer, setRevokingViewer] = createSignal<string>()
   const [revokeFailed, setRevokeFailed] = createSignal(false)
+  const [viewerLimitDraft, setViewerLimitDraft] = createSignal(String(emptyState.viewerLimit))
+  const [viewerLimitInvalid, setViewerLimitInvalid] = createSignal(false)
+  const [viewerLimitSaveFailed, setViewerLimitSaveFailed] = createSignal(false)
+  const [savingViewerLimit, setSavingViewerLimit] = createSignal(false)
   const [qrCode] = createResource(
     () => state.url,
     (url) => QRCode.toDataURL(url, { errorCorrectionLevel: "Q", margin: 2, width: 264 }),
@@ -43,6 +51,13 @@ export function DialogRemoteAccess() {
     disposed = true
     unsubscribe?.()
   })
+
+  createEffect(
+    on(
+      () => state.viewerLimit,
+      (limit) => setViewerLimitDraft(String(limit)),
+    ),
+  )
 
   const copyLink = async () => {
     if (!state.url) return
@@ -70,6 +85,24 @@ export function DialogRemoteAccess() {
     }
   }
 
+  const saveViewerLimit = async () => {
+    const limit = Number(viewerLimitDraft())
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      setViewerLimitInvalid(true)
+      return
+    }
+    setSavingViewerLimit(true)
+    setViewerLimitInvalid(false)
+    setViewerLimitSaveFailed(false)
+    try {
+      await remoteAccess?.setViewerLimit(limit)
+    } catch {
+      setViewerLimitSaveFailed(true)
+    } finally {
+      setSavingViewerLimit(false)
+    }
+  }
+
   return (
     <Dialog size="large" fit containerClass="!w-[min(calc(100vw_-_32px),680px)]">
       <DialogHeader closeLabel={language.t("common.close")}>
@@ -79,6 +112,75 @@ export function DialogRemoteAccess() {
         />
       </DialogHeader>
       <DialogBody class="gap-3 px-4 py-4">
+        <Show when={remoteAccess}>
+          <section class="flex min-w-0 flex-wrap items-end justify-between gap-3 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-3">
+            <div class="min-w-0 flex-1">
+              <label for="remote-access-viewer-limit" class="text-14-medium text-v2-text-text-strong">
+                {language.t("remoteAccess.viewerLimitLabel")}
+              </label>
+              <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">
+                {language.t("remoteAccess.viewerLimitDescription")}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <TextInputV2
+                id="remote-access-viewer-limit"
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                inputMode="numeric"
+                numeric
+                class="w-20"
+                aria-label={language.t("remoteAccess.viewerLimitLabel")}
+                aria-describedby="remote-access-viewer-limit-help"
+                invalid={viewerLimitInvalid()}
+                value={viewerLimitDraft()}
+                onInput={(event) => {
+                  setViewerLimitDraft(event.currentTarget.value)
+                  setViewerLimitInvalid(false)
+                  setViewerLimitSaveFailed(false)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return
+                  event.preventDefault()
+                  void saveViewerLimit()
+                }}
+              />
+              <ButtonV2
+                size="small"
+                variant="outline"
+                disabled={savingViewerLimit() || Number(viewerLimitDraft()) === state.viewerLimit}
+                onClick={() => void saveViewerLimit()}
+              >
+                {language.t(savingViewerLimit() ? "remoteAccess.viewerLimitSaving" : "remoteAccess.viewerLimitSave")}
+              </ButtonV2>
+            </div>
+            <p id="remote-access-viewer-limit-help" class="w-full text-12-regular leading-5 text-v2-text-text-muted">
+              {language.t("remoteAccess.viewerLimitRange")}
+            </p>
+            <Show when={viewerLimitInvalid()}>
+              <p class="w-full text-12-regular leading-5 text-v2-state-fg-danger" role="alert">
+                {language.t("remoteAccess.viewerLimitInvalid")}
+              </p>
+            </Show>
+            <Show when={viewerLimitSaveFailed()}>
+              <p class="w-full text-12-regular leading-5 text-v2-state-fg-danger" role="alert">
+                {language.t("remoteAccess.viewerLimitSaveFailed")}
+              </p>
+            </Show>
+            <Show when={state.status === "active" && !state.viewerLimitSupported}>
+              <p class="w-full text-12-regular leading-5 text-v2-state-fg-warning" role="status">
+                {language.t("remoteAccess.viewerLimitRelayUnsupported")}
+              </p>
+            </Show>
+            <Show when={state.authorizedDevices >= state.effectiveViewerLimit}>
+              <p class="w-full text-12-regular leading-5 text-v2-state-fg-warning" role="status">
+                {language.t("remoteAccess.viewerLimitOverCapacity")}
+              </p>
+            </Show>
+          </section>
+        </Show>
         <Show when={state.status === "active"}>
           <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-v2-state-bg-success px-3 py-2.5">
             <span
@@ -90,7 +192,10 @@ export function DialogRemoteAccess() {
               {language.t("remoteAccess.active")}
             </span>
             <span class="text-12-regular text-v2-state-fg-success">
-              {language.t("remoteAccess.deviceCount", { count: state.authorizedDevices })}
+              {language.t("remoteAccess.deviceCount", {
+                count: state.authorizedDevices,
+                limit: state.effectiveViewerLimit,
+              })}
             </span>
           </div>
           <Show when={state.pendingRequests.length > 0}>
@@ -116,7 +221,11 @@ export function DialogRemoteAccess() {
                         </p>
                       </div>
                       <div class="flex shrink-0 flex-wrap gap-2">
-                        <ButtonV2 size="small" onClick={() => remoteAccess?.approve(request.id)}>
+                        <ButtonV2
+                          size="small"
+                          disabled={state.authorizedDevices >= state.effectiveViewerLimit}
+                          onClick={() => remoteAccess?.approve(request.id)}
+                        >
                           {language.t("remoteAccess.approve")}
                         </ButtonV2>
                         <ButtonV2 size="small" variant="ghost" onClick={() => remoteAccess?.deny(request.id)}>

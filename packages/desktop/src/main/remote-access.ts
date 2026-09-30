@@ -1,6 +1,15 @@
-import { decodeBase64, encodeBase64, randomToken, relayMessage } from "@openctrlc/remote-relay/protocol"
+import {
+  decodeBase64,
+  DEFAULT_VIEWER_LIMIT,
+  encodeBase64,
+  isViewerLimit,
+  randomToken,
+  relayMessage,
+} from "@openctrlc/remote-relay/protocol"
 import type { RemoteAccessPairRequest, RemoteAccessState, RemoteWorkspaceSnapshot } from "@openctrlc/app"
 import type { ServerReadyData } from "../preload/types"
+import { getStore } from "./store"
+import { REMOTE_ACCESS_VIEWER_LIMIT_KEY } from "./store-keys"
 
 type InboundHTTP = {
   controller?: ReadableStreamDefaultController<Uint8Array>
@@ -11,11 +20,19 @@ const heartbeatInterval = 30_000
 const heartbeatTimeout = 90_000
 const reconnectGrace = 3 * 60_000
 const reconnectDelays = [1_000, 2_000, 4_000, 8_000, 10_000]
+const legacyViewerLimit = 3
 
 class RemoteSessionUnavailable extends Error {}
 
 export class RemoteAccessService {
-  #state: RemoteAccessState = { status: "stopped", pendingRequests: [], authorizedDevices: 0 }
+  #state: RemoteAccessState = {
+    status: "stopped",
+    pendingRequests: [],
+    authorizedDevices: 0,
+    viewerLimit: DEFAULT_VIEWER_LIMIT,
+    effectiveViewerLimit: legacyViewerLimit,
+    viewerLimitSupported: false,
+  }
   #listeners = new Set<(state: RemoteAccessState) => void>()
   #socket?: WebSocket
   #heartbeat?: ReturnType<typeof setInterval>
@@ -38,11 +55,16 @@ export class RemoteAccessService {
   #generation = 0
   #workspace?: RemoteWorkspaceSnapshot
   #workspaceJSON?: string
+  #viewerLimit = DEFAULT_VIEWER_LIMIT
 
   constructor(
     private readonly getServer: () => Promise<ServerReadyData>,
     private readonly onError: (error: unknown) => void,
-  ) {}
+  ) {
+    const savedLimit = getStore().get(REMOTE_ACCESS_VIEWER_LIMIT_KEY)
+    this.#viewerLimit = isViewerLimit(savedLimit) ? savedLimit : DEFAULT_VIEWER_LIMIT
+    this.#state = { ...this.#state, viewerLimit: this.#viewerLimit }
+  }
 
   getState() {
     return this.#state
@@ -87,7 +109,14 @@ export class RemoteAccessService {
     const generation = ++this.#generation
     this.#clearReconnect()
     this.#notifiedPairRequests.clear()
-    this.#setState({ status: "connecting", pendingRequests: [], authorizedDevices: 0 })
+    this.#setState({
+      status: "connecting",
+      pendingRequests: [],
+      authorizedDevices: 0,
+      viewerLimit: this.#viewerLimit,
+      effectiveViewerLimit: legacyViewerLimit,
+      viewerLimitSupported: false,
+    })
     this.#starting = this.#start(generation).finally(() => {
       this.#starting = undefined
     })
@@ -110,7 +139,14 @@ export class RemoteAccessService {
     } else if (sessionID && hostToken) {
       stopRequest = this.#sendStopOnNewSocket(sessionID, hostToken)
     }
-    this.#setState({ status: "stopped", pendingRequests: [], authorizedDevices: 0 })
+    this.#setState({
+      status: "stopped",
+      pendingRequests: [],
+      authorizedDevices: 0,
+      viewerLimit: this.#viewerLimit,
+      effectiveViewerLimit: legacyViewerLimit,
+      viewerLimitSupported: false,
+    })
     this.#socket = undefined
     this.#sessionID = undefined
     this.#hostToken = undefined
@@ -122,6 +158,18 @@ export class RemoteAccessService {
     this.#localSockets.clear()
     if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, "Remote access stopped")
     await stopRequest
+  }
+
+  setViewerLimit(limit: number) {
+    if (!isViewerLimit(limit)) return Promise.reject(new Error("Browser limit must be between 1 and 100"))
+    if (limit === this.#viewerLimit) return Promise.resolve()
+    getStore().set(REMOTE_ACCESS_VIEWER_LIMIT_KEY, limit)
+    this.#viewerLimit = limit
+    this.#setState({ ...this.#state, viewerLimit: limit })
+    if (this.#state.status === "active" && this.#state.viewerLimitSupported) {
+      this.#send({ type: "session.limit.update", viewerLimit: limit })
+    }
+    return Promise.resolve()
   }
 
   #sendStopOnNewSocket(sessionID: string, hostToken: string) {
@@ -219,6 +267,9 @@ export class RemoteAccessService {
           status: "error",
           pendingRequests: [],
           authorizedDevices: 0,
+          viewerLimit: this.#viewerLimit,
+          effectiveViewerLimit: legacyViewerLimit,
+          viewerLimitSupported: false,
           error: error instanceof Error ? error.message : "Could not start remote access",
         })
       }
@@ -242,7 +293,7 @@ export class RemoteAccessService {
         reject(error)
       }
       timeout = setTimeout(() => fail(new Error("Relay connection timed out")), resume ? 12_000 : 20_000)
-      const activate = (url: string) => {
+      const activate = (url: string, relayViewerLimit: unknown) => {
         if (generation !== this.#generation || this.#state.status === "stopped") {
           fail(new Error("Mobile access stopped"))
           return
@@ -252,8 +303,20 @@ export class RemoteAccessService {
         clearTimeout(timeout)
         this.#notifiedPairRequests.clear()
         this.#clearReconnect()
-        this.#setState({ status: "active", url, pendingRequests: [], authorizedDevices: 0 })
+        const viewerLimitSupported = isViewerLimit(relayViewerLimit)
+        this.#setState({
+          status: "active",
+          url,
+          pendingRequests: [],
+          authorizedDevices: 0,
+          viewerLimit: this.#viewerLimit,
+          effectiveViewerLimit: viewerLimitSupported ? relayViewerLimit : legacyViewerLimit,
+          viewerLimitSupported,
+        })
         this.#startHeartbeat(socket)
+        if (resume && viewerLimitSupported && relayViewerLimit !== this.#viewerLimit) {
+          this.#send({ type: "session.limit.update", viewerLimit: this.#viewerLimit })
+        }
         if (this.#workspace) this.#send({ type: "workspace.update", workspace: this.#workspace })
         resolve()
       }
@@ -269,7 +332,7 @@ export class RemoteAccessService {
               JSON.stringify(
                 resume
                   ? { type: "session.resume", sessionID: this.#sessionID, hostToken: this.#hostToken }
-                  : { type: "session.create" },
+                  : { type: "session.create", viewerLimit: this.#viewerLimit },
               ),
             )
           } catch {
@@ -304,7 +367,7 @@ export class RemoteAccessService {
           }
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
-          activate(message.url)
+          activate(message.url, message.viewerLimit)
           return
         }
         if (resume && message.type === "session.resumed") {
@@ -316,7 +379,7 @@ export class RemoteAccessService {
             fail(new RemoteSessionUnavailable("The relay could not restore the previous session"))
             return
           }
-          activate(message.url)
+          activate(message.url, message.viewerLimit)
           return
         }
         if (resume && message.type === "session.resume.error") {
@@ -372,7 +435,15 @@ export class RemoteAccessService {
       this.#scheduleReconnect(generation)
       return
     }
-    this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: reason })
+    this.#setState({
+      status: "error",
+      pendingRequests: [],
+      authorizedDevices: 0,
+      viewerLimit: this.#viewerLimit,
+      effectiveViewerLimit: legacyViewerLimit,
+      viewerLimitSupported: false,
+      error: reason,
+    })
     this.onError(new Error(reason))
   }
 
@@ -421,7 +492,15 @@ export class RemoteAccessService {
     this.#server = undefined
     this.#notifiedPairRequests.clear()
     const error = "Could not restore the remote session"
-    this.#setState({ status: "error", pendingRequests: [], authorizedDevices: 0, error: "reconnect-failed" })
+    this.#setState({
+      status: "error",
+      pendingRequests: [],
+      authorizedDevices: 0,
+      viewerLimit: this.#viewerLimit,
+      effectiveViewerLimit: legacyViewerLimit,
+      viewerLimitSupported: false,
+      error: "reconnect-failed",
+    })
     this.onError(new Error(error))
   }
 
@@ -460,6 +539,14 @@ export class RemoteAccessService {
   }
 
   #handleMessage(message: Record<string, unknown>) {
+    if (message.type === "session.limit.updated" && isViewerLimit(message.viewerLimit)) {
+      this.#setState({
+        ...this.#state,
+        effectiveViewerLimit: message.viewerLimit,
+        viewerLimitSupported: true,
+      })
+      return
+    }
     if (message.type === "session.pong") {
       if (typeof message.pingID === "string") this.#pendingPings.delete(message.pingID)
       else this.#pendingPings.clear()
@@ -473,7 +560,7 @@ export class RemoteAccessService {
         if (typeof device.device !== "string" || device.device.length > 80) return []
         return [{ id: device.id, device: device.device }]
       })
-      this.#setState({ ...this.#state, authorizedDevices: Math.min(3, authorizedViewers.length), authorizedViewers })
+      this.#setState({ ...this.#state, authorizedDevices: authorizedViewers.length, authorizedViewers })
       return
     }
     if (
@@ -510,7 +597,7 @@ export class RemoteAccessService {
       return
     }
     if (message.type === "viewer.count" && typeof message.count === "number") {
-      this.#setState({ ...this.#state, authorizedDevices: Math.min(3, Math.max(0, Math.floor(message.count))) })
+      this.#setState({ ...this.#state, authorizedDevices: Math.max(0, Math.floor(message.count)) })
       return
     }
     if (message.type === "pair.rotated" && typeof message.url === "string") {
