@@ -24,6 +24,9 @@ services:
       HOST: 0.0.0.0
       PORT: 4097
       OPENCTRLC_REMOTE_PUBLIC_URL: https://openctrlc-remote.quniv.cn
+      OPENCTRLC_REMOTE_DATA_DIR: /data
+    volumes:
+      - ./data:/data
     ports:
       - "127.0.0.1:4097:4097"
     healthcheck:

@@ -2245,7 +2245,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - Desktop 主进程通过 WSS 建立 Relay 会话，并由主进程把获批浏览器的 HTTP 流和 WebSocket 流转发到本机回环地址；本地 Basic Auth 凭据只在桌面主进程与本地服务器之间使用。WebSocket 本地连接使用 OpenCtrlC 的 `auth_token` 查询参数认证，不把凭据发给手机或 Relay。
 - Relay 提供短时配对链接；配对秘密只放在 URL fragment 中。新浏览器必须在桌面端批准后才获得 HttpOnly、Secure、SameSite=Strict 的 bearer cookie。每个会话默认允许 10 个浏览器授权，桌面端可自定义 1–100 个；降低上限不会撤销已有授权，但达到上限后 Relay 会阻止新的配对和批准。旧版桌面客户端未发送上限时仍使用 3 个浏览器的兼容限制。桌面保持手机访问开启时，会话随主机 WSS 连接持续有效。桌面每 30 秒发送带 ID 的应用心跳，90 秒未收到匹配响应就关闭失联连接并显示错误；系统睡眠期间暂停心跳，唤醒后立即重新探测，避免睡眠时间被误判为网络故障。浏览器授权采用 30 天未使用过期策略，每次请求都会续期；只有显式“停止访问”或 Relay 重启会撤销会话授权。
-- 桌面退出/重启不再销毁 Relay 会话：`sessionID`/`hostToken` 持久化在桌面设置中，退出时仅断开 WSS（detach），Relay 将带已授权浏览器的会话保留最长 30 天（无授权浏览器的空会话保留 1 小时）。下次启动若手机访问曾开启则自动 `session.resume` 恢复原会话，已授权浏览器无需重新扫码批准；`session.resume.error` 或旧 Relay 超时后回退新建会话。
+- 桌面退出/重启不再销毁 Relay 会话：`sessionID`/`hostToken` 持久化在桌面设置中，退出时仅断开 WSS（detach），Relay 将带已授权浏览器的会话保留最长 30 天（无授权浏览器的空会话保留 1 小时）。下次启动若手机访问曾开启或存在已存会话则自动 `session.resume` 恢复原会话，已授权浏览器无需重新扫码批准；`session.resume.error` 或旧 Relay 超时后回退新建会话。`start()` 一被调用就写入 `remoteAccessEnabled=true`，避免连接失败导致重启后又变成关闭。
+- Relay 会话与浏览器授权落盘到 `OPENCTRLC_REMOTE_DATA_DIR`（部署为 `/home/pon/openctrlc-remote/data/remote-sessions.json`），SIGTERM 时先写盘再停服，重启后自动恢复授权；不再因 Relay 发版/重启而强制所有浏览器重新扫码。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - Renderer 收到旧版桌面主进程 IPC 状态时，缺失的授权上限字段回退为默认 10 和旧 Relay 容量 3，避免数字输入为空或显示 `undefined`。
 - 桌面可查看已批准浏览器并逐个撤销授权。Relay 仅向桌面提供随机授权 ID 和根据 User-Agent 生成的浏览器提示，不向 UI 暴露 bearer token；浏览器提示可伪造，不能作为真实设备身份验证。撤销后 Relay 会删除对应授权并关闭该浏览器现有 WebSocket。

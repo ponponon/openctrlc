@@ -69,16 +69,27 @@ export class RemoteAccessService {
     const store = getStore()
     const savedLimit = store.get(REMOTE_ACCESS_VIEWER_LIMIT_KEY)
     this.#viewerLimit = isViewerLimit(savedLimit) ? savedLimit : DEFAULT_VIEWER_LIMIT
-    this.#state = { ...this.#state, viewerLimit: this.#viewerLimit }
     const savedSession = readPersistedSession()
     if (savedSession) {
       this.#sessionID = savedSession.sessionID
       this.#hostToken = savedSession.hostToken
     }
+    // Surface "coming back up" immediately so a remembered-on session never looks switched off.
+    const restore = this.isEnabled() || Boolean(savedSession)
+    this.#state = {
+      ...this.#state,
+      viewerLimit: this.#viewerLimit,
+      ...(restore ? { status: "connecting" as const } : {}),
+    }
   }
 
   isEnabled() {
     return getStore().get(REMOTE_ACCESS_ENABLED_KEY) === true
+  }
+
+  /** Mobile access should come back after relaunch once it has been on. */
+  shouldAutoStart() {
+    return this.isEnabled() || Boolean(this.#sessionID && this.#hostToken)
   }
 
   getState() {
@@ -124,6 +135,9 @@ export class RemoteAccessService {
     const generation = ++this.#generation
     this.#clearReconnect()
     this.#notifiedPairRequests.clear()
+    // Remember the intent as soon as start is requested so relaunch keeps bringing access back,
+    // even if this particular connection attempt fails.
+    getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
     this.#setState({
       status: "connecting",
       pendingRequests: [],
@@ -302,12 +316,20 @@ export class RemoteAccessService {
 
   async #start(generation: number) {
     try {
-      this.#server = await this.getServer()
+      this.#server = await withTimeout(this.getServer(), 45_000, "Local server startup timed out")
       if (generation !== this.#generation || this.#state.status === "stopped") return this.#state
       const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+      if (!this.#sessionID || !this.#hostToken) {
+        const saved = readPersistedSession()
+        if (saved) {
+          this.#sessionID = saved.sessionID
+          this.#hostToken = saved.hostToken
+        }
+      }
       if (this.#sessionID && this.#hostToken) {
         try {
           await this.#connect(relay, generation, true)
+          persistSession({ sessionID: this.#sessionID, hostToken: this.#hostToken })
           getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
           return this.#state
         } catch (error) {
@@ -557,7 +579,16 @@ export class RemoteAccessService {
     } catch (error) {
       if (generation !== this.#generation || this.#state.status !== "reconnecting") return
       if (error instanceof RemoteSessionUnavailable) {
-        this.#endReconnect(generation)
+        // Relay no longer has this session; create a replacement instead of parking on an error.
+        this.#sessionID = undefined
+        this.#hostToken = undefined
+        persistSession(undefined)
+        try {
+          await this.#connect(relay, generation, false)
+          getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
+        } catch {
+          this.#endReconnect(generation)
+        }
         return
       }
       this.#scheduleReconnect(generation)
@@ -985,4 +1016,20 @@ function persistSession(session: { sessionID: string; hostToken: string } | unde
   const store = getStore()
   if (session) store.set(REMOTE_ACCESS_SESSION_KEY, session)
   else store.delete(REMOTE_ACCESS_SESSION_KEY)
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
 }

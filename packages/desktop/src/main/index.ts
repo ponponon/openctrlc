@@ -286,7 +286,7 @@ const main = Effect.gen(function* () {
   app.setAsDefaultProtocolClient(Brand.urlScheme)
   registerRendererProtocol()
   setDockIcon()
-  if (remoteAccess.isEnabled()) void remoteAccess.start().catch(() => undefined)
+  if (remoteAccess.shouldAutoStart()) void remoteAccess.start().catch(() => undefined)
   const updater = setupAutoUpdater(stopSidecars)
   const menuDeps = {
     trigger: (id: string) => {

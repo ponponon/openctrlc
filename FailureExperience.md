@@ -1037,3 +1037,7 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 ## 二进制帧 ID 字段必须装下 streamID 全文
 
 `randomToken(12)` 是 12 个随机字节，base64 后是 16 个字符；`encodeBinaryFrame` 按 `BINARY_FRAME_ID_BYTES=12` 硬截断，Relay 拿截断 ID 去 `responses.get(id)` 永远查不到，响应分片被静默丢弃，浏览器拿到空 HTML 白屏。healthz 上 `viewerOut=0` 而 `hostIn` 正常增长就是这个特征。以后凡是把 ID 放进定长帧头，必须先量 `id.length`，并让生成函数保证长度（`streamID()` = `randomToken(9)` = 12 字符），编解码两侧共用同一常量；发现帧查不到目标时要打日志，不能静默 return。
+
+## Relay 会话与浏览器授权不能只放内存
+
+把 session/viewers 只存在 Relay 进程内存里，任何发版、容器重建、进程重启都会清空全部浏览器授权；桌面 resume 会拿到 `session.resume.error` 并新建会话，用户表现就是“每次重启 Desktop 都要重新扫码”。以后凡是“设备授权应当跨进程存活”的状态，必须在 Relay 落盘（本项目是 `remote-sessions.json`）并在 SIGTERM 时先写盘再退出；compose 要挂可写数据卷，且注意容器 `user=65532` 对宿主目录的写权限。桌面端 `#endReconnect` 清掉内存凭据后，`start()` 必须能从 store 再读回来，否则一次失败就会永久丢掉 resume 能力。

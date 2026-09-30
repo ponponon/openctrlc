@@ -12,6 +12,7 @@ import {
   type RelayServerMessage,
   type RelayWorkspaceSnapshot,
 } from "./protocol"
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -94,6 +95,106 @@ const hostReconnectGraceWithViewers = viewerLifetime
 const sessions = new Map<string, RelaySession>()
 const viewerTokens = new Map<string, ViewerGrant>()
 const createRates = new Map<string, number[]>()
+const dataDir = process.env.OPENCTRLC_REMOTE_DATA_DIR?.trim() || ""
+const stateFile = dataDir ? `${dataDir}/remote-sessions.json` : ""
+let persistTimer: ReturnType<typeof setTimeout> | undefined
+
+function schedulePersist() {
+  if (!stateFile) return
+  if (persistTimer) return
+  persistTimer = setTimeout(() => {
+    persistTimer = undefined
+    persistState()
+  }, 250)
+}
+
+function persistState() {
+  if (!stateFile) return
+  const payload = {
+    version: 1,
+    savedAt: Date.now(),
+    sessions: [...sessions.values()].map((session) => ({
+      id: session.id,
+      hostToken: session.hostToken,
+      joinToken: session.joinToken,
+      viewerLimit: session.viewerLimit,
+      binaryChunks: session.binaryChunks,
+      workspace: session.workspace,
+      viewers: [...session.viewers.entries()].map(([token, grant]) => ({
+        token,
+        id: grant.id,
+        device: grant.device,
+        expiresAt: grant.expiresAt,
+      })),
+    })),
+  }
+  try {
+    mkdirSync(dataDir, { recursive: true })
+    const tmp = `${stateFile}.tmp`
+    writeFileSync(tmp, JSON.stringify(payload))
+    renameSync(tmp, stateFile)
+  } catch (error) {
+    console.error("failed to persist relay sessions", error)
+  }
+}
+
+function restoreState() {
+  if (!stateFile) return
+  let raw: string
+  try {
+    raw = readFileSync(stateFile, "utf8")
+  } catch {
+    return
+  }
+  try {
+    const parsed = JSON.parse(raw) as {
+      sessions?: Array<{
+        id?: string
+        hostToken?: string
+        joinToken?: string
+        viewerLimit?: number
+        binaryChunks?: boolean
+        workspace?: RelayWorkspaceSnapshot
+        viewers?: Array<{ token?: string; id?: string; device?: string; expiresAt?: number }>
+      }>
+    }
+    const now = Date.now()
+    for (const item of parsed.sessions ?? []) {
+      if (!item.id || !item.hostToken || !item.joinToken) continue
+      const session: RelaySession = {
+        id: item.id,
+        hostToken: item.hostToken,
+        joinToken: item.joinToken,
+        viewerLimit: isViewerLimit(item.viewerLimit) ? item.viewerLimit : legacyViewerLimit,
+        binaryChunks: item.binaryChunks === true,
+        traffic: { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 },
+        pairingSockets: new Set(),
+        pairs: new Map(),
+        viewers: new Map(),
+        responses: new Map(),
+        sockets: new Map(),
+        workspace: item.workspace,
+      }
+      for (const viewer of item.viewers ?? []) {
+        if (!viewer.token || !viewer.id || !viewer.expiresAt || viewer.expiresAt <= now) continue
+        const grant: ViewerGrant = {
+          session,
+          id: viewer.id,
+          device: viewer.device ?? "Browser",
+          expiresAt: viewer.expiresAt,
+        }
+        session.viewers.set(viewer.token, grant)
+        viewerTokens.set(viewer.token, grant)
+      }
+      const grace = session.viewers.size > 0 ? hostReconnectGraceWithViewers : hostReconnectGrace
+      session.resumeUntil = now + grace
+      sessions.set(session.id, session)
+    }
+    console.log(`restored ${sessions.size} relay sessions from ${stateFile}`)
+  } catch (error) {
+    console.error("failed to restore relay sessions", error)
+  }
+}
 
 const server = Bun.serve<SocketData>({
   hostname: process.env.HOST ?? "0.0.0.0",
@@ -307,6 +408,7 @@ const server = Bun.serve<SocketData>({
   },
 })
 
+restoreState()
 console.log(`OpenCtrlC Remote Relay listening on ${server.hostname}:${server.port}`)
 
 async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value: Record<string, unknown>) {
@@ -390,6 +492,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     }
     socket.data.sessionID = session.id
     sessions.set(session.id, session)
+    schedulePersist()
     socket.send(
       JSON.stringify({
         type: "session.created",
@@ -478,6 +581,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     }
     session.viewers.set(pair.viewerToken, grant)
     viewerTokens.set(pair.viewerToken, grant)
+    schedulePersist()
     pair.socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID, viewerToken: pair.viewerToken }))
     pair.socket.close(1000, "Approved")
     socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID } satisfies RelayServerMessage))
@@ -498,7 +602,10 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
   if (value.type === "workspace.update") {
     const workspace = validateWorkspaceSnapshot(value.workspace)
-    if (workspace) session.workspace = workspace
+    if (workspace) {
+      session.workspace = workspace
+      schedulePersist()
+    }
     return
   }
   if (value.type === "pair.received" && typeof value.pairID === "string") {
@@ -832,6 +939,7 @@ function viewerCookie(token: string) {
 function removeViewer(session: RelaySession, token: string, reason = "Browser authorization expired") {
   session.viewers.delete(token)
   if (viewerTokens.get(token)?.session === session) viewerTokens.delete(token)
+  schedulePersist()
   for (const [id, socket] of session.sockets) {
     if (socket.data.viewerToken !== token) continue
     session.sockets.delete(id)
@@ -848,6 +956,7 @@ function touchViewer(session: RelaySession, token: string) {
     return false
   }
   grant.expiresAt = Date.now() + viewerLifetime
+  schedulePersist()
   return true
 }
 
@@ -985,6 +1094,7 @@ function deleteSession(session: RelaySession) {
   if (session.resumeTimer) clearTimeout(session.resumeTimer)
   sessions.delete(session.id)
   for (const [token, value] of viewerTokens) if (value.session === session) viewerTokens.delete(token)
+  schedulePersist()
   for (const socket of session.pairingSockets) socket.close(4404, "Session ended")
   for (const socket of session.sockets.values()) socket.close(4404, "Session ended")
   for (const response of session.responses.values()) {
@@ -1169,7 +1279,10 @@ setInterval(() => {
 }, 60_000)
 
 async function closeServer() {
-  for (const session of sessions.values()) deleteSession(session)
+  // Keep session/viewer grants on disk so a Relay restart restores browser auth.
+  if (persistTimer) clearTimeout(persistTimer)
+  persistTimer = undefined
+  persistState()
   server.stop(true)
 }
 
