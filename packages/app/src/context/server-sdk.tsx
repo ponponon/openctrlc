@@ -219,6 +219,7 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
   const FLUSH_FRAME_MS = 16
   const STREAM_YIELD_MS = 8
   const RECONNECT_DELAY_MS = 250
+  const RECONNECT_DELAY_MAX_MS = 5_000
 
   let queue: Queued[] = []
   let buffer: Queued[] = []
@@ -283,12 +284,14 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
     const previous = run
     const current = (async () => {
       if (previous) await previous
+      let reconnectFailures = 0
       // oxlint-disable-next-line no-unmodified-loop-condition -- `started` is set to false by stop() which also aborts; both flags are checked to allow graceful exit
       while (!abort.signal.aborted && started && generation === active) {
         attempt = new AbortController()
         const onAbort = () => {
           attempt?.abort()
         }
+        const attemptStarted = Date.now()
         abort.signal.addEventListener("abort", onAbort)
         try {
           const kind = await protocol
@@ -330,7 +333,12 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
         }
 
         if (abort.signal.aborted || !started || generation !== active) return
-        await wait(RECONNECT_DELAY_MS)
+        // Stay snappy after a healthy stream, but back off when the stream keeps dying
+        // right away so a remote relay is not hammered with reconnect requests.
+        if (Date.now() - attemptStarted > 5_000) reconnectFailures = 0
+        const delay = Math.min(RECONNECT_DELAY_MS * 2 ** reconnectFailures, RECONNECT_DELAY_MAX_MS)
+        reconnectFailures += 1
+        await wait(delay)
       }
     })().finally(() => {
       if (run !== current) return
