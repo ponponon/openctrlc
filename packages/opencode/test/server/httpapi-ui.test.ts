@@ -333,6 +333,31 @@ describe("HttpApi UI fallback", () => {
     }),
   )
 
+  it.live("resolves bundle-relative embedded files against the module directory", () =>
+    Effect.gen(function* () {
+      let readPath: string | undefined
+      const fs = yield* FSUtil.Service
+      const response = yield* serveEmbeddedUIEffect(
+        "/",
+        {
+          ...fs,
+          readFile: (path) => {
+            readPath = path
+            return path.endsWith("index-rel.html")
+              ? Effect.succeed(new TextEncoder().encode("<html>rel</html>"))
+              : Effect.die(`unexpected path ${path}`)
+          },
+        },
+        { "index.html": "./index-rel.html" },
+      ).pipe(Effect.map(HttpServerResponse.toWeb))
+
+      expect(response.status).toBe(200)
+      expect(readPath).toBeDefined()
+      expect(readPath!.endsWith("index-rel.html")).toBe(true)
+      expect(yield* responseText(response)).toBe("<html>rel</html>")
+    }),
+  )
+
   it.live("serves embedded UI assets when Bun can read them but access reports missing", () =>
     Effect.gen(function* () {
       let readPath: string | undefined

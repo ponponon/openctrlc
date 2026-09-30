@@ -80,7 +80,9 @@ type ViewerGrant = {
 const port = Number(process.env.PORT ?? 4097)
 const publicURL = new URL(process.env.OPENCTRLC_REMOTE_PUBLIC_URL ?? "https://openctrlc-remote.quniv.cn")
 const maxRequestBytes = 16 * 1024 * 1024
-const maxPendingRequests = 64
+// Workspace restore fans out per-project bootstrap calls; keep headroom so a
+// freshly approved browser does not get 429 while hydrating the sidebar.
+const maxPendingRequests = 256
 const maxSockets = 32
 const maxSocketQueueBytes = 512 * 1024
 const maxSessionCreationsPerIPPerHour = 60

@@ -15,9 +15,10 @@ export const UI_UPSTREAM = new URL("https://app.opencode.ai")
 // break embedded UI reads.
 const bundleDir = path.dirname(fileURLToPath(import.meta.url))
 
-function resolveEmbeddedFile(file: string) {
-  if (file.startsWith("./") || file.startsWith("../")) return path.join(bundleDir, file)
-  return file
+function resolveEmbeddedFileCandidates(file: string) {
+  if (!file.startsWith("./") && !file.startsWith("../")) return [file]
+  const name = file.replace(/^\.\//, "")
+  return [path.join(bundleDir, name), path.join(bundleDir, "chunks", name), path.join(bundleDir, "..", "chunks", name)]
 }
 
 export const csp = (hash = "") =>
@@ -80,11 +81,20 @@ export function serveEmbeddedUIEffect(
 ) {
   const mapped = embeddedWebUI[requestPath.replace(/^\//, "")] ?? embeddedWebUI["index.html"] ?? null
   if (!mapped) return Effect.succeed(notFound())
-  const file = resolveEmbeddedFile(mapped)
+  const candidates = resolveEmbeddedFileCandidates(mapped)
+  return readFirstEmbedded(fs, candidates).pipe(Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : notFound())))
+}
 
+function readFirstEmbedded(
+  fs: FSUtil.Interface,
+  candidates: string[],
+  index = 0,
+): Effect.Effect<{ file: string; body: Uint8Array } | undefined> {
+  if (index >= candidates.length) return Effect.succeed(undefined)
+  const file = candidates[index]!
   return fs.readFile(file).pipe(
-    Effect.map((body) => embeddedUIResponse(file, body)),
-    Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(notFound())),
+    Effect.map((body) => ({ file, body })),
+    Effect.catchReason("PlatformError", "NotFound", () => readFirstEmbedded(fs, candidates, index + 1)),
   )
 }
 

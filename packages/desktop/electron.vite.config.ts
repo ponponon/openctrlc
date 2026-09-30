@@ -72,9 +72,15 @@ const require = __cjs_mod__.createRequire(import.meta.url);
       {
         name: "openctrlc:copy-server-assets",
         async writeBundle() {
+          // Bun file-import URLs are bundle-relative (./index-*.html). The sidecar
+          // bundle lives in out/main[/chunks], so every embedded asset must land next
+          // to it — not only .wasm.
+          const dests = ["./out/main", "./out/main/chunks"]
+          for (const dest of dests) await fs.mkdir(dest, { recursive: true })
           for (const l of await fs.readdir(OPENCTRLC_SERVER_DIST)) {
-            if (!l.endsWith(".wasm")) continue
-            await fs.writeFile(`./out/main/chunks/${l}`, await fs.readFile(`${OPENCTRLC_SERVER_DIST}/${l}`))
+            if (l.endsWith(".map") || l === "node.js") continue
+            const bytes = await fs.readFile(`${OPENCTRLC_SERVER_DIST}/${l}`)
+            for (const dest of dests) await fs.writeFile(`${dest}/${l}`, bytes)
           }
         },
       },
