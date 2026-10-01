@@ -68,11 +68,20 @@ import { createSessionLineage } from "@/pages/session/session-lineage"
 import { showToast } from "@/utils/toast"
 import { showOpenCodeImportDialog } from "@/utils/opencode-import-dialog"
 import { decode64 } from "@/utils/base64"
-
-import { SessionPage, SessionRouteErrorBoundary, TargetSessionRouteContent } from "@/pages/session"
 import { NewHome } from "@/pages/home"
 import { LegacyHome } from "@/pages/home/legacy-home"
 
+// Session chrome (timeline, diffs, composer, terminal) is the bulk of the bundle.
+// Keep it out of the remote first paint; only load when a session route mounts.
+const SessionRouteView = lazy(() =>
+  import("@/pages/session-route-view").then((m) => ({ default: m.SessionRouteView })),
+)
+const TargetSessionRouteView = lazy(() =>
+  import("@/pages/session-route-view").then((m) => ({ default: m.TargetSessionRouteView })),
+)
+const SessionBoundary = lazy(() =>
+  import("@/pages/session-route-view").then((m) => ({ default: m.SessionBoundary })),
+)
 const NewSession = lazy(() => import("@/pages/new-session"))
 
 const setDesktopTitlebar = (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => {
@@ -113,11 +122,7 @@ const SessionRoute = () => {
     tabs.newDraft({ server: server.key, directory: sdk().directory }, search.prompt)
   })
 
-  return (
-    <SessionRouteErrorBoundary sessionID={params.id}>
-      <SessionPage />
-    </SessionRouteErrorBoundary>
-  )
+  return <SessionRouteView sessionID={params.id} />
 }
 
 function TargetServerRoute(props: ParentProps) {
@@ -142,7 +147,7 @@ function TargetServerRoute(props: ParentProps) {
 
 const TargetSessionRoute = () => (
   <TargetServerRoute>
-    <TargetSessionRouteContent />
+    <TargetSessionRouteView />
   </TargetServerRoute>
 )
 
@@ -150,9 +155,9 @@ function LegacyTargetSessionRoute() {
   const params = useParams<{ serverKey: string; id: string }>()
   return (
     <TargetServerRoute>
-      <SessionRouteErrorBoundary sessionID={params.id} serverKey={requireServerKey(params.serverKey)}>
+      <SessionBoundary sessionID={params.id} serverKey={requireServerKey(params.serverKey)}>
         <LegacyTargetSessionRedirect />
-      </SessionRouteErrorBoundary>
+      </SessionBoundary>
     </TargetServerRoute>
   )
 }
