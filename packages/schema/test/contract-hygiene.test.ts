@@ -28,7 +28,7 @@ describe("contract hygiene", () => {
     })
   })
 
-  test("session context stays on the wire and is omitted when a Session has no completed step", () => {
+  test("session context and transcript size stay on the wire and are omitted when unreported", () => {
     const info = {
       id: "ses_contract",
       projectID: "prj_contract",
@@ -41,8 +41,17 @@ describe("contract hygiene", () => {
     const decode = Schema.decodeUnknownSync(Session.Info)
     const encode = Schema.encodeSync(Session.Info)
 
-    expect(encode({ ...decode(info), context: { tokens: 15 } }).context).toEqual({ tokens: 15 })
-    expect(encode(decode(info))).not.toHaveProperty("context")
+    const reported = encode({
+      ...decode(info),
+      storage: { bytes: 16_516_826 },
+      context: { tokens: 15 },
+    })
+    expect(reported.storage).toEqual({ bytes: 16_516_826 })
+    expect(reported.context).toEqual({ tokens: 15 })
+
+    const omitted = encode(decode(info))
+    expect(omitted).not.toHaveProperty("storage")
+    expect(omitted).not.toHaveProperty("context")
   })
 
   test("current ID constructors expose create", () => {

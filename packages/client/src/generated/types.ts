@@ -245,6 +245,7 @@ export type SessionsListOutput = {
       readonly reasoning: number
       readonly cache: { readonly read: number; readonly write: number }
     }
+    readonly storage?: { readonly bytes: number }
     readonly context?: { readonly tokens: number }
     readonly time: { readonly created: number; readonly updated: number; readonly archived?: number }
     readonly title: string
@@ -308,6 +309,7 @@ export type SessionsCreateOutput = {
       readonly reasoning: number
       readonly cache: { readonly read: number; readonly write: number }
     }
+    readonly storage?: { readonly bytes: number }
     readonly context?: { readonly tokens: number }
     readonly time: { readonly created: number; readonly updated: number; readonly archived?: number }
     readonly title: string
@@ -347,6 +349,7 @@ export type SessionsGetOutput = {
       readonly reasoning: number
       readonly cache: { readonly read: number; readonly write: number }
     }
+    readonly storage?: { readonly bytes: number }
     readonly context?: { readonly tokens: number }
     readonly time: { readonly created: number; readonly updated: number; readonly archived?: number }
     readonly title: string

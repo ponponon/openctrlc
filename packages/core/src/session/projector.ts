@@ -108,6 +108,24 @@ function applyUsage(
     .pipe(Effect.orDie)
 }
 
+// JSON columns store exactly JSON.stringify(value), and sqlite length() on the stored text
+// counts UTF-8 bytes, so this matches `length(cast(data as blob))` without a round trip.
+const payloadBytes = (value: unknown) => (value === undefined ? 0 : Buffer.byteLength(JSON.stringify(value)))
+
+function applyStorage(
+  db: DatabaseService,
+  sessionID: (typeof SessionTable.$inferSelect)["id"],
+  delta: number,
+) {
+  if (delta === 0) return Effect.void
+  return db
+    .update(SessionTable)
+    .set({ storage_bytes: sql`${SessionTable.storage_bytes} + ${delta}` })
+    .where(eq(SessionTable.id, sessionID))
+    .run()
+    .pipe(Effect.orDie)
+}
+
 function run(db: DatabaseService, event: SessionEvent.Event) {
   return Effect.gen(function* () {
     const decodeRow = (row: typeof SessionMessageTable.$inferSelect) =>
@@ -263,12 +281,19 @@ const layer = Layer.effectDiscard(
         const id = event.data.info.id
         const sessionID = event.data.info.sessionID
         const data = messageData(event.data.info)
+        const previous = yield* db
+          .select({ data: MessageTable.data })
+          .from(MessageTable)
+          .where(eq(MessageTable.id, id))
+          .get()
+          .pipe(Effect.orDie)
         yield* db
           .insert(MessageTable)
           .values({ id, session_id: sessionID, time_created, data })
           .onConflictDoUpdate({ target: MessageTable.id, set: { data } })
           .run()
           .pipe(Effect.orDie)
+        yield* applyStorage(db, sessionID, payloadBytes(data) - payloadBytes(previous?.data))
       }),
     )
     yield* events.project(SessionV1.Event.MessageRemoved, (event) =>
@@ -283,11 +308,23 @@ const layer = Layer.effectDiscard(
           const previous = usage(row.data)
           if (previous) yield* applyUsage(db, event.data.sessionID, previous, -1)
         }
+        const message = yield* db
+          .select({ data: MessageTable.data })
+          .from(MessageTable)
+          .where(and(eq(MessageTable.id, event.data.messageID), eq(MessageTable.session_id, event.data.sessionID)))
+          .get()
+          .pipe(Effect.orDie)
         yield* db
           .delete(MessageTable)
           .where(and(eq(MessageTable.id, event.data.messageID), eq(MessageTable.session_id, event.data.sessionID)))
           .run()
           .pipe(Effect.orDie)
+        // Parts cascade with the message, so their bytes leave the transcript with it.
+        yield* applyStorage(
+          db,
+          event.data.sessionID,
+          -(payloadBytes(message?.data) + rows.reduce((sum, row) => sum + payloadBytes(row.data), 0)),
+        )
       }),
     )
     yield* events.project(SessionV1.Event.PartRemoved, (event) =>
@@ -305,6 +342,7 @@ const layer = Layer.effectDiscard(
           .where(and(eq(PartTable.id, event.data.partID), eq(PartTable.session_id, event.data.sessionID)))
           .run()
           .pipe(Effect.orDie)
+        yield* applyStorage(db, event.data.sessionID, -payloadBytes(row?.data))
       }),
     )
     yield* events.project(SessionV1.Event.PartUpdated, (event) =>
@@ -324,6 +362,7 @@ const layer = Layer.effectDiscard(
         const next = usage(event.data.part)
         if (previous) yield* applyUsage(db, row.session_id, previous, -1)
         if (next) yield* applyUsage(db, sessionID, next)
+        yield* applyStorage(db, sessionID, payloadBytes(data) - payloadBytes(row?.data))
       }),
     )
     yield* events.project(SessionEvent.AgentSwitched, (event) =>

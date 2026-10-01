@@ -2,7 +2,7 @@ import { describe, expect } from "bun:test"
 import path from "path"
 import { Effect, Layer, Stream } from "effect"
 import { AgentV2 } from "@openctrlc/core/agent"
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, sql } from "drizzle-orm"
 import { Database } from "@openctrlc/core/database/database"
 import { AppNodeBuilder } from "@openctrlc/core/effect/app-node-builder"
 import { LayerNode } from "@openctrlc/core/effect/layer-node"
@@ -471,6 +471,65 @@ describe("SessionV2.create", () => {
 
       expect(listed?.context).toBeUndefined()
       expect((yield* session.get(created.id)).context).toBeUndefined()
+    }),
+  )
+
+  it.effect("tracks the bytes the projected transcript occupies", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionV2.Service
+      const events = yield* EventV2.Service
+      const { db } = yield* Database.Service
+      const created = yield* session.create({ location })
+      const messageID = SessionV1.MessageID.make("msg_storage")
+      const partID = SessionV1.PartID.make("prt_storage")
+      const stored = () =>
+        db
+          .select({
+            bytes: sql<number>`coalesce((select sum(length(cast(message.data as blob))) from message where message.session_id = ${created.id}), 0) + coalesce((select sum(length(cast(part.data as blob))) from part where part.session_id = ${created.id}), 0)`,
+          })
+          .from(SessionTable)
+          .where(eq(SessionTable.id, created.id))
+          .get()
+          .pipe(Effect.orDie)
+
+      yield* events.publish(SessionV1.Event.MessageUpdated, {
+        sessionID: created.id,
+        info: {
+          id: messageID,
+          sessionID: created.id,
+          role: "assistant",
+          time: { created: 1 },
+          parentID: SessionV1.MessageID.make("msg_storage_parent"),
+          modelID: ModelV2.ID.make("test-model"),
+          providerID: ProviderV2.ID.make("test-provider"),
+          mode: "build",
+          agent: "build",
+          path: { cwd: location.directory, root: location.directory },
+          cost: 0,
+          tokens: { input: 1, output: 2, reasoning: 0, cache: { read: 0, write: 0 } },
+        },
+      })
+      yield* events.publish(SessionV1.Event.PartUpdated, {
+        sessionID: created.id,
+        time: 1,
+        part: {
+          id: partID,
+          messageID,
+          sessionID: created.id,
+          type: "text",
+          text: "a projected transcript part",
+        },
+      })
+
+      const projected = yield* stored()
+      expect(projected.bytes).toBeGreaterThan(0)
+      expect((yield* session.get(created.id)).storage).toEqual({ bytes: projected.bytes })
+
+      yield* events.publish(SessionV1.Event.PartRemoved, { sessionID: created.id, messageID, partID })
+
+      const removed = yield* stored()
+      expect(removed.bytes).toBeLessThan(projected.bytes)
+      expect((yield* session.list()).map((item) => item.storage)).toEqual([{ bytes: removed.bytes }])
     }),
   )
 })

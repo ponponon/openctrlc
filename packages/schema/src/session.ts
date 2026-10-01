@@ -33,6 +33,16 @@ export const Info = Schema.Struct({
     }),
   }),
   /**
+   * UTF-8 bytes this Session's projected messages and parts occupy on disk, maintained by the
+   * transcript projector. It is the transcript the user can act on: it excludes the shared
+   * append-only event log and project file snapshots, and it is not the billing token counter.
+   */
+  storage: optional(
+    Schema.Struct({
+      bytes: Schema.Finite,
+    }),
+  ),
+  /**
    * Token total of the most recent completed step, which is what the next request resends.
    * `tokens` accumulates every step of the whole session for billing, so it keeps growing
    * even while the context window stays the same and cannot describe the current session size.

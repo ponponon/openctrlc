@@ -47,6 +47,10 @@ export const SessionTable = sqliteTable(
     tokens_reasoning: integer().notNull().default(0),
     tokens_cache_read: integer().notNull().default(0),
     tokens_cache_write: integer().notNull().default(0),
+    // UTF-8 bytes of this Session's projected message and part rows, the transcript that
+    // actually occupies disk. `cost`/`tokens_*` cannot answer that: they count every step
+    // of the whole session for billing, including re-sent context.
+    storage_bytes: integer().notNull().default(0),
     revert: text({ mode: "json" }).$type<Revert.State>(),
     permission: text({ mode: "json" }).$type<PermissionV1.Ruleset>(),
     agent: text(),
