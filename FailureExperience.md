@@ -1,3 +1,7 @@
+## 桌面端渲染层会热更新，内嵌 server 不会
+
+改完 Session 接口后，首页那一列在用户那里整列变空，看起来像被改坏了。排查发现：渲染层由 Vite dev server（5173）提供，源码一改就生效；而桌面端的内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`，由 `desktop/scripts/predev.ts` 调 `opencode/script/build-node.ts` 生成），运行中的进程（Electron utility，持有 `openctrlc-dev.db`、监听 50585）还是改动前的代码。`bun ./scripts/dev.ts` 的重启循环只重新拉起 `electron-vite dev`，不会重跑 `predev`，所以“应用内重启”会一直复用旧 server bundle。教训有两条：一是跨进程边界的改动必须同时重建内嵌 server 并完整重启 App，验证时要检查运行进程实际加载的产物（`lsof -p <pid>`、bundle 里 grep 新代码的字符串、直接 curl 接口看返回字段），不要只看源码和类型检查；二是 UI 不能静默依赖新字段，服务端没有该字段时要显示明确的占位（`—`）而不是整列留空，避免把版本错配伪装成界面损坏。
+
 ## 展示派生数值时必须确认口径，不能混用两种来源
 
 首页会话列表原来的“体积”由 `(input + output + reasoning + cache.read + cache.write) × 4 字节` 算出。cache read 会把每一轮重新发送的整段上下文都计进去，于是一个两周的 agent 会话显示成 1754.1 MB，而同一个会话在数据库里的消息和 part 总共只有 15.8 MB；同一列还会因为客户端是否缓存了会话而在“实测 payload”和“token 估算”之间切换，出现 195 KB 的行排在 634.0 MB 的行上面、打开会话后数字掉到 15 MB 的情况。以后凡是要展示用户会当成事实的数值：先明确它到底在量什么（计费流量、上下文占用、磁盘占用是三个不同的量），只用一个数据来源，并把口径写进名字或提示里；真要展示“占用”就用字节而不是字符数，并说明是否包含事件日志、快照和外置工具输出。性能上也要先用真实数据库量一遍：全量 `sum(length(data))` 聚合在这台机器上冷启动要 0.98 秒，而按最新消息做索引点查只要 0.01 秒，两种口径的成本差两个数量级。

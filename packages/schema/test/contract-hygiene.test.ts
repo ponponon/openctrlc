@@ -28,6 +28,23 @@ describe("contract hygiene", () => {
     })
   })
 
+  test("session context stays on the wire and is omitted when a Session has no completed step", () => {
+    const info = {
+      id: "ses_contract",
+      projectID: "prj_contract",
+      cost: 1,
+      tokens: { input: 1, output: 2, reasoning: 3, cache: { read: 4, write: 5 } },
+      time: { created: 0, updated: 0 },
+      title: "contract",
+      location: { directory: "/project" },
+    }
+    const decode = Schema.decodeUnknownSync(Session.Info)
+    const encode = Schema.encodeSync(Session.Info)
+
+    expect(encode({ ...decode(info), context: { tokens: 15 } }).context).toEqual({ tokens: 15 })
+    expect(encode(decode(info))).not.toHaveProperty("context")
+  })
+
   test("current ID constructors expose create", () => {
     expect(Question.ID.create()).toStartWith("que_")
     expect(Pty.ID.create()).toStartWith("pty_")

@@ -10,6 +10,7 @@
 - 服务端 `SessionV2.list` / `get` 从消息投影里按 `(session_id, time_created desc, id desc)` 读取最新一条 token 总量大于 0 的 assistant 消息，走索引点查，不累加历史。
 - 首页列表显示“当前 / 上限”（例如 `636K / 1M`），悬停显示精确 token 数和占用百分比；模型上下文上限来自客户端 provider 目录，未知时只显示当前值。
 - 会话事件（`session.updated`）不携带上下文大小，列表保留上一次由列表接口报告的值，避免数字在两种来源之间跳变。
+- 服务端完全没有该字段时（例如桌面端内嵌的 server bundle 还是旧的），有历史的会话显示 `—`，而不是静默留空，便于区分“没有数据”和“界面坏了”。
 - 删除 `session-storage-size.ts` 中估算与实测混用的逻辑。
 
 ### 代码位置
@@ -23,8 +24,10 @@
 ### 验证方式
 
 - 在 `packages/core` 执行 `bun test test/session-create.test.ts`，覆盖“最近步骤上下文”和“尚无步骤时省略”两个用例。
+- 在 `packages/schema` 执行 `bun test test/contract-hygiene.test.ts`，确认 `context` 能编码上线、缺省时不出现该键。
 - 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts src/context/global-sync src/utils` 和 `bun run typecheck`。
 - 协议变更后重新生成 SDK：`packages/client` 执行 `bun run generate`，仓库根执行 `./packages/sdk/js/script/build.ts`。
+- 桌面端界面走 Vite 热更新，但内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`）；改服务端代码后必须 `cd packages/opencode && bun script/build-node.ts`（或完整 `bun run dev`，它会跑 `predev`）再完整重启桌面 App，仅重启渲染层不会更新内嵌 server。
 
 ## Relay 短时断线自动恢复
 

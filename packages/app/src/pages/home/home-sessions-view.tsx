@@ -6,6 +6,7 @@ import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
 import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
 import { IconButtonV2 } from "@openctrlc/ui/v2/icon-button-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
+import { EMPTY_DISPLAY } from "@/components/session/session-context-metrics"
 import { useLanguage } from "@/context/language"
 import { ServerConnection } from "@/context/server"
 import { useProviders } from "@/hooks/use-providers"
@@ -24,6 +25,7 @@ import {
 const SHOW_HOME_SESSION_ARCHIVE = false
 const HOME_SECTION_LABEL = "text-v2-text-text-muted [font-weight:440]"
 const HOME_SESSION_SEARCH_RESULTS_ID = "home-session-search-results"
+const HOME_CONTEXT_LABEL = "shrink-0 text-v2-text-text-faint text-12-regular tabular-nums"
 
 // Middle-click or Cmd+click on macOS (Ctrl+click elsewhere) opens a session
 // tab in the background without navigating, matching browser conventions.
@@ -527,6 +529,13 @@ function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
       percent: contextUsagePercent(tokens, limit()),
     }
   })
+  // Older or unbundled servers cannot report the context window at all. Say so instead of
+  // dropping the column silently, which looks like a broken row rather than missing data.
+  const reported = () => {
+    const tokens = props.record.session.tokens
+    if (!tokens) return false
+    return tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write > 0
+  }
   const tooltip = () => {
     const count = (value: number) => value.toLocaleString(language.intl())
     const current = usage()
@@ -553,9 +562,16 @@ function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
   }
 
   return (
-    <Show when={usage().label}>
+    <Show
+      when={usage().tokens}
+      fallback={
+        <Show when={reported()}>
+          <span class={HOME_CONTEXT_LABEL}>{EMPTY_DISPLAY}</span>
+        </Show>
+      }
+    >
       <TooltipV2 placement="top" value={tooltip()}>
-        <span class="shrink-0 text-v2-text-text-faint text-12-regular tabular-nums">{usage().label}</span>
+        <span class={HOME_CONTEXT_LABEL}>{usage().label}</span>
       </TooltipV2>
     </Show>
   )
