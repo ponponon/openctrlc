@@ -11,7 +11,8 @@ import { useLanguage } from "@/context/language"
 import { ServerConnection } from "@/context/server"
 import { useProviders } from "@/hooks/use-providers"
 import { SessionTabAvatarView } from "@/pages/layout/session-tab-avatar"
-import { contextUsagePercent, formatContextUsage } from "@/utils/session-context-usage"
+import { contextUsagePercent } from "@/utils/session-context-usage"
+import { formatStorageBytes } from "@/utils/session-storage"
 import { sessionTitle } from "@/utils/session-title"
 import { shouldOpenSessionInBackground } from "../home-session-open"
 import {
@@ -390,7 +391,7 @@ function HomeSessionSearchResultRow(
         <HomeSessionTitle title={title()} showProjectName={!!showProjectName()} search />
         <Show when={showProjectName()}>
           <HomeSessionProjectName name={props.record.projectName} search />
-          <HomeSessionContextUsage record={props.record} />
+          <HomeSessionStorage record={props.record} />
         </Show>
       </div>
     </button>
@@ -457,7 +458,7 @@ function HomeSessionRow(props: HomeSessionsViewProps & { record: HomeSessionReco
         <Show when={showProjectName()}>
           <HomeSessionProjectName name={props.record.projectName} />
         </Show>
-        <HomeSessionContextUsage record={props.record} />
+        <HomeSessionStorage record={props.record} />
       </button>
       <Show when={SHOW_HOME_SESSION_ARCHIVE}>
         <div
@@ -512,7 +513,7 @@ function HomeSessionProjectName(props: { name: string; search?: boolean }) {
   )
 }
 
-function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
+function HomeSessionStorage(props: { record: HomeSessionRecord }) {
   const language = useLanguage()
   const providers = useProviders(() => props.record.session.directory)
   const limit = createMemo(() => {
@@ -520,17 +521,17 @@ function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
     if (!model) return undefined
     return providers.all().get(model.providerID)?.models[model.id]?.limit.context
   })
-  const usage = createMemo(() => {
+  const context = createMemo(() => {
     const tokens = props.record.context?.tokens
     return {
       tokens,
       limit: limit(),
-      label: formatContextUsage(tokens, limit()),
       percent: contextUsagePercent(tokens, limit()),
     }
   })
-  // Older or unbundled servers cannot report the context window at all. Say so instead of
-  // dropping the column silently, which looks like a broken row rather than missing data.
+  const label = createMemo(() => formatStorageBytes(props.record.storage?.bytes))
+  // Servers that predate the storage rollup report nothing. Say so instead of dropping the
+  // column silently, which looks like a broken row rather than missing data.
   const reported = () => {
     const tokens = props.record.session.tokens
     if (!tokens) return false
@@ -538,9 +539,15 @@ function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
   }
   const tooltip = () => {
     const count = (value: number) => value.toLocaleString(language.intl())
-    const current = usage()
+    const current = context()
     return (
-      <div class="flex w-[120px] flex-col gap-2">
+      <div class="flex w-[140px] flex-col gap-2">
+        <div class="flex min-w-0 items-center gap-4">
+          <span class="shrink-0 text-v2-text-text-muted">{language.t("home.sessions.storage")}</span>
+          <span class="ml-auto min-w-0 truncate text-right text-v2-text-text-base">
+            {count(props.record.storage?.bytes ?? 0)} B
+          </span>
+        </div>
         <div class="flex min-w-0 items-center gap-4">
           <span class="shrink-0 text-v2-text-text-muted">{language.t("context.usage.tokens")}</span>
           <span class="ml-auto min-w-0 truncate text-right text-v2-text-text-base">
@@ -563,7 +570,7 @@ function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
 
   return (
     <Show
-      when={usage().tokens}
+      when={label()}
       fallback={
         <Show when={reported()}>
           <span class={HOME_CONTEXT_LABEL}>{EMPTY_DISPLAY}</span>
@@ -571,7 +578,7 @@ function HomeSessionContextUsage(props: { record: HomeSessionRecord }) {
       }
     >
       <TooltipV2 placement="top" value={tooltip()}>
-        <span class={HOME_CONTEXT_LABEL}>{usage().label}</span>
+        <span class={HOME_CONTEXT_LABEL}>{label()}</span>
       </TooltipV2>
     </Show>
   )

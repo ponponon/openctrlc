@@ -7,7 +7,9 @@ export const HOME_V2_SESSION_PAGE_LIMIT = 5_000
 
 /** Current context window size, which only the V2 list reports and the legacy Session shape cannot carry. */
 export type HomeSessionContext = NonNullable<SessionV2Info["context"]>
-export type HomeSession = Session & { context?: HomeSessionContext }
+/** Bytes the Session's projected transcript occupies, reported only by the V2 list. */
+export type HomeSessionStorage = NonNullable<SessionV2Info["storage"]>
+export type HomeSession = Session & { context?: HomeSessionContext; storage?: HomeSessionStorage }
 
 export type HomeSessionEvent = {
   type: "session.created" | "session.updated" | "session.deleted"
@@ -167,8 +169,8 @@ export function applyHomeSessionEvent(sessions: HomeSession[], event: HomeSessio
   }
   if (event.type !== "session.created" && event.type !== "session.updated") return sessions
   if (index === -1) return [...sessions, info]
-  // Session events never carry the context window size, so keep the last value the list reported.
-  return sessions.with(index, { ...info, context: sessions[index]?.context })
+  // Session events never carry the reported size, so keep the last value the list reported.
+  return sessions.with(index, { ...info, context: sessions[index]?.context, storage: sessions[index]?.storage })
 }
 
 function toLegacySummary(session: SessionV2Info): HomeSession {
@@ -183,6 +185,7 @@ function toLegacySummary(session: SessionV2Info): HomeSession {
     cost: session.cost,
     tokens: session.tokens,
     context: session.context,
+    storage: session.storage,
     title: session.title,
     agent: session.agent,
     model: session.model,

@@ -12,6 +12,7 @@ import {
   type HomeSession,
   type HomeSessionContext,
   type HomeSessionEvents,
+  type HomeSessionStorage,
 } from "@/context/global-sync/home-session-index"
 import type { LocalProject } from "@/context/layout"
 import { useLanguage } from "@/context/language"
@@ -30,6 +31,8 @@ export type HomeSessionRecord = {
   session: Session
   project: LocalProject
   projectName: string
+  /** Bytes the Session's projected transcript occupies on disk. */
+  storage?: HomeSessionStorage
   /** Context window usage of the most recent completed step, absent before the first one. */
   context?: HomeSessionContext
 }
@@ -275,6 +278,7 @@ function buildHomeSessionRecords(input: {
         session,
         project,
         projectName: displayName(project),
+        storage: session.storage,
         context: session.context,
       }
     })

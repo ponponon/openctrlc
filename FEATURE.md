@@ -1,33 +1,56 @@
+## 首页会话列表显示会话磁盘占用
+
+### 功能目标
+
+首页“最近会话”右侧原来的体积数字来自“累计计费 token × 4 字节”的估算，量的是模型每一轮重读上下文的累计流量，与磁盘占用无关；同一列还会因为客户端是否缓存了会话而在“估算”和“实测 payload”之间跳变。现在这一列显示该会话在磁盘上真实占用的字节数（消息与 part 投影，例如 `15.8 MB`），悬停给出精确字节数、当前上下文 token 占用和占模型窗口的百分比，让用户看出这个会话多重、还能聊多久。
+
+### 实现范围
+
+- `session` 表新增 `storage_bytes`（UTF-8 字节，默认 0），迁移时用 `sum(length(cast(data as blob)))` 对已有 `message` + `part` 回填。
+- JSON 列存的就是 `JSON.stringify(value)`，`length()` 作用在 blob 上即 UTF-8 字节数，因此 projector 用 `Buffer.byteLength(JSON.stringify(value))` 维护增量：`message.updated` / `message.part.updated` 加减新旧行字节，`message.removed` / `message.part.removed` 减去被删行（part 随 message 级联，一并扣掉）。
+- `SessionV2.Info` 新增可选 `storage: { bytes }`，由 `fromRow` 从该列直接映射，因此 `list`、`get` 都自动带上，没有额外查询。
+- 首页列表显示 `15.8 MB` / `195 KB`；悬停显示精确字节数、`context: { tokens }` 与占用百分比。
+- 会话事件（`session.updated`）不携带这两个字段，列表保留上一次由列表接口报告的值，避免数字在两种来源之间跳变。
+- 服务端完全没有该字段时（例如桌面端内嵌的 server bundle 还是旧的），有历史的会话显示 `—`，而不是静默留空，便于区分“没有数据”和“界面坏了”。
+- 口径边界：只统计该会话自己的消息与 part，不含共享的 event 追加日志与项目文件快照。
+
+### 代码位置
+
+- `packages/core/src/session/sql.ts`：`session.storage_bytes` 列。
+- `packages/core/src/database/migration/20261001041018_session_storage_bytes.ts`：加列 + 回填。
+- `packages/core/src/session/projector.ts`：`payloadBytes` / `applyStorage` 及四个 V1 投影点的增量维护。
+- `packages/core/src/session/info.ts`：`storage: { bytes }` 映射。
+- `packages/schema/src/session.ts`：`SessionV2.Info.storage` 与 `context`。
+- `packages/app/src/context/global-sync/home-session-index.ts`、`packages/app/src/pages/home/home-sessions-controller.tsx`、`home-sessions-view.tsx`：把两个字段带进列表记录并展示。
+- `packages/app/src/utils/session-storage.ts`、`session-context-usage.ts`：字节与百分比格式化。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`：`home.sessions.storage` 文案。
+
+### 验证方式
+
+- 在 `packages/core` 执行 `bun test test/session-create.test.ts`：投影一条 assistant 消息与一个 text part 后，`storage.bytes` 等于库里 `message` + `part` 的字节总和；删除该 part 后同步回落；另有用例覆盖“最近步骤上下文”。
+- 在 `packages/schema` 执行 `bun test test/contract-hygiene.test.ts`，确认 `storage`、`context` 都能编码上线、缺省时不出现该键。
+- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts src/context/global-sync src/utils` 和 `bun run typecheck`。
+- 迁移可用真实库副本预演：拷贝一份 DB 后手动执行迁移里的 `ALTER` + `UPDATE`，比对 `storage_bytes` 与 `sum(length(cast(data as blob)))`。
+- 协议变更后重新生成 SDK：`packages/client` 执行 `bun run generate`，仓库根执行 `./packages/sdk/js/script/build.ts`。
+- 桌面端界面走 Vite 热更新，但内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`）；改服务端代码后必须 `cd packages/opencode && bun script/build-node.ts`（或完整 `bun run dev`，它会跑 `predev`）再完整重启桌面 App，仅重启渲染层不会更新内嵌 server。
+
 ## 首页会话列表显示上下文窗口占用
 
 ### 功能目标
 
-首页“最近会话”右侧原来的体积数字来自“累计计费 token × 4 字节”的估算，量的是模型每一轮重读上下文的累计流量，与磁盘占用无关；同一列还会因为客户端是否缓存了会话而在“估算”和“实测 payload”之间跳变。改为显示该会话最近一次已完成步骤的上下文占用，让用户直接看出这个会话多重、还能聊多久。
+（已并入上一条：上下文 token 占用现在是悬停提示的一部分，不再占据列表主列。）
 
 ### 实现范围
 
 - `SessionV2.Info` 新增可选 `context: { tokens }`，只表示最近一次已完成模型步骤的 token 总量，也就是下一次请求会重新发送的上下文。
 - 服务端 `SessionV2.list` / `get` 从消息投影里按 `(session_id, time_created desc, id desc)` 读取最新一条 token 总量大于 0 的 assistant 消息，走索引点查，不累加历史。
-- 首页列表显示“当前 / 上限”（例如 `636K / 1M`），悬停显示精确 token 数和占用百分比；模型上下文上限来自客户端 provider 目录，未知时只显示当前值。
-- 会话事件（`session.updated`）不携带上下文大小，列表保留上一次由列表接口报告的值，避免数字在两种来源之间跳变。
-- 服务端完全没有该字段时（例如桌面端内嵌的 server bundle 还是旧的），有历史的会话显示 `—`，而不是静默留空，便于区分“没有数据”和“界面坏了”。
-- 删除 `session-storage-size.ts` 中估算与实测混用的逻辑。
+- 悬停提示显示精确 token 数（`654,460 / 1,000,000`）和占用百分比；模型上下文上限来自客户端 provider 目录，未知时只显示当前值。
 
 ### 代码位置
 
-- `packages/schema/src/session.ts`：`SessionV2.Info.context`。
 - `packages/core/src/session.ts`：`contextTokensFor` / `withContext`，以及在 `list`、`get` 中的接线。
-- `packages/app/src/context/global-sync/home-session-index.ts`：`HomeSession` 类型，事件回放时保留上下文。
-- `packages/app/src/pages/home/home-sessions-controller.tsx`、`home-sessions-view.tsx`、`packages/app/src/utils/session-context-usage.ts`：首页展示与格式化。
+- `packages/app/src/pages/home/home-sessions-view.tsx`、`packages/app/src/utils/session-context-usage.ts`：悬停提示与百分比。
 - `packages/app/src/components/session/session-context-metrics.ts`：会话内既有口径，列表与其保持一致。
-
-### 验证方式
-
-- 在 `packages/core` 执行 `bun test test/session-create.test.ts`，覆盖“最近步骤上下文”和“尚无步骤时省略”两个用例。
-- 在 `packages/schema` 执行 `bun test test/contract-hygiene.test.ts`，确认 `context` 能编码上线、缺省时不出现该键。
-- 在 `packages/app` 执行 `bun test --conditions=solid --preload ./happydom.ts src/context/global-sync src/utils` 和 `bun run typecheck`。
-- 协议变更后重新生成 SDK：`packages/client` 执行 `bun run generate`，仓库根执行 `./packages/sdk/js/script/build.ts`。
-- 桌面端界面走 Vite 热更新，但内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`）；改服务端代码后必须 `cd packages/opencode && bun script/build-node.ts`（或完整 `bun run dev`，它会跑 `predev`）再完整重启桌面 App，仅重启渲染层不会更新内嵌 server。
 
 ## Relay 短时断线自动恢复
 
