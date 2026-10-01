@@ -31,6 +31,7 @@ import { useSettings } from "@/context/settings"
 import { WindowsAppMenu } from "./windows-app-menu"
 import { applyPath, backPath, forwardPath } from "./titlebar-history"
 import { remoteHostName, listRemoteDesktops, switchRemoteDesktop, activeRemoteSessionID } from "@/utils/remote-workspace"
+import { readNetworkQuality, onNetworkQualityChange } from "@/utils/network-quality"
 import { TitlebarTabStrip } from "@/components/titlebar-tab-strip"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
@@ -836,35 +837,65 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
 }
 
 function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void } }) {
+  const platform = usePlatform()
+  const language = useLanguage()
   const channel = import.meta.env.VITE_OPENCTRLC_CHANNEL
-  const host = remoteHostName()
-  const desktops = listRemoteDesktops()
-  const activeId = activeRemoteSessionID()
-  const hostChip =
-    desktops.length > 1 ? (
-      <select
-        class="max-w-[180px] truncate rounded-sm border-0 bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
-        title={host}
-        value={activeId ?? ""}
-        onChange={(event) => {
-          const id = event.currentTarget.value
-          if (id) switchRemoteDesktop(id)
-        }}
-      >
-        {desktops.map((item) => (
-          <option value={item.sessionID} selected={item.sessionID === activeId}>
-            {item.hostName}
-          </option>
-        ))}
-      </select>
-    ) : host ? (
+  const [host, setHost] = createSignal(remoteHostName())
+  const [liteNet, setLiteNet] = createSignal(readNetworkQuality().lite)
+  const desktops = createMemo(() => listRemoteDesktops())
+  const activeId = createMemo(() => activeRemoteSessionID())
+
+  onMount(() => {
+    setLiteNet(readNetworkQuality().lite)
+    onNetworkQualityChange((quality) => setLiteNet(quality.lite))
+  })
+
+  createEffect(() => {
+    const known = remoteHostName()
+    if (known) {
+      setHost(known)
+      return
+    }
+    void platform.remoteAccess
+      ?.getState()
+      .then((state) => {
+        if (state.hostName) setHost(state.hostName)
+      })
+      .catch(() => undefined)
+  })
+
+  const hostChip = createMemo(() => {
+    const name = host()
+    const list = desktops()
+    if (list.length > 1) {
+      return (
+        <select
+          class="max-w-[180px] truncate rounded-sm border-0 bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
+          title={name}
+          value={activeId() ?? ""}
+          onChange={(event) => {
+            const id = event.currentTarget.value
+            if (id) switchRemoteDesktop(id)
+          }}
+        >
+          {list.map((item) => (
+            <option value={item.sessionID} selected={item.sessionID === activeId()}>
+              {item.hostName}
+            </option>
+          ))}
+        </select>
+      )
+    }
+    if (!name) return null
+    return (
       <div
         class="max-w-[160px] truncate rounded-sm bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
-        title={host}
+        title={name}
       >
-        {host}
+        {name}
       </div>
-    ) : null
+    )
+  })
   if (channel === "dev" && props.debugTools) {
     return (
       <>
@@ -877,7 +908,15 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
         >
           DEV
         </button>
-        {hostChip}
+        <Show when={liteNet()}>
+          <div
+            class="rounded-sm bg-v2-state-bg-warning px-2 text-12-regular text-v2-state-fg-warning"
+            title={language.t("remote.liteNetworkHint")}
+          >
+            {language.t("remote.liteNetwork")}
+          </div>
+        </Show>
+        {hostChip()}
       </>
     )
   }
@@ -889,7 +928,15 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           {channel.toUpperCase()}
         </div>
       )}
-      {hostChip}
+      <Show when={liteNet()}>
+        <div
+          class="rounded-sm bg-v2-state-bg-warning px-2 text-12-regular text-v2-state-fg-warning"
+          title={language.t("remote.liteNetworkHint")}
+        >
+          {language.t("remote.liteNetwork")}
+        </div>
+      </Show>
+      {hostChip()}
     </>
   )
 }

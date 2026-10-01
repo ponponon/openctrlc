@@ -796,6 +796,8 @@ export const dict = {
   "remoteAccess.viewerLimitOverCapacity":
     "제한을 낮춰도 기존 승인은 유지됩니다. 새 브라우저를 승인하려면 기존 승인을 취소하거나 제한을 높이세요.",
   "remoteAccess.viewerMeta": "승인 {{created}} · 최근 사용 {{seen}}",
+  "remote.liteNetwork": "절약",
+  "remote.liteNetworkHint": "네트워크가 느리거나 데이터 요금이 적용되어 미리 가져오기와 무거운 미리보기를 제한합니다",
   "remoteAccess.viewerExpiring": "오랫동안 사용하지 않았습니다. 승인을 유지하려면 곧 다시 연결하세요",
   "remote.desktop.offlineTitle": "데스크톱 연결 끊김",
   "remote.desktop.offlineDescription":

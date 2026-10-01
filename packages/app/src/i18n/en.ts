@@ -1072,6 +1072,8 @@ export const dict = {
   "remoteAccess.viewerLimitOverCapacity":
     "Existing approvals are kept when you lower the limit. Revoke a browser or raise the limit before approving another.",
   "remoteAccess.viewerMeta": "Approved {{created}} · Last used {{seen}}",
+  "remote.liteNetwork": "Lite",
+  "remote.liteNetworkHint": "Slow or metered network — heavy previews and prefetch are limited",
   "remoteAccess.viewerExpiring": "Unused for a while — reconnect soon to keep this approval",
   "remote.desktop.offlineTitle": "Desktop is offline",
   "remote.desktop.offlineDescription":

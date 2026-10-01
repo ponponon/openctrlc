@@ -3,7 +3,6 @@ import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@openctrlc/ui/context"
 import { DialogProvider, useDialog } from "@openctrlc/ui/context/dialog"
 import { FileComponentProvider } from "@openctrlc/ui/context/file"
-import { File } from "@openctrlc/session-ui/file"
 import { Font } from "@openctrlc/ui/font"
 import { Splash } from "@openctrlc/ui/logo"
 import { ThemeProvider } from "@openctrlc/ui/theme/context"
@@ -82,6 +81,7 @@ const TargetSessionRouteView = lazy(() =>
 const SessionBoundary = lazy(() =>
   import("@/pages/session-route-view").then((m) => ({ default: m.SessionBoundary })),
 )
+const File = lazy(() => import("@openctrlc/session-ui/file").then((m) => ({ default: m.File })))
 const NewSession = lazy(() => import("@/pages/new-session"))
 
 const setDesktopTitlebar = (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => {
