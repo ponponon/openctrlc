@@ -723,6 +723,8 @@ function RemoteWorkspaceHydrator() {
 
   // Fresh remote browsers have empty local storage; restore the sidebar from the
   // backend project list so the page is not blank before/independent of a snapshot.
+  // Open projects in small waves so a cold remote link does not fan out dozens of
+  // bootstrap calls and trip the relay request cap.
   createEffect(() => {
     if (platform.platform !== "web") return
     if (!server.ready()) return
@@ -733,12 +735,21 @@ function RemoteWorkspaceHydrator() {
     if (known.length === 0) return
     const open = context.projects.list()
     if (open.length > 0) return
-    for (const project of known) {
-      if (!project.worktree) continue
-      context.projects.open(project.worktree)
+    const worktrees = known.map((project) => project.worktree).filter(Boolean) as string[]
+    if (worktrees[0]) context.projects.touch(worktrees[0])
+    let index = 0
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const step = () => {
+      if (index >= worktrees.length) return
+      const batch = worktrees.slice(index, index + 2)
+      index += batch.length
+      for (const worktree of batch) context.projects.open(worktree)
+      if (index < worktrees.length) timer = setTimeout(step, 120)
     }
-    const first = known.find((project) => project.worktree)
-    if (first?.worktree) context.projects.touch(first.worktree)
+    step()
+    onCleanup(() => {
+      if (timer) clearTimeout(timer)
+    })
   })
 
   return null

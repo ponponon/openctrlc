@@ -787,6 +787,7 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     const result = await headersPromise
     const responseHeaders = sanitizeResponseHeaders(result.headers)
     for (const cookie of viewerCookie(viewerToken, session.id)) responseHeaders.append("set-cookie", cookie)
+    applyAssetCachePolicy(path, responseHeaders)
     if ([204, 205, 304].includes(result.status)) {
       return new Response(null, { status: result.status, headers: responseHeaders })
     }
@@ -813,6 +814,21 @@ function shouldGzipToViewer(request: Request, responseHeaders: Headers) {
   const contentType = (responseHeaders.get("content-type") ?? "").toLowerCase()
   if (contentType.includes("text/event-stream")) return false
   return /^(text\/|application\/(json|javascript|xml|jsonml|xhtml|x-ndjson))/.test(contentType)
+}
+
+/**
+ * Hashed Vite assets are immutable. Long-caching them on the relay cuts repeat
+ * remote loads from multi-MB to a handful of small document/API calls on 5Mbps.
+ */
+function applyAssetCachePolicy(pathnameWithQuery: string, responseHeaders: Headers) {
+  const pathname = pathnameWithQuery.split("?")[0] ?? pathnameWithQuery
+  if (/^\/assets\/.+-[A-Za-z0-9_-]{6,}\.\w+$/.test(pathname)) {
+    responseHeaders.set("cache-control", "public, max-age=31536000, immutable")
+    return
+  }
+  if (pathname === "/" || pathname.endsWith(".html")) {
+    responseHeaders.set("cache-control", "no-cache")
+  }
 }
 
 async function sendRequestBody(session: RelaySession, request: Request, id: string) {
