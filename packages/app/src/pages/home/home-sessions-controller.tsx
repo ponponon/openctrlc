@@ -21,6 +21,7 @@ import { sessionHasOpenTab, useTabs } from "@/context/tabs"
 import { compareSessionTime, displayName, errorMessage, projectForSession } from "@/pages/layout/helpers"
 import { useSessionTabAvatarState } from "@/pages/layout/project-avatar-state"
 import { pathKey } from "@/utils/path-key"
+import { readNetworkQuality } from "@/utils/network-quality"
 import { showToast } from "@/utils/toast"
 import { Binary } from "@openctrlc/core/util/binary"
 import { archiveHomeSession } from "../home-session-archive"
@@ -105,37 +106,42 @@ export function createHomeSessionsController(home: HomeController) {
   const groups = createMemo(() => groupSessions(records(), language))
   const prefetched = new Set<string>()
 
-  createEffect(() => {
+  const prefetchSession = (record: HomeSessionRecord) => {
     const ctx = home.server.focusedContext()
     const conn = home.server.focused()
     if (!ctx || !conn) return
+    // Slow/save-data links skip opportunistic prefetch so the list stays cheap.
+    if (readNetworkQuality().lite) return
+    const key = `${ServerConnection.key(conn)}\0${record.session.id}`
+    if (prefetched.has(key)) return
+    prefetched.add(key)
+    createRoot((dispose) => {
+      try {
+        void ctx.sync.session
+          .sync(record.session.id)
+          .then(() =>
+            Promise.all(
+              (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
+                (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
+                  if (part.type !== "text" || !part.text) return []
+                  return preloadMarkdown(part.text, part.id)
+                }),
+              ),
+            ),
+          )
+          .catch(() => {})
+          .finally(dispose)
+      } catch {
+        dispose()
+      }
+    })
+  }
+
+  createEffect(() => {
+    if (readNetworkQuality().lite) return
     records()
       .slice(0, 2)
-      .forEach((record) => {
-        const key = `${ServerConnection.key(conn)}\0${record.session.id}`
-        if (prefetched.has(key)) return
-        prefetched.add(key)
-        createRoot((dispose) => {
-          try {
-            void ctx.sync.session
-              .sync(record.session.id)
-              .then(() =>
-                Promise.all(
-                  (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
-                    (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
-                      if (part.type !== "text" || !part.text) return []
-                      return preloadMarkdown(part.text, part.id)
-                    }),
-                  ),
-                ),
-              )
-              .catch(() => {})
-              .finally(dispose)
-          } catch {
-            dispose()
-          }
-        })
-      })
+      .forEach((record) => prefetchSession(record))
   })
 
   command.register("home.palette", () => [
@@ -185,6 +191,10 @@ export function createHomeSessionsController(home: HomeController) {
       server: () => home.selection.value().server,
       canCreate: () => !!home.project.newSession(),
       create: home.project.openNewSession,
+      prefetch: (session: Session) => {
+        const record = records().find((item) => item.session.id === session.id) ?? allRecords().find((item) => item.session.id === session.id)
+        if (record) prefetchSession(record)
+      },
       open: (session: Session, options?: OpenSessionOptions) => {
         const directoryKey = pathKey(session.directory)
         const project =

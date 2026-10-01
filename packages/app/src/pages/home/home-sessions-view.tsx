@@ -58,6 +58,7 @@ export type HomeSessionsViewProps = {
   isOpenTab: (record: HomeSessionRecord) => boolean
   onCreateSession: () => void
   onOpenSession: (session: Session, options?: OpenSessionOptions) => void
+  onPrefetchSession?: (session: Session) => void
   onArchiveSession: (session: Session) => Promise<void>
   onSetHoverTarget: (element: HTMLElement) => void
   onSetThumbTrack: (element: HTMLDivElement) => void
@@ -441,6 +442,7 @@ function HomeSessionRow(props: HomeSessionsViewProps & { record: HomeSessionReco
         onMouseDown={(event) => {
           if (event.button === 1) event.preventDefault()
         }}
+        onMouseEnter={() => props.onPrefetchSession?.(props.record.session)}
         onClick={(event) => props.onOpenSession(props.record.session, { background: isBackgroundOpen(event) })}
         onAuxClick={(event) => {
           if (!isBackgroundOpen(event)) return
