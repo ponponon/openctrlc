@@ -94,7 +94,7 @@ function readFirstEmbedded(
   const file = candidates[index]!
   return fs.readFile(file).pipe(
     Effect.map((body) => ({ file, body })),
-    Effect.catchReason("PlatformError", "NotFound", () => readFirstEmbedded(fs, candidates, index + 1)),
+    Effect.catchCause(() => readFirstEmbedded(fs, candidates, index + 1)),
   )
 }
 

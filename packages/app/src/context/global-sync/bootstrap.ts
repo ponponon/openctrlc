@@ -249,6 +249,9 @@ export const loadProvidersQuery = (
 ) =>
   queryOptions({
     queryKey: [scope, directory, "providers"],
+    // Full model catalogs are multi-MB over a relay; never refetch on remount.
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: () =>
       retry(async () => {
         if ((await protocol) === "v1" && legacy) {
@@ -292,6 +295,8 @@ export const loadAgentsQuery = (
 ) =>
   queryOptions({
     queryKey: [scope, directory, "agents"],
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: () =>
       retry(async () => {
         if ((await protocol) === "v1" && legacy) return normalizeAgentList((await legacy.app.agents()).data ?? [])

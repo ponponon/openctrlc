@@ -39,7 +39,11 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
     const svc = yield* ProviderAuth.Service
     const authStore = yield* Auth.Service
 
+    // Provider catalogs include every model definition and can be multi-MB.
+    // Memoize briefly so concurrent directory-scoped loads do not recompute/serialize it.
+    let listCache: { at: number; value: unknown } | undefined
     const list = Effect.fn("ProviderHttpApi.list")(function* () {
+      if (listCache && Date.now() - listCache.at < 60_000) return listCache.value as never
       const config = yield* cfg.get()
       const all = yield* ModelsDev.Service.use((s) => s.get())
       const disabled = new Set(config.disabled_providers ?? [])
@@ -54,11 +58,13 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
         mapValues(filtered, (item) => Provider.fromModelsDevProvider(item)),
         connected,
       )
-      return {
+      const value = {
         all: Object.values(providers).map(Provider.toPublicInfo),
         default: Provider.defaultModelIDs(providers),
         connected: Object.keys(providers).filter((id) => id in connected || credentials[id]),
       }
+      listCache = { at: Date.now(), value }
+      return value
     })
 
     const auth = Effect.fn("ProviderHttpApi.auth")(function* () {
