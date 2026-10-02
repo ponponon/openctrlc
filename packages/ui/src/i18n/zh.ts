@@ -44,6 +44,7 @@ export const dict = {
   "ui.fileMedia.state.loading": "正在加载{{kind}}...",
   "ui.fileMedia.state.error": "加载{{kind}}失败",
   "ui.fileMedia.state.unavailable": "{{kind}}不可预览",
+  "ui.fileMedia.state.tapToLoad": "加载{{kind}}",
   "ui.fileMedia.binary.title": "二进制文件",
   "ui.fileMedia.binary.description.path": "无法显示 {{path}}，因为它是二进制文件。",
   "ui.fileMedia.binary.description.default": "无法显示此文件，因为它是二进制文件。",

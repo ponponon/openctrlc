@@ -43,6 +43,7 @@ export const dict = {
   "ui.fileMedia.state.loading": "{{kind}}を読み込んでいます...",
   "ui.fileMedia.state.error": "{{kind}}の読み込みに失敗しました",
   "ui.fileMedia.state.unavailable": "{{kind}}は表示できません",
+  "ui.fileMedia.state.tapToLoad": "{{kind}}を読み込む",
   "ui.fileMedia.binary.title": "バイナリファイル",
   "ui.fileMedia.binary.description.path": "{{path}} はバイナリファイルのため表示できません。",
   "ui.fileMedia.binary.description.default": "このファイルはバイナリファイルのため表示できません。",

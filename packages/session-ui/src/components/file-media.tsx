@@ -1,7 +1,8 @@
 import type { FileContent } from "@openctrlc/sdk/v2"
-import { createEffect, createMemo, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js"
+import { createEffect, createMemo, createSignal, Match, on, onCleanup, Show, Switch, untrack, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useI18n } from "@openctrlc/ui/context/i18n"
+import { isLiteNetwork } from "./network-quality"
 import {
   dataUrlFromMediaValue,
   hasMediaValue,
@@ -38,6 +39,7 @@ export function FileMedia(props: { media?: FileMediaOptions; fallback: () => JSX
     src?: string
     mime?: string
   }>({})
+  const [mediaRevealed, setMediaRevealed] = createSignal(false)
   const cfg = () => props.media
   const kind = createMemo(() => {
     const media = cfg()
@@ -228,14 +230,27 @@ export function FileMedia(props: { media?: FileMediaOptions; fallback: () => JSX
             if (k === "image") {
               return (
                 <div class="flex justify-center bg-background-stronger px-6 py-4">
-                  <img
-                    src={value()}
-                    alt={cfg()?.path}
-                    class="max-h-[60vh] max-w-full rounded border border-border-weak-base bg-background-base object-contain"
-                    loading="lazy"
-                    decoding="async"
-                    onLoad={onLoad}
-                  />
+                  <Show
+                    when={!isLiteNetwork() || mediaRevealed()}
+                    fallback={
+                      <button
+                        type="button"
+                        class="rounded border border-border-weak-base bg-background-base px-3 py-2 text-13-regular text-text-base"
+                        onClick={() => setMediaRevealed(true)}
+                      >
+                        {i18n.t("ui.fileMedia.state.tapToLoad", { kind: i18n.t("ui.fileMedia.kind.image") })}
+                      </button>
+                    }
+                  >
+                    <img
+                      src={value()}
+                      alt={cfg()?.path}
+                      class="max-h-[60vh] max-w-full rounded border border-border-weak-base bg-background-base object-contain"
+                      loading="lazy"
+                      decoding="async"
+                      onLoad={onLoad}
+                    />
+                  </Show>
                 </div>
               )
             }

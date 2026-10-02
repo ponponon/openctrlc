@@ -42,6 +42,7 @@ export const dict: Record<string, string> = {
   "ui.fileMedia.state.loading": "Loading {{kind}}...",
   "ui.fileMedia.state.error": "Unable to load {{kind}}.",
   "ui.fileMedia.state.unavailable": "{{kind}} preview unavailable.",
+  "ui.fileMedia.state.tapToLoad": "Load {{kind}}",
   "ui.fileMedia.binary.title": "Binary file",
   "ui.fileMedia.binary.description.path": "{{path}} is binary.",
   "ui.fileMedia.binary.description.default": "Binary content",

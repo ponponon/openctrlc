@@ -22,6 +22,7 @@ export const dict = {
   "ui.fileMedia.state.loading": "{{kind}} 로드 중...",
   "ui.fileMedia.state.error": "{{kind}} 로드 오류",
   "ui.fileMedia.state.unavailable": "{{kind}} 미리보기를 사용할 수 없음",
+  "ui.fileMedia.state.tapToLoad": "{{kind}} 불러오기",
   "ui.fileMedia.binary.title": "바이너리 파일",
   "ui.fileMedia.binary.description.path": "{{path}}은(는) 바이너리 파일이므로 표시할 수 없습니다.",
   "ui.fileMedia.binary.description.default": "바이너리 파일이므로 표시할 수 없습니다.",
