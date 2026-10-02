@@ -2388,9 +2388,11 @@ export default function Page() {
                 fallback={
                   <div class="flex flex-col gap-3 px-4 py-6" aria-busy="true" aria-live="polite">
                     <div class="h-4 w-2/5 animate-pulse rounded bg-v2-background-bg-layer-01" />
-                    <div class="h-20 w-full animate-pulse rounded-xl bg-v2-background-bg-layer-01" />
+                    <div class="h-24 w-full animate-pulse rounded-xl bg-v2-background-bg-layer-01" />
                     <div class="h-4 w-3/5 animate-pulse rounded bg-v2-background-bg-layer-01" />
-                    <div class="h-16 w-4/5 animate-pulse rounded-xl bg-v2-background-bg-layer-01" />
+                    <div class="h-24 w-4/5 animate-pulse rounded-xl bg-v2-background-bg-layer-01" />
+                    <div class="h-4 w-1/3 animate-pulse rounded bg-v2-background-bg-layer-01" />
+                    <div class="h-16 w-3/5 animate-pulse rounded-xl bg-v2-background-bg-layer-01" />
                   </div>
                 }
               >

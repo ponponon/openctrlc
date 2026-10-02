@@ -257,9 +257,22 @@ export function FileMedia(props: { media?: FileMediaOptions; fallback: () => JSX
 
             return (
               <div class="flex justify-center bg-background-stronger px-6 py-4">
-                <audio class="w-full max-w-xl" controls preload="metadata" onLoadedMetadata={onLoad}>
-                  <source src={value()} type={audioMime()} />
-                </audio>
+                <Show
+                  when={!isLiteNetwork() || mediaRevealed()}
+                  fallback={
+                    <button
+                      type="button"
+                      class="rounded border border-border-weak-base bg-background-base px-3 py-2 text-13-regular text-text-base"
+                      onClick={() => setMediaRevealed(true)}
+                    >
+                      {i18n.t("ui.fileMedia.state.tapToLoad", { kind: i18n.t("ui.fileMedia.kind.audio") })}
+                    </button>
+                  }
+                >
+                  <audio class="w-full max-w-xl" controls preload="metadata" onLoadedMetadata={onLoad}>
+                    <source src={value()} type={audioMime()} />
+                  </audio>
+                </Show>
               </div>
             )
           }}
