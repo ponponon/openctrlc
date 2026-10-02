@@ -1319,7 +1319,13 @@ export function UserMessageDisplay(props: {
                         </div>
                       }
                     >
-                      <img data-slot="user-message-attachment-image" src={file.url} alt={name} />
+                      <img
+                        data-slot="user-message-attachment-image"
+                        src={file.url}
+                        alt={name}
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </Show>
                   </div>
                 }

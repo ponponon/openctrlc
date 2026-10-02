@@ -232,6 +232,8 @@ export function FileMedia(props: { media?: FileMediaOptions; fallback: () => JSX
                     src={value()}
                     alt={cfg()?.path}
                     class="max-h-[60vh] max-w-full rounded border border-border-weak-base bg-background-base object-contain"
+                    loading="lazy"
+                    decoding="async"
                     onLoad={onLoad}
                   />
                 </div>
@@ -262,6 +264,8 @@ export function FileMedia(props: { media?: FileMediaOptions; fallback: () => JSX
                       src={value()}
                       alt={cfg()?.path}
                       class="max-h-[60vh] max-w-full rounded border border-border-weak-base bg-background-base object-contain"
+                      loading="lazy"
+                      decoding="async"
                       onLoad={onLoad}
                     />
                   </div>
