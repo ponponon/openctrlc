@@ -41,6 +41,7 @@ type PendingResponse = {
   rejectHeaders: (error: Error) => void
   controller?: ReadableStreamDefaultController<Uint8Array>
   closed: boolean
+  cache?: { key: string; status: number; headers: Record<string, string>; chunks: Uint8Array[] }
 }
 
 type SessionTraffic = {
@@ -692,6 +693,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     const response = session.responses.get(value.id)
     if (!response || response.closed) return
     response.closed = true
+    if (response.cache) writeApiCache(response.cache)
     response.controller?.close()
     session.responses.delete(value.id)
     return
@@ -722,10 +724,51 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
 }
 
+const apiCache = new Map<string, { at: number; status: number; headers: Record<string, string>; body: Uint8Array }>()
+const apiCacheTtlMs = 60_000
+
+function cacheableApiPath(pathnameWithQuery: string) {
+  return /^\/(provider|command|agents|model)(\?|$)/.test(pathnameWithQuery)
+}
+
+function readApiCache(key: string) {
+  const hit = apiCache.get(key)
+  if (!hit) return
+  if (Date.now() - hit.at > apiCacheTtlMs) {
+    apiCache.delete(key)
+    return
+  }
+  return hit
+}
+
+function writeApiCache(entry: NonNullable<PendingResponse["cache"]>) {
+  if (entry.chunks.length === 0) return
+  const total = entry.chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
+  if (total > 8 * 1024 * 1024) return
+  const body = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of entry.chunks) {
+    body.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  apiCache.set(entry.key, { at: Date.now(), status: entry.status, headers: entry.headers, body })
+}
+
 async function proxyRequest(session: RelaySession, request: Request, viewerToken: string) {
   if (!session.host || session.host.readyState !== 1) return new Response("Desktop is disconnected", { status: 503 })
   if (request.headers.get("upgrade")) return new Response("Unsupported upgrade", { status: 400 })
   if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
+  const path = new URL(request.url).pathname + new URL(request.url).search
+  const cacheable = request.method === "GET" && cacheableApiPath(path)
+  if (cacheable) {
+    const hit = readApiCache(path)
+    if (hit) {
+      const headers = new Headers(hit.headers)
+      headers.set("x-relay-cache", "hit")
+      for (const cookie of viewerCookie(viewerToken, session.id)) headers.append("set-cookie", cookie)
+      return new Response(hit.body, { status: hit.status, headers })
+    }
+  }
   if (session.responses.size >= maxPendingRequests)
     return new Response("Too many remote requests", { status: 429, headers: noStore })
   const contentLength = Number(request.headers.get("content-length") ?? 0)
@@ -768,7 +811,6 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
         ].includes(name.toLowerCase()),
     ),
   )
-  const path = new URL(request.url).pathname + new URL(request.url).search
   if (!sendHost(session, { type: "request.start", id, method: request.method, path, headers })) {
     session.responses.delete(id)
     return new Response("Desktop is disconnected", { status: 503 })
@@ -788,6 +830,14 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     const responseHeaders = sanitizeResponseHeaders(result.headers)
     for (const cookie of viewerCookie(viewerToken, session.id)) responseHeaders.append("set-cookie", cookie)
     applyAssetCachePolicy(path, responseHeaders)
+    if (cacheable) {
+      pending.cache = {
+        key: path,
+        status: result.status,
+        headers: Object.fromEntries(responseHeaders.entries()),
+        chunks: [],
+      }
+    }
     if ([204, 205, 304].includes(result.status)) {
       return new Response(null, { status: result.status, headers: responseHeaders })
     }
@@ -1107,6 +1157,7 @@ function handleHostBinary(session: RelaySession, bytes: Uint8Array) {
 function enqueueResponseChunk(session: RelaySession, response: PendingResponse, payload: Uint8Array) {
   if (!response.controller || response.closed) return
   session.traffic.viewerOut += payload.byteLength
+  if (response.cache) response.cache.chunks.push(payload)
   response.controller.enqueue(payload)
 }
 
