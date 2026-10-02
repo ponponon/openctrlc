@@ -32,6 +32,19 @@ function mapProviderAuthError<A, R>(self: Effect.Effect<A, ProviderAuth.Error, R
   )
 }
 
+/** Drop transport-only model fields the web list never reads (saves ~1MB JSON). */
+function toCatalogProvider<T extends { models?: Record<string, unknown> }>(provider: T): T {
+  if (!provider.models) return provider
+  const models = Object.fromEntries(
+    Object.entries(provider.models).map(([id, model]) => {
+      if (!model || typeof model !== "object") return [id, model]
+      const { api: _api, options: _options, ...rest } = model as Record<string, unknown>
+      return [id, rest]
+    }),
+  )
+  return { ...provider, models }
+}
+
 export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider", (handlers) =>
   Effect.gen(function* () {
     const cfg = yield* Config.Service
@@ -59,7 +72,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
         connected,
       )
       const value = {
-        all: Object.values(providers).map(Provider.toPublicInfo),
+        all: Object.values(providers).map((item) => toCatalogProvider(Provider.toPublicInfo(item))),
         default: Provider.defaultModelIDs(providers),
         connected: Object.keys(providers).filter((id) => id in connected || credentials[id]),
       }
