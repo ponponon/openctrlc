@@ -73,8 +73,20 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       )
     })
 
+    // Command templates are multi-line prompts; the palette only needs metadata.
+    // Keep the `template` key for schema compatibility but send an empty string.
+    let commandCache: { at: number; value: unknown } | undefined
     const getCommand = Effect.fn("InstanceHttpApi.command")(function* () {
-      return yield* command.list()
+      if (commandCache && Date.now() - commandCache.at < 60_000) return commandCache.value as never
+      const list = yield* command.list()
+      const value = Array.isArray(list)
+        ? list.map((item) => {
+            if (!item || typeof item !== "object") return item
+            return { ...item, template: "" } as typeof item
+          })
+        : list
+      commandCache = { at: Date.now(), value }
+      return value
     })
 
     const getAgent = Effect.fn("InstanceHttpApi.agent")(function* () {
