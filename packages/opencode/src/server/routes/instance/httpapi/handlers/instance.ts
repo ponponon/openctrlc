@@ -89,13 +89,21 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       return value
     })
 
+    let agentCache: { at: number; value: unknown } | undefined
     const getAgent = Effect.fn("InstanceHttpApi.agent")(function* () {
-      return yield* agent.list()
+      if (agentCache && Date.now() - agentCache.at < 60_000) return agentCache.value as never
+      const value = yield* agent.list()
+      agentCache = { at: Date.now(), value }
+      return value
     })
 
+    let skillCache: { at: number; value: unknown } | undefined
     const getSkill = Effect.fn("InstanceHttpApi.skill")(function* () {
+      if (skillCache && Date.now() - skillCache.at < 60_000) return skillCache.value as never
       yield* skill.refresh()
-      return yield* skill.all()
+      const value = yield* skill.all()
+      skillCache = { at: Date.now(), value }
+      return value
     })
 
     const getLsp = Effect.fn("InstanceHttpApi.lsp")(function* () {
