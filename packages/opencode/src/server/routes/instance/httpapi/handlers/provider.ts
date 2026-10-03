@@ -32,17 +32,31 @@ function mapProviderAuthError<A, R>(self: Effect.Effect<A, ProviderAuth.Error, R
   )
 }
 
-/** Drop transport-only model fields the web list never reads (saves ~1MB JSON). */
+/** Drop transport-only model fields and false capability flags the web list never needs. */
 function toCatalogProvider<T extends { models?: Record<string, unknown> }>(provider: T): T {
   if (!provider.models) return provider
   const models = Object.fromEntries(
     Object.entries(provider.models).map(([id, model]) => {
       if (!model || typeof model !== "object") return [id, model]
-      const { api: _api, options: _options, ...rest } = model as Record<string, unknown>
-      return [id, rest]
+      const { api: _api, options: _options, capabilities, ...rest } = model as Record<string, unknown>
+      return [id, { ...rest, capabilities: compactFalsy(capabilities) }]
     }),
   )
   return { ...provider, models }
+}
+
+/** Omit false/0/null object values — readers treat missing as falsy. */
+function compactFalsy(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(compactFalsy)
+  if (!value || typeof value !== "object") return value
+  const out: Record<string, unknown> = {}
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (item === false || item === 0 || item === null) continue
+    const next = compactFalsy(item)
+    if (next === undefined) continue
+    out[key] = next
+  }
+  return out
 }
 
 export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider", (handlers) =>
