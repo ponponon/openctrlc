@@ -38,11 +38,38 @@ function toCatalogProvider<T extends { models?: Record<string, unknown> }>(provi
   const models = Object.fromEntries(
     Object.entries(provider.models).map(([id, model]) => {
       if (!model || typeof model !== "object") return [id, model]
-      const { api: _api, options: _options, capabilities, ...rest } = model as Record<string, unknown>
-      return [id, { ...rest, capabilities: compactFalsy(capabilities) }]
+      const { api: _api, options: _options, cost, variants, capabilities, ...rest } = model as Record<
+        string,
+        unknown
+      >
+      return [
+        id,
+        {
+          ...rest,
+          capabilities: compactFalsy(capabilities),
+          cost: compactCost(cost),
+          variants: compactVariants(variants),
+        },
+      ]
     }),
   )
   return { ...provider, models }
+}
+
+/** UI only reads the untiered (or first) cost entry. */
+function compactCost(cost: unknown) {
+  if (!Array.isArray(cost)) return cost
+  const pick = cost.find((item) => item && typeof item === "object" && (item as { tier?: unknown }).tier === undefined) ?? cost[0]
+  return pick === undefined ? cost : [pick]
+}
+
+function compactVariants(variants: unknown) {
+  if (!Array.isArray(variants)) return variants
+  return variants.map((variant) => {
+    if (!variant || typeof variant !== "object") return variant
+    const { id, settings } = variant as Record<string, unknown>
+    return { id, settings: settings ?? {} }
+  })
 }
 
 /** Omit false/0/null object values — readers treat missing as falsy. */
