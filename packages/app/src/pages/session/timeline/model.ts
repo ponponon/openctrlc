@@ -99,7 +99,11 @@ export function selectUserMessages(messages: Message[]) {
 }
 
 export function isTimelineReady(messages: Message[] | undefined, loading: boolean) {
-  return messages !== undefined && !loading
+  if (messages === undefined) return false
+  // Progressive paint: show the timeline as soon as any message lands instead of
+  // waiting for the whole first page (important on remote / 5Mbps).
+  if (messages.length > 0) return true
+  return !loading
 }
 
 export function selectVisibleUserMessages(messages: UserMessage[], revertMessageID?: string) {

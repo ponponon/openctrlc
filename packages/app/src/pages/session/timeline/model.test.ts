@@ -15,9 +15,10 @@ describe("timeline model", () => {
     expect(selectVisibleUserMessages(users)).toBe(users)
   })
 
-  test("waits for the initial history load to settle", () => {
-    expect(isTimelineReady([assistant("msg_2")], true)).toBe(false)
-    expect(isTimelineReady([user("msg_1"), assistant("msg_2")], true)).toBe(false)
+  test("paints as soon as any message lands", () => {
+    expect(isTimelineReady([assistant("msg_2")], true)).toBe(true)
+    expect(isTimelineReady([user("msg_1"), assistant("msg_2")], true)).toBe(true)
+    expect(isTimelineReady([], true)).toBe(false)
     expect(isTimelineReady([], false)).toBe(true)
   })
 
