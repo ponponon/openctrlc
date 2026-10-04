@@ -728,7 +728,10 @@ const apiCache = new Map<string, { at: number; status: number; headers: Record<s
 const apiCacheTtlMs = 60_000
 
 function cacheableApiPath(pathnameWithQuery: string) {
-  return /^\/(provider|command|agents|model)(\?|$)/.test(pathnameWithQuery)
+  // Keep these in sync with actual client URLs (`/agent`, not `/agents`).
+  return /^\/(provider|command|agents?|model|permission|vcs|system-prompt-snapshot|skill|references?)(\?|$)/.test(
+    pathnameWithQuery,
+  )
 }
 
 function readApiCache(key: string) {
