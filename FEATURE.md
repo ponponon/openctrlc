@@ -2314,6 +2314,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 远程性能：会话页/File/KaTeX 均按需；入口 JS 约 1.49MB（原 3.26MB），主 CSS 不含 KaTeX；哈希资源一年缓存；弱网（saveData/2G/3G）跳过预取并对图片/音频点按加载，顶栏显示「省流」；会话打开 20 条/页、折叠 diff、虚拟列表、气泡骨架。
 
+- 交互即时化（桌面/远程统一）：开 tab、切项目、选模型、新建草稿均先改 UI 再补数据；禁止用 startTransition 包住含懒加载的导航。会话时间线首条消息到达即渲染；Inter 拉丁子集 + font-display:swap；hover 预取会话路由包与消息。
+
 - 远程首屏验收：侧栏项目数与桌面一致（或至少 > 0），首页会话列表非空；新开标签页/强刷后仍能看到项目与会话。改动 workspace 同步、bootstrap 或 tabs 恢复后必须复验这三条。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
 - Renderer 收到旧版桌面主进程 IPC 状态时，缺失的授权上限字段回退为默认 10 和旧 Relay 容量 3，避免数字输入为空或显示 `undefined`。
