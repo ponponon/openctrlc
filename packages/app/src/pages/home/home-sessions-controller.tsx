@@ -3,7 +3,7 @@ import { preloadMarkdown } from "@openctrlc/session-ui/markdown-cache"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { useQuery } from "@tanstack/solid-query"
 import { DateTime } from "luxon"
-import { type Accessor, createEffect, createMemo, createRoot, type JSX, startTransition } from "solid-js"
+import { type Accessor, createEffect, createMemo, createRoot, type JSX, onMount, startTransition } from "solid-js"
 import { produce } from "solid-js/store"
 import { useCommand } from "@/context/command"
 import {
@@ -105,6 +105,20 @@ export function createHomeSessionsController(home: HomeController) {
   const records = createMemo(() => allRecords().slice(0, HOME_SESSION_LIMIT))
   const groups = createMemo(() => groupSessions(records(), language))
   const prefetched = new Set<string>()
+
+  // Warm the session route chunk so the first click does not stall on a 1MB download.
+  onMount(() => {
+    const idle = (fn: () => void) => {
+      if (typeof requestIdleCallback === "function") {
+        requestIdleCallback(() => fn(), { timeout: 2000 })
+        return
+      }
+      setTimeout(fn, 400)
+    }
+    idle(() => {
+      void import("@/pages/session-route-view").catch(() => undefined)
+    })
+  })
 
   const prefetchSession = (record: HomeSessionRecord) => {
     const ctx = home.server.focusedContext()

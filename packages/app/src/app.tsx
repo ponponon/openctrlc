@@ -35,6 +35,7 @@ import {
   type ParentProps,
   Show,
   startTransition,
+  Suspense,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import { makeEventListener } from "@solid-primitives/event-listener"
@@ -69,6 +70,7 @@ import { showOpenCodeImportDialog } from "@/utils/opencode-import-dialog"
 import { decode64 } from "@/utils/base64"
 import { NewHome } from "@/pages/home"
 import { LegacyHome } from "@/pages/home/legacy-home"
+import { SessionSkeleton } from "@/pages/session-skeleton"
 
 // Session chrome (timeline, diffs, composer, terminal) is the bulk of the bundle.
 // Keep it out of the remote first paint; only load when a session route mounts.
@@ -122,7 +124,11 @@ const SessionRoute = () => {
     tabs.newDraft({ server: server.key, directory: sdk().directory }, search.prompt)
   })
 
-  return <SessionRouteView sessionID={params.id} />
+  return (
+    <Suspense fallback={<SessionSkeleton />}>
+      <SessionRouteView sessionID={params.id} />
+    </Suspense>
+  )
 }
 
 function TargetServerRoute(props: ParentProps) {
@@ -147,7 +153,9 @@ function TargetServerRoute(props: ParentProps) {
 
 const TargetSessionRoute = () => (
   <TargetServerRoute>
-    <TargetSessionRouteView />
+    <Suspense fallback={<SessionSkeleton />}>
+      <TargetSessionRouteView />
+    </Suspense>
   </TargetServerRoute>
 )
 
@@ -155,9 +163,11 @@ function LegacyTargetSessionRoute() {
   const params = useParams<{ serverKey: string; id: string }>()
   return (
     <TargetServerRoute>
-      <SessionBoundary sessionID={params.id} serverKey={requireServerKey(params.serverKey)}>
-        <LegacyTargetSessionRedirect />
-      </SessionBoundary>
+      <Suspense fallback={<SessionSkeleton />}>
+        <SessionBoundary sessionID={params.id} serverKey={requireServerKey(params.serverKey)}>
+          <LegacyTargetSessionRedirect />
+        </SessionBoundary>
+      </Suspense>
     </TargetServerRoute>
   )
 }
