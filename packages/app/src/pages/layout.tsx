@@ -1177,6 +1177,14 @@ export default function LegacyLayout(props: ParentProps) {
     if (!directory) return
     const root = projectRoot(directory)
     server.projects.touch(root)
+    // First paint must not wait on directory listing or session.sync —
+    // jump to the best-known URL immediately, then refine if needed.
+    const remembered = store.lastProjectSession[root]
+    const initial = remembered?.id
+      ? `/${base64Encode(remembered.directory)}/session/${remembered.id}`
+      : `/${base64Encode(root)}/session`
+    navigateWithSidebarReset(initial)
+
     const project = layout.projects.list().find((item) => item.worktree === root)
     let dirs = project
       ? effectiveWorkspaceOrder(root, [root, ...(project.sandboxes ?? [])], store.workspaceOrder[root])
@@ -1216,40 +1224,39 @@ export default function LegacyLayout(props: ParentProps) {
       return true
     }
 
-    const projectSession = store.lastProjectSession[root]
-    if (projectSession?.id) {
-      await refreshDirs(projectSession.directory)
-      const opened = await openSession(projectSession)
-      if (opened) return
-      clearLastProjectSession(root)
+    // Already navigated above; only hop again if we discover a better session.
+    if (remembered?.id) {
+      void refreshDirs(remembered.directory)
+        .then(() => openSession(remembered))
+        .then((opened) => {
+          if (!opened) clearLastProjectSession(root)
+        })
+        .catch(() => undefined)
+      return
     }
 
     const latest = latestRootSession(
       dirs.map((item) => serverSync().child(item, { bootstrap: false })[0]),
       Date.now(),
     )
-    if (latest && (await openSession(latest))) {
+    if (latest) {
+      void openSession(latest).catch(() => undefined)
       return
     }
 
-    const fetched = latestRootSession(
-      await Promise.all(
-        dirs.map(async (item) => ({
-          path: { directory: item },
-          session: await listAllSessions(serverSDK().api.session, {
-            directory: item,
-            parentID: null,
-            order: "desc",
-          }).catch(() => []),
-        })),
-      ),
-      Date.now(),
+    void Promise.all(
+      dirs.map(async (item) => ({
+        path: { directory: item },
+        session: await listAllSessions(serverSDK().api.session, {
+          directory: item,
+          parentID: null,
+          order: "desc",
+        }).catch(() => []),
+      })),
     )
-    if (fetched && (await openSession(fetched))) {
-      return
-    }
-
-    navigateWithSidebarReset(`/${base64Encode(root)}/session`)
+      .then((items) => latestRootSession(items, Date.now()))
+      .then((fetched) => (fetched ? openSession(fetched) : undefined))
+      .catch(() => undefined)
   }
 
   function navigateToSession(session: Session | undefined) {
