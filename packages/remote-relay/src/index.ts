@@ -41,7 +41,6 @@ type PendingResponse = {
   rejectHeaders: (error: Error) => void
   controller?: ReadableStreamDefaultController<Uint8Array>
   closed: boolean
-  cache?: { key: string; status: number; headers: Record<string, string>; chunks: Uint8Array[] }
 }
 
 type SessionTraffic = {
@@ -693,7 +692,6 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     const response = session.responses.get(value.id)
     if (!response || response.closed) return
     response.closed = true
-    if (response.cache) writeApiCache(response.cache)
     response.controller?.close()
     session.responses.delete(value.id)
     return
@@ -724,54 +722,11 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
 }
 
-const apiCache = new Map<string, { at: number; status: number; headers: Record<string, string>; body: Uint8Array }>()
-const apiCacheTtlMs = 60_000
-
-function cacheableApiPath(pathnameWithQuery: string) {
-  // Keep these in sync with actual client URLs (`/agent`, not `/agents`).
-  return /^\/(provider|command|agents?|model|permission|vcs|system-prompt-snapshot|skill|references?)(\?|$)/.test(
-    pathnameWithQuery,
-  )
-}
-
-function readApiCache(key: string) {
-  const hit = apiCache.get(key)
-  if (!hit) return
-  if (Date.now() - hit.at > apiCacheTtlMs) {
-    apiCache.delete(key)
-    return
-  }
-  return hit
-}
-
-function writeApiCache(entry: NonNullable<PendingResponse["cache"]>) {
-  if (entry.chunks.length === 0) return
-  const total = entry.chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0)
-  if (total > 8 * 1024 * 1024) return
-  const body = new Uint8Array(total)
-  let offset = 0
-  for (const chunk of entry.chunks) {
-    body.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  apiCache.set(entry.key, { at: Date.now(), status: entry.status, headers: entry.headers, body })
-}
-
 async function proxyRequest(session: RelaySession, request: Request, viewerToken: string) {
   if (!session.host || session.host.readyState !== 1) return new Response("Desktop is disconnected", { status: 503 })
   if (request.headers.get("upgrade")) return new Response("Unsupported upgrade", { status: 400 })
   if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
   const path = new URL(request.url).pathname + new URL(request.url).search
-  const cacheable = request.method === "GET" && cacheableApiPath(path)
-  if (cacheable) {
-    const hit = readApiCache(path)
-    if (hit) {
-      const headers = new Headers(hit.headers)
-      headers.set("x-relay-cache", "hit")
-      for (const cookie of viewerCookie(viewerToken, session.id)) headers.append("set-cookie", cookie)
-      return new Response(hit.body, { status: hit.status, headers })
-    }
-  }
   if (session.responses.size >= maxPendingRequests)
     return new Response("Too many remote requests", { status: 429, headers: noStore })
   const contentLength = Number(request.headers.get("content-length") ?? 0)
@@ -831,15 +786,9 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
   try {
     const result = await headersPromise
     const responseHeaders = sanitizeResponseHeaders(result.headers)
-    for (const cookie of viewerCookie(viewerToken, session.id)) responseHeaders.append("set-cookie", cookie)
-    applyAssetCachePolicy(path, responseHeaders)
-    if (cacheable) {
-      pending.cache = {
-        key: path,
-        status: result.status,
-        headers: Object.fromEntries(responseHeaders.entries()),
-        chunks: [],
-      }
+    applyAssetCachePolicy(path, request.method, result.status, responseHeaders)
+    if (!responseHeaders.get("cache-control")?.startsWith("public,")) {
+      for (const cookie of viewerCookie(viewerToken, session.id)) responseHeaders.append("set-cookie", cookie)
     }
     if ([204, 205, 304].includes(result.status)) {
       return new Response(null, { status: result.status, headers: responseHeaders })
@@ -870,17 +819,25 @@ function shouldGzipToViewer(request: Request, responseHeaders: Headers) {
 }
 
 /**
- * Hashed Vite assets are immutable. Long-caching them on the relay cuts repeat
+ * Hashed Vite assets are immutable. Long-caching them in the browser cuts repeat
  * remote loads from multi-MB to a handful of small document/API calls on 5Mbps.
  */
-function applyAssetCachePolicy(pathnameWithQuery: string, responseHeaders: Headers) {
+function applyAssetCachePolicy(pathnameWithQuery: string, method: string, status: number, responseHeaders: Headers) {
+  // All desktops share the public origin, but API responses belong to one
+  // desktop and project. Never retain them or their viewer authorization cookies.
+  responseHeaders.set("cache-control", "no-store, max-age=0")
   const pathname = pathnameWithQuery.split("?")[0] ?? pathnameWithQuery
-  if (/^\/assets\/.+-[A-Za-z0-9_-]{6,}\.\w+$/.test(pathname)) {
+  if (
+    ["GET", "HEAD"].includes(method) &&
+    [200, 304].includes(status) &&
+    !(responseHeaders.get("content-type") ?? "").toLowerCase().includes("text/html") &&
+    /^\/assets\/.+-[A-Za-z0-9_-]{6,}\.\w+$/.test(pathname)
+  ) {
     responseHeaders.set("cache-control", "public, max-age=31536000, immutable")
     return
   }
   if (pathname === "/" || pathname.endsWith(".html")) {
-    responseHeaders.set("cache-control", "no-cache")
+    responseHeaders.set("cache-control", "private, no-cache")
   }
 }
 
@@ -1160,7 +1117,6 @@ function handleHostBinary(session: RelaySession, bytes: Uint8Array) {
 function enqueueResponseChunk(session: RelaySession, response: PendingResponse, payload: Uint8Array) {
   if (!response.controller || response.closed) return
   session.traffic.viewerOut += payload.byteLength
-  if (response.cache) response.cache.chunks.push(payload)
   response.controller.enqueue(payload)
 }
 

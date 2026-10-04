@@ -52,6 +52,15 @@
 - `packages/app/src/pages/home/home-sessions-view.tsx`、`packages/app/src/utils/session-context-usage.ts`：悬停提示与百分比。
 - `packages/app/src/components/session/session-context-metrics.ts`：会话内既有口径，列表与其保持一致。
 
+## Relay 动态响应隔离与静态资源缓存边界
+
+- 删除公共 Relay 按 URL 全局复用的动态 API 缓存。浏览器请求始终转发给它已授权的桌面，避免不同桌面和不同项目间混用配置、权限、仓库状态及浏览器授权 Cookie。
+- 动态响应默认 `no-store`；HTML 使用私有重新校验策略。仅成功的 GET/HEAD 内容哈希静态资源允许长期缓存，错误响应和 HTML 回退不会被缓存一年；公共静态响应不附带浏览器授权 Cookie。
+- 保留桌面实例内部的接口优化与浏览器静态资源缓存，Relay 不积累动态 API 响应副本。
+- 修正 Relay 文档中旧的三分钟恢复窗口和“授权不落盘”说明，按当前可选持久化行为记录会话、授权及工作区元数据边界。
+- `docs/remote-service-economics.md` 记录经过官方资料核对的低成本架构、免费额度、成本算例、赞助条件及托管收入规划；P2P/CDN/计费属于待实现方案。
+- 本次做源码审查及 Bun 静态 bundle 构建；未执行运行时或负载测试，不能据此宣称多用户上线验收通过。
+
 ## Relay 短时断线自动恢复
 
 ### 功能目标

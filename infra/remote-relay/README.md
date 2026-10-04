@@ -21,6 +21,6 @@ For another host, edit `compose.yaml` (`OPENCTRLC_REMOTE_PUBLIC_URL`), `openrest
 - Check status: `docker compose --project-name openctrlc-remote --project-directory /home/pon/openctrlc-remote -f /home/pon/openctrlc-remote/infra/remote-relay/compose.yaml ps`
 - Check health: `curl --fail https://openctrlc-remote.quniv.cn/healthz` returns 404 by design; the private host-only check is `curl http://127.0.0.1:4097/healthz`.
 - View relay process output: run `docker compose ... logs --tail=100 relay` with the same project and file arguments above. The reverse proxy disables access logs and sends its virtual-host error log to `/dev/null` to avoid persisting request URLs.
-- Restarting the relay drops all active remote sessions; sessions are process-local and are not restored after restart.
+- Restarting the relay disconnects active transports. This compose file persists resume credentials, browser grants, and workspace metadata under `/home/pon/openctrlc-remote/data`; saved sessions and unexpired grants are restored so desktops can reconnect. Protect this directory and backups as credentials. In-flight requests and WebSocket streams are not restored. Without the data volume, grants are lost on restart.
 
 The public endpoint is one limited-capacity instance. It is suitable as an initial shared service, not a claim of worldwide low latency, high availability, or horizontal scaling.
