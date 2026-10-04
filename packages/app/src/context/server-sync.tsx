@@ -192,8 +192,8 @@ function makeQueryOptionsApi(
   return {
     globalConfig: () => loadGlobalConfigQuery(scope, serverSDK(), protocol),
     projects: () => loadProjectsQuery(scope, serverAPI.project),
-    providers: (directory: PathKey | null) =>
-      loadProvidersQuery(scope, directory, serverAPI, directory ? sdkFor(directory) : serverSDK(), protocol),
+    providers: (directory: PathKey | null, view: "summary" | "full" = "summary") =>
+      loadProvidersQuery(scope, directory, serverAPI, directory ? sdkFor(directory) : serverSDK(), protocol, view),
     path: (directory: PathKey | null) =>
       loadPathQuery(scope, directory, directory ? sdkFor(directory) : serverSDK(), protocol),
     agents: (directory: PathKey) => loadAgentsQuery(scope, directory, serverAPI.agent, sdkFor(directory), protocol),
@@ -245,7 +245,12 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
   )
 
   const [configQuery, providerQuery, pathQuery] = useQueries(() => ({
-    queries: [queryOptionsApi.globalConfig(), queryOptionsApi.providers(null), queryOptionsApi.path(null)],
+    queries: [queryOptionsApi.globalConfig(), queryOptionsApi.providers(null, "summary"), queryOptionsApi.path(null)],
+  }))
+  const providerFullQuery = useQuery(() => ({
+    ...queryOptionsApi.providers(null, "full"),
+    // Upgrade to the full catalog after the slim one is on screen.
+    enabled: !providerQuery.isLoading && providerQuery.isSuccess,
   }))
   const activeSessionsQuery = useQuery(() =>
     loadActiveSessionsQuery(serverSDK.scope, {
@@ -285,6 +290,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     },
     get provider() {
       const EMPTY = { all: new Map(), connected: [], default: {} }
+      if (providerFullQuery.data) return providerFullQuery.data
       if (providerQuery.isLoading) return EMPTY
       return providerQuery.data ?? EMPTY
     },

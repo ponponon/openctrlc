@@ -5,7 +5,7 @@ import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
 import { Authorization } from "../middleware/authorization"
 import { InstanceContextMiddleware } from "../middleware/instance-context"
-import { WorkspaceRoutingMiddleware, WorkspaceRoutingQuery } from "../middleware/workspace-routing"
+import { WorkspaceRoutingMiddleware, WorkspaceRoutingQuery, WorkspaceRoutingQueryFields } from "../middleware/workspace-routing"
 import { described } from "./metadata"
 import { ProviderV2 } from "@openctrlc/core/provider"
 
@@ -36,7 +36,11 @@ export const ProviderApi = HttpApi.make("provider")
     HttpApiGroup.make("provider")
       .add(
         HttpApiEndpoint.get("list", root, {
-          query: WorkspaceRoutingQuery,
+          query: Schema.Struct({
+            ...WorkspaceRoutingQueryFields,
+            /** `summary` omits model catalogs for unconnected providers (remote first paint). */
+            view: Schema.optional(Schema.Literals(["summary", "full"])),
+          }),
           success: described(Provider.ListResult, "List of providers"),
         }).annotateMerge(
           OpenApi.annotations({

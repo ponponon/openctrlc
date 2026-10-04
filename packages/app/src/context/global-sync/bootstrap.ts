@@ -246,16 +246,20 @@ export const loadProvidersQuery = (
   sdk: CatalogApi,
   legacy?: OpencodeClient,
   protocol?: Promise<ServerProtocol>,
+  view: "summary" | "full" = "summary",
 ) =>
   queryOptions({
-    queryKey: [scope, directory, "providers"],
+    queryKey: [scope, directory, "providers", view],
     // Full model catalogs are multi-MB over a relay; never refetch on remount.
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: () =>
       retry(async () => {
         if ((await protocol) === "v1" && legacy) {
-          const result = await legacy.provider.list()
+          // `view=summary` skips model catalogs for unconnected providers.
+          const result = await legacy.provider.list({
+            query: { directory: directory ?? undefined, view },
+          } as never)
           return normalizeProviderList(result.data!)
         }
         const location = directory ? { location: { directory } } : undefined
