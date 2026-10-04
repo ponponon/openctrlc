@@ -3,7 +3,7 @@ import { preloadMarkdown } from "@openctrlc/session-ui/markdown-cache"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { useQuery } from "@tanstack/solid-query"
 import { DateTime } from "luxon"
-import { type Accessor, createEffect, createMemo, createRoot, type JSX, onMount, startTransition } from "solid-js"
+import { type Accessor, createEffect, createMemo, createRoot, type JSX, onMount } from "solid-js"
 import { produce } from "solid-js/store"
 import { useCommand } from "@/context/command"
 import {
@@ -179,10 +179,8 @@ export function createHomeSessionsController(home: HomeController) {
               const directory = entry.project?.worktree ?? entry.directory
               ctx.projects.open(directory)
               ctx.projects.touch(directory)
-              void startTransition(() => {
-                const tab = tabs.addSessionTab({ server, sessionId: sessionID })
-                tabs.select(tab)
-              })
+              const tab = tabs.addSessionTab({ server, sessionId: sessionID })
+              tabs.select(tab)
             }}
           />
         ))
@@ -230,10 +228,9 @@ export function createHomeSessionsController(home: HomeController) {
           return
         }
         ctx.projects.touch(directory)
-        void startTransition(() => {
-          const tab = tabs.addSessionTab({ server: ServerConnection.key(conn), sessionId: session.id })
-          tabs.select(tab)
-        })
+        // Navigate immediately; never wait on session sync or route chunk download.
+        const tab = tabs.addSessionTab({ server: ServerConnection.key(conn), sessionId: session.id })
+        tabs.select(tab)
       },
       archive: async (session: Session) => {
         const conn = home.server.focused()

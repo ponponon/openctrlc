@@ -190,14 +190,14 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
         const next = { type: "session" as const, ...tab }
         const existing = store.find((item) => tabKey(item) === tabKey(next))
         if (existing) return existing
-        void startTransition(() => {
-          setStore(
-            produce((tabs) => {
-              if (tabs.some((item) => tabKey(item) === tabKey(next))) return
-              tabs.push(next)
-            }),
-          )
-        })
+        // Do not startTransition here: the tab strip must paint before the session
+        // route chunk loads, or remote clicks feel frozen until the download ends.
+        setStore(
+          produce((tabs) => {
+            if (tabs.some((item) => tabKey(item) === tabKey(next))) return
+            tabs.push(next)
+          }),
+        )
         return next
       },
       reorder(keys: string[]) {
@@ -219,14 +219,12 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
         const draftID = uuid()
         const tab = { type: "draft" as const, draftID, ...draft }
         memory.ensure(tabKey(tab), "prompt", () => createDraftPromptSession(draftID, { prompt, model }))
-        await startTransition(() => {
-          setStore(
-            produce((tabs) => {
-              tabs.push(tab)
-            }),
-          )
-          navigate(draftHref(draftID))
-        })
+        setStore(
+          produce((tabs) => {
+            tabs.push(tab)
+          }),
+        )
+        navigate(draftHref(draftID))
         return tab
       },
       updateDraft(draftID: string, draft: Partial<Omit<DraftTab, "type" | "draftID">>) {
