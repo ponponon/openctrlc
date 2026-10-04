@@ -1081,3 +1081,7 @@ Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 `__Host-oc_remote_boot
 ## 内嵌 UI 的 file 导入路径必须相对模块定位
 
 Bun `with { type: "file" }` 打进 bundle 后是 `./index-*.html` 相对路径。`fs.readFile` 若按 cwd 解析，桌面进程 `chdir(homedir())` 后就变成读家目录，`NotFound` 再包成 `{"error":"Not Found"}` 404。必须 `path.join(dirname(fileURLToPath(import.meta.url)), file)` 解析。electron-vite 会把 `dist/node/*` 整目录拷到 `out/main/chunks/`，资源与 node.js 同级时该解析成立。测试里要用带 `./` 的相对映射覆盖这条路径，不能只用 `$bunfs` 绝对路径。
+
+## 不能对 wire schema 做字段级裁剪来瘦身 HTTP 响应
+
+`Provider.ListResult` 校验很严：删掉 `model.api`、`options`，或把 `capabilities.attachment` 等假值键去掉，都会 400 `Missing key`。远程 `/provider` 因此整接口挂掉。安全做法是 **summary/full 两阶段**：summary 里未连接厂商 `models: {}`，已连接厂商保持完整模型对象；实测 6.6MB → 143KB（~2%）。改响应字段前必须对照 Schema（`packages/schema`）或跑真实 decode，不能只看 UI 是否读该字段。
