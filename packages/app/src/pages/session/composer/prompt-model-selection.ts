@@ -1,4 +1,4 @@
-import { batch, createMemo, startTransition } from "solid-js"
+import { batch, createMemo } from "solid-js"
 import { useModels } from "@/context/models"
 import type { ModelKey, ModelSelection } from "@/context/local"
 import { cycleModelVariant, getConfiguredAgentVariant, resolveModelVariant } from "@/context/model-variant"
@@ -68,14 +68,13 @@ export function createPromptModelSelection(input: { agent: () => { model?: Model
       if (next) selection.set({ providerID: next.provider.id, modelID: next.id })
     },
     set(item: ModelKey | undefined, options?: { recent?: boolean }) {
-      startTransition(() =>
-        batch(() => {
-          prompt.model.set(item ? { ...item, variant: prompt.model.current()?.variant } : undefined)
-          if (!item) return
-          models.setVisibility(item, true)
-          if (options?.recent) models.recent.push(item)
-        }),
-      )
+      // Immediate paint — never wait on a pending remote fetch to show the new model.
+      batch(() => {
+        prompt.model.set(item ? { ...item, variant: prompt.model.current()?.variant } : undefined)
+        if (!item) return
+        models.setVisibility(item, true)
+        if (options?.recent) models.recent.push(item)
+      })
     },
     visible: models.visible,
     setVisibility: models.setVisibility,
@@ -108,14 +107,12 @@ export function createPromptModelSelection(input: { agent: () => { model?: Model
         return Object.keys(current()?.variants ?? {})
       },
       set(value: string | undefined) {
-        startTransition(() =>
-          batch(() => {
-            const model = current()
-            if (!model) return
-            prompt.model.set({ providerID: model.provider.id, modelID: model.id, variant: value ?? null })
-            models.variant.set({ providerID: model.provider.id, modelID: model.id }, value)
-          }),
-        )
+        batch(() => {
+          const model = current()
+          if (!model) return
+          prompt.model.set({ providerID: model.provider.id, modelID: model.id, variant: value ?? null })
+          models.variant.set({ providerID: model.provider.id, modelID: model.id }, value)
+        })
       },
       cycle() {
         const variants = this.list()

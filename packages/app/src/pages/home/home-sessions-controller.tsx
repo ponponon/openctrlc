@@ -124,6 +124,8 @@ export function createHomeSessionsController(home: HomeController) {
     const ctx = home.server.focusedContext()
     const conn = home.server.focused()
     if (!ctx || !conn) return
+    // Warm both the route chunk and message data on hover so the click is a nav, not a download.
+    void import("@/pages/session-route-view").catch(() => undefined)
     // Slow/save-data links skip opportunistic prefetch so the list stays cheap.
     if (readNetworkQuality().lite) return
     const key = `${ServerConnection.key(conn)}\0${record.session.id}`
@@ -230,6 +232,7 @@ export function createHomeSessionsController(home: HomeController) {
         ctx.projects.touch(directory)
         // Navigate immediately; never wait on session sync or route chunk download.
         const tab = tabs.addSessionTab({ server: ServerConnection.key(conn), sessionId: session.id })
+        if (tab.type === "session") tabs.rememberSessionInfo(tab, session)
         tabs.select(tab)
       },
       archive: async (session: Session) => {
