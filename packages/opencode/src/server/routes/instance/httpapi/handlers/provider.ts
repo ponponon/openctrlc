@@ -32,58 +32,18 @@ function mapProviderAuthError<A, R>(self: Effect.Effect<A, ProviderAuth.Error, R
   )
 }
 
-/** Drop transport-only model fields and false capability flags the web list never needs. */
-function toCatalogProvider<T extends { models?: Record<string, unknown> }>(provider: T): T {
-  if (!provider.models) return provider
-  const models = Object.fromEntries(
-    Object.entries(provider.models).map(([id, model]) => {
-      if (!model || typeof model !== "object") return [id, model]
-      const { api: _api, options: _options, cost, variants, capabilities, ...rest } = model as Record<
-        string,
-        unknown
-      >
-      return [
-        id,
-        {
-          ...rest,
-          capabilities: compactFalsy(capabilities),
-          cost: compactCost(cost),
-          variants: compactVariants(variants),
-        },
-      ]
-    }),
-  )
-  return { ...provider, models }
-}
-
-/** UI only reads the untiered (or first) cost entry. */
-function compactCost(cost: unknown) {
-  if (!Array.isArray(cost)) return cost
-  const pick = cost.find((item) => item && typeof item === "object" && (item as { tier?: unknown }).tier === undefined) ?? cost[0]
-  return pick === undefined ? cost : [pick]
-}
-
-function compactVariants(variants: unknown) {
-  if (!Array.isArray(variants)) return variants
-  return variants.map((variant) => {
-    if (!variant || typeof variant !== "object") return variant
-    const { id, settings } = variant as Record<string, unknown>
-    return { id, settings: settings ?? {} }
-  })
-}
-
-/** Omit false/0/null object values — readers treat missing as falsy. */
-function compactFalsy(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(compactFalsy)
-  if (!value || typeof value !== "object") return value
-  const out: Record<string, unknown> = {}
-  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-    if (item === false || item === 0 || item === null) continue
-    const next = compactFalsy(item)
-    if (next === undefined) continue
-    out[key] = next
-  }
-  return out
+/**
+ * Two-phase catalog: `view=summary` keeps model bodies only for connected
+ * providers. Field-level stripping is unsafe here — the wire schema requires
+ * nested keys like `capabilities.attachment` and `model.api`.
+ */
+function toCatalogProvider<T extends { models?: Record<string, unknown> }>(
+  provider: T,
+  view: "summary" | "full",
+  connected: boolean,
+): T {
+  if (view === "full" || connected) return provider
+  return { ...provider, models: {} }
 }
 
 export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider", (handlers) =>
@@ -118,9 +78,8 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       const connectedSet = new Set(Object.keys(providers).filter((id) => id in connected || credentials[id]))
       const value = {
         all: Object.values(providers).map((item) => {
-          const pub = toCatalogProvider(Provider.toPublicInfo(item))
-          if (view !== "summary" || connectedSet.has(pub.id)) return pub
-          return { ...pub, models: {} }
+          const pub = Provider.toPublicInfo(item)
+          return toCatalogProvider(pub, view, connectedSet.has(pub.id))
         }),
         default: Provider.defaultModelIDs(providers),
         connected: [...connectedSet],
