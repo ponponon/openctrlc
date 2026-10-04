@@ -37,11 +37,15 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       }
     })
 
+    let vcsCache: { at: number; value: unknown } | undefined
     const getVcs = Effect.fn("InstanceHttpApi.vcs")(function* () {
+      if (vcsCache && Date.now() - vcsCache.at < 30_000) return vcsCache.value as never
       const [branch, default_branch] = yield* Effect.all([vcs.branch(), vcs.defaultBranch()], {
         concurrency: "unbounded",
       })
-      return { branch, default_branch }
+      const value = { branch, default_branch }
+      vcsCache = { at: Date.now(), value }
+      return value
     })
 
     const getVcsStatus = Effect.fn("InstanceHttpApi.vcsStatus")(function* () {
