@@ -34,11 +34,17 @@ done
 fail=0
 ok() {
   echo "PASS  $1"
-  fail=0
 }
 bad() {
   echo "FAIL  $1"
   fail=1
+}
+curl_public() {
+  if [ -n "$cookie" ]; then
+    curl --fail --silent --show-error --max-time 20 -H "Cookie: $cookie" "$@"
+    return
+  fi
+  curl --fail --silent --show-error --max-time 20 "$@"
 }
 
 # 1) healthz reports sessions and traffic shape
@@ -47,9 +53,9 @@ if [ -n "$healthz" ]; then
   if [ -z "$snap" ]; then
     bad "healthz unreachable ($healthz)"
   else
-    echo "$snap" | jq -e '.ok == true and (.traffic | type == "object")' >/dev/null \
+    echo "$snap" | jq -e '.ok == true and (.traffic | type == "object") and (.persistence | type == "object")' >/dev/null \
       && ok "healthz payload" \
-      || bad "healthz payload missing ok/traffic"
+      || bad "healthz payload missing ok/traffic/persistence"
   fi
 fi
 
@@ -59,7 +65,7 @@ if [ -z "$public" ]; then
   exit "$fail"
 fi
 
-ui_headers=$(curl --silent --show-error --max-time 8 -D - -o /dev/null ${cookie:+-H "Cookie: $cookie"} "$public/" || true)
+ui_headers=$(curl_public -D - -o /dev/null "$public/" || true)
 ui_mode=$(printf '%s' "$ui_headers" | awk -F': ' 'tolower($1)=="x-openctrlc-ui"{print $2}' | tr -d '\r' | tail -1)
 if [ "$ui_mode" = "embedded" ]; then
   ok "UI source is embedded"
@@ -70,10 +76,10 @@ else
 fi
 
 # 3) app shell JS must contain the OpenCtrlC workspace key
-html=$(curl --fail --silent --max-time 8 ${cookie:+-H "Cookie: $cookie"} "$public/" || true)
+html=$(curl_public "$public/" || true)
 js_path=$(printf '%s' "$html" | sed -n 's/.*src="\(\/assets\/[^"]*\.js\)".*/\1/p' | head -1)
 if [ -n "$js_path" ]; then
-  js_hit=$(curl --fail --silent --max-time 20 ${cookie:+-H "Cookie: $cookie"} "$public$js_path" | grep -c "openctrlc.remote-workspace" || true)
+  js_hit=$(curl_public "$public$js_path" | grep -c "openctrlc.remote-workspace" || true)
   if [ "$js_hit" -gt 0 ]; then
     ok "app JS contains openctrlc.remote-workspace"
   else

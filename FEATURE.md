@@ -58,7 +58,7 @@
 - 动态响应默认 `no-store`；HTML 使用私有重新校验策略。仅成功的 GET/HEAD 内容哈希静态资源允许长期缓存，错误响应和 HTML 回退不会被缓存一年；公共静态响应不附带浏览器授权 Cookie。
 - 保留桌面实例内部的接口优化与浏览器静态资源缓存，Relay 不积累动态 API 响应副本。
 - 修正 Relay 文档中旧的三分钟恢复窗口和“授权不落盘”说明，按当前可选持久化行为记录会话、授权及工作区元数据边界。
-- `docs/remote-service-economics.md` 记录经官方资料核对的低成本架构、免费额度、出口带宽算例、赞助条件及托管收入规划；截至 2026-10-06 对比 Oracle/GCP/AWS 免费资源，公共远程服务不依赖 Cloudflare Workers 网络；P2P/CDN/计费仍需真实部署和用量数据验收。
+- `docs/remote-service-economics.md` 记录经官方资料核对的低成本架构、免费额度、出口带宽算例、赞助条件及托管收入规划；截至 2026-10-06 对比 Oracle/GCP/AWS 免费资源，公共远程服务不依赖 Cloudflare Workers 网络；明确单实例资源、每桌面 P2P peer 数和按会话计算的请求限制不是容量承诺，TURN 上线前要设置服务端带宽与 allocation 上限；P2P/CDN/计费仍需真实部署和用量数据验收。
 - 本次做源码审查及 Bun 静态 bundle 构建；未执行运行时或负载测试，不能据此宣称多用户上线验收通过。
 
 ## 旧会话打开时只恢复未完成的 assistant 消息
@@ -2371,8 +2371,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 ## Relay 会话上限与运行状态计数
 
 - Relay 的进程内会话硬上限提高到 10,000；另有独立的来源 IP 创建频率限制：滚动一小时内最多创建 60 个会话。两者都是保护阈值，不代表单实例经过容量验证可承载对应数量的活跃用户。
-- 私有 `/healthz` 快照报告保留会话、在线桌面、浏览器授权、活动 Relay WebSocket、P2P 信令连接、未完成请求和待审批配对。授权浏览器数不等于在线浏览器；同一个浏览器可能同时占用 Relay socket 和 P2P 信令连接，没有登录账号时不能可靠统计真人数。
-- 运行状态只能从 Relay 主机本机访问；公网 `/healthz` 继续返回 404。服务器可用 `curl -fsS http://127.0.0.1:4097/healthz | jq '{retainedSessions: .sessions, usage: .usage}'` 查看快照；`relay-watch.sh` 每小时的日志行也打印在线桌面、授权浏览器及各类活动连接数，JSONL 保留完整用量快照。
+- 私有 `/healthz` 快照报告保留会话、在线桌面、浏览器授权、活动 Relay WebSocket、P2P 信令连接、已选中的直连/TURN 路径、未完成请求和待审批配对。授权浏览器数不等于在线浏览器；同一个浏览器可能同时占用 Relay socket 和 P2P 信令连接，没有登录账号时不能可靠统计真人数。直连/TURN 路径数不是流量计量。
+- 运行状态只能从 Relay 主机本机访问；公网 `/healthz` 继续返回 404。服务器可用 `curl -fsS http://127.0.0.1:4097/healthz | jq '{retainedSessions: .sessions, usage: .usage}'` 查看快照；`relay-watch.sh` 每小时的日志行也打印在线桌面、授权浏览器及各类活动连接数，JSONL 只保留聚合用量字段，不落盘逐会话 ID。
 
 ## Desktop 更新说明预览
 
@@ -2616,9 +2616,14 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 ## P2P 自托管 ICE 配置与路径识别
 
 - Relay 从 `OPENCTRLC_STUN_URLS` 读取最多 8 个 STUN 地址，从 `OPENCTRLC_TURN_URLS` 和 `OPENCTRLC_TURN_SHARED_SECRET` 读取 Coturn 配置；无默认第三方 ICE 地址，不请求外部凭据 API。
-- Coturn 凭据使用 `expiry:sessionID` 用户名和 HMAC-SHA1 密码，12 小时后过期；Relay `/healthz` 只报告 STUN/TURN 配置状态，不暴露共享密钥，也不代表 UDP 端口可达。
+- Coturn 凭据使用 `expiry:sessionID` 用户名和 HMAC-SHA1 密码，12 小时后过期；Relay `/healthz` 报告 STUN/TURN 配置状态及当前 P2P 路径连接数，不暴露共享密钥，也不代表 UDP 端口可达。
 - DataChannel 建立后读取选中的 ICE candidate pair，标题栏将 WebRTC 直连和 TURN 中继分开显示，帮助识别中继用量。
+- 已连接桌面每 15 秒向 Relay 上报其 WebRTC stats 选中的路径；`usage.activeP2PDirectPeers` 与 `usage.activeP2PTurnPeers` 汇总当前直连和 TURN peer 数，peer 关闭、桌面断开或会话删除时立即清理。`infra/remote-relay/monitor/relay-watch.sh` 同步输出这两个计数。
+- `traffic.p2pDirectBytes` 与 `traffic.p2pTurnBytes` 累加桌面端选中 candidate pair 的 `bytesSent + bytesReceived`，监控日志记录小时增量并对异常 TURN 端点字节趋势告警。按 W3C 定义，它们只计 payload，不含包头、padding 或 ICE 检查；TURN 只计桌面端看到的一侧，不等于 TURN 服务端网卡总量，也不是账单或限流口径。实际出口要查服务器网卡与云厂商账单。
+- 路径计数不包含正在协商但尚未选出 candidate pair 的 peer，也不代表用户人数；旧的线上 Relay 不会自动出现这些字段，需部署新版本后才可观测。
 - `infra/remote-relay/README.md` 记录自建 Coturn 的服务端私密 `.env` 配置与端口验收边界。
+- `packages/remote-relay/src/peer-usage.test.ts` 覆盖同一 peer 路径更新时只计一次以及非法路径不进入统计。
+- 2026-10-06 本地验证：`packages/remote-relay` 的 17 个 Bun 单测通过，`packages/app` 与 `packages/desktop` 类型检查通过，Relay 入口 Bun bundle 构建通过，监控脚本 `sh -n` 和 `git diff --check` 通过；没有重启进程，也没有完成真实手机、公网 Relay 或 Coturn 验收。
 - 仍需真实 Coturn 与不同 NAT/网络条件下的端到端验证；当前源码未发布，不代表公共 Relay 已启用 P2P 或已测出节省的流量。
 
 ## Relay 浏览器活动状态落盘限频
@@ -2658,6 +2663,8 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 ## 项目恢复会话失效时回退到最近有效会话
 
 切换项目先立即显示最后访问的会话；如果这条记录失效，则后台清理旧记录、查找当前项目最近有效会话。找到后打开该会话；没有可恢复会话时回到项目会话页。异步恢复结果会校验导航代次，不能覆盖用户之后手动选择的路由。
+
+恢复请求等待服务端目录/会话结果期间，如果用户通过标签栏或其他直接路由操作切换到另一页，路由变化会取消旧项目跳转；过期异步结果不能再把用户带回原项目。
 
 ### 验证方式
 
@@ -2747,6 +2754,16 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 - 生产环境未开启此 profile；修改仓库配置不会自行变更服务器防火墙或重启 Relay。
 - STUN 不承载工作区数据；当直接连接失败且后续未配置 TURN 时，客户端仍使用现有 HTTPS Relay。
 
+## Relay 监控日志脱敏与冒烟检查失败累计
+
+小时监控只保存会话总数、聚合连接计数、累计流量和持久化状态，不再把健康接口中的逐会话 `active` 列表写入日志。监控目录使用 `0700`，状态、告警与流量文件使用 `0600`。公网冒烟脚本的通过结果只打印成功，不会清除之前检查记录的失败；带 Cookie 检查时也通过单独的 curl 函数正确传递请求头。
+
+### 验证
+
+- `sh -n` 和 `git diff --check` 通过。
+- 使用假的 curl 响应模拟“healthz 失败、后续 UI 检查通过”，冒烟脚本仍返回失败码 1。
+- 使用包含伪造会话 ID 的健康数据跑监控脚本，JSONL 不含 `active` 列表或会话 ID，目录/文件权限分别为 `0700`/`0600`。
+
 ## 重启后会话首屏加速与加载占位
 
 ### 功能目标
@@ -2778,3 +2795,44 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 
 - `tabs.info` 只提供 title/directory，完整会话元数据仍由 `session.get` / lineage 解析补齐；目录缺失且 tab 缓存也没有时，仍显示占位。
 - 预热只针对恢复到的会话路由，不恢复“省流”模式下对其它会话的 hover 预取。
+
+## 远程浏览器恢复桌面工作区与会话标签
+
+远程工作区快照包含桌面已打开项目、会话标签顺序、轻量标题和当前会话。新浏览器按快照恢复所有已打开标签；非当前标签先用快照标题展示，只有切换到该标签时才解析会话详情并加载消息，避免恢复一排标签时同时拉取所有会话正文。项目快照是权威状态，即使为空也表示桌面当前没有打开项目；没有快照的普通 Web 连接只回退打开最近项目或列表首项，不会把服务器上的所有项目都自动打开。
+
+桌面只从 `RemoteTabsHydrator` 发送完整工作区快照，避免项目同步器发送空会话列表覆盖包含标签的快照。Relay 仅在内存中保存项目路径、会话 ID、标题和活动会话，不保存提示词或消息正文；浏览器解析与 Relay 校验都限制到 128 个会话、200 字标题和 64 KiB 总快照。若标题使快照超过总大小限制，桌面先去掉可选标题元数据，保留项目、会话 ID 和活动会话。
+
+### 代码位置
+
+- `packages/app/src/app.tsx`：单一桌面快照发布者和无快照项目回退。
+- `packages/app/src/context/platform.tsx`、`packages/remote-relay/src/protocol.ts`：快照结构。
+- `packages/app/src/context/tabs.tsx`、`packages/app/src/components/titlebar-tab-strip.tsx`：恢复标签、显示轻量标题、当前标签按需加载。
+- `packages/app/src/utils/remote-workspace.ts`、`packages/desktop/src/main/remote-access.ts`、`packages/remote-relay/src/index.ts`：浏览器、桌面和 Relay 的快照校验与裁剪。
+
+### 验证与边界
+
+- 类型检查应覆盖 `packages/app`、`packages/desktop` 和 `packages/remote-relay` 相关入口。
+- 本地 sidecar 的会话元数据和首屏消息分页已分别测得毫秒级；这不等于新快照已在生产 Relay/手机端验证。
+- 真实公网手机验收需要发布桌面与 Relay 新版本；本次没有重启或部署任何运行中的服务。
+- 旧 Relay 快照没有 `sessionInfo` 时仍会恢复全部标签，但尚无本地标题的非当前标签显示通用占位，切换后再解析标题。
+
+## 远程模型目录按需加载状态
+
+远程连接启动时只取轻量模型摘要；用户首次打开模型选择器时再按需请求完整目录。请求期间明确显示加载状态，避免把尚未返回的空目录误报成“未找到模型”；请求失败会说明加载失败并提供可重复触发的重试入口。摘要里已有的模型在后台加载期间仍可选择。
+
+### 代码位置
+
+- `packages/app/src/components/dialog-select-model.tsx`：共享远程目录加载状态，并接入旧版、新版弹层和完整选择对话框。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`：四种运行时语言的加载、失败与重试文案。
+
+## P2P 只在 Relay 与 ICE 均就绪时启用
+
+浏览器先读取同源 `/_remote/capabilities`。只有 Relay 声明支持当前 peer 协议且配置了 STUN 或有效 TURN 凭证时，浏览器才建立 P2P 信令 WebSocket 和 WebRTC DataChannel。旧版 Relay、未配置 ICE 的 Relay、或不支持 WebRTC 的浏览器继续使用已有 HTTPS/WSS 中继路径，不会反复尝试无效的信令连接。该能力探测不依赖 Cloudflare Workers。
+
+### 代码位置与验证
+
+- `packages/remote-relay/src/index.ts`：返回不含会话信息的协议能力与 ICE 配置状态。
+- `packages/remote-relay/src/protocol.ts`：校验能力响应版本与 ICE 开关。
+- `packages/app/src/utils/remote-peer.ts`：探测通过后才开始 P2P；网络暂时失败时退避重试，旧版或未配置的 Relay 保持中继传输。
+- `packages/remote-relay/src/peer.test.ts`：覆盖错误协议版本、未配置 ICE 和有效能力响应。
+- 启用公网 P2P 仍需部署对应 Relay 与 STUN/TURN 设置，并在大陆移动网络和美国网络真实验收；代码合并本身不改变线上服务。

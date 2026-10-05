@@ -18,6 +18,7 @@ export interface MockServerConfig {
   beforeMessagesResponse?: (input: { sessionID: string; before?: string }) => Promise<{ status: number } | void>
   onMessages?: (input: { sessionID: string; before?: string; phase: "start" | "end" }) => void
   message?: (sessionID: string, messageID: string) => unknown
+  parentMessages?: (sessionID: string) => unknown[]
   onMessage?: (input: { sessionID: string; messageID: string }) => void
   events?: () => unknown[]
   eventRetry?: number
@@ -300,6 +301,7 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
       if (cursor) cursors.set(cursor, pageData.cursor!)
       return json(route, {
         data: pageData.items.map(currentMessage).reverse(),
+        parents: config.parentMessages?.(currentMessagesMatch[1]).map(currentMessage),
         cursor: { next: cursor },
       })
     }
@@ -395,6 +397,7 @@ function currentMessage(value: unknown) {
   return {
     id: item.info.id,
     type: "assistant",
+    parentID: item.info.parentID,
     time: item.info.time,
     agent: item.info.agent ?? "build",
     model: { id: item.info.modelID ?? "model", providerID: item.info.providerID ?? "provider" },

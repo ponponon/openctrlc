@@ -23,6 +23,10 @@ if [ "$mode" = --config-only ] && [ "$#" -ne 1 ]; then
   echo "Usage: sh infra/remote-relay/deploy.sh [--config-only]" >&2
   exit 2
 fi
+if [ "$mode" = full ] && ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required to validate Relay persistence health during deployment" >&2
+  exit 1
+fi
 
 if [ -e "$relay" ] && [ ! -f "$managed_marker" ]; then
   echo "Refusing to use an existing unmarked directory: $relay" >&2
@@ -75,7 +79,27 @@ if [ "$mode" = --config-only ]; then
   exit 0
 fi
 
+relay_uid=$(id -u)
+relay_gid=$(id -g)
+if [ "$relay_uid" -eq 0 ]; then
+  echo "Run the Relay deployment as a non-root account so the container stays unprivileged" >&2
+  exit 1
+fi
+export OPENCTRLC_RELAY_UID=$relay_uid
+export OPENCTRLC_RELAY_GID=$relay_gid
+
 install -d -m 0755 "$relay/packages" "$relay/infra/remote-relay"
+install -d -m 0700 "$relay/data"
+if ! chmod 0700 "$relay/data"; then
+  echo "Cannot secure $relay/data; make it owned by the deployment account before deploying" >&2
+  exit 1
+fi
+if [ -f "$relay/data/remote-sessions.json" ]; then
+  if ! chmod 0600 "$relay/data/remote-sessions.json"; then
+    echo "Cannot secure the Relay session state file; make it owned by the deployment account before deploying" >&2
+    exit 1
+  fi
+fi
 printf '%s\n' 'Managed by OpenCtrlC Remote Relay deployment.' > "$managed_marker"
 rm -rf "$relay/packages/remote-relay.next"
 install -d -m 0755 "$relay/packages/remote-relay.next"
@@ -92,7 +116,8 @@ docker compose --project-name openctrlc-remote --project-directory "$relay" -f "
 
 healthy=false
 for attempt in $(seq 1 30); do
-  if curl --fail --silent http://127.0.0.1:4097/healthz >/dev/null; then
+  health=$(curl --fail --silent http://127.0.0.1:4097/healthz || true)
+  if [ -n "$health" ] && printf '%s' "$health" | jq -e '.ok == true and .persistence.enabled == true and .persistence.errors == 0' >/dev/null; then
     healthy=true
     break
   fi

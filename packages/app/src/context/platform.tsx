@@ -32,6 +32,7 @@ export type RemoteWorkspaceSnapshot = {
   projects: Array<{ worktree: string; expanded: boolean }>
   lastProject?: string
   sessionIDs: string[]
+  sessionInfo?: Array<{ sessionID: string; title: string }>
   activeSessionID?: string
   hostName?: string
 }
@@ -46,6 +47,11 @@ export type RemoteAccessState = {
   authorizedViewers?: RemoteAccessAuthorizedViewer[]
   hostName?: string
   error?: string
+}
+export type RemoteTransportStatus = "connecting" | "checking" | "direct" | "turn" | "relay" | "unavailable"
+export type RemoteTransportPlatform = {
+  getStatus(): RemoteTransportStatus
+  subscribe(callback: (status: RemoteTransportStatus) => void): () => void
 }
 export type RemoteAccessPlatform = {
   getState(): Promise<RemoteAccessState>
@@ -141,6 +147,15 @@ type PlatformBase = {
 
   /** Fetch override */
   fetch?: typeof fetch
+
+  /** Pin each browser request to the remote desktop selected when this tab opened. */
+  remoteSessionID?: string
+
+  /** Current browser-to-desktop transport used by a remote session. */
+  remoteTransport?: RemoteTransportPlatform
+
+  /** Create a WebSocket using the remote direct channel when it is ready. */
+  webSocket?: (url: string | URL, protocols?: string | string[]) => WebSocket
 
   /** Get the configured default server URL (platform-specific) */
   getDefaultServer?(): Promise<ServerConnection.Key | null>

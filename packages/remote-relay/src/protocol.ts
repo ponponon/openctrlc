@@ -2,6 +2,7 @@ export type RelayWorkspaceSnapshot = {
   projects: Array<{ worktree: string; expanded: boolean }>
   lastProject?: string
   sessionIDs: string[]
+  sessionInfo?: Array<{ sessionID: string; title: string }>
   activeSessionID?: string
   hostName?: string
 }
@@ -10,11 +11,18 @@ export const DEFAULT_VIEWER_LIMIT = 10
 export const MIN_VIEWER_LIMIT = 1
 export const MAX_VIEWER_LIMIT = 100
 
+/** Direct response streams grant byte credit only while the browser has buffer capacity. */
+export const PEER_RESPONSE_CHUNK_BYTES = 24 * 1024
+export const PEER_RESPONSE_BUFFER_BYTES = 256 * 1024
+
 export function isViewerLimit(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= MIN_VIEWER_LIMIT && value <= MAX_VIEWER_LIMIT
 }
 
 export type RelayHostMessage =
+  | { type: "peer.signal"; peerID: string; signal: PeerSignal }
+  | { type: "peer.route"; peerID: string; route: "direct" | "turn"; directBytes?: number; turnBytes?: number }
+  | { type: "peer.close"; peerID: string; code?: 1000 | 1012 | 4429 }
   | { type: "session.create"; viewerLimit: number; binaryChunks?: boolean }
   | { type: "session.resume"; sessionID: string; hostToken: string; binaryChunks?: boolean }
   | { type: "session.limit.update"; sessionID: string; hostToken: string; viewerLimit: number }
@@ -44,6 +52,10 @@ export type RelayHostMessage =
   | { type: "socket.close"; id: string; code: number; reason: string }
 
 export type RelayServerMessage =
+  | { type: "peer.ready"; peerID: string; iceServers: PeerIceServer[] }
+  | { type: "peer.open"; peerID: string; iceServers: PeerIceServer[] }
+  | { type: "peer.close"; peerID: string }
+  | { type: "peer.signal"; peerID: string; signal: PeerSignal }
   | {
       type: "session.created"
       sessionID: string
@@ -91,6 +103,63 @@ export type RelayServerMessage =
   | { type: "socket.close"; id: string; code: number; reason: string }
 
 export type RelayViewerMessage = { type: "pair"; joinToken: string }
+export type PeerRoute = "direct" | "turn"
+export type PeerRouteBytes = { directBytes: number; turnBytes: number }
+
+export function isPeerRouteBytes(value: unknown): value is PeerRouteBytes {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const bytes = value as Record<string, unknown>
+  return Number.isSafeInteger(bytes.directBytes) && (bytes.directBytes as number) >= 0 &&
+    Number.isSafeInteger(bytes.turnBytes) && (bytes.turnBytes as number) >= 0
+}
+
+export type PeerSignal =
+  | { type: "offer" | "answer"; sdp: string }
+  | { type: "candidate"; candidate: string; sdpMid: string | null; sdpMLineIndex: number | null }
+
+export function isPeerRelayAvailable(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const capabilities = value as Record<string, unknown>
+  return capabilities.peerProtocol === 1 && capabilities.iceConfigured === true
+}
+
+export type PeerIceServer = {
+  urls: string | string[]
+  username?: string
+  credential?: string
+}
+
+export function isPeerIceServers(value: unknown): value is PeerIceServer[] {
+  if (!Array.isArray(value) || value.length > 8) return false
+  return value.every((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false
+    const server = item as Record<string, unknown>
+    const urls = typeof server.urls === "string" ? [server.urls] : server.urls
+    if (!Array.isArray(urls) || urls.length === 0 || urls.length > 8) return false
+    if (!urls.every((url) => typeof url === "string" && url.length <= 512 && /^(stun|stuns|turn|turns):/i.test(url)))
+      return false
+    if (server.username !== undefined && (typeof server.username !== "string" || server.username.length > 512))
+      return false
+    if (server.credential !== undefined && (typeof server.credential !== "string" || server.credential.length > 512))
+      return false
+    return (server.username === undefined) === (server.credential === undefined)
+  })
+}
+
+/** Signaling is untrusted even after a browser has been authorized. */
+export function isPeerSignal(value: unknown): value is PeerSignal {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const signal = value as Record<string, unknown>
+  if (signal.type === "offer" || signal.type === "answer")
+    return typeof signal.sdp === "string" && signal.sdp.length > 0 && signal.sdp.length <= 60_000
+  return (
+    signal.type === "candidate" &&
+    typeof signal.candidate === "string" && signal.candidate.length <= 4096 &&
+    (signal.sdpMid === null || (typeof signal.sdpMid === "string" && signal.sdpMid.length <= 256)) &&
+    (signal.sdpMLineIndex === null || (typeof signal.sdpMLineIndex === "number" &&
+      Number.isInteger(signal.sdpMLineIndex) && signal.sdpMLineIndex >= 0 && signal.sdpMLineIndex < 256))
+  )
+}
 
 export function relayMessage(value: unknown): Record<string, unknown> | undefined {
   if (typeof value !== "string") return

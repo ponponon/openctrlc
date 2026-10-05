@@ -22,6 +22,7 @@
     "./regression/session-timeline-context-resize.spec.ts",
     "./regression/session-timeline-follow-pause.spec.ts",
     "./regression/session-search-tool-hit.spec.ts",
+    "./regression/remote-peer-channel.spec.ts",
     "./utils/**/*.ts"
   ]
 }

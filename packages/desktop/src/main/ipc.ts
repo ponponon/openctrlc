@@ -33,6 +33,7 @@ import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { createDesktopDraftStore } from "./draft-store"
 import { nativeT } from "./native-translations"
 import type { RemoteAccessService } from "./remote-access"
+import { registerRemotePeerHost } from "./remote-peer-host"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -69,6 +70,7 @@ type Deps = {
 }
 
 export function registerIpcHandlers(deps: Deps) {
+  registerRemotePeerHost(deps.remoteAccess)
   const drafts = createDesktopDraftStore(join(app.getPath("userData"), "drafts.sqlite"))
   const updaterSubscriptions = createUpdaterSubscriptions()
   const remoteAccessSubscriptions = new Map<number, () => void>()

@@ -767,6 +767,12 @@
     "packages/remote-relay": {
       "name": "@openctrlc/remote-relay",
       "version": "1.0.0",
+      "devDependencies": {
+        "@tsconfig/bun": "catalog:",
+        "@types/bun": "catalog:",
+        "@types/node": "catalog:",
+        "@typescript/native-preview": "catalog:",
+      },
     },
     "packages/schema": {
       "name": "@openctrlc/schema",

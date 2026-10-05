@@ -6,19 +6,30 @@ import {
   encodeBase64,
   encodeBinaryFrame,
   isViewerLimit,
+  isPeerSignal,
   randomToken,
   relayMessage,
   streamID,
   type RelayServerMessage,
   type RelayWorkspaceSnapshot,
 } from "./protocol"
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { sanitizeResponseHeaders, shouldGzipToViewer } from "./response-encoding"
+import { peerRouteCounts, recordPeerRoute, type PeerRouteState } from "./peer-usage"
+import {
+  createPeerIceServers,
+  removeTurnIceServers,
+  stunServersConfigured,
+  turnCredentialsConfigured,
+} from "./turn"
 
 type SocketData = {
   role: "host" | "viewer"
   sessionID?: string
   pairID?: string
-  mode?: "pair" | "proxy"
+  mode?: "pair" | "proxy" | "peer"
+  signalWindow?: number
+  signalCount?: number
   id?: string
   path?: string
   protocols?: string[]
@@ -48,6 +59,8 @@ type SessionTraffic = {
   hostOut: number
   viewerIn: number
   viewerOut: number
+  p2pDirectBytes: number
+  p2pTurnBytes: number
 }
 
 type RelaySession = {
@@ -63,6 +76,8 @@ type RelaySession = {
   viewers: Map<string, ViewerGrant>
   responses: Map<string, PendingResponse>
   sockets: Map<string, Bun.ServerWebSocket<SocketData>>
+  peers: Map<string, Bun.ServerWebSocket<SocketData>>
+  peerRoutes: Map<string, PeerRouteState>
   resumeUntil?: number
   resumeTimer?: ReturnType<typeof setTimeout>
   workspace?: RelayWorkspaceSnapshot
@@ -91,6 +106,7 @@ const sessionCreationWindow = 60 * 60 * 1000
 const legacyViewerLimit = 3
 const viewerLifetime = 30 * 24 * 60 * 60 * 1000
 const viewerCookieLifetimeSeconds = Math.floor(viewerLifetime / 1000)
+const viewerActivityPersistenceInterval = 5 * 60 * 1000
 const pairLifetime = 5 * 60 * 1000
 // Keep a host-disconnected session resumable long enough to survive desktop restarts.
 // Sessions with authorized browsers stay for the full viewer lifetime; empty ones clean up sooner.
@@ -102,18 +118,26 @@ const createRates = new Map<string, number[]>()
 const dataDir = process.env.OPENCTRLC_REMOTE_DATA_DIR?.trim() || ""
 const stateFile = dataDir ? `${dataDir}/remote-sessions.json` : ""
 let persistTimer: ReturnType<typeof setTimeout> | undefined
+let persistDueAt = 0
+let lastPersistAttemptAt = 0
+let persistenceErrors = 0
 
-function schedulePersist() {
+function schedulePersist(delay = 250) {
   if (!stateFile) return
-  if (persistTimer) return
+  const dueAt = Date.now() + delay
+  if (persistTimer && persistDueAt <= dueAt) return
+  if (persistTimer) clearTimeout(persistTimer)
+  persistDueAt = dueAt
   persistTimer = setTimeout(() => {
     persistTimer = undefined
+    persistDueAt = 0
     persistState()
-  }, 250)
+  }, Math.max(0, dueAt - Date.now()))
 }
 
 function persistState() {
   if (!stateFile) return
+  lastPersistAttemptAt = Date.now()
   const payload = {
     version: 1,
     savedAt: Date.now(),
@@ -135,11 +159,13 @@ function persistState() {
     })),
   }
   try {
-    mkdirSync(dataDir, { recursive: true })
+    mkdirSync(dataDir, { recursive: true, mode: 0o700 })
     const tmp = `${stateFile}.tmp`
-    writeFileSync(tmp, JSON.stringify(payload))
+    writeFileSync(tmp, JSON.stringify(payload), { mode: 0o600 })
+    chmodSync(tmp, 0o600)
     renameSync(tmp, stateFile)
   } catch (error) {
+    persistenceErrors += 1
     console.error("failed to persist relay sessions", error)
   }
 }
@@ -148,8 +174,12 @@ function restoreState() {
   if (!stateFile) return
   let raw: string
   try {
+    chmodSync(stateFile, 0o600)
     raw = readFileSync(stateFile, "utf8")
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return
+    persistenceErrors += 1
+    console.error("failed to read relay sessions", error)
     return
   }
   try {
@@ -171,6 +201,7 @@ function restoreState() {
         }>
       }>
     }
+    lastPersistAttemptAt = Date.now()
     const now = Date.now()
     for (const item of parsed.sessions ?? []) {
       if (!item.id || !item.hostToken || !item.joinToken) continue
@@ -180,12 +211,14 @@ function restoreState() {
         joinToken: item.joinToken,
         viewerLimit: isViewerLimit(item.viewerLimit) ? item.viewerLimit : legacyViewerLimit,
         binaryChunks: item.binaryChunks === true,
-        traffic: { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 },
+        traffic: { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0, p2pDirectBytes: 0, p2pTurnBytes: 0 },
         pairingSockets: new Set(),
         pairs: new Map(),
         viewers: new Map(),
         responses: new Map(),
         sockets: new Map(),
+        peers: new Map(),
+        peerRoutes: new Map(),
         workspace: item.workspace,
       }
       for (const viewer of item.viewers ?? []) {
@@ -207,6 +240,7 @@ function restoreState() {
     }
     console.log(`restored ${sessions.size} relay sessions from ${stateFile}`)
   } catch (error) {
+    persistenceErrors += 1
     console.error("failed to restore relay sessions", error)
   }
 }
@@ -220,6 +254,12 @@ const server = Bun.serve<SocketData>({
   fetch(request, server) {
     const url = new URL(request.url)
     if (url.pathname === "/healthz") return Response.json(healthSnapshot())
+    if (request.method === "GET" && url.pathname === "/_remote/capabilities") {
+      return Response.json(
+        { peerProtocol: 1, iceConfigured: stunServersConfigured() || turnCredentialsConfigured() },
+        { headers: noStore },
+      )
+    }
     if (url.pathname === "/v1/host" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
       if (request.headers.has("origin") && !sameOrigin(request)) return new Response("Origin rejected", { status: 403 })
       if (server.upgrade(request, { data: { role: "host", clientIP: request.headers.get("x-real-ip") ?? "unknown" } }))
@@ -252,16 +292,25 @@ const server = Bun.serve<SocketData>({
     if (request.method === "GET" && url.pathname === "/") {
       const viewer = sessionFor(request)
       if (!viewer) return htmlResponse(pairPage("home"))
-      if (!hasWorkspaceBootstrapCookie(request)) return workspaceBootstrapResponse(viewer.session.workspace, "/")
+      if (!hasWorkspaceBootstrapCookie(request, viewer.session.id))
+        return workspaceBootstrapResponse(viewer.session.workspace, "/", viewer.session.id)
       return proxyRequest(viewer.session, request, viewer.token)
     }
 
     const viewer = sessionFor(request)
     if (!viewer) return new Response("Remote session required", { status: 401, headers: noStore })
     const session = viewer.session
+    if (url.pathname === "/_remote/peer") {
+      if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
+      if (session.host?.readyState !== 1) return new Response("Desktop disconnected", { status: 503, headers: noStore })
+      if (session.peers.size >= maxSockets) return new Response("Too many peers", { status: 429, headers: noStore })
+      if (server.upgrade(request, { data: { role: "viewer", mode: "peer", sessionID: session.id,
+        viewerToken: viewer.token, id: randomToken(12) } })) return
+      return new Response("WebSocket upgrade required", { status: 426, headers: noStore })
+    }
     if (request.method === "GET" && request.headers.get("sec-fetch-dest") === "document") {
-      if (!hasWorkspaceBootstrapCookie(request)) {
-        return workspaceBootstrapResponse(viewer.session.workspace, url.pathname + url.search)
+      if (!hasWorkspaceBootstrapCookie(request, viewer.session.id)) {
+        return workspaceBootstrapResponse(viewer.session.workspace, url.pathname + url.search, viewer.session.id)
       }
     }
     if (request.headers.get("upgrade")?.toLowerCase() === "websocket") {
@@ -274,6 +323,8 @@ const server = Bun.serve<SocketData>({
         .filter(Boolean)
       if (protocols.length)
         return new Response("WebSocket subprotocols are not supported", { status: 400, headers: noStore })
+      const target = new URL(request.url)
+      target.searchParams.delete("_oc_remote_session")
       if (
         server.upgrade(request, {
           data: {
@@ -282,7 +333,7 @@ const server = Bun.serve<SocketData>({
             mode: "proxy",
             viewerToken: viewer.token,
             id: streamID(),
-            path: url.pathname + url.search,
+            path: target.pathname + target.search,
             protocols,
             device: deviceLabel(request.headers.get("user-agent")),
             ready: false,
@@ -298,7 +349,7 @@ const server = Bun.serve<SocketData>({
   websocket: {
     maxPayloadLength: 2 * 1024 * 1024,
     idleTimeout: 0,
-    open(socket) {
+    async open(socket) {
       if (socket.data.role === "host") return
       const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
       if (!session) return socket.close(4404, "Session not found")
@@ -306,6 +357,21 @@ const server = Bun.serve<SocketData>({
         if (session.pairingSockets.size >= session.viewerLimit + 2)
           return socket.close(4429, "Too many pairing attempts")
         session.pairingSockets.add(socket)
+        return
+      }
+      if (socket.data.mode === "peer" && socket.data.id) {
+        const peerID = socket.data.id
+        session.peers.set(peerID, socket)
+        const iceServers = await createPeerIceServers(session.id)
+        if (session.peers.get(peerID) !== socket || socket.readyState !== 1) return
+        if (!socket.data.viewerToken || !touchViewer(session, socket.data.viewerToken))
+          return socket.close(4401, "Authorization expired")
+        socket.send(JSON.stringify({ type: "peer.ready", peerID, iceServers } satisfies RelayServerMessage))
+        if (!sendHost(session, { type: "peer.open", peerID, iceServers })) {
+          session.peers.delete(peerID)
+          session.peerRoutes.delete(peerID)
+          socket.close(1012, "Desktop disconnected")
+        }
         return
       }
       const id = socket.data.id
@@ -342,6 +408,26 @@ const server = Bun.serve<SocketData>({
       }
       const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
       if (!session) return socket.close(4404, "Session not found")
+      if (socket.data.mode === "peer") {
+        if (!socket.data.viewerToken || !touchViewer(session, socket.data.viewerToken))
+          return socket.close(4401, "Authorization expired")
+        const message = relayMessage(raw)
+        if (message?.type === "peer.ping") {
+          socket.send(JSON.stringify({ type: "peer.pong" }))
+          return
+        }
+        if (message?.type !== "peer.signal" || !isPeerSignal(message.signal))
+          return socket.close(4400, "Invalid peer signal")
+        if (Date.now() - (socket.data.signalWindow ?? 0) >= 60_000) {
+          socket.data.signalWindow = Date.now()
+          socket.data.signalCount = 0
+        }
+        socket.data.signalCount = (socket.data.signalCount ?? 0) + 1
+        if (socket.data.signalCount > 180) return socket.close(4429, "Too many peer signals")
+        if (!sendHost(session, { type: "peer.signal", peerID: socket.data.id!, signal: message.signal }))
+          socket.close(1012, "Desktop disconnected")
+        return
+      }
       if (socket.data.mode === "proxy") {
         const id = socket.data.id
         if (!id) return socket.close(4400, "Invalid tunnel")
@@ -418,12 +504,19 @@ const server = Bun.serve<SocketData>({
     close(socket) {
       if (socket.data.role === "host") {
         const session = socket.data.sessionID ? sessions.get(socket.data.sessionID) : undefined
-        if (session?.host === socket) suspendHost(session, socket)
+        if (!session || session.host !== socket) return
+        suspendHost(session, socket)
         return
       }
       if (!socket.data.sessionID) return
       const session = sessions.get(socket.data.sessionID)
       if (!session) return
+      if (socket.data.mode === "peer" && socket.data.id) {
+        session.peers.delete(socket.data.id)
+        session.peerRoutes.delete(socket.data.id)
+        sendHost(session, { type: "peer.close", peerID: socket.data.id })
+        return
+      }
       session.pairingSockets.delete(socket)
       if (socket.data.pairID) {
         const pair = session.pairs.get(socket.data.pairID)
@@ -514,13 +607,15 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       joinToken: randomToken(),
       viewerLimit: isViewerLimit(value.viewerLimit) ? value.viewerLimit : legacyViewerLimit,
       binaryChunks: value.binaryChunks === true,
-      traffic: { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 },
+      traffic: { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0, p2pDirectBytes: 0, p2pTurnBytes: 0 },
       host: socket,
       pairingSockets: new Set(),
       pairs: new Map(),
       viewers: new Map(),
       responses: new Map(),
       sockets: new Map(),
+      peers: new Map(),
+      peerRoutes: new Map(),
     }
     socket.data.sessionID = session.id
     sessions.set(session.id, session)
@@ -553,6 +648,38 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         ...(typeof value.pingID === "string" ? { pingID: value.pingID } : {}),
       } satisfies RelayServerMessage),
     )
+    return
+  }
+  if (value.type === "peer.signal" && typeof value.peerID === "string" && isPeerSignal(value.signal)) {
+    session.peers.get(value.peerID)?.send(JSON.stringify({ type: "peer.signal", signal: value.signal }))
+    return
+  }
+  if (
+    value.type === "peer.route" &&
+    typeof value.peerID === "string" &&
+    session.peers.has(value.peerID)
+  ) {
+    const delta = recordPeerRoute(
+      session.peerRoutes,
+      value.peerID,
+      value.route,
+      value.directBytes ?? 0,
+      value.turnBytes ?? 0,
+    )
+    if (!delta) return
+    session.traffic.p2pDirectBytes += delta.directBytes
+    session.traffic.p2pTurnBytes += delta.turnBytes
+    return
+  }
+  if ((value.type === "peer.open" || value.type === "peer.close") && typeof value.peerID === "string") {
+    if (value.type === "peer.close") {
+      session.peerRoutes.delete(value.peerID)
+      const capacityLimited = value.code === 4429
+      session.peers.get(value.peerID)?.close(
+        capacityLimited ? 4429 : 1000,
+        capacityLimited ? "Direct peer capacity reached" : "Desktop closed direct connection",
+      )
+    }
     return
   }
   if (value.type === "session.limit.update") {
@@ -616,6 +743,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     session.viewers.set(pair.viewerToken, grant)
     viewerTokens.set(pair.viewerToken, grant)
     schedulePersist()
+    void createPeerIceServers(session.id)
     pair.socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID, viewerToken: pair.viewerToken }))
     pair.socket.close(1000, "Approved")
     socket.send(JSON.stringify({ type: "pair.approved", pairID: value.pairID } satisfies RelayServerMessage))
@@ -726,7 +854,9 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
   if (!session.host || session.host.readyState !== 1) return new Response("Desktop is disconnected", { status: 503 })
   if (request.headers.get("upgrade")) return new Response("Unsupported upgrade", { status: 400 })
   if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
-  const path = new URL(request.url).pathname + new URL(request.url).search
+  const target = new URL(request.url)
+  target.searchParams.delete("_oc_remote_session")
+  const path = target.pathname + target.search
   if (session.responses.size >= maxPendingRequests)
     return new Response("Too many remote requests", { status: 429, headers: noStore })
   const contentLength = Number(request.headers.get("content-length") ?? 0)
@@ -760,6 +890,7 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
         ![
           "cookie",
           "authorization",
+          "x-openctrlc-remote-session",
           "host",
           "origin",
           "referer",
@@ -793,11 +924,13 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     if ([204, 205, 304].includes(result.status)) {
       return new Response(null, { status: result.status, headers: responseHeaders })
     }
-    // Local fetch decompresses upstream bodies, so text assets leave the Relay
-    // uncompressed unless we compress again for the browser leg.
+    // Older desktop clients send decoded bodies; newer clients may already gzip
+    // them before upload. Never compress a body that still has an encoding.
     if (shouldGzipToViewer(request, responseHeaders)) {
       responseHeaders.set("content-encoding", "gzip")
-      return new Response(body.pipeThrough(new CompressionStream("gzip")), {
+      return new Response(body.pipeThrough(
+        new CompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>,
+      ), {
         status: result.status,
         headers: responseHeaders,
       })
@@ -809,13 +942,6 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
   } catch {
     return new Response("Desktop request failed", { status: 502 })
   }
-}
-
-function shouldGzipToViewer(request: Request, responseHeaders: Headers) {
-  if (!/\bgzip\b/.test(request.headers.get("accept-encoding") ?? "")) return false
-  const contentType = (responseHeaders.get("content-type") ?? "").toLowerCase()
-  if (contentType.includes("text/event-stream")) return false
-  return /^(text\/|application\/(json|javascript|xml|jsonml|xhtml|x-ndjson))/.test(contentType)
 }
 
 /**
@@ -934,6 +1060,21 @@ function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | und
     (item): item is string => typeof item === "string" && item.length > 0 && item.length <= 200,
   )
   if (sessionIDs.length !== input.sessionIDs.length) return
+  const sessionIDSet = new Set(sessionIDs)
+  if (input.sessionInfo !== undefined && (!Array.isArray(input.sessionInfo) || input.sessionInfo.length > 128)) return
+  const sessionInfo = (input.sessionInfo as unknown[] | undefined)?.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return []
+    const info = item as Record<string, unknown>
+    if (
+      typeof info.sessionID !== "string" ||
+      !sessionIDSet.has(info.sessionID) ||
+      typeof info.title !== "string" ||
+      info.title.length > 200
+    )
+      return []
+    return [{ sessionID: info.sessionID, title: info.title }]
+  })
+  if (sessionInfo && input.sessionInfo && sessionInfo.length !== input.sessionInfo.length) return
   if (input.lastProject !== undefined && (typeof input.lastProject !== "string" || input.lastProject.length > 4096))
     return
   if (
@@ -948,6 +1089,7 @@ function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | und
     projects,
     ...(typeof input.lastProject === "string" ? { lastProject: input.lastProject } : {}),
     sessionIDs,
+    ...(sessionInfo ? { sessionInfo } : {}),
     ...(typeof input.activeSessionID === "string" ? { activeSessionID: input.activeSessionID } : {}),
     ...(typeof input.hostName === "string" ? { hostName: input.hostName } : {}),
   } satisfies RelayWorkspaceSnapshot
@@ -955,25 +1097,30 @@ function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | und
   return workspace
 }
 
-function hasWorkspaceBootstrapCookie(request: Request) {
+function hasWorkspaceBootstrapCookie(request: Request, sessionID: string) {
   return request.headers
     .get("cookie")
     ?.split(";")
-    .some((item) => item.trim() === "__Host-oc_remote_boot=1")
+    .some((item) => item.trim() === `__Host-oc_remote_boot=${sessionID}`)
 }
 
-function workspaceBootstrapResponse(workspace: RelayWorkspaceSnapshot | undefined, destination: string) {
+function workspaceBootstrapResponse(
+  workspace: RelayWorkspaceSnapshot | undefined,
+  destination: string,
+  sessionID: string,
+) {
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))))
   const snapshot = JSON.stringify(workspace ?? null).replaceAll("<", "\\u003c")
   const target = JSON.stringify(destination).replaceAll("<", "\\u003c")
+  const key = JSON.stringify(`openctrlc.remote-workspace:${sessionID}`).replaceAll("<", "\\u003c")
   return new Response(
-    `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCtrlC</title><body><script nonce="${nonce}">try{const workspace=${snapshot};const key="openctrlc.remote-workspace";if(workspace){const raw=JSON.stringify(workspace);sessionStorage.setItem(key,raw);try{localStorage.setItem(key,raw)}catch{}}else{sessionStorage.removeItem(key);try{localStorage.removeItem(key)}catch{}}}catch{}location.replace(${target})</script></body></html>`,
+    `<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCtrlC</title><body><script nonce="${nonce}">try{const workspace=${snapshot};const key=${key};if(workspace){const raw=JSON.stringify(workspace);sessionStorage.setItem(key,raw);try{localStorage.setItem(key,raw)}catch{}}else{sessionStorage.removeItem(key);try{localStorage.removeItem(key)}catch{}}}catch{}location.replace(${target})</script></body></html>`,
     {
       headers: {
         ...noStore,
         "content-type": "text/html; charset=utf-8",
         "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
-        "set-cookie": "__Host-oc_remote_boot=1; Path=/; Max-Age=60; Secure; SameSite=Strict",
+        "set-cookie": `__Host-oc_remote_boot=${sessionID}; Path=/; Max-Age=60; Secure; SameSite=Strict`,
       },
     },
   )
@@ -981,6 +1128,15 @@ function workspaceBootstrapResponse(workspace: RelayWorkspaceSnapshot | undefine
 
 function sessionFor(request: Request) {
   const cookies = parseCookies(request.headers.get("cookie"))
+  // Pin API and signaling traffic to the desktop selected when this tab booted.
+  // A failed explicit selection must never fall through to another desktop's cookie.
+  const selected = request.headers.get("x-openctrlc-remote-session") ??
+    new URL(request.url).searchParams.get("_oc_remote_session")
+  if (selected !== null) {
+    if (!/^[A-Za-z0-9_-]{16}$/.test(selected)) return
+    const hit = viewerForToken(cookies[viewerCookieName(selected)])
+    return hit?.session.id === selected ? hit : undefined
+  }
   // `oc_active` is readable/writable by the page so the remote UI can switch desktops;
   // `__Host-oc_active` remains the server-set default.
   const active = cookies["oc_active"] ?? cookies["__Host-oc_active"]
@@ -1032,6 +1188,13 @@ function removeViewer(session: RelaySession, token: string, reason = "Browser au
   session.viewers.delete(token)
   if (viewerTokens.get(token)?.session === session) viewerTokens.delete(token)
   schedulePersist()
+  for (const [id, socket] of session.peers) {
+    if (socket.data.viewerToken !== token) continue
+    session.peers.delete(id)
+    session.peerRoutes.delete(id)
+    sendHost(session, { type: "peer.close", peerID: id })
+    socket.close(4401, reason)
+  }
   for (const [id, socket] of session.sockets) {
     if (socket.data.viewerToken !== token) continue
     session.sockets.delete(id)
@@ -1047,9 +1210,11 @@ function touchViewer(session: RelaySession, token: string) {
     sendViewerState(session)
     return false
   }
-  grant.expiresAt = Date.now() + viewerLifetime
-  grant.lastSeenAt = Date.now()
-  schedulePersist()
+  const now = Date.now()
+  grant.expiresAt = now + viewerLifetime
+  grant.lastSeenAt = now
+  const delay = viewerActivityPersistenceInterval - (now - lastPersistAttemptAt)
+  schedulePersist(delay > 0 ? delay : 250)
   return true
 }
 
@@ -1128,13 +1293,25 @@ function sendViewerSocket(session: RelaySession, id: string, payload: Uint8Array
 }
 
 function healthSnapshot() {
-  const totals: SessionTraffic = { hostIn: 0, hostOut: 0, viewerIn: 0, viewerOut: 0 }
+  const totals: SessionTraffic = {
+    hostIn: 0,
+    hostOut: 0,
+    viewerIn: 0,
+    viewerOut: 0,
+    p2pDirectBytes: 0,
+    p2pTurnBytes: 0,
+  }
   const usage = {
     connectedDesktops: 0,
     authorizedBrowsers: 0,
     activeViewerSockets: 0,
+    activePeerSignalingSockets: 0,
+    activeP2PDirectPeers: 0,
+    activeP2PTurnPeers: 0,
     pendingViewerRequests: 0,
     pendingPairings: 0,
+    stunServersConfigured: stunServersConfigured(),
+    turnCredentialsConfigured: turnCredentialsConfigured(),
   }
   const active: Array<{ id: string } & SessionTraffic & { viewers: number; binaryChunks: boolean }> = []
   for (const session of sessions.values()) {
@@ -1142,9 +1319,15 @@ function healthSnapshot() {
     totals.hostOut += session.traffic.hostOut
     totals.viewerIn += session.traffic.viewerIn
     totals.viewerOut += session.traffic.viewerOut
+    totals.p2pDirectBytes += session.traffic.p2pDirectBytes
+    totals.p2pTurnBytes += session.traffic.p2pTurnBytes
     if (session.host?.readyState === 1) usage.connectedDesktops += 1
     usage.authorizedBrowsers += session.viewers.size
     usage.activeViewerSockets += session.sockets.size
+    usage.activePeerSignalingSockets += session.peers.size
+    const peerRoutes = peerRouteCounts(session.peerRoutes.values())
+    usage.activeP2PDirectPeers += peerRoutes.direct
+    usage.activeP2PTurnPeers += peerRoutes.turn
     usage.pendingViewerRequests += session.responses.size
     usage.pendingPairings += session.pairs.size
     active.push({
@@ -1154,7 +1337,14 @@ function healthSnapshot() {
       ...session.traffic,
     })
   }
-  return { ok: true, sessions: sessions.size, usage, traffic: totals, active }
+  return {
+    ok: true,
+    sessions: sessions.size,
+    usage,
+    traffic: totals,
+    persistence: { enabled: !!stateFile, errors: persistenceErrors },
+    active,
+  }
 }
 
 function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketData>) {
@@ -1178,6 +1368,9 @@ function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketDa
   session.pairs.clear()
   for (const pairingSocket of session.pairingSockets) pairingSocket.close(1012, "Desktop is reconnecting")
   session.pairingSockets.clear()
+  for (const peer of session.peers.values()) peer.close(1012, "Desktop is reconnecting")
+  session.peers.clear()
+  session.peerRoutes.clear()
 
   for (const viewer of session.sockets.values()) viewer.close(1012, "Desktop is reconnecting")
   session.sockets.clear()
@@ -1195,31 +1388,18 @@ function suspendHost(session: RelaySession, socket: Bun.ServerWebSocket<SocketDa
 function deleteSession(session: RelaySession) {
   if (session.resumeTimer) clearTimeout(session.resumeTimer)
   sessions.delete(session.id)
+  removeTurnIceServers(session.id)
   for (const [token, value] of viewerTokens) if (value.session === session) viewerTokens.delete(token)
   schedulePersist()
   for (const socket of session.pairingSockets) socket.close(4404, "Session ended")
   for (const socket of session.sockets.values()) socket.close(4404, "Session ended")
+  for (const socket of session.peers.values()) socket.close(4404, "Session ended")
+  session.peerRoutes.clear()
   for (const response of session.responses.values()) {
     const error = new Error("Remote session ended")
     response.rejectHeaders(error)
     response.controller?.error(error)
   }
-}
-
-function sanitizeResponseHeaders(value: Record<string, string>) {
-  const headers = new Headers(value)
-  for (const name of [
-    "connection",
-    "content-length",
-    "content-encoding",
-    "keep-alive",
-    "set-cookie",
-    "set-cookie2",
-    "transfer-encoding",
-    "upgrade",
-  ])
-    headers.delete(name)
-  return headers
 }
 
 function closeCode(value: unknown) {
@@ -1388,6 +1568,7 @@ async function closeServer() {
   // Keep session/viewer grants on disk so a Relay restart restores browser auth.
   if (persistTimer) clearTimeout(persistTimer)
   persistTimer = undefined
+  persistDueAt = 0
   persistState()
   server.stop(true)
 }
