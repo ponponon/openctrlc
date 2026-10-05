@@ -180,6 +180,12 @@ for (const item of targets) {
     },
   })
 
+  // Embedding the bundle invalidates the linker's ad-hoc signature. Repair it
+  // before macOS executes the binary; release CI replaces it with Developer ID.
+  if (item.os === "darwin" && process.platform === "darwin") {
+    await $`codesign --force --sign - dist/${name}/bin/${Brand.cli}`
+  }
+
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
     const binaryPath = `dist/${name}/bin/${Brand.cli}`

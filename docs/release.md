@@ -36,6 +36,7 @@ git show-ref --tags
 当前正式发布包含：
 
 - CLI：macOS Apple Silicon / Intel、Linux x64 / ARM64、Windows x64 / ARM64。
+- macOS CLI：三种 Darwin 归档（arm64、x64、x64-baseline）使用 Developer ID 签名和 hardened runtime；单独的 CLI notarization 不在当前流程中。
 - Desktop：macOS Apple Silicon、Windows x64 / ARM64、Linux x64 / ARM64。
 - Desktop Linux：DEB、AppImage、RPM。
 - Desktop Windows：NSIS 安装程序。
@@ -80,7 +81,7 @@ CLOUDFLARE_ACCOUNT_ID  # Variable 或 Secret，Cloudflare Account ID
 
 ## GitHub Actions 必需 Secrets
 
-macOS 正式桌面包需要以下仓库 Secrets：
+macOS 正式 CLI 和桌面包共用 Developer ID 证书 Secrets；桌面 notarization 还需要 Apple 账号信息：
 
 ```text
 MACOS_DEVELOPER_ID_P12_BASE64
@@ -92,6 +93,12 @@ APPLE_TEAM_ID
 
 其中 `MACOS_DEVELOPER_ID_P12_BASE64` 是包含 Developer ID Application 私钥的
 `.p12` 文件的 base64 内容。不要把 `.p12`、密码或任何 API token 提交到仓库。
+
+CLI 的 `sign-cli-macos` job 下载 `build-cli` 的 ZIP，解包后签名、严格校验并重新归档，
+按 runner 原生架构运行 `--version` 校验目标版本。最终 `publish` 必须等待此 job 成功，
+先下载原始 CLI artifact，再用 `openctrlc-cli-signed-macos` 覆盖三份 Darwin ZIP，然后才上传
+资产并公开 Release；签名或冒烟失败时不发布。临时证书和 keychain 在成功、失败时均清理。
+Homebrew tap 使用的 macOS ZIP 也因此来自签名后的正式 Release。
 
 ## 发布前检查
 
@@ -140,6 +147,14 @@ bun ./script/publish.ts
 拒绝缺失、混用版本或目录/包名不匹配的构建产物，并只发布刚生成的对应版本 tarball。
 `OPENCTRLC_NPM_ONLY=1` 只发布 CLI、平台二进制包和迁移期兼容别名，不会尝试发布未配置
 npm scope 的 SDK，也不会运行 Docker、AUR 或 Homebrew 发布流程。
+
+注意：上述本地构建在 macOS 上只自动修复 ad-hoc 签名，不会自动使用 Developer ID，
+也不会复用 GitHub 工作流的签名 artifact。若 npm 包需要与 Release 保持相同签名，
+应在构建后、运行 npm 发布命令前下载同版本 Release 的三份 `openctrlc-darwin-*.zip`，
+解压覆盖对应 `packages/opencode/dist/<platform>/bin` 内的二进制（保留已校验的 package.json）；
+在 macOS 上执行 `codesign --verify --deep --strict`、`codesign --display --verbose=4` 并检查
+Developer ID 身份及原生架构 `--version`，或者在持有该证书的 macOS 上执行相同签名步骤。
+不要设置 `OPENCTRLC_RELEASE` 来补签已公开的 Release，也不要把 ad-hoc 签名当作 Developer ID 签名。
 
 ## Homebrew tap
 

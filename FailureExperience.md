@@ -1097,3 +1097,7 @@ Bun `with { type: "file" }` 打进 bundle 后是 `./index-*.html` 相对路径�
 ## scrollIntoView 默认 block:"start" 会连带滚动 overflow 祖先并裁剪标题栏
 
 点击标题栏前面需要横向滚动的会话 tab 时，标题栏高度看起来“往上缩”，左侧「省流」徽章被裁掉一半；点击后面已可见的 tab 则正常。根因是导航回调里的 `el?.scrollIntoView({ behavior: "instant" })` 没有指定 `block`/`inline`，默认 `block: "start"` 会把目标元素顶边对齐到每个可滚动祖先的顶部。标题栏内层是 `h-full overflow-hidden`，tab 横向滚动容器写的是 `overflow-x-auto`（按 CSS 规范 `overflow-y` 会被计算成 `auto`，同样可被程序滚动）。只有当前 tab 需要横向滚动时 `scrollIntoView` 才真正滚动，此时它也会把 overflow 祖先纵向 scrollTop 推上去，padding 顶上的 chips 就被裁掉了；点击已可见的 tab 不触发滚动，所以看起来“只有前面的 tab 有问题”。修复是显式传 `{ block: "nearest", inline: "nearest" }`，并给横向 tab 条加 `overflow-y-hidden`，避免 `overflow-x-auto` 把纵向也变成可滚动。以后凡是标题栏、工具条、粘性头等“绝对不能纵向滚”的条里做元素定位滚动，都必须显式限制滚动轴，不能依赖 `scrollIntoView` 默认值。
+
+## macOS CLI 签名必须落到最终发布归档
+
+本地 Desktop 复制 CLI 时的 ad-hoc 签名，不会修复 Linux CI 交叉编译后单独分发的 Darwin CLI ZIP；Bun 嵌入 bundle 也会使链接器原签名失效。以后本地 macOS 编译后先重新签名再执行冒烟；正式归档在 macOS runner 上用 Developer ID 和 Bun runtime entitlements 签名、校验、重新打 ZIP。发布 job 必须依赖签名成功，并在下载原始 CLI artifact 后再覆盖已签名 ZIP，避免后续上传把签名产物替换回原包。只含 ZIP 的 artifact 不能按上游包含平台目录的结构直接签名，必须先解包。手动 npm 流程还需明确复用同版本签名二进制，不能把 ad-hoc 校验通过当成 Developer ID 分发已完成。

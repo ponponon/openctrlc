@@ -9,9 +9,9 @@ source of updates.
 - Local exact tag: `base-opencode-7774461`
 - Published marker: `openctrlc-baseline-7774461`
 - Imported: 2026-08-19
-- Reviewed through upstream commit: `7945de2089`
-- Last selective sync: 2026-09-29
-- Upstream version at review: `1.18.33`
+- Reviewed through upstream commit: `907b3bc518fa48e90e8ec24dd327d13eee71c36c`
+- Last selective sync: 2026-10-05
+- Upstream version at review: `1.18.34`
 - OpenCtrlC version at sync: `1.18.18`
 
 ## Sync policy
@@ -45,8 +45,10 @@ Do not edit generated client files directly; regenerate them from
 
 ## Integrated upstream commits
 
-The 2026-09-13, 2026-09-21, and 2026-09-28 syncs integrated the following upstream fixes and
-features while preserving OpenCtrlC's independent product code:
+The selective syncs from 2026-09-13 through 2026-10-05 integrated the following
+upstream fixes and features while preserving OpenCtrlC's independent product code.
+The latest range contains 19 commits: 5 were integrated wholly or in part; the
+remaining 14 and the statistics portion of `a79ecfe109` are recorded below.
 
 ### Runtime, provider, and session reliability
 
@@ -88,6 +90,12 @@ features while preserving OpenCtrlC's independent product code:
   fetches while enforcing header, SSE chunk, and request timeouts. The native
   passthrough timeout path is deferred below because the local gateway SDK
   rejects its Anthropic route before dispatch.
+- `e9f8a210b9` adds namespaced session and parent-session identity headers to
+  both V1 and V2 provider requests while preserving all existing compatibility
+  headers and OpenCtrlC's User-Agent behavior. Tests cover root/child sessions
+  on OpenCode-compatible and custom providers, plus V2 compaction requests.
+- `a79ecfe109` partially integrates the CLI unknown-model subprocess test's
+  serial execution fix. Its statistics site changes remain deferred below.
 
 ### Statistics hardening
 
@@ -109,6 +117,17 @@ features while preserving OpenCtrlC's independent product code:
 - `5cd8e68fdd` add the GPT-6 Astra system prompt.
 - `a9a6fad0fa` request summarized adaptive thinking for GitHub Copilot models.
 - `f12e14cf16` identify desktop clients during provider OAuth.
+- `97a86b7677` uses the native path separator when extracting plugin names
+  from file URLs in TUI `/status`, fixing Windows directory handling.
+- `9b4882db54` repairs Darwin CLI ad-hoc signatures after Bun compilation and
+  before the local smoke test, using OpenCtrlC's binary name.
+- `f66b86ceec` adapts Developer ID signing to OpenCtrlC's archive-only release
+  artifacts and existing macOS certificate secrets. All three Darwin CLI ZIPs
+  are signed, verified, repacked, and smoke-tested on the runner's native
+  architecture; final publication requires the signed artifact and overlays
+  it after the original CLI artifact. Temporary signing credentials are
+  removed even on failure. The independent manual npm path is documented
+  separately and does not automatically consume this CI artifact.
 
 ## Deferred upstream commits
 
@@ -164,3 +183,20 @@ OpenCtrlC-specific adaptation:
   Zen privacy, and referral-program product copy; not applicable to this fork.
 - `90e65205f6`: upstream `1.18.33` release/version synchronization; OpenCtrlC
   continues to use its own release cadence.
+- `2fa3363c92`, `c42ae0d56b`, `907b3bc518`: hosted GPT-6.1 Sol pricing and
+  Zen Ling/Fledge model product copy; not OpenCtrlC provider/config changes.
+- `82ea3a3a63`: upstream `1.18.34` release/version synchronization; local
+  package versions remain `1.18.18` until an OpenCtrlC release is requested.
+- `28e13d9fd0`, `62ac31eb7a`, `0112a92c41`: upstream contributor compliance
+  grace periods and triage-owner assignments, not this fork's maintenance policy.
+- `63cf236140`, `cff9078bb3`: generated upstream Nix dependency hashes; they
+  do not describe OpenCtrlC's current dependency graph.
+- `8bb2ccf829`, `dc31828006`, `1ddb0873ae`: retirement of the hosted S3 data
+  lake, ingestion server, and SST resources. Do not delete OpenCtrlC's
+  infrastructure as part of a client fix; adapt it with the deferred R2 work.
+- `aa481b8f56`, statistics portion of `a79ecfe109`: canonical URLs, 404/SEO,
+  sitemap coverage, and agent-readable data formats for the upstream stats
+  site; broad site/catalog changes require independent local adaptation.
+- `108b988a08`: hidden-model filtering requires a new SST secret and removes
+  retired model dimensions from stored statistics. Defer with the hosted
+  catalog attribution and R2 migration rather than silently changing local data.

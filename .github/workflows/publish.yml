@@ -127,6 +127,106 @@ jobs:
             packages/opencode/dist/*.zip
             packages/opencode/dist/*.tar.gz
 
+  sign-cli-macos:
+    needs:
+      - version
+      - build-cli
+    runs-on: macos-14
+    if: github.repository == 'ponponon/openctrlc'
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: openctrlc-cli
+          path: packages/opencode/dist
+
+      - name: Import CLI Developer ID certificate
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_DEVELOPER_ID_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MACOS_CERTIFICATE_BASE64" ] || [ -z "$MACOS_CERTIFICATE_PASSWORD" ]; then
+            echo "Missing MACOS_DEVELOPER_ID_P12_BASE64 or MACOS_DEVELOPER_ID_P12_PASSWORD" >&2
+            exit 1
+          fi
+
+          keychain_path="$RUNNER_TEMP/openctrlc-cli.keychain-db"
+          certificate_path="$RUNNER_TEMP/openctrlc-cli-developer-id.p12"
+          keychain_password="$(openssl rand -hex 24)"
+          echo "::add-mask::$keychain_password"
+
+          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 -D > "$certificate_path"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -k "$keychain_path" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+
+      - name: Sign and repack macOS CLI archives
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/openctrlc-cli.keychain-db"
+          identity="$(security find-identity -v -p codesigning "$keychain_path" | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -n 1)"
+          if [ -z "$identity" ]; then
+            echo "Developer ID Application identity not found" >&2
+            exit 1
+          fi
+
+          for name in openctrlc-darwin-arm64 openctrlc-darwin-x64 openctrlc-darwin-x64-baseline; do
+            mkdir -p "packages/opencode/dist/$name/bin"
+            unzip -q "packages/opencode/dist/$name.zip" -d "packages/opencode/dist/$name/bin"
+            file="packages/opencode/dist/$name/bin/openctrlc"
+            chmod +x "$file"
+            codesign \
+              --force \
+              --timestamp \
+              --options runtime \
+              --entitlements packages/opencode/script/entitlements.plist \
+              --keychain "$keychain_path" \
+              --sign "$identity" \
+              "$file"
+            codesign --verify --deep --strict --verbose=4 "$file"
+            codesign --display --requirements - "$file"
+            (cd "packages/opencode/dist/$name/bin" && zip -r "../../$name-signed.zip" .)
+            mv "packages/opencode/dist/$name-signed.zip" "packages/opencode/dist/$name.zip"
+          done
+
+      - name: Smoke test signed CLI on the runner architecture
+        env:
+          EXPECTED_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in
+            arm64) name=openctrlc-darwin-arm64 ;;
+            x86_64) name=openctrlc-darwin-x64 ;;
+            *) echo "Unsupported macOS runner architecture" >&2; exit 1 ;;
+          esac
+          actual="$("packages/opencode/dist/$name/bin/openctrlc" --version)"
+          if [ "$actual" != "$EXPECTED_VERSION" ]; then
+            echo "CLI version mismatch: expected $EXPECTED_VERSION, got $actual" >&2
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: openctrlc-cli-signed-macos
+          path: |
+            packages/opencode/dist/openctrlc-darwin-arm64.zip
+            packages/opencode/dist/openctrlc-darwin-x64.zip
+            packages/opencode/dist/openctrlc-darwin-x64-baseline.zip
+          if-no-files-found: error
+
+      - name: Remove temporary CLI signing credentials
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/openctrlc-cli.keychain-db" || true
+          rm -f "$RUNNER_TEMP/openctrlc-cli-developer-id.p12"
+
   check-desktop-icons:
     needs:
       - version
@@ -312,6 +412,7 @@ jobs:
     needs:
       - version
       - build-cli
+      - sign-cli-macos
       - build-desktop-macos
       - build-desktop-windows
       - build-desktop-linux
@@ -324,6 +425,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: openctrlc-cli
+          path: packages/opencode/dist
+
+      - name: Replace unsigned macOS CLI archives
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: openctrlc-cli-signed-macos
           path: packages/opencode/dist
 
       - name: Upload CLI release assets
