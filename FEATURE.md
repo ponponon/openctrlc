@@ -2592,7 +2592,7 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 - 经 DataChannel 转发的本机 WebSocket 握手 15 秒没有结果时会失败关闭；直连通道中止时也会结束等待中的 socket，避免连接永久停留在 `CONNECTING` 或 `CLOSING`。
 - 远程 WebSocket wrapper 的 `send()` 按调用顺序串行发送；Blob 转换不能越过后续文本帧。`bufferedAmount` 反映尚未提交到传输层的 payload 字节，发送失败会发出 error 并关闭该 socket。
 - 响应流使用端到端字节额度：浏览器按 256 KiB 的 ReadableStream 缓冲窗口授予额度，一次 pull 会连续发足当前可用额度，避免跨网时每 24 KiB 等一次往返；桌面每次最多发送 24 KiB，并在额度耗尽时暂停读取本地响应。桌面 IPC/DataChannel 发送队列仍保留 512 KiB 发送阈值和 10 秒拥塞超时。peer 关闭或额度等待超时会唤醒等待者并终止关联流。
-- 未就绪时 HTTP 和 WebSocket 仍走现有 Relay。ICE 地址只从 Relay 环境读取：`OPENCTRLC_STUN_URLS` 可配置自有 STUN，`OPENCTRLC_TURN_URLS` 与 `OPENCTRLC_TURN_SHARED_SECRET` 可配置 Coturn。Relay 生成 12 小时 HMAC-SHA1 凭据；未配置 ICE 时用本地候选并在 12 秒后回退 HTTPS Relay，不请求公共 STUN 或外部 TURN API。生产部署和跨网端到端验证仍未完成。
+- 未就绪时 HTTP 和 WebSocket 仍走现有 Relay。ICE 地址只从 Relay 环境读取：`OPENCTRLC_STUN_URLS` 可配置自有 STUN，`OPENCTRLC_TURN_URLS` 与 `OPENCTRLC_TURN_SHARED_SECRET` 可配置 Coturn。Relay 生成 12 小时 HMAC-SHA1 凭据；未配置 ICE 时不启动 P2P 协商，立即使用 HTTPS Relay；配置 ICE 后若直连协商 12 秒仍未就绪，再回退 HTTPS Relay。不请求公共 STUN 或外部 TURN API。生产部署和跨网端到端验证仍未完成。
 - 远程浏览器标题栏显示当前传输状态：协商期间明确提示请求仍经 Relay；DataChannel ready 后先显示线路识别中，再根据已选 ICE candidate pair 区分直连与 TURN，避免把尚未识别的线路误报为免费直连。TURN 状态提示流量可能产生中继费用。DataChannel 中断时显示回到 Relay 并继续重试；服务端实时事件流和已打开的终端 WebSocket 会在 DataChannel ready 后重连切换通道（包括 TURN 路径），重连期间暂存至多 256 KiB 的键盘输入并在恢复后发送。
 - ICE 候选可能让已授权浏览器看到桌面端或浏览器的网络地址；加密保护传输内容但不隐藏 IP。公开发布前需要隐私说明及 Relay-only/候选地址策略评估。
 - 手机访问弹窗区分 WebRTC 直连与 HTTPS Relay 的数据路径：直连时说明工作区传输已加密、对端可能看到公网 IP；回退 Relay 时说明 TLS 保护传输但 Relay 可查看转发内容。该文案随应用支持的四种语言同步。
@@ -2691,14 +2691,13 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 
 ### 实现范围
 
-- 桌面通过本机 `fetch` 读取的响应会自动解压。远程查看器支持 gzip 时，桌面在 WebSocket 上传前对可压缩文本和 JSON 重新进行流式 gzip，并在响应头标记 `Content-Encoding: gzip`；SSE 不压缩。
-- Relay 保留桌面端的 gzip 标记并原样转发，避免将已压缩数据再次压缩；旧版桌面仍由 Relay 负责给浏览器压缩。
-- WebRTC 直连请求在浏览器支持 `DecompressionStream` 时声明 gzip 能力；桌面压缩后，浏览器在创建 fetch `Response` 前流式解压。解压能力不可用时继续传未压缩内容。
+- 桌面通过本机 `fetch` 读取的响应会自动解压。Relay 在创建/恢复会话时用 `gzipResponseUpload` 明确声明支持压缩响应上行；桌面只在收到该能力后，才对 Relay 路径的可压缩文本和 JSON 重新流式 gzip。旧 Relay 不发送该字段，桌面保持未压缩，由旧 Relay 给浏览器压缩，避免版本错配造成双重 gzip 和白屏；SSE 不压缩。
+- WebRTC 直连有独立的内部 gzip 协商：浏览器通过 DataChannel 声明支持 `DecompressionStream`，桌面识别该请求确实来自已登记的 peer 后才压缩。普通 HTTP Relay 请求不能靠伪造内部请求头开启桌面压缩。浏览器在创建 fetch `Response` 前流式解压；解压能力不可用时继续传未压缩内容。
 - 不缓存远程响应，不改变 API 内容、请求取消或 SSE 语义。
 
 ### 验证方式
 
-- `packages/app` 和 `packages/desktop` 执行 `bun run typecheck`。
+- `packages/app` 和 `packages/desktop` 执行 `bun run typecheck`；`packages/desktop/src/main/remote-response-encoding.test.ts` 覆盖旧/新 Relay 能力协商、P2P 独立压缩及 HTTP 伪造头回退。
 - `packages/app` 的 `remote-peer.test.ts` 覆盖 gzip DataChannel 响应解压；`packages/remote-relay/src/response-encoding.test.ts` 覆盖保留 gzip、避免二次压缩、普通 JSON 压缩与 SSE 排除。
 - `packages/remote-relay` 执行 `bun build ./src/index.ts --target bun`。
 - 已观测旧链路一次 6.6 MB JSON 在 Relay 到浏览器时压缩约 390 KB，而桌面仍上传未压缩响应；本次仅有本机类型检查、单测和 Relay bundle 检查，尚未在真实桌面与公网 Relay 上量测新链路字节数或首屏耗时。

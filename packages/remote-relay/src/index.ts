@@ -584,6 +584,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
         viewerLimit: session.viewerLimit,
         binaryChunks: session.binaryChunks,
+        gzipResponseUpload: true,
       } satisfies RelayServerMessage),
     )
     if (!pruneExpiredViewers(session)) sendViewerState(session)
@@ -631,6 +632,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
         url: `${publicURL.origin}/join/${session.id}#${session.joinToken}`,
         viewerLimit: session.viewerLimit,
         binaryChunks: session.binaryChunks,
+        gzipResponseUpload: true,
       } satisfies RelayServerMessage),
     )
     sendViewerState(session)

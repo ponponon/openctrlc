@@ -64,6 +64,7 @@ export type RelayServerMessage =
       url: string
       viewerLimit: number
       binaryChunks?: boolean
+      gzipResponseUpload?: boolean
     }
   | {
       type: "session.resumed"
@@ -72,6 +73,7 @@ export type RelayServerMessage =
       url: string
       viewerLimit: number
       binaryChunks?: boolean
+      gzipResponseUpload?: boolean
     }
   | { type: "session.limit.updated"; viewerLimit: number }
   | { type: "session.resume.error"; reason: "unavailable" | "invalid" }

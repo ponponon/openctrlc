@@ -21,6 +21,7 @@ import type { PeerIceServer, PeerRoute, PeerRouteBytes, PeerSignal } from "@open
 import { getStore } from "./store"
 import { REMOTE_ACCESS_ENABLED_KEY, REMOTE_ACCESS_SESSION_KEY, REMOTE_ACCESS_VIEWER_LIMIT_KEY } from "./store-keys"
 import { consumeRejectedPeerStream, type RejectedPeerStream } from "./remote-peer-rejection"
+import { remoteAcceptEncoding, shouldCompressRemoteResponse } from "./remote-response-encoding"
 
 type InboundHTTP = {
   controller?: ReadableStreamDefaultController<Uint8Array>
@@ -65,6 +66,7 @@ export class RemoteAccessService {
   #sessionID?: string
   #hostToken?: string
   #binaryChunks = false
+  #gzipResponseUpload = false
   #server?: ServerReadyData
   #requests = new Map<string, InboundHTTP>()
   #localSockets = new Map<string, WebSocket>()
@@ -281,7 +283,7 @@ export class RemoteAccessService {
       return
     if (message.type === "request.end" || message.type === "request.cancel" || message.type === "socket.close")
       this.#peerInputEnded.add(message.id as string)
-    this.#handleMessage(message)
+    this.#handleMessage(message, peerID)
     if (message.type === "request.end") this.#finishPeerStream(message.id as string, peerID)
     if (message.type === "request.cancel") {
       this.#peerResponseEnded.add(message.id as string)
@@ -371,6 +373,7 @@ export class RemoteAccessService {
     })
     this.#socket = undefined
     this.#binaryChunks = false
+    this.#gzipResponseUpload = false
     this.#sessionID = undefined
     this.#hostToken = undefined
     this.#server = undefined
@@ -412,6 +415,7 @@ export class RemoteAccessService {
     })
     this.#socket = undefined
     this.#binaryChunks = false
+    this.#gzipResponseUpload = false
     this.#server = undefined
     this.#notifiedPairRequests.clear()
     for (const request of this.#requests.values()) request.aborted.abort()
@@ -591,7 +595,12 @@ export class RemoteAccessService {
         reject(error)
       }
       timeout = setTimeout(() => fail(new Error("Relay connection timed out")), resume ? 12_000 : 20_000)
-      const activate = (url: string, relayViewerLimit: unknown, binaryChunks: boolean) => {
+      const activate = (
+        url: string,
+        relayViewerLimit: unknown,
+        binaryChunks: boolean,
+        gzipResponseUpload: boolean,
+      ) => {
         if (generation !== this.#generation || this.#state.status === "stopped") {
           fail(new Error("Mobile access stopped"))
           return
@@ -600,6 +609,7 @@ export class RemoteAccessService {
         settled = true
         clearTimeout(timeout)
         this.#binaryChunks = binaryChunks
+        this.#gzipResponseUpload = gzipResponseUpload
         this.#notifiedPairRequests.clear()
         this.#clearReconnect()
         const viewerLimitSupported = isViewerLimit(relayViewerLimit)
@@ -682,7 +692,12 @@ export class RemoteAccessService {
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
           persistSession({ sessionID: message.sessionID, hostToken: message.hostToken })
-          activate(message.url, message.viewerLimit, message.binaryChunks === true)
+          activate(
+            message.url,
+            message.viewerLimit,
+            message.binaryChunks === true,
+            message.gzipResponseUpload === true,
+          )
           return
         }
         if (resume && message.type === "session.resumed") {
@@ -694,7 +709,12 @@ export class RemoteAccessService {
             fail(new RemoteSessionUnavailable("The relay could not restore the previous session"))
             return
           }
-          activate(message.url, message.viewerLimit, message.binaryChunks === true)
+          activate(
+            message.url,
+            message.viewerLimit,
+            message.binaryChunks === true,
+            message.gzipResponseUpload === true,
+          )
           return
         }
         if (resume && message.type === "session.resume.error") {
@@ -732,6 +752,7 @@ export class RemoteAccessService {
     this.#pendingPings.clear()
     this.#socket = undefined
     this.#binaryChunks = false
+    this.#gzipResponseUpload = false
     for (const peerID of this.#peerRequests.keys()) this.#closePeer(peerID, "Relay disconnected", false)
     const error = new Error("Remote relay disconnected")
     this.#rejectPendingRevocations(error)
@@ -814,6 +835,7 @@ export class RemoteAccessService {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
     this.#clearReconnect()
     this.#binaryChunks = false
+    this.#gzipResponseUpload = false
     this.#sessionID = undefined
     this.#hostToken = undefined
     this.#server = undefined
@@ -865,7 +887,7 @@ export class RemoteAccessService {
     }
   }
 
-  #handleMessage(message: Record<string, unknown>) {
+  #handleMessage(message: Record<string, unknown>, peerID?: string) {
     if (
       message.type === "peer.open" &&
       typeof message.peerID === "string" &&
@@ -969,7 +991,7 @@ export class RemoteAccessService {
     }
     if (typeof message.id !== "string") return
     if (message.type === "request.start") {
-      this.#startLocalRequest(message)
+      this.#startLocalRequest(message, peerID)
       return
     }
     if (message.type === "request.chunk") {
@@ -1054,7 +1076,7 @@ export class RemoteAccessService {
     return true
   }
 
-  #startLocalRequest(message: Record<string, unknown>) {
+  #startLocalRequest(message: Record<string, unknown>, peerID?: string) {
     if (typeof message.id !== "string" || typeof message.path !== "string" || typeof message.method !== "string") return
     const server = this.#server
     if (!server) return this.#send({ type: "response.error", id: message.id, message: "Local server is unavailable" })
@@ -1088,7 +1110,7 @@ export class RemoteAccessService {
       headers = new Headers(
         message.headers && typeof message.headers === "object" ? (message.headers as Record<string, string>) : {},
       )
-      acceptEncoding = headers.get("accept-encoding") ?? headers.get("x-openctrlc-remote-accept-encoding")
+      acceptEncoding = remoteAcceptEncoding(headers, peerID ? "peer" : "relay", this.#gzipResponseUpload)
       headers.delete("x-openctrlc-remote-accept-encoding")
       headers.set("origin", server.url)
       if (server.username && server.password)
@@ -1126,25 +1148,11 @@ export class RemoteAccessService {
         )
         // Node fetch decodes upstream content-encoding; the outgoing header must describe these bytes.
         delete responseHeaders["content-encoding"]
-        const contentType = responseHeaders["content-type"]?.toLowerCase() ?? ""
-        const acceptedEncodings = new Map(
-          (acceptEncoding ?? "")
-            .toLowerCase()
-            .split(",")
-            .map((item) => {
-              const [encoding, ...parameters] = item.trim().split(";")
-              const quality = parameters.find((parameter) => parameter.trim().startsWith("q="))
-              return [encoding, quality === undefined ? 1 : Number(quality.trim().slice(2))] as const
-            }),
+        const compress = shouldCompressRemoteResponse(
+          acceptEncoding,
+          responseHeaders["content-type"] ?? "",
+          !!response.body,
         )
-        const gzipQuality = acceptedEncodings.get("gzip") ?? acceptedEncodings.get("*") ?? 0
-        const compress =
-          !!response.body &&
-          Number.isFinite(gzipQuality) &&
-          gzipQuality > 0 &&
-          gzipQuality <= 1 &&
-          !contentType.includes("text/event-stream") &&
-          /^(text\/|application\/(json|javascript|xml|jsonml|xhtml|x-ndjson))/.test(contentType)
         const responseBody = compress ? response.body!.pipeThrough(new CompressionStream("gzip")) : response.body
         if (compress) {
           responseHeaders["content-encoding"] = "gzip"

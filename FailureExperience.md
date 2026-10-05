@@ -952,6 +952,18 @@ WebSocket 仍显示 `OPEN` 不代表桌面到 Relay 的传输链路仍能双向�
 
 桌面主进程的 Node `fetch` 会自动解压 HTTP 响应体，但 Undici 仍可能保留 `Content-Encoding` 响应头。若代理只删掉 `Content-Length`，Relay 会把已解压的页面内容和旧的 gzip 标记一起发给浏览器；浏览器再次解压就会白屏，而 Relay 健康检查仍显示正常。转发端必须让响应头与实际字节一致：若继续发送解压后的 body，就一路删除旧的 `Content-Encoding`；若为了节省上行重新 gzip，就先删除上游编码标记、压缩实际 body、再设置新的 `Content-Encoding: gzip`。Relay 只能保留与压缩字节匹配的 gzip 标记，不能双重压缩，也不能仅凭原始上游头猜 body 编码。每次改压缩链路都要同时检查桌面上行、Relay 输出和浏览器解码。
 
+## Relay 与桌面版本错开时必须协商压缩能力
+
+桌面端对响应重新 gzip 可以节省 Relay 上行，但旧 Relay 可能仍假设桌面上传的是解压内容，并再次压缩；浏览器解开一层后得到的还是 gzip 字节，表现为空白或乱码。不能只根据浏览器的 `Accept-Encoding` 判断 Relay 是否能接收压缩体。Relay 应在会话创建和恢复握手中显式声明 `gzipResponseUpload`；桌面只在该能力为真时压缩 Relay 路径，旧 Relay 缺少字段就退回未压缩上传。P2P DataChannel 的 gzip 必须依据实际 peer 路径和专用能力单独决定，不能让普通 HTTP 请求伪造内部头来启用。
+
+## 公网依赖必须先验证中国大陆真实网络可达性
+
+用户实测 Cloudflare Workers 服务在中国大陆容易被防火墙屏蔽。以后为 OpenCtrlC 的远程入口选托管平台时，不能只看免费额度、全球节点或海外可用性；任何会挡住 Web 页面、信令或数据转发的依赖都不适合作为必需链路。优先保留可自托管、域名可迁移的 Bun Relay，并在中国大陆与目标海外地区实测 DNS、TLS、WebSocket、长连接和实际数据转发；没有完成这些链路验证前，不把某个边缘平台写成默认生产架构。
+
+## ICE 未配置和 ICE 协商失败是两条不同路径
+
+客户端能力检查要求 Relay 明确报告 ICE 已配置。若没有 STUN/TURN 地址，客户端不会启动 WebRTC 协商，而是直接使用 HTTPS Relay；12 秒超时只适用于 ICE 已配置后实际开始的 P2P 协商。功能描述和运维文档要按代码的能力门控写清这两种行为，不能把“不配置 ICE”误写成“尝试直连后等待超时”。
+
 ## 桌面到 Relay 的上行也要单独测量
 
 Node/Electron `fetch` 会自动解压桌面本机 API 返回的 gzip JSON。即使 Relay 最后把 6.6 MB JSON 压成约 390 KB 再发给浏览器，桌面此前仍可能已经把完整 6.6 MB 上传到 Relay，几条大请求并行时会堵住后续的小型会话请求。诊断中继性能时要分别测桌面→Relay、Relay→浏览器的编码字节和排队时间；只看浏览器侧传输量会漏掉上行瓶颈。需要降低上行时，应在桌面转发端针对查看器支持的编码流式重压缩，正确标记 `Content-Encoding`，并在 Relay 防止二次压缩；P2P 路径也要有相配套的解压或未压缩回退。

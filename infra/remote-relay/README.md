@@ -27,9 +27,19 @@ For another host, edit `compose.yaml` (`OPENCTRLC_REMOTE_PUBLIC_URL`), `openrest
 
 The public endpoint is one limited-capacity instance. It is suitable as an initial shared service, not a claim of worldwide low latency, high availability, or horizontal scaling.
 
+## Capacity and bandwidth
+
+The Relay's `maxSessions = 10,000` is an admission ceiling for retained session records, including temporarily offline sessions; it is not a benchmark or a promise of 10,000 connected users. The `60` session-creation limit is per source IP per rolling hour and is an abuse guard. The current container is separately capped at one CPU and 512 MiB RAM, and request/socket concurrency has its own limits. Measure realistic concurrent WebSockets, workspace loads, streams, CPU, memory, and egress before raising production capacity.
+
+The current public host has a nominal 5 Mbit/s line. At continuous line-rate, that is at most about 54 GB/day or 1.62 TB per 30 days before protocol overhead and provider-specific billing rules; operating continuously at the limit leaves no burst headroom. At 50% average utilization, the theoretical 30-day transfer is about 810 GB. With 10,000 users sharing that evenly, this is only about 81 MB of Relay traffic per user per month. These are arithmetic ceilings, not a capacity test or a bill estimate.
+
+For the full load assumptions, free-tier comparison, launch gates, and monetization options, see [the remote-service capacity and economics plan](../../docs/remote-service-economics.md).
+
+WebRTC direct paths can keep workspace payload off the public Relay; signaling still uses the Relay. STUN helps discover direct candidates and normally carries no workspace payload. TURN and HTTPS fallback do carry user traffic and therefore still consume server bandwidth. Do not count configured P2P support as an egress reduction until the selected path and Relay traffic counters confirm it. This project uses its self-hosted Bun Relay for the remote data path; Cloudflare Workers or other Worker-hosted forwarding are not part of this design.
+
 ## Optional self-hosted WebRTC ICE/TURN
 
-P2P uses ICE servers supplied by this Relay. There is no hard-coded public STUN provider and the Relay does not call an external TURN credential API. With no ICE server configured, it tries local network candidates, then falls back to the existing HTTPS Relay after 12 seconds. For cross-network direct connections, configure a reachable STUN service; for networks that block direct UDP, configure a Coturn TURN service as well. TURN carries encrypted WebRTC packets but still consumes the TURN server's bandwidth.
+P2P uses ICE servers supplied by this Relay. There is no hard-coded public STUN provider and the Relay does not call an external TURN credential API. With no ICE server configured, clients skip P2P negotiation and use the existing HTTPS Relay immediately. After configuring ICE, a peer that has not become ready within 12 seconds falls back to HTTPS Relay. For cross-network direct connections, configure a reachable STUN service; for networks that block direct UDP, configure a Coturn TURN service as well. TURN carries encrypted WebRTC packets but still consumes the TURN server's bandwidth.
 
 This Compose file includes an **opt-in, STUN-only** Coturn service. It is excluded from the normal Relay deployment and listens only on UDP 3478 using host networking; it does not allocate TURN relays or expose a TURN relay port range. The version-tagged upstream image currently used here is `coturn/coturn:4.18.0-r0`.
 
