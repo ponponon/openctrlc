@@ -9,7 +9,7 @@ services:
     container_name: openctrlc-remote-relay
     restart: unless-stopped
     init: true
-    user: "65532:65532"
+    user: "${OPENCTRLC_RELAY_UID:-65532}:${OPENCTRLC_RELAY_GID:-65532}"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=16m
@@ -25,6 +25,9 @@ services:
       PORT: 4097
       OPENCTRLC_REMOTE_PUBLIC_URL: https://openctrlc-remote.quniv.cn
       OPENCTRLC_REMOTE_DATA_DIR: /data
+      OPENCTRLC_STUN_URLS: ${OPENCTRLC_STUN_URLS:-}
+      OPENCTRLC_TURN_URLS: ${OPENCTRLC_TURN_URLS:-}
+      OPENCTRLC_TURN_SHARED_SECRET: ${OPENCTRLC_TURN_SHARED_SECRET:-}
     volumes:
       - ./data:/data
     ports:
@@ -44,3 +47,35 @@ services:
       options:
         max-size: 10m
         max-file: "3"
+
+  stun:
+    image: coturn/coturn:4.18.0-r0
+    profiles:
+      - stun
+    restart: unless-stopped
+    init: true
+    network_mode: host
+    read_only: true
+    tmpfs:
+      - /var/tmp:rw,noexec,nosuid,size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.25
+    command:
+      - -n
+      - --log-file=stdout
+      - --stun-only
+      - --no-cli
+      - --no-tcp
+      - --no-tls
+      - --no-dtls
+      - --listening-port=3478
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "2"

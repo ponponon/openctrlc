@@ -950,7 +950,11 @@ WebSocket 仍显示 `OPEN` 不代表桌面到 Relay 的传输链路仍能双向�
 
 ## 远程页面代理必须同步剥离压缩响应头
 
-桌面主进程的 Node `fetch` 会自动解压 HTTP 响应体，但 Undici 仍可能保留 `Content-Encoding` 响应头。若代理只删掉 `Content-Length`，Relay 会把已解压的页面内容和旧的 gzip 标记一起发给浏览器；浏览器再次解压就会白屏，而 Relay 健康检查仍显示正常。以后凡是用 `fetch` 代理响应，都要在桌面转发端和 Relay 出口清除 `Content-Encoding`，并确认授权后的 HTML 与静态资源可以正常加载。
+桌面主进程的 Node `fetch` 会自动解压 HTTP 响应体，但 Undici 仍可能保留 `Content-Encoding` 响应头。若代理只删掉 `Content-Length`，Relay 会把已解压的页面内容和旧的 gzip 标记一起发给浏览器；浏览器再次解压就会白屏，而 Relay 健康检查仍显示正常。转发端必须让响应头与实际字节一致：若继续发送解压后的 body，就一路删除旧的 `Content-Encoding`；若为了节省上行重新 gzip，就先删除上游编码标记、压缩实际 body、再设置新的 `Content-Encoding: gzip`。Relay 只能保留与压缩字节匹配的 gzip 标记，不能双重压缩，也不能仅凭原始上游头猜 body 编码。每次改压缩链路都要同时检查桌面上行、Relay 输出和浏览器解码。
+
+## 桌面到 Relay 的上行也要单独测量
+
+Node/Electron `fetch` 会自动解压桌面本机 API 返回的 gzip JSON。即使 Relay 最后把 6.6 MB JSON 压成约 390 KB 再发给浏览器，桌面此前仍可能已经把完整 6.6 MB 上传到 Relay，几条大请求并行时会堵住后续的小型会话请求。诊断中继性能时要分别测桌面→Relay、Relay→浏览器的编码字节和排队时间；只看浏览器侧传输量会漏掉上行瓶颈。需要降低上行时，应在桌面转发端针对查看器支持的编码流式重压缩，正确标记 `Content-Encoding`，并在 Relay 防止二次压缩；P2P 路径也要有相配套的解压或未压缩回退。
 
 遇到已运行的单实例 Relay 且有活动内存会话时，完整部署会重建 Relay 并清空所有会话。只需修反向代理头部时，优先用带备份回滚的 OpenResty 配置热重载；只有 Relay 程序本身必须更新时才接受重启会话。
 
@@ -1020,7 +1024,7 @@ Linux 与 Windows 的文件遍历顺序不同，直接把 Glob 扫描结果按�
 
 ## 远程浏览器不能把本机的空标签状态误认为没有工作区
 
-Relay 代理到的是同一个桌面本地服务器，会话记录和消息并没有分叉；真正分离的是 App 客户端状态：打开项目保存在各自浏览器/窗口的持久化存储中，打开会话标签也按窗口保存。新手机没有桌面浏览器的 localStorage，因此首页用空项目集过滤了服务器已有会话，造成“项目和会话都不存在”的假象。以后遇到桌面与远程列表不一致，先区分服务器数据与客户端工作区视图，不要误判为会话丢失或先改数据库。远程模式应在授权后安全传递打开项目、会话 ID 和当前会话索引；不要把路径/会话 ID 放进公开 QR URL，也不要传提示词、草稿或消息正文。Relay 对该索引只做会话内存缓存，并在产品文档中说明路径和 ID 对中继运营方可见。刷新时需要重新读取最新索引；消息与运行状态始终由同一桌面服务器提供。桌面端的持久化状态采用异步恢复，发送首个快照前必须等项目状态和会话标签都 ready，不能让启动时的临时空列表覆盖已有工作区。
+Relay 代理到的是同一个桌面本地服务器，会话记录和消息并没有分叉；真正分离的是 App 客户端状态：打开项目保存在各自浏览器/窗口的持久化存储中，打开会话标签也按窗口保存。新手机没有桌面浏览器的 localStorage，因此首页用空项目集过滤了服务器已有会话，造成“项目和会话都不存在”的假象。以后遇到桌面与远程列表不一致，先区分服务器数据与客户端工作区视图，不要误判为会话丢失或先改数据库。远程模式应在授权后安全传递打开项目、会话 ID 和当前会话索引；不要把路径/会话 ID 放进公开 QR URL，也不要传提示词、草稿或消息正文。Relay 对该索引保存在内存中；生产部署还会把会话恢复凭据、浏览器授权及项目路径/会话 ID 写入受限访问的 `remote-sessions.json`。路径和 ID 对中继运营方可见，不能误称“只在内存、不落盘”；转发的提示词、草稿和消息正文不在恢复文件中。刷新时需要重新读取最新索引；消息与运行状态始终由同一桌面服务器提供。桌面端的持久化状态采用异步恢复，发送首个快照前必须等项目状态和会话标签都 ready，不能让启动时的临时空列表覆盖已有工作区。
 
 ## 新增 HttpApi 路由必须同步加入 exerciser
 
@@ -1062,6 +1066,8 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 
 把 session/viewers 只存在 Relay 进程内存里，任何发版、容器重建、进程重启都会清空全部浏览器授权；桌面 resume 会拿到 `session.resume.error` 并新建会话，用户表现就是“每次重启 Desktop 都要重新扫码”。以后凡是“设备授权应当跨进程存活”的状态，必须在 Relay 落盘（本项目是 `remote-sessions.json`）并在 SIGTERM 时先写盘再退出；compose 要挂可写数据卷，且注意容器 `user=65532` 对宿主目录的写权限。桌面端 `#endReconnect` 清掉内存凭据后，`start()` 必须能从 store 再读回来，否则一次失败就会永久丢掉 resume 能力。
 
+Relay 监控读取向后兼容的 `/healthz` 时，字段缺失表示当前版本无法报告该状态，不等同于值为 `false`。解析健康字段要区分 `enabled`、`disabled` 和 `unknown`；未知状态只提示诊断字段不可用，不能报成持久化已关闭或伪造零错误。
+
 ## E2E 观察器不要返回未完成的 page.evaluate Promise
 
 在 `page.evaluate` 里创建 MutationObserver 时，如果把一个等待状态变化的 Promise 返回给 Playwright，页面导航或测试超时会销毁执行上下文，错误可能只显示为“Execution context was destroyed”，遮住真正未完成的断言。以后让 `page.evaluate` 同步安装观察器并立即返回，把采样写到页面内的状态对象，再用 `expect.poll` 或 `waitForFunction` 等待终态并读取样本。
@@ -1072,7 +1078,7 @@ Cloudflare R2 管理 API 的列对象响应把对象列表直接放在 `result` 
 
 ## 远程工作区快照不能只依赖 sessionStorage
 
-Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 `__Host-oc_remote_boot` Cookie 注入桌面项目/会话快照。sessionStorage 是标签页隔离的，Cookie 却是跨标签共享：用户在已有 Cookie 的新标签页打开远程链接时会跳过 bootstrap，拿不到快照，侧栏和会话列表全空。另外 web 端 `server.projects` 只从快照恢复、不看后端 `GET /project`，快照一丢整页就空白。以后远程首屏必须双通道：快照（sessionStorage+localStorage）+ 后端项目 API 兜底；桌面端 `RemoteWorkspaceReporter` 也要挂在所有布局上，不能只挂新布局，且不能只认 `ServerConnection.builtin`。
+Relay 的 workspace bootstrap 用 sessionStorage + 60 秒 Cookie 注入桌面项目/会话快照。sessionStorage 是标签页隔离的，Cookie 和同域 localStorage 却被多个 Relay 会话共用：新标签可能跳过 bootstrap，或误用另一台桌面的项目快照。以后同时以 Relay session ID 隔离 bootstrap Cookie、sessionStorage/localStorage 快照键和主机名；只按路径判断“是否已经 bootstrap”不够。远程首屏还要有后端 `GET /project` 兜底，桌面端 `RemoteWorkspaceHydrator` 要挂在所有布局上，不能只挂新布局，也不能只认 `ServerConnection.builtin`。
 
 ## 远程 Web 必须吃内嵌 OpenCtrlC UI，不能回退 app.opencode.ai
 
@@ -1094,10 +1100,225 @@ Bun `with { type: "file" }` 打进 bundle 后是 `./index-*.html` 相对路径�
 
 `Provider.ListResult` 校验很严：删掉 `model.api`、`options`，或把 `capabilities.attachment` 等假值键去掉，都会 400 `Missing key`。远程 `/provider` 因此整接口挂掉。安全做法是 **summary/full 两阶段**：summary 里未连接厂商 `models: {}`，已连接厂商保持完整模型对象；实测 6.6MB → 143KB（~2%）。改响应字段前必须对照 Schema（`packages/schema`）或跑真实 decode，不能只看 UI 是否读该字段。
 
-## scrollIntoView 默认 block:"start" 会连带滚动 overflow 祖先并裁剪标题栏
-
-点击标题栏前面需要横向滚动的会话 tab 时，标题栏高度看起来“往上缩”，左侧「省流」徽章被裁掉一半；点击后面已可见的 tab 则正常。根因是导航回调里的 `el?.scrollIntoView({ behavior: "instant" })` 没有指定 `block`/`inline`，默认 `block: "start"` 会把目标元素顶边对齐到每个可滚动祖先的顶部。标题栏内层是 `h-full overflow-hidden`，tab 横向滚动容器写的是 `overflow-x-auto`（按 CSS 规范 `overflow-y` 会被计算成 `auto`，同样可被程序滚动）。只有当前 tab 需要横向滚动时 `scrollIntoView` 才真正滚动，此时它也会把 overflow 祖先纵向 scrollTop 推上去，padding 顶上的 chips 就被裁掉了；点击已可见的 tab 不触发滚动，所以看起来“只有前面的 tab 有问题”。修复是显式传 `{ block: "nearest", inline: "nearest" }`，并给横向 tab 条加 `overflow-y-hidden`，避免 `overflow-x-auto` 把纵向也变成可滚动。以后凡是标题栏、工具条、粘性头等“绝对不能纵向滚”的条里做元素定位滚动，都必须显式限制滚动轴，不能依赖 `scrollIntoView` 默认值。
-
 ## macOS CLI 签名必须落到最终发布归档
 
 本地 Desktop 复制 CLI 时的 ad-hoc 签名，不会修复 Linux CI 交叉编译后单独分发的 Darwin CLI ZIP；Bun 嵌入 bundle 也会使链接器原签名失效。以后本地 macOS 编译后先重新签名再执行冒烟；正式归档在 macOS runner 上用 Developer ID 和 Bun runtime entitlements 签名、校验、重新打 ZIP。发布 job 必须依赖签名成功，并在下载原始 CLI artifact 后再覆盖已签名 ZIP，避免后续上传把签名产物替换回原包。只含 ZIP 的 artifact 不能按上游包含平台目录的结构直接签名，必须先解包。手动 npm 流程还需明确复用同版本签名二进制，不能把 ad-hoc 校验通过当成 Developer ID 分发已完成。
+
+## P2P 流取消必须清理请求映射
+
+WebRTC DataChannel 的浏览器请求被取消时，桌面端必须将本地 fetch 中止，并清理 peer 路由、输入结束和响应结束状态。只发 `request.cancel` 而不标记响应结束，会让每次导航/超时留下一个永不完成的映射，最终耗尽每 peer 64 条并发流上限。P2P 状态指标也不能把 Relay 上存在信令 WebSocket 等同于 ICE/DataChannel 已经直连；监控字段必须准确叫“信令 socket”，并在真正收到 DataChannel open 后单独上报直连状态。
+
+## Durable Objects 不能原样沿用 30 秒应用心跳并宣称免费
+
+DO 会按入站 WebSocket 应用消息计请求（按 20:1 折算），并按事件执行时长计 duration；每个桌面的 30 秒 JSON 心跳本身每天就是 2,880 条消息。容量估算必须将活跃连接数、心跳、浏览器信令、真实转发字节和 DO 计算分开计数；优先评估 WebSocket hibernation 与无需唤醒 DO 的协议层 ping，再根据真实用量设免费额度和账单上限。
+
+## P2P 上传超限分支也必须释放请求映射
+
+桌面端检测到 DataChannel 上传请求超过 16 MiB 时会 abort 本地 fetch。fetch 的 abort catch 为避免把用户取消误报成网络错误会提前返回；如果超限分支没有同步删除 `#requests` 项，请求虽然已报错给浏览器，却会留在桌面内存中。以后每个主动 abort 的终止分支都要确认它自己负责释放映射，不能假设异步 fetch catch 会兜底清理。
+
+## P2P 响应失败后要停止仍在发送的请求 body
+
+请求开始后服务端可能在浏览器继续上传时就返回错误（例如请求超限或本地 API 拒绝）。如果浏览器只结束 fetch 响应，却继续读取并发送 body，服务端可能已经删除该 stream 路由；剩余分片就会被当作无主流，错误地关闭同一 DataChannel 上其他请求。响应错误、超时、AbortSignal 和 peer 关闭都必须停止/取消 body reader，并发送 `request.cancel`；桌面超限路径保留路由直到收到 `request.end` 或 `request.cancel`，由双向终止状态共同清理映射。
+
+## 远程预取要按桌面上行成本限量
+
+浏览器的 `navigator.connection` 描述的是手机到网络的链路，不能反映桌面到 Relay 的上行带宽。桌面有低上行带宽时，远程布局若照搬本地桌面的预热策略（每个相邻会话抓 200 条、并行两个、前后各四个），会在用户未打开的会话上产生明显上传流量。远程模式应只串行预热相邻会话的首屏 20 条，深层历史等用户真正打开或滚动时再取。
+
+远程全局初始化也不能在摘要之后自动拉取完整 Provider 模型目录：完整目录约 6.6 MB，即使用户只想打开一条会话，也会占用桌面上行并和首屏请求争带宽。远程模式先用约 143 KB 的摘要；用户打开模型选择器时再按需获取完整目录。会话页也不能因为打开一条会话就后台预热前后邻居；一次打开只取当前会话，鼠标悬停不请求远程正文，显式键盘切换时最多串行预取一条首屏。带宽评估要把后台资源查询与会话正文分开统计。
+
+首页还有独立于会话页的预取入口：原先自动并发拉取最近两条会话，鼠标扫过列表时还会继续拉每条会话的 20 条首屏正文。它们都会占用桌面到 Relay 的同一条上行，点击真正目标时可能与首屏加载争带宽；手机的 `navigator.connection` 无法代表这段桌面链路。以后检查远程带宽必须覆盖首页、列表 hover、相邻会话导航和全局初始化的全部预取入口；远程首页只预载代码不取正文，会话页也只在显式键盘切换时预热一个目标会话，正文默认留给用户实际打开的会话。
+
+## 会话首屏补父消息不能串行累加 RTT
+
+加载的 assistant 消息若缺少对应 user parent，逐个请求父消息会把网络往返时间累加到首屏渲染前；弱上行下即使总响应体很小，也可能因多次 RTT 等待而显得卡住。父消息补齐要设置有界并发，并在并发请求重试时保留其他请求期间到达的实时事件；用延迟请求测试并发上限和最终合并结果。
+
+## WebRTC 响应流必须把背压传回本地 HTTP reader
+
+只在 DataChannel 层限制 `bufferedAmount` 仍不够：桌面主进程可能先从本地服务连续读取并 IPC 排队大量响应块。响应发送应按 peer 维护有界待发送量，在积压超过阈值时暂停读取；DataChannel 消化积压后再恢复。peer 关闭或等待超时必须唤醒等待者并终止关联流，避免悬挂的 reader 和映射继续占资源。
+
+## 隐藏 WebRTC renderer 加载失败要清理整组待处理 peer
+
+多个浏览器 peer 共用一个隐藏 Electron renderer。若 `loadFile()` 失败后只关闭最初发起的 peer，其余 peer 会留在集合和排队事件 Map 中；窗口又仍存在但永远不会 `ready`，后续 open 只会继续排队。失败路径必须将当前窗口标记失效、关闭该窗口承载的全部 peer、清空队列并销毁失败窗口；异步 load 回调还要核对窗口身份，避免迟到的旧回调误伤新窗口。
+
+## 隐藏 WebRTC renderer 必须排队第一个 peer.open
+
+新建隐藏窗口的 `open()` 分支不能在创建窗口后直接返回，否则首个 `peer.open` 不会送到 renderer；窗口加载完成后队列为空，P2P 连接永久停在信令阶段。首次打开也必须经过与窗口加载期间后续事件相同的队列，等 renderer ready 后统一分发；验收需验证冷启动时第一个 peer 能发 offer 并进入 DataChannel ready。
+
+## WebRTC 信令和数据必须走不同的 IPC 通道
+
+offer/answer/ICE candidate 在 DataChannel 建立前就必须传输；如果把信令 JSON 塞进只接收 DataChannel 业务消息的 IPC，主进程会因 peer 尚未 ready 拒绝它，或把它误判为无效数据并关连接。renderer 到 Relay 的信令应走独立 IPC，并由主进程验证 PeerSignal 结构；只有 DataChannel ready 后才允许请求、响应和 socket 数据进入业务消息通道。
+
+## WebRTC 直连断线不能把 Relay 备用通道一起拖死
+
+手机网络切换、休眠或 NAT 映射过期后，WebRTC/DataChannel 可能失败，而 Relay WebSocket 仍能工作。浏览器必须先把当前请求切回 Relay，再用有上限的指数退避重新建立信令和 peer；短暂可用后立刻断开的 peer 不应把退避重置成高频重试。显式撤销或会话不存在时停止重连，避免无效信令连接持续占用 Relay 资源。
+
+## BFCache 恢复后必须重新建立远程传输
+
+浏览器把页面放入前进/后退缓存（BFCache）时会触发 `pagehide`，恢复页面时触发 `pageshow` 且 `persisted` 为真。若只在 `pagehide` 永久关闭远程客户端，恢复后的 UI 虽可通过 Relay 继续工作，却永远不会再尝试 WebRTC 直连。以后释放页面级连接时，要覆盖 BFCache 恢复路径，并验证恢复后信令、心跳和 DataChannel 都能重新建立。
+
+## 直连建立后也要迁移已经打开的长连接
+
+只让新发的 `fetch` 请求使用 DataChannel 不够：在直连协商前建立的 SSE/事件流和终端 WebSocket 会继续占用 Relay。直连 ready 后，事件流要取消并快速重连；同源终端要保留游标并重连一次。终端切换/断线重连期间还要暂存有界键盘输入，在恢复后发送，避免吞掉正在输入的命令。状态 UI 必须按 DataChannel ready 更新，而且说明终端会短暂重连，不能把“信令已连接”显示成“直连已建立”。信令连接和 P2P 协商还要有超时，避免界面永久停留在连接中。
+
+## WebSocket 控制帧不能走普通消息包装
+
+P2P 终端 WebSocket 的 `socket.open` 和 `socket.close` 是桌面端路由控制命令。若复用 `socketSend`，它会被包装成 `socket.message`，桌面只会把它当作终端输入数据，导致连接永远无法握手。控制命令必须走原始 DataChannel 控制消息；只有真正的终端文本或二进制数据才走 `socket.message`。桌面拒绝 socket.open 时必须返回 `socket.close`，不能返回通用 HTTP `response.error`，否则浏览器 wrapper 不认识该响应，会一直停留在 `CONNECTING` 直到超时。即使本地服务暂不可用也要立即结束握手，不能静默丢弃打开请求。还要在远程客户端关闭（包括 BFCache 的 `pagehide`）时通知已打开的直连 socket 以 1012 收敛，确保恢复后会创建新连接。回归测试需经过完整的浏览器 WebSocket wrapper 和对端控制帧应答，单测底层 DataChannel 分片不能发现这类集成错误。
+
+## WebRTC 直连需要披露候选地址可见性
+
+STUN/ICE 建立直连时，已授权对端可能获得连接候选地址（包含公网地址，部分网络下也可能暴露本地候选）。加密 DataChannel 保护传输内容，但不隐藏网络地址。公开发布直连前应清楚说明这点，并评估限制候选地址或提供 Relay-only 选项；不能把 TLS/加密等同于隐藏 IP。
+
+如果远程访问启用 WebRTC 直连，安全说明不能继续只描述「所有数据都经过公共 Relay」。要分别说明直连的数据加密与对端地址可见性，以及直连失败时 Relay 能看到转发内容的事实；文案必须在所有运行时语言同步更新。
+
+## Electron peer 启动队列必须按字节限流
+
+隐藏 renderer 加载期间的队列若只限制事件条数并不构成内存上限，因为单个 DataChannel 消息可接近 2 MiB。多个 peer 同时发送大响应时，即使每个队列未达到条数限制，也可能在主进程累积数百 MiB。队列需要同时限制总字节数，并在发送、关闭、加载完成、窗口失败和应用退出时同步维护或清空计数；超限应关闭对应 peer，让浏览器回退 Relay。
+
+## 只为恢复中断消息时不要加载整条会话历史
+
+会话 `get` 和分页消息读取都可能触发中断恢复。如果恢复实现为了寻找未完成的 assistant 消息而逐页读取、hydrate 每一条历史消息及其 parts，老会话会在首屏数据返回前承担与完整历史长度成正比的数据库工作。恢复只需要读取 `time.completed` 缺失的 assistant 消息及其 parts；应在数据库边界按 session、role 和完成时间筛选，保留中断恢复语义，同时避免让只读接口重复加载完整 transcript。诊断此类延迟时要拆开 TTFB、传输和客户端父消息补齐耗时，不能只根据响应体大小推断瓶颈。
+
+## P2P 发送队列有界不代表浏览器消费队列有界
+
+限制 DataChannel `bufferedAmount` 和桌面 IPC 队列只能控制发送侧积压；若浏览器继续把收到的块 `enqueue` 到 `ReadableStream`，桌面仍可能持续发送、浏览器队列仍可能随慢消费者增长。响应流必须让接收端按实际可用缓冲授予字节额度，桌面用完额度后暂停本地 HTTP reader；取消、peer 关闭和超时要释放额度等待者及请求映射。传输队列与应用读取缓冲是两层独立背压，必须分别设上限并验证。
+
+额度不能只按每次 `ReadableStream.pull` 发一个 24 KiB 的块；如果下一块要等前一块传完才获准，跨网链路会退化成每个小块一次往返，显著压低吞吐。一次 pull 应在 `desiredSize - outstandingCredit` 范围内连续授予额度，直到填满有界缓冲窗口；仍需按实收字节扣减，并在取消、断连时停止继续授予。
+
+## 当前上下文统计必须排除未完成 assistant 回合
+
+最新 assistant 消息可能仍在生成，消息投影中的 token 也可能是局部更新。只按创建时间挑最新非零 token 会把半成品使用量展示成“当前上下文”，刷新页面后数值还可能跳动。上下文占用应只采纳 `time.completed` 已写入的 assistant 消息；测试要同时包含“较新的未完成回合”和“上一次已完成回合”，确认不被覆盖。
+
+## 远程首页不能空闲预取整套会话路由
+
+只跳过远程会话正文预取仍不够：首页的空闲任务还会导入会话路由及其依赖，开发模式下尤其会产生大量模块请求，经桌面上行转发到浏览器。排查远程流量时要同时检查动态路由、Markdown/高亮等依赖的自动预载；远程首页应等用户指向具体会话后再预载，正文继续按需获取。
+
+## V1/V2 启动都必须经过 Provider 摘要
+
+只在 V1 分支请求 `/provider?view=summary` 不足以省流：V2 初始化仍可能并行请求完整 `/api/model` 和默认模型，把完整目录提前传到远程浏览器。优化多协议客户端时要逐条追踪真实 endpoint，而不是只看共享的查询名；远程启动应在两种协议下都先获取 Provider 摘要，完整目录只在模型选择器打开时请求。本地桌面可继续自动载入完整目录。
+
+## 项目记忆会话失效后不能停在坏路由
+
+项目切换会立即导航到持久化的最后会话。如果这条会话已删除、属于当前项目以外的工作区或无法同步，只清理持久化记录会让用户停在“找不到会话”页；必须继续寻找项目最近的有效会话，无可用会话时回到项目会话页。异步恢复还有竞态：用户在补载期间手动切换会话，旧请求可能迟到并把路由切回旧目标。后台导航应检查操作代次，在每次 await 后确认目标仍是当前导航，并为用户路由操作使旧恢复失效。
+
+## WebRTC DataChannel 建立不等于网络直连
+
+WebRTC DataChannel 既可能经 STUN 建立端到端连接，也可能选中 TURN 候选并由供应商转发流量。只根据 DataChannel `open` 就显示“直连”，会把可能计费的 TURN 路径误报成免费直连。建立后应从 `getStats()` 读取已选 candidate pair，区分 `relay` candidate，并在界面标记 TURN；测试还要覆盖凭据缺失、签发失败、UDP/TCP 受限和退回应用层 Relay。TURN 长期密钥只留服务端，客户端只能拿有 TTL 的凭据。
+
+线路统计尚未返回时应显示“线路识别中”，不应先报“直连”；桌面端等待 ICE 的超时也必须与浏览器侧一致，否则较慢的 TURN 协商会被桌面先行关闭。终端迁移判断使用“DataChannel 已就绪”语义，不能只等 `direct`：TURN DataChannel 同样能绕过应用层 Relay，若只切换纯直连，终端仍会长期占用原 Relay 带宽。
+
+实时事件流也要按 DataChannel 是否 ready 切换，不能只在最后识别为纯直连时中断 Relay SSE。TURN 上的 WebRTC DataChannel 同样承载应用流量；状态从“线路识别中”转为 TURN 后不应让已建立的 SSE 留在旧链路。
+
+Peer 状态从“线路识别中”变成“直连”或“TURN”只是同一 DataChannel 的候选线路识别结果，不代表事件流底层连接需要重建。只应在 DataChannel 首次 ready 时迁移一次 SSE；对后续 candidate pair 状态继续 abort 会造成无谓的事件流断开和重连。
+
+## 会话消息边界比较必须保留数值时间语义
+
+分页消息的稳定顺序是 `(created timestamp, message ID)`。把时间戳与 ID 直接拼成字符串比较，会让 `10` 排在 `9` 之前并保留应淘汰的陈旧消息；共享的消息排序键也供二分查找使用，必须保持同一数值时间顺序。过滤边界时先按数值比较时间，仅时间相同时再比较 ID；字符串排序键要把非负时间戳编码为固定宽度后再拼 ID。回归测试要覆盖跨十位数时间戳，而不只覆盖单数位时间。
+
+## 延迟绑定桌面 PeerTransport 时保留 ICE 配置
+
+Relay 可能在隐藏 renderer 的 PeerTransport 完成绑定前就收到 `peer.open`。如果只在当下调用 `open` 时传入 TURN ICE 配置，迟绑定后补开的 peer 会丢失短时 TURN 凭据，导致两端候选集不一致；主进程应按 peer 暂存配置，并在传输绑定时重放、peer 关闭时清理。异步读取 `getStats()` 时要先捕获可选回调，避免闭包中丢失类型缩窄。
+
+## 远程 Relay 的状态文件要同时解决可写和最小权限
+
+持久化 JSON 含桌面恢复令牌和浏览器 bearer 授权。只设容器 `user` 不能保证宿主 bind mount 对该 UID 可写；静默落盘失败会让 Relay 重启后授权全部丢失。部署时要让非 root 服务 UID 与专用数据目录所有者一致，目录设为 `0700`、状态文件设为 `0600`，启动恢复时也收紧旧文件权限。监控或部署必须能发现所有权不匹配，不能仅因 healthz 正常就认定恢复已启用。
+
+## liveness 检查不能代替持久化健康检查
+
+Relay 能响应 HTTP healthz，只能证明进程还活着；它不能证明恢复令牌已成功写入磁盘。持久化读写错误应进入本机 healthz 汇总并由小时监控在错误计数增加时告警，不能只依赖容器 healthcheck 或查看日志。
+
+## 高频浏览器请求不能触发整份 Relay 状态落盘
+
+授权浏览器的每次 API、WebSocket 或 P2P 信令活动都会刷新滚动有效期和最后活动时间。如果每次 touch 都序列化并原子替换完整会话快照，流量高时磁盘写入和 JSON 序列化会与请求量成正比，且每个请求都会扫描所有会话及授权记录。活动时间应保留在内存中并合并为全局限频快照；授权创建、撤销、会话删除等会改变恢复权限的操作仍应快速持久化。限频窗口需要写进功能说明，因为 Relay 在该窗口内重启时，滚动授权的恢复有效期会略微变短。
+
+## TURN 凭据签发不能放大每次重连的控制面成本
+
+每次 P2P 信令重连都重新向 TURN 提供商申请凭据，会把网络抖动和设备重连放大成外部 API 请求与握手等待；连续失败时还会让每个重连都等待完整超时。短时凭据应按 Relay 会话缓存、同会话并发签发合并，失败增加有限冷却，批准时预热，并在会话删除时清理。不能把缓存改为跨会话共享，因为凭据的授权边界应与 Relay 会话一致；也不能把缓存时长设到提供商 TTL 之后。
+
+## P2P 不可用时必须明确退回 Relay
+
+WebRTC 是节省中继流量的可选路径，不能成为远程会话可用性的前置条件。浏览器没有 `RTCPeerConnection`、Peer 初始化同步抛错或协商超时，都应明确展示“仅使用中继”并让现有 HTTP/WebSocket Relay 继续工作；如果只把状态留在 `connecting`，用户会误以为整个远程会话卡死。兼容性回退要覆盖能力缺失和构造失败两条路径，而不只测试正常 Chromium 建连。
+
+## retained session 上限不等于在线并发量
+
+Relay 的 `sessions.size` 还包含断线后为保留浏览器授权而恢复的会话；带有效授权的断线会话可以保留 30 天。因此把 `maxSessions` 调高到 10,000 既不是 10,000 个在线用户的容量证明，也不代表还剩多少在线名额。回答容量问题要区分保留记录、在线桌面、在线浏览器和实际转发流量；扩容前分别定义在线上限和授权保留/淘汰策略，不能未经提示就删掉有效授权。
+
+## Solid Suspense 不会自动覆盖普通异步状态
+
+`createSessionLineage()` 主动启动 Promise 并在完成前返回 `undefined`，它没有 suspend；若外层只提供 `<Suspense fallback>`，目标会话目录尚未解析时仍会渲染空白。每个异步状态都要显式渲染 loading、success、error 三态，不能假设 Suspense 会捕获所有 Promise。延迟请求回归应阻塞元数据响应，断言状态文字和骨架可见，再放行并确认目标会话出现。
+
+## 首页会话列表已有详情时不要再阻塞请求一次
+
+首页会话列表包含目标会话的目录、标题和 parentID。若打开列表项时没有把这些已到手的元数据写入同一 server session sync cache，路由又会为解析目录发一次串行 detail GET；弱网下即使 transcript 很小，也会额外等待一次完整往返。打开前应只在 sync cache 缺项时复用列表对象，保留已由事件流更新的较新缓存；同时仍需为直接 URL 和真正缺失的会话展示 loading，并对响应延迟单独计时。
+
+新架构的 assistant 消息页不能假设第一页总包含 user root。若只依赖客户端前后翻页推断父子关系，连续的 assistant step 会让手机端为等到第一条 user 消息而串行发出多次弱网请求；之后逐个回取根消息还会再增加请求。不要直接丢弃 orphan assistant（那会把有效回答渲染成空白）。应由服务端明确携带父 ID、用索引回填历史记录，并在同一页响应附带缺失根消息；客户端只在旧协议确实没有这些信息时保留历史追溯兼容。用合成延迟测试时必须标注它不是用户公网的实测数据。
+
+V1 和 V2 的消息分页路由、响应结构不同。验证 V2 的 `parents` 侧载时，Playwright mock 必须显式报告 V2 协议并断言走 `/api/session/:id/message`；否则测试会悄悄走 V1，把旧版逐条父消息请求误判为新实现失败。反过来，不能只检查 mock 配置或单测；要在生产构建浏览器测试里同时断言协议路径、页数、父消息详情请求数和渲染结果。V2 assistant 内容分片 ID 由消息 ID、类型和序号生成（如 `messageID:text:0`），不能拿 V1 fixture 的 part ID 作为渲染完成条件。
+
+远程首页只在鼠标 `mouseenter` 预载路由会漏掉手机首次点按，因为触摸屏不保证派发鼠标 hover。代码预载用 `pointerenter` 覆盖鼠标、触摸和笔；远程只拉代码包，不能因为 pointer 进入就拉整段 transcript。
+
+## Peer 传输层缺失时不能把静默丢弃报告为发送成功
+
+桌面端 P2P 发送如果对尚未绑定的传输层使用可选链，然后仍返回成功，上游会继续等待一个永远不会到达的响应。Peer 初始化必须在传输层不可用时立即通知 Relay 关闭该直连并让浏览器回退；已存在的 Peer 在发送时发现传输层缺失，也要清理请求和 socket 状态并返回失败。异步网络路径不能用“方法没有抛错”推断“数据已交付”。
+
+远程页面销毁时会主动关闭 Peer 并失败所有待处理请求。若把每个幂等 GET 的 Peer 错误都无条件回退到 Relay，页面关闭本身也可能重新发起已经不再需要的请求，额外占用慢上行。只在页面仍活跃时执行自动 GET/HEAD 回退；页面关闭后的请求应停止。
+
+## 隐私说明必须和实际持久化字段一致
+
+Relay 为恢复桌面会话会把项目路径和会话 ID 写入受限权限的状态文件，即使提示词、消息正文和文件内容不落盘，也不能笼统宣称“工作区内容不会保存”。面向用户的说明应列明保存的元数据、实际保留和清理条件、谁能访问，以及哪些正文数据不会主动持久化；文案要与当前 `persistState` 字段和会话清理周期一起复核。
+
+## WebSocket 回退要分清远程 Relay 路径和桌面本地路径
+
+远程页面为 Relay 选定会话的 `_oc_remote_session` 标记不能附加到跨域地址，也不能被拼进 P2P 的本地 WebSocket 路径；它只放在同源 Relay 回退 URL 上。HTTPS 页面下的 `ws://` 也不是安全同源地址。加入自动回退后，旧 E2E 若仍假定直连拒绝就立即关闭，会变成永远等不到的测试；测试替身需区分信令连接和 Relay WebSocket，并明确断言路径、标记位置与 binaryType。不要让一个假的 WebSocket 构造器同时代表两种服务端协议。
+
+## 给动态接口加短缓存前必须先证明失效边界
+
+VCS 分支、待处理权限、Provider 认证/配置、Agent、Skill 和 Command 都会在桌面进程运行期间变化。按 URL 或固定 5–60 秒缓存虽能减少重复序列化，却可能让用户看到旧分支、已处理的权限仍挂在界面、刚添加的模型或 Skill 消失；把 Command 的 `template` 清空则会直接破坏依赖模板正文的调用，不是合法的“摘要响应”。优化前先确认接口消费者需要的完整字段与更新来源，再选进程内目录级缓存、明确的变更失效事件，或单独定义并校验的 summary schema。没有可靠失效信号时先保持实时读取；不能为追求请求数或流量下降而篡改公开接口的语义。回归检查要覆盖运行时切换分支、批准/拒绝权限后立即刷新、更新 Provider 凭据/配置、新增 Skill/Agent/Command 后立即可见，以及 Command 模板仍能执行。
+
+Playwright 回归用例若在测试体内写死模拟服务端口，单独覆盖 `PLAYWRIGHT_SERVER_PORT` 时应用协议探测会请求另一个端口，容易把夹具未命中误判为产品空白页。测试 URL、mock 路由端口和 Playwright 配置必须取同一环境变量；自定义端口回归也应跑一次，确认模拟服务仍截获全部协议请求。
+
+## WebSocket 兼容层必须保留 Blob 与文本的发送顺序
+
+原生 WebSocket 按调用顺序发送，但远程 wrapper 若对 Blob 单独异步调用 `arrayBuffer()`，后续文本可能先进入 DataChannel 队列，导致终端等协议帧乱序。兼容层应把所有 payload（包括 Blob 转换）放进同一 FIFO 队列，维护真实的待发送字节数供 `bufferedAmount` 查询，并在失败时显式结束 socket；验证要通过真实 Chromium DataChannel 连续发送 Blob 和文本，而不是只测序列化 helper。
+
+## 会话慢诊断必须连接产生数据的那个服务实例
+
+先访问了 CLI 的 4096 端口，目标会话 404；这不是桌面端当前服务。切到 Electron 隐藏服务端口后，同一会话 API 200、5 次仅 3.7–8.6 ms、41 KB，而此前看到的约 10 秒等待仍未解释。排查必须先核对桌面进程、实际监听端口和其数据库，再分段测首字节、响应大小、分页与整页渲染；错误实例的 404 不能当作会话不存在，快速单个 API 也不能当作完整页面已快速。
+
+## 当前沙箱中的 Effect 测试监听失败不能冒充产品回归
+
+`packages/opencode/test/server/httpapi-provider.test.ts` 使用 `NodeHttpServer.layerTest`，本轮在单独运行时仍因绑定随机端口返回 `EADDRINUSE`，因此不能把失败归因到 Provider 路由，也不能仅凭错误断言是并行测试争抢。先区分监听器未启动和 HTTP 断言失败；在允许本地 loopback 绑定的受支持环境/CI 中重跑，再判断产品行为。不要为让测试通过而改生产监听端口、吞掉错误或终止用户现有服务。
+
+## 深层子会话不能等完整父链后才显示正文
+
+目标会话目录通常已包含在目标 Session 元数据中；若路由为了找到 root ID 逐层请求所有祖先，并把整条链作为渲染门槛，N 层子会话就会在正文请求之前串行等待 N 次网络往返。应按职责拆开：目标元数据一到就能挂载其目录和页面，首屏消息并行预取，父链在后台完成后再更新根会话标签。保留祖先缺失时的错误处理，但不要把“根 ID 尚未解析”误判成“目标会话不存在”；回归应故意阻塞祖先请求并确认正文请求和页面仍先启动。
+
+## WebSocket error 和 close 事件不能向远程端重复回报
+
+浏览器/桌面 WebSocket 常在 `error` 后继续派发 `close`。若两种事件都回传 `socket.close`，第一个会触发 Relay 回退，迟到的第二个却可能被误当成备用连接的关闭并打断已恢复的终端。桌面端按 socket 生命周期只上报一次；浏览器开始 Relay 回退后忽略该直连 ID 的迟到关闭帧。回归要让对端连续发两次直连关闭，在 Relay socket 打开后确认连接仍处于 OPEN。
+
+## 桌面源码更新不代表远程网页 bundle 已更新
+
+远程手机页的静态 UI 由桌面后端嵌入提供；`bun run dev:desktop` 的 `predev` 会重新构建 `packages/app/dist` 并嵌入 OpenCtrlC server，但已运行的桌面进程不会因源码改动自动替换这份嵌入资源。排查“源码已经省流、线上仍上传完整目录”时，先在浏览器 Resource Timing 核对真实 URL 参数和响应体积，再核对 Electron 开发进程启动时间/构建版本。Provider 请求没有 `view=summary` 且仍约 6.6 MB，说明当前浏览器还在用旧 UI bundle；刷新网页不能更新桌面进程内已加载的资源。变更需在安全时机重启桌面开发进程，并确认请求带 `view=summary` 后再判断省流代码是否生效。
+
+## 远程悬停预取的代码包也会占用桌面上行
+
+远程首页在悬停会话时即使不拉 transcript，动态 `import()` 的路由代码包仍从桌面服务通过同一 Relay 链路传给浏览器；弱网时这会和用户主动打开会话抢带宽。远程访问或检测到受限网络时，预取函数应在动态导入之前返回，打开会话后再按需拉代码。首屏空闲预载也要遵守相同条件，不能只跳过会话正文请求。
+
+## 拒绝超并发 P2P 请求后仍要吸收已排队的帧
+
+DataChannel 是多个 HTTP 请求共享的通道。达到并发上限时，桌面回复单个请求失败后，浏览器已经排队的 body chunk、`request.end` 或取消帧仍可能随后到达；若把这些帧当成未知流并关闭整个 peer，会连带打断其余正常请求。应短暂登记被拒的流 ID，按字节上限丢弃它的迟到上传帧，在结束/取消/超时或 peer 关闭时清理，再让其他流继续使用原通道。
+
+## scrollIntoView 默认 block:"start" 会连带滚动 overflow 祖先并裁剪标题栏
+
+点击标题栏前面需要横向滚动的会话 tab 时，标题栏高度看起来“往上缩”，左侧「省流」徽章被裁掉一半；点击后面已可见的 tab 则正常。根因是导航回调里的 `el?.scrollIntoView({ behavior: "instant" })` 没有指定 `block`/`inline`，默认 `block: "start"` 会把目标元素顶边对齐到每个可滚动祖先的顶部。标题栏内层是 `h-full overflow-hidden`，tab 横向滚动容器写的是 `overflow-x-auto`（按 CSS 规范 `overflow-y` 会被计算成 `auto`，同样可被程序滚动）。只有当前 tab 需要横向滚动时 `scrollIntoView` 才真正滚动，此时它也会把 overflow 祖先纵向 scrollTop 推上去，padding 顶上的 chips 就被裁掉了；点击已可见的 tab 不触发滚动，所以看起来“只有前面的 tab 有问题”。修复是显式传 `{ block: "nearest", inline: "nearest" }`，并给横向 tab 条加 `overflow-y-hidden`，避免 `overflow-x-auto` 把纵向也变成可滚动。以后凡是标题栏、工具条、粘性头等“绝对不能纵向滚”的条里做元素定位滚动，都必须显式限制滚动轴，不能依赖 `scrollIntoView` 默认值。
+## 补齐旧消息关联时必须保留分页查询顺序
+
+V2 消息接口为旧助手记录回填缺失的 `parentID` 时，需要把消息按序号正序走一遍，以识别它之前最近的 user/synthetic 回合根；这只是内部计算顺序。曾把这份正序结果直接返回，覆盖了请求的降序顺序。消息页游标仍按返回数组首尾生成，因此反向分页可能从错误的一端续读，造成重复或漏消息。以后任何页内派生、排序或关联补齐都必须保留接口约定的原始行顺序；仅对计算所需的副本排序，并在响应前映射回查询顺序。
+
+## 面向中国大陆的远程基础设施先服从实测网络约束
+
+在规划 OpenCtrlC 公共远程服务时，曾把托管边缘计算/中继作为免费扩容候选；用户明确说明 Cloudflare 相关服务在其中国大陆实测环境容易被屏蔽。以后不得把此类服务作为远程连接、信令、静态页面或数据中继的必需依赖，也不能只按官网免费额度判断可用性。应优先保留自有域名、自建 Relay 和可验证的回退，再用大陆、美国及移动网络分别测连接成功率与延迟；免费额度只能作为经过实测的辅助选项。
+
+## 动态目录缓存要和变更事件配套失效
+
+近期远程性能优化里，服务端曾给 VCS、待处理权限、Agent、Skill、Command 和 Provider 结果加固定 TTL；这些数据会随分支切换、权限处理、配置文件、OAuth 和目录内容实时变化。固定缓存没有覆盖全部目录作用域与更新事件，会让用户读到过期权限、旧 Agent 或另一时刻的 Provider 状态；Relay 全局 API 缓存若只用 URL 作键，还会把不同桌面会话的数据串在一起。动态数据只有在缓存键包含所有隔离维度、每条变更路径都有明确失效通知并验证之后才能缓存；否则保持实时查询。TanStack Query 的 `staleTime` 也不能替代失效：收到更新事件时要让缓存失效并重新取数，bootstrap 对需要即时更新的 Agent 列表必须执行实际 fetch，不能只读已有缓存。

@@ -43,7 +43,7 @@
 ### 实现范围
 
 - `SessionV2.Info` 新增可选 `context: { tokens }`，只表示最近一次已完成模型步骤的 token 总量，也就是下一次请求会重新发送的上下文。
-- 服务端 `SessionV2.list` / `get` 从消息投影里按 `(session_id, time_created desc, id desc)` 读取最新一条 token 总量大于 0 的 assistant 消息，走索引点查，不累加历史。
+- 服务端 `SessionV2.list` / `get` 从消息投影里按 `(session_id, time_created desc, id desc)` 读取最新一条已完成且 token 总量大于 0 的 assistant 消息，走索引点查，不累加历史；正在生成的 assistant 不会覆盖上一条完整上下文值。
 - 悬停提示显示精确 token 数（`654,460 / 1,000,000`）和占用百分比；模型上下文上限来自客户端 provider 目录，未知时只显示当前值。
 
 ### 代码位置
@@ -58,8 +58,14 @@
 - 动态响应默认 `no-store`；HTML 使用私有重新校验策略。仅成功的 GET/HEAD 内容哈希静态资源允许长期缓存，错误响应和 HTML 回退不会被缓存一年；公共静态响应不附带浏览器授权 Cookie。
 - 保留桌面实例内部的接口优化与浏览器静态资源缓存，Relay 不积累动态 API 响应副本。
 - 修正 Relay 文档中旧的三分钟恢复窗口和“授权不落盘”说明，按当前可选持久化行为记录会话、授权及工作区元数据边界。
-- `docs/remote-service-economics.md` 记录经过官方资料核对的低成本架构、免费额度、成本算例、赞助条件及托管收入规划；P2P/CDN/计费属于待实现方案。
+- `docs/remote-service-economics.md` 记录经官方资料核对的低成本架构、免费额度、出口带宽算例、赞助条件及托管收入规划；截至 2026-10-06 对比 Oracle/GCP/AWS 免费资源，公共远程服务不依赖 Cloudflare Workers 网络；P2P/CDN/计费仍需真实部署和用量数据验收。
 - 本次做源码审查及 Bun 静态 bundle 构建；未执行运行时或负载测试，不能据此宣称多用户上线验收通过。
+
+## 旧会话打开时只恢复未完成的 assistant 消息
+
+- 会话详情和分页消息读取会触发中断恢复；恢复逻辑现在从数据库筛选 `time.completed` 缺失的 assistant 消息，并只加载这些消息及其 parts，不再逐页加载并 hydrate 整条历史记录。
+- 保留现有恢复语义：进程重启留下的未完成 assistant/tool 仍会被标记为中断，完整历史不会为了判断恢复状态而全部读入内存。
+- 用大于原恢复页大小的历史记录验证筛选结果只包含未完成消息，并验证完成消息、其他会话消息不会被带入恢复候选。
 
 ## Relay 短时断线自动恢复
 
@@ -302,6 +308,9 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 - 适配 `ba341c6c`，让 Node 下的 NPM 条件导出解析为可导入的 file URL；适配 `f5ce4f88`，消除文件搜索模块对完整 `FileSystem` 命名空间的运行时依赖。
 - 适配 `3a35b45d`、`82d4c890` 和 `b471c2b4`，分别支持 Codex GPT-6 Sol/Luna、脱敏 `debug config` 输出，以及 MCP 浏览器启动器提前退出的错误传播；适配 `0f549842`，将 Hy4 preview 统计归属到腾讯并清理旧维度。
 - 适配 `610df0b5`，为非旧世代 Gemini 的 Google/Vertex 与 OpenRouter/LLMGateway 请求显式设置高思考档位；保留 Gemini 1/2 的旧参数行为、Gemini 2.5 的 thinking budget，并按模型能力生成 Gemini/Gemma 思考变体。
+- 适配 `e9f8a210b9`，V1/V2 模型请求均携带 `x-opencode-session-id` 和可选的 `x-opencode-parent-session-id`，同时保留旧会话关联头和本地 User-Agent 行为；不改变公开 HttpApi，无需重新生成客户端。
+- 适配 `97a86b7677`，TUI `/status` 按平台路径分隔符解析本地插件名；部分适配 `a79ecfe109`，未知模型退出时间断言不再与其他 CLI 启动并发竞争。
+- 适配 `9b4882db54`，macOS 本地 CLI 编译后、启动冒烟前重新 ad-hoc 签名；适配 `f66b86ceec`，正式工作流使用现有 Developer ID 凭据签名三种 Darwin CLI ZIP 并重新归档，最终发布只使用已签名归档，失败时不发布且始终清理临时证书与 keychain。CLI Developer ID 签名不等同于 Desktop notarization，手动 npm 分发需显式复用同版本已签名二进制。
 - 在 `UPSTREAM.md` 中记录已集成与延期的上游 commit，在 `scripts/upstream-sync-report.sh` 中根据游标生成下一轮待审查范围。
 - 对上游生成文件、依赖补丁和 OpenCtrlC 定制边界保留人工审查，避免一次性全量 diff 引入 Go/Console/Zen 等不属于本项目的产品代码。
 
@@ -2311,6 +2320,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - Relay 提供短时配对链接；配对秘密只放在 URL fragment 中。新浏览器必须在桌面端批准后才获得 HttpOnly、Secure、SameSite=Strict 的 bearer cookie。每个会话默认允许 10 个浏览器授权，桌面端可自定义 1–100 个；降低上限不会撤销已有授权，但达到上限后 Relay 会阻止新的配对和批准。旧版桌面客户端未发送上限时仍使用 3 个浏览器的兼容限制。桌面保持手机访问开启时，会话随主机 WSS 连接持续有效。桌面每 30 秒发送带 ID 的应用心跳，90 秒未收到匹配响应就关闭失联连接并显示错误；系统睡眠期间暂停心跳，唤醒后立即重新探测，避免睡眠时间被误判为网络故障。浏览器授权采用 30 天未使用过期策略，每次请求都会续期；只有显式“停止访问”或 Relay 重启会撤销会话授权。
 - 桌面退出/重启不再销毁 Relay 会话：`sessionID`/`hostToken` 持久化在桌面设置中，退出时仅断开 WSS（detach），Relay 将带已授权浏览器的会话保留最长 30 天（无授权浏览器的空会话保留 1 小时）。下次启动若手机访问曾开启或存在已存会话则自动 `session.resume` 恢复原会话，已授权浏览器无需重新扫码批准；`session.resume.error` 或旧 Relay 超时后回退新建会话。`start()` 一被调用就写入 `remoteAccessEnabled=true`，避免连接失败导致重启后又变成关闭。
 - Relay 会话与浏览器授权落盘到 `OPENCTRLC_REMOTE_DATA_DIR`（部署为 `/home/pon/openctrlc-remote/data/remote-sessions.json`），SIGTERM 时先写盘再停服，重启后自动恢复授权；不再因 Relay 发版/重启而强制所有浏览器重新扫码。
+- 持久化目录权限固定为 `0700`、恢复凭据文件固定为 `0600`；部署脚本让非 root Relay 容器使用部署账户的 UID/GID，确保安全权限下仍能写入 bind mount。
+- Relay 将恢复状态读取/写入错误计入私有 `/healthz`，小时监控检测新增错误并生成 critical 告警，避免“健康检查正常但授权未持久化”长期不被发现。监控区分明确关闭、读写失败和旧 Relay 未提供诊断字段，避免把未知状态误报成持久化关闭。
 - 远程页首屏与桌面端对齐：桌面 `RemoteWorkspaceHydrator` 上报项目/打开会话快照；Relay bootstrap 同时写入 sessionStorage 与 localStorage（新标签页 Cookie 已存在时仍能恢复）。web 端若侧栏为空，自动从后端 `GET /project` 水合 `server.projects`；若顶部会话标签为空，自动从 `session.list` 恢复最近会话标签。水合器挂在所有布局上，不再只挂新布局。
 - 远程浏览器必须加载 sidecar 内嵌的 OpenCtrlC Web UI（`build-node.ts` → `openctrlc-web-ui.gen.ts`）。桌面 main 不得设置 `OPENCTRLC_DISABLE_EMBEDDED_WEB_UI`，否则 UI 会代理到上游 `app.opencode.ai`，远程永远无法消费 workspace 快照。排查远程空白时先验证入口 JS 包含 `openctrlc` 标识。
 - 同一浏览器保持授权：凭据是 `__Host-oc_remote` Cookie + 会话 resume，不是 UA 指纹。访问 `/join/<session>` 时若已有该会话有效 Cookie 则 302 到 `/`，禁止再签发新 viewer 编号。只有新会话、Cookie 丢失或显式撤销才需要重新批准。
@@ -2322,7 +2333,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 多桌面共用一个手机浏览器：Cookie 改为 `__Host-oc_remote_<sessionID>` 按会话隔离，并设 `__Host-oc_active` 选择当前桌面；配对 token 先写 sessionStorage 再抹 hash，刷新/重载不丢 join 凭证。工作区快照带 `hostName`，远程顶栏显示电脑名。首页会话行显示约略存储体量（token×4 字节估算）。
 
-- 远程性能：会话页/File/KaTeX 均按需；入口 JS 约 1.49MB（原 3.26MB），主 CSS 不含 KaTeX；哈希资源一年缓存；弱网（saveData/2G/3G）跳过预取并对图片/音频点按加载，顶栏显示「省流」；会话打开 20 条/页、折叠 diff、虚拟列表、气泡骨架。
+- 远程性能：会话页/File/KaTeX 均按需；入口 JS 约 1.49MB（原 3.26MB），主 CSS 不含 KaTeX；哈希资源一年缓存；弱网（saveData/2G/3G）跳过预取并对图片/音频点按加载，顶栏显示「省流」；V1/V2 共用 `/provider?view=summary|full` 两阶段目录，摘要先到，远程完整目录仅在用户打开模型选择器时加载，避免 V2 启动绕过摘要并全量请求 `/api/model`；打开会话时只加载当前目标，不自动预热相邻会话；键盘显式切换时最多串行预热目标会话的首 20 条，鼠标悬停不请求远程正文；缺失的父级用户消息以最多 20 个并发请求补齐，避免多次网络往返串行累加；会话打开 20 条/页、折叠 diff、虚拟列表、气泡骨架。
+- 远程首页不自动预载会话路由代码，也不预取会话正文，减少首次打开时经桌面上行搬运的无用资源；用户指向具体会话时才预载路由，正文按用户操作加载。桌面本地首页仍在空闲时预载路由。
 
 - 交互即时化（桌面/远程统一）：开 tab、切项目、选模型、新建草稿均先改 UI 再补数据；禁止用 startTransition 包住含懒加载的导航。会话时间线首条消息到达即渲染；Inter 拉丁子集 + font-display:swap；hover 预取会话路由包与消息。
 
@@ -2333,7 +2345,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 首次配对时 Relay 先显示连接/送达状态；桌面审批界面的订阅回调收到待审批状态后，preload 经 IPC 回传 `pair.received`，Relay 再通知手机端“桌面已收到”。慢请求显示连接诊断提示；整个流程由 WebSocket 推送驱动，不做轮询。
 - 刷新二维码会轮换链接并取消待处理请求；停止访问会关闭 Relay 会话并撤销全部获批设备。桌面端退出时 detach 会话并保留授权，下次启动自动恢复。
 - App 的旧版侧栏和新版标题栏都有更醒目的手机入口：标题栏采用强调色和浅色底，旧侧栏采用有底色按钮；对话框的未开启状态按“开启、扫码、桌面批准”三步引导，并展示中继隐私边界。开启后，待审批设备显示在二维码和隐私说明之前的全宽警示卡片中；设备浏览器标识明确标注为参考信息，不能用于验证真实设备身份。每种目标语言都说明首次批准要求及连续 30 天未使用后授权过期。
-- Relay 采用内存会话状态和限额，反向代理关闭访问日志；代码和部署示例位于 `packages/remote-relay` 与 `infra/remote-relay`。部署脚本支持 `--config-only`，仅平滑重载受管 OpenResty 虚拟主机配置，不重启 Relay 或中断内存会话。
+- Relay 在进程内维护实时连接状态，并将会话恢复凭据、浏览器授权和工作区元数据持久化到受限状态文件；反向代理关闭访问日志。代码和部署示例位于 `packages/remote-relay` 与 `infra/remote-relay`。部署脚本支持 `--config-only`，仅平滑重载受管 OpenResty 虚拟主机配置，不重启 Relay 或中断活动连接。
 - TLS 覆盖桌面到 Relay 和手机到 Relay 两段链路，不是端到端加密；Relay 在转发时能查看请求内容，但不会主动持久化工作区内容。UI、README 和文档必须明确这个信任边界。
 - Relay 出口对可压缩文本响应（text/\*、application/json|javascript|xml 等）按浏览器 `Accept-Encoding` 重新 gzip，SSE 除外；桌面侧 `fetch` 会解压上游响应，若不再压缩会让 JS/HTML 以原始体积经中继转发。App 全局事件流重连采用 250ms 起步的指数退避（上限 5s），连接稳定超过 5 秒后重置，避免断线时每 250ms 打一次中继。
 - 桌面↔Relay 批量数据（请求体、响应体、PTY WebSocket）在双方协商 `binaryChunks: true` 后改用二进制 WebSocket 帧（magic 0xC1 + kind + flags + 12 字节流 ID + 原始载荷），不再 base64 进 JSON，省约 33% 载荷；控制消息仍走 JSON。旧 Relay 忽略未知字段时桌面回退 JSON，保持兼容。Relay `/healthz`（仅本机可达）暴露按会话的 `hostIn/hostOut/viewerIn/viewerOut` 流量计数与汇总，便于核对出入网来源。
@@ -2359,8 +2371,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 ## Relay 会话上限与运行状态计数
 
 - Relay 的进程内会话硬上限提高到 10,000；另有独立的来源 IP 创建频率限制：滚动一小时内最多创建 60 个会话。两者都是保护阈值，不代表单实例经过容量验证可承载对应数量的活跃用户。
-- 私有 `/healthz` 快照新增运行汇总：已连接桌面、获批浏览器授权、活动浏览器 WebSocket 隧道、未完成浏览器请求和待审批配对数。授权浏览器数不等于当前在线浏览器数；没有账号或可信设备身份时，不能准确统计真人在线数。
-- 运行状态只能从 Relay 主机本机访问；公网 `/healthz` 继续返回 404。服务器可用 `curl -fsS http://127.0.0.1:4097/healthz | jq '{sessions, usage, traffic}'` 查看实时快照；现有监控脚本继续保存每小时历史样本。
+- 私有 `/healthz` 快照报告保留会话、在线桌面、浏览器授权、活动 Relay WebSocket、P2P 信令连接、未完成请求和待审批配对。授权浏览器数不等于在线浏览器；同一个浏览器可能同时占用 Relay socket 和 P2P 信令连接，没有登录账号时不能可靠统计真人数。
+- 运行状态只能从 Relay 主机本机访问；公网 `/healthz` 继续返回 404。服务器可用 `curl -fsS http://127.0.0.1:4097/healthz | jq '{retainedSessions: .sessions, usage: .usage}'` 查看快照；`relay-watch.sh` 每小时的日志行也打印在线桌面、授权浏览器及各类活动连接数，JSONL 保留完整用量快照。
 
 ## Desktop 更新说明预览
 
@@ -2491,10 +2503,12 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 桌面端只发送打开项目路径及展开状态、最近项目、打开的会话 ID 和当前会话 ID；不发送提示词、草稿或消息正文。
 - 桌面端等待服务器项目状态和会话标签完成本地存储恢复后才发送快照，避免启动期间的临时空状态覆盖正确工作区。
-- Relay 只在当前会话内存中保留经认证桌面端发送的快照。已授权浏览器首次加载或刷新页面时，会将快照短暂写入本地 `sessionStorage` 并恢复界面。
+- Relay 在内存中保留经认证桌面端发送的快照；启用持久化时，也会将项目路径、会话 ID 和当前会话 ID 写入受限访问的恢复文件，直到会话停止或过期。已授权浏览器首次加载或刷新页面时，会将快照短暂写入本地 `sessionStorage` 和 `localStorage`，以兼容新标签页的会话存储隔离。
+- Bootstrap Cookie 和浏览器存储键都包含 Relay 会话 ID；同一浏览器切换多个桌面时，各桌面的项目快照和主机名不会互相覆盖。
 - Web 客户端把项目和会话标签映射到当前 Relay 服务器键；若桌面端有当前会话，就直接打开该会话。对话内容、运行状态和消息仍由同一桌面本地服务器提供。
 - 刷新已授权浏览器时会重新获取当前快照，避免继续使用早期配对时的项目和会话列表。
-- Relay 只在内存中暂存项目路径和会话 ID 等敏感元数据，不写入磁盘；四种远程访问文档说明了这一数据边界。
+- Relay 会在启用持久化时将项目路径和会话 ID 等敏感元数据写入恢复状态文件；提示词、草稿、消息正文和转发内容不会被主动持久化。四种远程访问文档说明了这一数据边界。
+- `packages/app/src/utils/remote-workspace.test.ts` 验证不同 Relay 会话的工作区快照键互相隔离。
 
 ### 验证方式
 
@@ -2558,3 +2572,174 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 - 在发布后检查 R2 `download-manifest.json` 只有一个版本，且版本目录下只有该版本资产。
 - 手动运行 `Sync OpenCtrlC Downloads` 工作流，确认无输入并且仍只同步 GitHub 当前 latest stable。
 - 抽查官网平台下载路由重定向到 R2 最新资产，历史版本入口直达 GitHub Releases；确认 R2 不可用时仍回退 GitHub latest。
+
+## 远程 WebRTC 直连原型（未发布）
+
+### 功能目标
+
+让授权后的手机浏览器尽量直接连接用户桌面，减少公共 HTTPS Relay 承载的工作区数据量；直连失败时仍能回退到现有 Relay。
+
+### 实现范围
+
+- Relay 为授权浏览器与桌面交换 WebRTC offer、answer 和 ICE candidate；桌面隐藏 renderer 通过独立、校验后的 IPC 信令通道与业务 DataChannel 消息分流，实际请求通过加密的 DataChannel 访问同一桌面本地服务。
+- 浏览器端信令断线或 DataChannel 建立失败时，以 1、2、4、8、15、30 秒退避重连；直连未就绪期间，HTTP 和 WebSocket 仍通过 Relay 工作。
+- 页面进入 BFCache 时关闭连接以释放资源；从 BFCache 恢复时重新建立信令和直连。
+- 桌面使用隐藏、沙箱隔离的 Electron renderer 承载 WebRTC；renderer 尚未加载时排队首个 peer 事件，HTTP 请求、响应流和 WebSocket 都有直连转发路径。
+- 隐藏 renderer 尚未就绪时，所有 peer 事件队列除了条数上限外还受 8 MiB 总字节上限保护；超限会关闭拥塞 peer，并在窗口关闭、加载失败和退出时清零队列计数。
+- Relay 的 `peer.open` 可能早于 Electron PeerTransport 绑定；主进程按 peer 暂存已校验的 ICE/TURN 配置，transport 迟绑定时重放，peer 关闭时清理。
+- 隐藏 renderer 加载失败时，立即关闭所有排队 peer 并清理窗口状态，避免留下永远未就绪的远程连接。
+- 信令连接 12 秒未打开或 DataChannel 12 秒未就绪时关闭该次尝试并退避重连；登录会话失效或已不存在时停止重试。
+- 经 DataChannel 转发的本机 WebSocket 握手 15 秒没有结果时会失败关闭；直连通道中止时也会结束等待中的 socket，避免连接永久停留在 `CONNECTING` 或 `CLOSING`。
+- 远程 WebSocket wrapper 的 `send()` 按调用顺序串行发送；Blob 转换不能越过后续文本帧。`bufferedAmount` 反映尚未提交到传输层的 payload 字节，发送失败会发出 error 并关闭该 socket。
+- 响应流使用端到端字节额度：浏览器按 256 KiB 的 ReadableStream 缓冲窗口授予额度，一次 pull 会连续发足当前可用额度，避免跨网时每 24 KiB 等一次往返；桌面每次最多发送 24 KiB，并在额度耗尽时暂停读取本地响应。桌面 IPC/DataChannel 发送队列仍保留 512 KiB 发送阈值和 10 秒拥塞超时。peer 关闭或额度等待超时会唤醒等待者并终止关联流。
+- 未就绪时 HTTP 和 WebSocket 仍走现有 Relay。ICE 地址只从 Relay 环境读取：`OPENCTRLC_STUN_URLS` 可配置自有 STUN，`OPENCTRLC_TURN_URLS` 与 `OPENCTRLC_TURN_SHARED_SECRET` 可配置 Coturn。Relay 生成 12 小时 HMAC-SHA1 凭据；未配置 ICE 时用本地候选并在 12 秒后回退 HTTPS Relay，不请求公共 STUN 或外部 TURN API。生产部署和跨网端到端验证仍未完成。
+- 远程浏览器标题栏显示当前传输状态：协商期间明确提示请求仍经 Relay；DataChannel ready 后先显示线路识别中，再根据已选 ICE candidate pair 区分直连与 TURN，避免把尚未识别的线路误报为免费直连。TURN 状态提示流量可能产生中继费用。DataChannel 中断时显示回到 Relay 并继续重试；服务端实时事件流和已打开的终端 WebSocket 会在 DataChannel ready 后重连切换通道（包括 TURN 路径），重连期间暂存至多 256 KiB 的键盘输入并在恢复后发送。
+- ICE 候选可能让已授权浏览器看到桌面端或浏览器的网络地址；加密保护传输内容但不隐藏 IP。公开发布前需要隐私说明及 Relay-only/候选地址策略评估。
+- 手机访问弹窗区分 WebRTC 直连与 HTTPS Relay 的数据路径：直连时说明工作区传输已加密、对端可能看到公网 IP；回退 Relay 时说明 TLS 保护传输但 Relay 可查看转发内容。该文案随应用支持的四种语言同步。
+- 取消 HTTP 请求时需同时中止桌面本地请求并清理两端流映射，避免长会话累积失效请求。
+- P2P 上传遇到响应错误、超时、页面取消或连接中断时，浏览器停止读取请求 body 并发送取消帧；超限的桌面请求保留路由，直到浏览器确认输入结束，避免剩余分片被误判为无主流并连带关闭同一 peer 上的其他请求。
+- P2P 请求达到并发上限时，桌面为被拒流 ID 建立短时隔离记录；吸收最多 16 MiB 的已排队上传分片，在请求结束、取消、socket 关闭、Peer 断开或超时后清理，避免单个容量拒绝关闭承载其他请求的 DataChannel。
+
+### 验证方式
+
+- `packages/app`、`packages/desktop`、`packages/opencode` 执行 `bun typecheck`；在 `packages/desktop` 执行 `electron-vite build`，确认 hidden peer 页面和 preload 被打包。
+- `packages/app/src/utils/remote-peer.test.ts` 验证一次缓冲窗口会拆成有界额度且总量不超限；`packages/app/e2e/regression/remote-peer-channel.spec.ts` 用真实 Chromium WebRTC 两端完成协商、控制帧和 512 KiB 分片传输。
+- `packages/desktop` 的 `bun typecheck` 与 `bun test src/main/remote-peer-rejection.test.ts` 通过；3 项用例覆盖并发拒绝后的迟到 body/end、取消与 socket close 清理、跨 Peer 帧及上传字节上限。此 helper 单测不代替桌面到手机的真实并发链路验收。
+- 2026-10-06 `packages/app`、`packages/desktop`、`packages/opencode` 的类型检查与 `packages/app` E2E 类型检查通过；`packages/remote-relay` 的 Bun bundle 检查通过（70.87 KB）。
+- `packages/app/e2e/regression/remote-peer-channel.spec.ts` 还覆盖服务端拒绝大请求后浏览器及时停止上传并发送取消帧。
+- 2026-10-05 本机 Chromium WebRTC 回归覆盖 Blob 后立即发送文本时的顺序、缓冲字节数和关闭状态；`packages/app` 与 E2E TypeScript 检查通过，该 spec 4 项通过。
+- 2026-10-05 复用已经运行的本机 Vite `127.0.0.1:4444` 执行该 Chromium spec，3 项通过；测试配置未启动或重启服务。
+- 2026-10-06 在独立临时 Vite 端口 4448 执行 `remote-peer-channel.spec.ts` 与 `session-lineage-loading.spec.ts`，6 项 Chromium E2E 全部通过；该模拟环境不覆盖公网 Relay、TURN 或真实手机网络。
+- WebSocket 的 `socket.open`、`socket.close` 控制帧通过独立控制通道发送，不能作为普通 socket payload 封装；直连请求达到并发上限或桌面本地服务不可用时返回 `socket.close`，使浏览器及时结束 `CONNECTING`；远程客户端销毁时会通知已打开的直连 WebSocket 收敛关闭，BFCache 恢复后可重新连接。回归用例覆盖控制帧握手、拒绝响应和 BFCache 断开路径。
+- 上述浏览器用例验证的是本机 Chromium DataChannel 与协议分片，不是整条桌面到手机链路验收。仍需覆盖同网、跨网、UDP 被阻断、TURN 凭据获取/过期、请求取消、WebSocket 长连接、桌面休眠恢复和 Relay 回退；在此之前不宣称 P2P 已上线或稳定。
+
+## P2P 自托管 ICE 配置与路径识别
+
+- Relay 从 `OPENCTRLC_STUN_URLS` 读取最多 8 个 STUN 地址，从 `OPENCTRLC_TURN_URLS` 和 `OPENCTRLC_TURN_SHARED_SECRET` 读取 Coturn 配置；无默认第三方 ICE 地址，不请求外部凭据 API。
+- Coturn 凭据使用 `expiry:sessionID` 用户名和 HMAC-SHA1 密码，12 小时后过期；Relay `/healthz` 只报告 STUN/TURN 配置状态，不暴露共享密钥，也不代表 UDP 端口可达。
+- DataChannel 建立后读取选中的 ICE candidate pair，标题栏将 WebRTC 直连和 TURN 中继分开显示，帮助识别中继用量。
+- `infra/remote-relay/README.md` 记录自建 Coturn 的服务端私密 `.env` 配置与端口验收边界。
+- 仍需真实 Coturn 与不同 NAT/网络条件下的端到端验证；当前源码未发布，不代表公共 Relay 已启用 P2P 或已测出节省的流量。
+
+## Relay 浏览器活动状态落盘限频
+
+授权浏览器的每次请求仍会在内存中刷新 30 天滚动有效期和最后活动时间；为了避免高并发时每个请求都序列化并重写整份会话 JSON，活动触发的状态快照全局最多每 5 分钟写一次。授权新增、撤销、会话删除等状态变更仍走短延迟持久化，Relay 关闭时会同步写最终快照。Relay 重启恰好发生在活动快照间隔内时，已授权浏览器的恢复有效期可能最多少约 5 分钟。
+
+### 验证方式
+
+- 持久化仍使用部署目录 `0700`、状态文件 `0600`；healthz 汇总持久化是否启用及读写错误数。
+- Relay 单测、打包和 shell 语法检查覆盖实现；当前不能从沙箱访问已运行的本机 Relay，因此尚未对线上文件写入频率和重启恢复做端到端复测。
+
+## 会话恢复检查按会话合并并缓存
+
+同一个长会话的详情读取和首屏消息分页会重复触发中断恢复。恢复只需检查一次未完成的 assistant 消息；成功后按会话缓存该结果，并合并并行恢复请求。新写入未完成的 assistant 消息会使缓存失效，缓存最多保留 2,048 个会话；失败结果不缓存。
+
+### 验证方式
+
+- `packages/opencode` 执行 `bun test test/session/messages-pagination.test.ts test/session/recovery.test.ts`，覆盖长历史筛选、恢复幂等和新中断消息触发缓存失效。
+- 旧会话实测基线为前端约 10 秒打开、消息响应约 429 KB 压缩 / 1.55 MB 解压；受限于当前会话连不到保存该会话的运行实例，本次未能对同一生产会话复测。缓存减少重复恢复查询，不代表已解决所有首屏延迟来源。
+
+## 会话首屏并发补齐缺失的父消息
+
+### 功能目标
+
+避免首屏中缺失多个 assistant 父级 user 消息时，逐个等待网络往返后才显示会话。
+
+### 实现范围
+
+- 首屏父消息回填并发上限提高到 20，与首屏消息页大小一致；超过上限的额外父消息仍分批处理，避免无限制并发。
+- 保留原有父消息角色校验、404 删除处理，以及加载期间实时事件与乐观消息合并逻辑。
+
+### 验证方式
+
+- `packages/app/src/context/server-session.test.ts` 覆盖首屏 20 个父消息同时请求和完整合并。
+- Playwright 生产构建基准以 20 个缺失父消息、每次 API 响应增加 50ms 延迟运行 5 次：首个正确画面中位数从改动前 425.5ms 降至 215.5ms（约减少 49%）；此为隔离合成场景，不代表公网实测或容量承诺。
+
+## 项目恢复会话失效时回退到最近有效会话
+
+切换项目先立即显示最后访问的会话；如果这条记录失效，则后台清理旧记录、查找当前项目最近有效会话。找到后打开该会话；没有可恢复会话时回到项目会话页。异步恢复结果会校验导航代次，不能覆盖用户之后手动选择的路由。
+
+### 验证方式
+
+- `packages/app` 执行 `bun typecheck`。
+- 生产会话基线显示项目与命令初始化请求有明显等待；此次仅修正导航恢复逻辑，不代表已经完成远程实例手工验收或解决全部首屏延迟。
+
+## 远程会话元数据待解析时显示加载状态
+
+目标服务器上的会话元数据尚未进入同步缓存时，路由会异步请求会话详情。此请求不会触发 Solid Suspense；在请求完成前页面显示会话骨架和本地化的“正在加载消息”状态，避免旧会话或弱网环境中出现看似永久白屏。请求失败仍交由会话错误边界显示具体错误。
+
+从首页会话列表打开时，列表已经带有目标会话元数据；若 session sync 尚无更新鲜的缓存，就先复用这份信息，避免再串行请求一次详情接口。消息内容仍按需获取，列表预取逻辑不变。
+首页会话路由预载使用 `pointerenter`，支持鼠标、笔和触摸输入；远程模式和受限网络跳过空闲/悬停路由代码预载及会话正文预取，用户实际打开会话后再按需加载。直接 URL 或缓存缺失时，显示四种支持语言对应的“正在加载会话”骨架状态；会话元数据就绪后，消息正文加载骨架继续显示“正在加载消息”。
+
+### 验证方式
+
+- `packages/app` 的 `bun typecheck` 与 `bun run typecheck:e2e` 通过；`server-session.test.ts` 覆盖已记忆的 root 会话不再发起详情请求；新增 `e2e/regression/session-lineage-loading.spec.ts` 覆盖元数据请求延迟时显示占位，以及响应后进入目标会话。本轮未启动浏览器 E2E。
+- 该占位只解决无反馈问题，不缩短服务器请求耗时；真实 10 秒延迟需要在运行中的目标服务器测量元数据 API、消息分页和父消息补齐各自的耗时。
+
+## 远程响应在桌面上压缩后再上传
+
+### 功能目标
+
+降低桌面到公共 Relay 的上行流量，避免大型 JSON、静态资源响应与小型会话请求共用一条慢链路时互相排队。
+
+### 实现范围
+
+- 桌面通过本机 `fetch` 读取的响应会自动解压。远程查看器支持 gzip 时，桌面在 WebSocket 上传前对可压缩文本和 JSON 重新进行流式 gzip，并在响应头标记 `Content-Encoding: gzip`；SSE 不压缩。
+- Relay 保留桌面端的 gzip 标记并原样转发，避免将已压缩数据再次压缩；旧版桌面仍由 Relay 负责给浏览器压缩。
+- WebRTC 直连请求在浏览器支持 `DecompressionStream` 时声明 gzip 能力；桌面压缩后，浏览器在创建 fetch `Response` 前流式解压。解压能力不可用时继续传未压缩内容。
+- 不缓存远程响应，不改变 API 内容、请求取消或 SSE 语义。
+
+### 验证方式
+
+- `packages/app` 和 `packages/desktop` 执行 `bun run typecheck`。
+- `packages/app` 的 `remote-peer.test.ts` 覆盖 gzip DataChannel 响应解压；`packages/remote-relay/src/response-encoding.test.ts` 覆盖保留 gzip、避免二次压缩、普通 JSON 压缩与 SSE 排除。
+- `packages/remote-relay` 执行 `bun build ./src/index.ts --target bun`。
+- 已观测旧链路一次 6.6 MB JSON 在 Relay 到浏览器时压缩约 390 KB，而桌面仍上传未压缩响应；本次仅有本机类型检查、单测和 Relay bundle 检查，尚未在真实桌面与公网 Relay 上量测新链路字节数或首屏耗时。
+
+## 远程会话消息页携带助手回合根消息
+
+助手消息创建时保存它所属的用户/合成提示 ID。读取旧会话时，服务端用带索引的边界查询补出缺失关联；消息页响应同时携带当前页助手所需、但本页未包含的根消息。客户端可以在一次消息页请求后还原完整的用户与助手顺序，不必先串行读取多页历史再逐条回取根消息。补齐旧消息的 parentID 时，服务端内部按序号正序计算回合根，再严格按查询结果原顺序返回消息；分页游标仍只根据原始消息页生成，根消息侧载不改变历史游标。
+
+### 验证方式
+
+- `packages/core/test/session-projector.test.ts` 覆盖新助手关联到最近提示，以及模拟旧存储记录缺失 parentID 时的服务端按页回填。
+- `packages/app/src/context/server-session.test.ts` 覆盖助手单页加根消息侧载后只请求一次并保持父子关系。
+- `packages/schema`、`packages/core`、`packages/server`、`packages/client`、`packages/sdk/js` 和 `packages/app` 执行 `bun run typecheck`；`packages/app` 的 Playwright 生产构建基准显式使用 V2：20 条 assistant 消息共享一个页外 user root，5 次都只发 1 次消息页请求、0 次父消息详情请求，首个正确画面中位数 111 ms（范围 106.5–117.7 ms）。这是本机合成场景，不代表公网/手机实测。
+- V1 仍使用旧消息 API 和历史兼容回填；V2 页外 root 通过 `parents` 侧载。手机、公网 Relay 和用户报告的 10 秒会话仍需端到端测量，不能据本机基准声称全部首屏延迟已解决。
+
+## 自托管 ICE 配置与 Coturn 短时凭据
+
+P2P 的 STUN/TURN 地址由 Relay 部署环境配置，不硬编码公共 STUN，也不调用外部 TURN 凭据 API。Relay 使用共享密钥按 Coturn REST 认证格式为每个会话生成 12 小时 HMAC-SHA1 凭据；浏览器和桌面只收到短时用户名/凭据，共享密钥留在 Relay。凭据按 Relay 会话缓存并合并并发请求，提前 5 分钟刷新；创建失败冷却 30 秒，Relay 删除会话时清理缓存。没有 ICE 服务时仍尝试本地候选，12 秒未建立后回退现有 HTTPS Relay。2026-10-06 线上 Relay 健康接口显示 STUN/TURN 均未配置，所以工作区实现尚未启用公网跨网直连；上线前必须配置自管 ICE 服务并做大陆手机与美国网络实测。
+
+### 验证方式
+
+- `packages/remote-relay` 执行 `bun test src/turn.test.ts`，覆盖 Coturn 凭据格式、会话隔离、并发合并、到期刷新、失败冷却和删除竞态。
+- Relay bundle 编译检查覆盖接线；真实 Coturn/ICE 端口和大陆/美国网络路径仍需部署环境验收，本地测试不会访问外部 ICE 服务。
+
+## P2P WebSocket 连接建立失败时回退到 Relay
+
+WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌面直连；若握手在打开前失败或超时，自动重新连接现有 Relay。只有 Relay 回退地址携带选定的远程会话标识；桌面本地 WebSocket 路径不带该标识，跨域 WebSocket 地址也绝不附加。连接已打开后不透明重放，避免重复发送终端输入。包装连接保持原生 WebSocket 的 `binaryType` 行为，运行时切换类型时同步底层 Relay socket。
+
+### 验证方式
+
+- `packages/app/src/utils/remote-peer.test.ts` 覆盖跨域不泄露、HTTP/WS 同源映射、安全页面拒绝不安全 WS，以及会话标识仅进入 Relay 地址。
+- `packages/app/e2e/regression/remote-peer-channel.spec.ts` 的 Chromium 测试覆盖直连握手失败后 Relay 建连、路径与会话标识、运行中修改 `binaryType`；P2P、断开及上传取消回归均通过。
+
+## 会话页面与根会话解析并行启动
+
+打开子会话时，先用目标会话自身的元数据确定工作区并挂载页面；消息首屏预取与逐级解析父会话同时进行。根会话 ID 确认后再登记根会话标签，不让深层父链的串行网络往返挡住会话正文。
+
+### 验证方式
+
+- `packages/app/e2e/regression/session-lineage-loading.spec.ts` 覆盖目标元数据未返回时的加载状态，以及父会话请求仍被阻塞时目标页面和消息页已启动。
+- 此并行化针对深层子会话的额外往返；它不能解释或证明任意根会话的公网 10 秒延迟已修复。真实设备仍需按实际服务器、Relay 路径和首屏时间分段测量。
+
+## 自托管 STUN-only 服务配置
+
+`infra/remote-relay/compose.yaml` 增加可选的 Coturn STUN-only profile，默认 Relay 部署不会打开 UDP 监听。显式使用 `--profile stun` 后，Coturn 只监听主机 UDP 3478，不启用 TURN 分配或大范围 relay 端口；Relay 可通过 `OPENCTRLC_STUN_URLS` 将自有 STUN 地址交给 WebRTC。HTTPS Relay 仍是连接失败时的回退路径。该配置减少 ICE 对外部服务的依赖，但只有大陆、美国及移动网络实测后，才能判断直连率和实际省下的中继流量。
+
+### 验证与限制
+
+- `infra/remote-relay/README.md` 记录启用命令、云安全组要求与 Relay 环境变量。
+- 生产环境未开启此 profile；修改仓库配置不会自行变更服务器防火墙或重启 Relay。
+- STUN 不承载工作区数据；当直接连接失败且后续未配置 TURN 时，客户端仍使用现有 HTTPS Relay。
