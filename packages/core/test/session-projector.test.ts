@@ -175,7 +175,30 @@ describe("SessionProjector", () => {
         { id: EventV2.ID.make("evt_a") },
       )
 
+      const assistantMessageID = SessionMessage.ID.make("msg_assistant")
+      yield* events.publish(SessionEvent.Step.Started, {
+        sessionID,
+        assistantMessageID,
+        timestamp: DateTime.makeUnsafe(3),
+        agent: "build",
+        model,
+      })
+
       const sessions = yield* SessionV2.Service
+      const assistant = (yield* sessions.messages({ sessionID, limit: 1, order: "desc" }))[0]
+      expect(assistant).toMatchObject({ type: "assistant", id: assistantMessageID, parentID: "msg_second" })
+      yield* db
+        .update(SessionMessageTable)
+        .set({ data: sql`json_remove(${SessionMessageTable.data}, '$.parentID')` })
+        .where(eq(SessionMessageTable.id, assistantMessageID))
+        .run()
+        .pipe(Effect.orDie)
+      expect((yield* sessions.messages({ sessionID, limit: 1, order: "desc" }))[0]).toMatchObject({
+        type: "assistant",
+        id: assistantMessageID,
+        parentID: "msg_second",
+      })
+
       const firstPage = yield* sessions.messages({ sessionID, limit: 1, order: "asc" })
       expect(firstPage.map((message) => (message.type === "user" ? message.text : message.type))).toEqual(["first"])
       const secondPage = yield* sessions.messages({
@@ -195,7 +218,7 @@ describe("SessionProjector", () => {
       ).toEqual(["first"])
       expect(
         (yield* sessions.context(sessionID)).map((message) => (message.type === "user" ? message.text : message.type)),
-      ).toEqual(["first", "second"])
+      ).toEqual(["first", "second", "assistant"])
     }).pipe(Effect.provide(sessionsLayer)),
   )
 

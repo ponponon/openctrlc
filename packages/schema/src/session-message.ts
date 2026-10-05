@@ -166,6 +166,7 @@ export interface Assistant extends Schema.Schema.Type<typeof Assistant> {}
 export const Assistant = Schema.Struct({
   ...Base,
   type: Schema.Literal("assistant"),
+  parentID: ID.pipe(optional),
   agent: Schema.String,
   model: Model.Ref,
   content: AssistantContent.pipe(Schema.Array),

@@ -2786,6 +2786,7 @@ export type SessionDurableEventStream = string
 
 export type SessionMessagesResponse = {
   data: Array<SessionMessage>
+  parents?: Array<SessionMessage>
   cursor: {
     previous?: string
     next?: string
@@ -4135,6 +4136,7 @@ export type SessionMessageAssistant = {
     completed?: number
   }
   type: "assistant"
+  parentID?: string
   agent: string
   model: ModelRef
   content: Array<SessionMessageAssistantText | SessionMessageAssistantReasoning | SessionMessageAssistantTool>
@@ -9362,6 +9364,7 @@ export type ProviderListData = {
   query?: {
     directory?: string
     workspace?: string
+    view?: "summary" | "full"
   }
   url: "/provider"
 }

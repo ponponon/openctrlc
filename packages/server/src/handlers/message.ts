@@ -6,6 +6,7 @@ import { Api } from "../api"
 import { InvalidCursorError, SessionNotFoundError, UnknownError } from "@openctrlc/protocol/errors"
 
 const DefaultMessagesLimit = 50
+const ParentHydrationConcurrency = 32
 
 const Cursor = Schema.Struct({
   id: SessionMessage.ID,
@@ -68,8 +69,26 @@ export const MessageHandler = HttpApiBuilder.group(Api, "server.message", (handl
           )
         const first = messages[0]
         const last = messages.at(-1)
+        const included = new Set(messages.map((message) => message.id))
+        const parents = yield* Effect.forEach(
+          [
+            ...new Set(
+              messages.flatMap((message) =>
+                message.type === "assistant" && message.parentID && !included.has(message.parentID)
+                  ? [message.parentID]
+                  : [],
+              ),
+            ),
+          ],
+          (messageID) => session.message({ sessionID: ctx.params.sessionID, messageID }),
+          { concurrency: ParentHydrationConcurrency },
+        )
         return {
           data: messages,
+          parents: parents.filter(
+            (message): message is SessionMessage.User | SessionMessage.Synthetic | SessionMessage.Shell =>
+              message?.type === "user" || message?.type === "synthetic" || message?.type === "shell",
+          ),
           cursor: {
             previous: first ? cursor.encode(first, order, "previous") : undefined,
             next: last ? cursor.encode(last, order, "next") : undefined,

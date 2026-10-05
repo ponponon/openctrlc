@@ -1,6 +1,6 @@
 export * as SessionProjector from "./projector"
 
-import { and, desc, eq, gt, or, sql } from "drizzle-orm"
+import { and, desc, eq, gt, inArray, ne, or, sql } from "drizzle-orm"
 import { DateTime, Effect, Layer, Schema } from "effect"
 import { Database } from "../database/database"
 import { EventV2 } from "../event"
@@ -148,6 +148,30 @@ function run(db: DatabaseService, event: SessionEvent.Event) {
     }
     const appendMessage = (message: SessionMessage.Message) => insertMessage(db, event, message)
     const adapter: SessionMessageUpdater.Adapter = {
+      getCurrentParentID() {
+        return Effect.gen(function* () {
+          const row = yield* db
+            .select()
+            .from(SessionMessageTable)
+            .where(
+              and(
+                eq(SessionMessageTable.session_id, event.data.sessionID),
+                inArray(SessionMessageTable.type, ["user", "synthetic", "shell"]),
+                or(
+                  ne(SessionMessageTable.type, "synthetic"),
+                  sql`length(trim(json_extract(${SessionMessageTable.data}, '$.text'))) > 0`,
+                ),
+              ),
+            )
+            .orderBy(desc(SessionMessageTable.seq))
+            .limit(1)
+            .get()
+            .pipe(Effect.orDie)
+          if (!row) return
+          const message = decodeRow(row)
+          if (message.type === "user" || (message.type === "synthetic" && message.text.trim())) return message.id
+        })
+      },
       getCurrentAssistant() {
         return Effect.gen(function* () {
           // A newer turn supersedes stale incomplete rows; never resume an older assistant projection.

@@ -15,8 +15,9 @@ describe("timeline model", () => {
     expect(selectVisibleUserMessages(users)).toBe(users)
   })
 
-  test("paints as soon as any message lands", () => {
-    expect(isTimelineReady([assistant("msg_2")], true)).toBe(true)
+  test("waits for a visible user turn instead of an orphan assistant", () => {
+    expect(isTimelineReady([assistant("msg_2")], true)).toBe(false)
+    expect(isTimelineReady([assistant("msg_2")], false)).toBe(true)
     expect(isTimelineReady([user("msg_1"), assistant("msg_2")], true)).toBe(true)
     expect(isTimelineReady([], true)).toBe(false)
     expect(isTimelineReady([], false)).toBe(true)

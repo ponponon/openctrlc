@@ -16,6 +16,7 @@ import {
 } from "@/context/global-sync/home-session-index"
 import type { LocalProject } from "@/context/layout"
 import { useLanguage } from "@/context/language"
+import { usePlatform } from "@/context/platform"
 import { ServerConnection } from "@/context/server"
 import { sessionHasOpenTab, useTabs } from "@/context/tabs"
 import { compareSessionTime, displayName, errorMessage, projectForSession } from "@/pages/layout/helpers"
@@ -47,6 +48,7 @@ export type HomeSessionGroup = {
 export type OpenSessionOptions = { background?: boolean }
 
 export function createHomeSessionsController(home: HomeController) {
+  const platform = usePlatform()
   const tabs = useTabs()
   const command = useCommand()
   const dialog = useDialog()
@@ -108,6 +110,7 @@ export function createHomeSessionsController(home: HomeController) {
 
   // Warm the session route chunk so the first click does not stall on a 1MB download.
   onMount(() => {
+    if (platform.remoteSessionID || readNetworkQuality().lite) return
     const idle = (fn: () => void) => {
       if (typeof requestIdleCallback === "function") {
         requestIdleCallback(() => fn(), { timeout: 2000 })
@@ -116,6 +119,7 @@ export function createHomeSessionsController(home: HomeController) {
       setTimeout(fn, 400)
     }
     idle(() => {
+      if (platform.remoteSessionID || readNetworkQuality().lite) return
       void import("@/pages/session-route-view").catch(() => undefined)
     })
   })
@@ -124,10 +128,11 @@ export function createHomeSessionsController(home: HomeController) {
     const ctx = home.server.focusedContext()
     const conn = home.server.focused()
     if (!ctx || !conn) return
-    // Warm both the route chunk and message data on hover so the click is a nav, not a download.
+    // On remote or constrained links, even the route chunk consumes the
+    // desktop's shared upload bandwidth. Load it only after the user opens a session.
+    if (platform.remoteSessionID || readNetworkQuality().lite) return
+    // Warm the route chunk on hover; local sessions may also warm message data.
     void import("@/pages/session-route-view").catch(() => undefined)
-    // Slow/save-data links skip opportunistic prefetch so the list stays cheap.
-    if (readNetworkQuality().lite) return
     const key = `${ServerConnection.key(conn)}\0${record.session.id}`
     if (prefetched.has(key)) return
     prefetched.add(key)
@@ -154,7 +159,7 @@ export function createHomeSessionsController(home: HomeController) {
   }
 
   createEffect(() => {
-    if (readNetworkQuality().lite) return
+    if (platform.remoteSessionID || readNetworkQuality().lite) return
     records()
       .slice(0, 2)
       .forEach((record) => prefetchSession(record))
@@ -224,6 +229,7 @@ export function createHomeSessionsController(home: HomeController) {
         const directory = project?.worktree ?? session.directory
         const ctx = home.server.focusedContext()
         if (!ctx) return
+        if (!ctx.sync.session.peek(session.id)) ctx.sync.session.remember(session)
         ctx.projects.open(directory)
         if (options?.background) {
           tabs.addSessionTab({ server: ServerConnection.key(conn), sessionId: session.id })

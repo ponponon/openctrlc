@@ -85,6 +85,7 @@ export type SessionItemProps = {
   level?: number
   sidebarExpanded: Accessor<boolean>
   clearHoverProjectSoon: () => void
+  cancelProjectNavigation: () => void
   prefetchSession: (session: Session, priority?: "high" | "low") => void
   archiveSession: (session: Session) => Promise<void>
 }
@@ -100,6 +101,7 @@ const SessionRow = (props: {
   hasError: Accessor<boolean>
   unseenCount: Accessor<number>
   clearHoverProjectSoon: () => void
+  cancelProjectNavigation: () => void
   sidebarOpened: Accessor<boolean>
   warmPress: () => void
   warmFocus: () => void
@@ -113,6 +115,7 @@ const SessionRow = (props: {
       onPointerDown={props.warmPress}
       onFocus={props.warmFocus}
       onClick={() => {
+        props.cancelProjectNavigation()
         if (props.sidebarOpened()) return
         props.clearHoverProjectSoon()
       }}
@@ -209,6 +212,7 @@ export const SessionItem = (props: SessionItemProps): JSX.Element => {
       hasError={hasError}
       unseenCount={unseenCount}
       clearHoverProjectSoon={props.clearHoverProjectSoon}
+      cancelProjectNavigation={props.cancelProjectNavigation}
       sidebarOpened={layout.sidebar.opened}
       warmPress={() => warm(2, "high")}
       warmFocus={() => warm(2, "high")}
@@ -285,6 +289,7 @@ export const NewSessionItem = (props: {
   dense?: boolean
   sidebarExpanded: Accessor<boolean>
   clearHoverProjectSoon: () => void
+  cancelProjectNavigation: () => void
 }): JSX.Element => {
   const layout = useLayout()
   const language = useLanguage()
@@ -296,6 +301,7 @@ export const NewSessionItem = (props: {
       end
       class={`flex items-center gap-2 min-w-0 w-full text-left focus:outline-none ${props.dense ? "py-0.5" : "py-1"}`}
       onClick={() => {
+        props.cancelProjectNavigation()
         if (layout.sidebar.opened()) return
         props.clearHoverProjectSoon()
       }}

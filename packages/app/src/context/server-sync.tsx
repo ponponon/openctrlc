@@ -8,7 +8,7 @@ import type {
 } from "@openctrlc/sdk/v2/client"
 import { showToast } from "@/utils/toast"
 import { getFilename } from "@openctrlc/core/util/path"
-import { type Accessor, batch, createMemo, getOwner, onCleanup, onMount, untrack } from "solid-js"
+import { type Accessor, batch, createMemo, createSignal, getOwner, onCleanup, onMount, untrack } from "solid-js"
 import { createStore, produce, reconcile } from "solid-js/store"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
@@ -26,6 +26,7 @@ import {
   loadProvidersQuery,
   loadReferencesQuery,
   loadSkillsQuery,
+  shouldLoadFullProviderCatalog,
 } from "./global-sync/bootstrap"
 import { createChildStoreManager } from "./global-sync/child-store"
 import { applyDirectoryEvent, applyGlobalEvent } from "./global-sync/event-reducer"
@@ -193,7 +194,7 @@ function makeQueryOptionsApi(
     globalConfig: () => loadGlobalConfigQuery(scope, serverSDK(), protocol),
     projects: () => loadProjectsQuery(scope, serverAPI.project),
     providers: (directory: PathKey | null, view: "summary" | "full" = "summary") =>
-      loadProvidersQuery(scope, directory, serverAPI, directory ? sdkFor(directory) : serverSDK(), protocol, view),
+      loadProvidersQuery(scope, directory, serverAPI, directory ? sdkFor(directory) : serverSDK(), view),
     path: (directory: PathKey | null) =>
       loadPathQuery(scope, directory, directory ? sdkFor(directory) : serverSDK(), protocol),
     agents: (directory: PathKey) => loadAgentsQuery(scope, directory, serverAPI.agent, sdkFor(directory), protocol),
@@ -247,10 +248,15 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
   const [configQuery, providerQuery, pathQuery] = useQueries(() => ({
     queries: [queryOptionsApi.globalConfig(), queryOptionsApi.providers(null, "summary"), queryOptionsApi.path(null)],
   }))
+  const [fullGlobalProvidersRequested, setFullGlobalProvidersRequested] = createSignal(false)
+  const [fullProviderDirectories, setFullProviderDirectories] = createSignal(new Set<string>())
   const providerFullQuery = useQuery(() => ({
     ...queryOptionsApi.providers(null, "full"),
-    // Upgrade to the full catalog after the slim one is on screen.
-    enabled: !providerQuery.isLoading && providerQuery.isSuccess,
+    // Remote sessions defer the multi-megabyte catalog until the user opens
+    // model selection; otherwise it competes with the desktop's limited upload.
+    enabled:
+      shouldLoadFullProviderCatalog(!!platform.remoteSessionID, fullGlobalProvidersRequested()) &&
+      !providerQuery.isLoading && providerQuery.isSuccess,
   }))
   const activeSessionsQuery = useQuery(() =>
     loadActiveSessionsQuery(serverSDK.scope, {
@@ -290,7 +296,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     },
     get provider() {
       const EMPTY = { all: new Map(), connected: [], default: {} }
-      if (providerFullQuery.data) return providerFullQuery.data
+      if (providerFullQuery.data && !providerFullQuery.isStale) return providerFullQuery.data
       if (providerQuery.isLoading) return EMPTY
       return providerQuery.data ?? EMPTY
     },
@@ -304,9 +310,20 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
   })
 
   const queryClient = useQueryClient()
+  const loadFullProviders = async (directory?: string) => {
+    if (!platform.remoteSessionID) return
+    const key = directory ? directoryKey(directory) : undefined
+    if (key) {
+      await queryClient.fetchQuery(queryOptionsApi.providers(key, "full"))
+      setFullProviderDirectories((current) => new Set(current).add(key))
+      return
+    }
+    await queryClient.fetchQuery(queryOptionsApi.providers(null, "full"))
+    setFullGlobalProvidersRequested(true)
+  }
   const homeSessions = createHomeSessionIndexCache(queryClient, ServerConnection.key(serverSDK.server))
   const refreshProviders = () =>
-    queryClient.refetchQueries({
+    queryClient.invalidateQueries({
       predicate: (query) => query.queryKey[0] === serverSDK.scope && query.queryKey[2] === "providers",
     })
 
@@ -399,6 +416,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     },
     translate: language.t,
     queryOptions: queryOptionsApi,
+    providerView: (directory) => (fullProviderDirectories().has(directory) ? "full" : "summary"),
     global: {
       provider: globalStore.provider,
     },
@@ -658,6 +676,13 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
         eventType === "project.directories.updated"
       )
         bootstrap.refetch()
+      if (eventType === "config.updated" || eventType === "catalog.updated") void refreshProviders()
+      if (eventType === "agent.updated") {
+        for (const directory of Object.keys(children.children)) {
+          if (!children.active(directory)) continue
+          queue.push(directory)
+        }
+      }
       if (eventType === "server.connected" || eventType === "global.disposed") {
         if (recent) return
         void session.catchUpAfterReconnect()
@@ -682,6 +707,12 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     const existing = children.children[key]
     if (!existing) return
     children.mark(key)
+    if (eventType === "config.updated") {
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === serverSDK.scope && query.queryKey[1] === key && query.queryKey[2] === "providers",
+      })
+    }
     if (
       event.current?.type === "session.moved" ||
       // event.current?.type === "session.archived" ||
@@ -781,6 +812,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     disableMcp: children.disableMcp,
     queryOptions: queryOptionsApi,
     refreshProviders,
+    loadFullProviders,
     // bootstrap,
     updateConfig: updateConfigMutation.mutateAsync,
     project: projectApi,

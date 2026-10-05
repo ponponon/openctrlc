@@ -100,9 +100,9 @@ export function selectUserMessages(messages: Message[]) {
 
 export function isTimelineReady(messages: Message[] | undefined, loading: boolean) {
   if (messages === undefined) return false
-  // Progressive paint: show the timeline as soon as any message lands instead of
-  // waiting for the whole first page (important on remote / 5Mbps).
-  if (messages.length > 0) return true
+  // Assistant records without a visible user turn cannot produce timeline rows.
+  // Keep the loading state until a user root arrives or the request completes.
+  if (messages.some((message) => message.role === "user")) return true
   return !loading
 }
 

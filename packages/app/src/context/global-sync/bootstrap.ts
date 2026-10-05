@@ -171,7 +171,7 @@ export async function bootstrapGlobal(input: {
     () => input.queryClient.fetchQuery(loadGlobalConfigQuery(input.scope, input.serverSDK, input.protocol)),
     () =>
       input.queryClient.fetchQuery(
-        loadProvidersQuery(input.scope, null, input.serverAPI, input.serverSDK, input.protocol),
+        loadProvidersQuery(input.scope, null, input.serverAPI, input.serverSDK),
       ),
     () => input.queryClient.fetchQuery(loadPathQuery(input.scope, null, input.serverSDK, input.protocol)),
     () =>
@@ -244,8 +244,7 @@ export const loadProvidersQuery = (
   scope: ServerScope,
   directory: string | null,
   sdk: CatalogApi,
-  legacy?: OpencodeClient,
-  protocol?: Promise<ServerProtocol>,
+  client?: OpencodeClient,
   view: "summary" | "full" = "summary",
 ) =>
   queryOptions({
@@ -255,11 +254,11 @@ export const loadProvidersQuery = (
     gcTime: 30 * 60_000,
     queryFn: () =>
       retry(async () => {
-        if ((await protocol) === "v1" && legacy) {
-          // `view=summary` skips model catalogs for unconnected providers.
-          const result = await legacy.provider.list({
-            query: { directory: directory ?? undefined, view },
-          } as never)
+        if (client) {
+          // Both protocol generations expose the same provider catalog here.
+          // Calling /api/model separately bypasses summary mode and downloads
+          // the entire catalog during remote startup.
+          const result = await client.provider.list({ directory: directory ?? undefined, view })
           return normalizeProviderList(result.data!)
         }
         const location = directory ? { location: { directory } } : undefined
@@ -271,6 +270,10 @@ export const loadProvidersQuery = (
         return normalizeProviderList(providers.data, models.data, defaultModel.data)
       }),
   })
+
+export function shouldLoadFullProviderCatalog(remoteSession: boolean, explicitlyRequested: boolean) {
+  return !remoteSession || explicitlyRequested
+}
 
 type AgentListApi = {
   readonly list: (input?: AgentListInput) => Promise<AgentListOutput>
@@ -299,7 +302,7 @@ export const loadAgentsQuery = (
 ) =>
   queryOptions({
     queryKey: [scope, directory, "agents"],
-    staleTime: 5 * 60_000,
+    staleTime: 0,
     gcTime: 30 * 60_000,
     queryFn: () =>
       retry(async () => {
@@ -434,7 +437,7 @@ export async function bootstrapDirectory(input: {
       () => Promise.resolve(input.loadSessions(input.directory)),
       () =>
         input.queryClient
-          .ensureQueryData(loadAgentsQuery(input.scope, input.directory, input.api.agent, input.sdk, input.protocol))
+          .fetchQuery(loadAgentsQuery(input.scope, input.directory, input.api.agent, input.sdk, input.protocol))
           .then((data) => input.setStore("agent", data)),
       () =>
         retry(async () => {
@@ -609,7 +612,7 @@ export async function bootstrapDirectory(input: {
           })),
       () =>
         input.queryClient
-          .fetchQuery(loadProvidersQuery(input.scope, input.directory, input.api, input.sdk, input.protocol))
+          .fetchQuery(loadProvidersQuery(input.scope, input.directory, input.api, input.sdk))
           .catch((err) => {
             if (!isCurrent() || isClientAbortError(err)) return
             showProjectReloadError({

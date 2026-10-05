@@ -12,6 +12,7 @@ import { Option, Schema } from "effect"
 const emptyTokens = { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } }
 const emptyModel: { id: string; providerID: string; variant?: string } = { id: "", providerID: "" }
 const decodeToolInput = Schema.decodeUnknownOption(Schema.UnknownFromJsonString)
+type SessionMessageWithParent = SessionMessageInfo & { parentID?: string }
 
 export function compareMessages(a: Pick<Message, "id" | "time">, b: Pick<Message, "id" | "time">) {
   const left = messageKey(a)
@@ -19,7 +20,8 @@ export function compareMessages(a: Pick<Message, "id" | "time">, b: Pick<Message
   return left < right ? -1 : left > right ? 1 : 0
 }
 
-export const messageKey = (message: Pick<Message, "id" | "time">) => message.time.created + message.id
+export const messageKey = (message: Pick<Message, "id" | "time">) =>
+  `${message.time.created.toFixed(20).padStart(42, "0")}${message.id}`
 
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value)
@@ -46,7 +48,7 @@ function normalizeToolMetadata(name: string, metadata: Record<string, unknown>) 
   }
 }
 
-export function normalizeSessionMessages(sessionID: string, source: readonly SessionMessageInfo[]) {
+export function normalizeSessionMessages(sessionID: string, source: readonly SessionMessageWithParent[]) {
   const messages: Message[] = []
   const parts = new Map<string, Part[]>()
   let agent = ""
@@ -91,8 +93,10 @@ export function normalizeSessionMessages(sessionID: string, source: readonly Ses
     if (message.type === "assistant") {
       agent = message.agent
       model = message.model
-      if (!parentID) return
-      const parent = messages.findLast((item) => item.id === parentID)
+      const assistantParentID = message.parentID ?? parentID
+      if (!assistantParentID) return
+      parentID = assistantParentID
+      const parent = messages.findLast((item) => item.id === assistantParentID)
       if (parent?.role === "user") {
         parent.agent = message.agent
         parent.model = {
@@ -101,7 +105,7 @@ export function normalizeSessionMessages(sessionID: string, source: readonly Ses
           variant: message.model.variant,
         }
       }
-      messages.push(assistantMessage(sessionID, parentID, message))
+      messages.push(assistantMessage(sessionID, assistantParentID, message))
       parts.set(message.id, assistantParts(sessionID, message))
       return
     }

@@ -55,7 +55,7 @@ import { usePlatform, type RemoteWorkspaceSnapshot } from "@/context/platform"
 import { PromptProvider } from "@/context/prompt"
 import { ServerConnection, ServerProvider, serverName, useServer } from "@/context/server"
 import { SettingsProvider, useSettings } from "@/context/settings"
-import { TabsProvider, useTabs, type DraftTab } from "@/context/tabs"
+import { TabsProvider, tabKey, useTabs, type DraftTab } from "@/context/tabs"
 import { SDKProvider, useSDK } from "@/context/sdk"
 import { WslServersProvider } from "@/wsl/context"
 import DirectoryLayout, { DirectoryDataProvider } from "@/pages/directory-layout"
@@ -679,7 +679,7 @@ export function AppInterface(props: {
       <GlobalProvider>
         <SettingsProvider>
           <ConnectionGate disableHealthCheck={props.disableHealthCheck} startup={props.startup}>
-            <RemoteWorkspaceHydrator />
+            <RemoteWorkspaceHydrator remoteWorkspace={props.remoteWorkspace} />
             <Show when={useSettings().general.newLayoutDesigns().toString()} keyed>
               <Dynamic
                 component={props.router ?? Router}
@@ -716,37 +716,16 @@ function pickRemoteConnection(global: ReturnType<typeof useGlobal>) {
   )
 }
 
-function RemoteWorkspaceHydrator() {
+function RemoteWorkspaceHydrator(props: { remoteWorkspace?: RemoteWorkspaceSnapshot }) {
   const platform = usePlatform()
   const server = useServer()
   const global = useGlobal()
 
-  // Desktop publishes the project/workspace snapshot (session tabs are added by RemoteTabsHydrator).
-  createEffect(() => {
-    if (platform.platform !== "desktop" || !platform.remoteAccess) return
-    if (!server.ready()) return
-    const connection = pickRemoteConnection(global)
-    if (!connection) return
-    const context = global.ensureServerCtx(connection)
-    const projects = context.projects.list().map((project) => ({
-      worktree: project.worktree,
-      expanded: project.expanded,
-    }))
-    const lastProject = context.projects.last()
-    const snapshot: RemoteWorkspaceSnapshot = {
-      projects,
-      ...(lastProject && projects.some((project) => project.worktree === lastProject) ? { lastProject } : {}),
-      sessionIDs: [],
-    }
-    platform.remoteAccess.updateWorkspace(snapshot)
-  })
-
-  // Fresh remote browsers have empty local storage; restore the sidebar from the
-  // backend project list so the page is not blank before/independent of a snapshot.
-  // Open projects in small waves so a cold remote link does not fan out dozens of
-  // bootstrap calls and trip the relay request cap.
+  // A workspace snapshot is authoritative, including an intentionally empty project list.
+  // Only direct web connections without a snapshot need one local project as a fallback.
   createEffect(() => {
     if (platform.platform !== "web") return
+    if (props.remoteWorkspace) return
     if (!server.ready()) return
     const connection = pickRemoteConnection(global)
     if (!connection) return
@@ -755,21 +734,11 @@ function RemoteWorkspaceHydrator() {
     if (known.length === 0) return
     const open = context.projects.list()
     if (open.length > 0) return
-    const worktrees = known.map((project) => project.worktree).filter(Boolean) as string[]
-    if (worktrees[0]) context.projects.touch(worktrees[0])
-    let index = 0
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const step = () => {
-      if (index >= worktrees.length) return
-      const batch = worktrees.slice(index, index + 2)
-      index += batch.length
-      for (const worktree of batch) context.projects.open(worktree)
-      if (index < worktrees.length) timer = setTimeout(step, 120)
-    }
-    step()
-    onCleanup(() => {
-      if (timer) clearTimeout(timer)
-    })
+    const last = context.projects.last()
+    const worktree = known.find((project) => project.worktree === last)?.worktree ?? known[0]?.worktree
+    if (!worktree) return
+    context.projects.touch(worktree)
+    context.projects.open(worktree)
   })
 
   return null
@@ -801,17 +770,24 @@ function RemoteTabsHydrator() {
       expanded: project.expanded,
     }))
     const lastProject = context.projects.last()
+    const sessionInfo = sessionIDs.flatMap((sessionID) => {
+      const tab = tabs.store.find((item) => item.type === "session" && item.sessionId === sessionID)
+      if (!tab || tab.type !== "session") return []
+      const title = tabs.info[tabKey(tab)]?.title ?? context.sync.session.peek(sessionID)?.title
+      return typeof title === "string" ? [{ sessionID, title: title.slice(0, 200) }] : []
+    })
     const snapshot: RemoteWorkspaceSnapshot = {
       projects,
       ...(lastProject && projects.some((project) => project.worktree === lastProject) ? { lastProject } : {}),
       sessionIDs,
+      sessionInfo,
       activeSessionID,
     }
     platform.remoteAccess.updateWorkspace(snapshot)
   })
 
-  // Do not pre-open historical sessions as tabs on remote — only the active
-  // session is restored; the rest stay browsable from the home session list.
+  // The snapshot already restores all desktop tabs. Keep this fallback only for
+  // older or direct links that have an active session but no workspace snapshot.
   createEffect(() => {
     if (platform.platform !== "web" || !tabs.ready()) return
     if (tabs.store.some((tab) => tab.type === "session")) return

@@ -12,7 +12,7 @@ import {
   type Accessor,
 } from "solid-js"
 import { makeEventListener } from "@solid-primitives/event-listener"
-import { useNavigate, useParams } from "@solidjs/router"
+import { useLocation, useNavigate, useParams } from "@solidjs/router"
 import { useLayout, LocalProject } from "@/context/layout"
 import { useServerSync } from "@/context/server-sync"
 import { Persist, persisted } from "@/utils/persist"
@@ -105,7 +105,10 @@ export default function LegacyLayout(props: ParentProps) {
   let scrollContainerRef: HTMLDivElement | undefined
   let dialogRun = 0
   let dialogDead = false
+  let projectNavigationRun = 0
+  let projectNavigationTarget: string | undefined
 
+  const location = useLocation()
   const params = useParams()
   const serverSync = useServerSync()
   const layout = useLayout()
@@ -318,16 +321,30 @@ export default function LegacyLayout(props: ParentProps) {
   const setEditor = editor.setEditor
   const InlineEditor = editor.InlineEditor
 
+  const cancelProjectNavigation = () => {
+    projectNavigationRun += 1
+    projectNavigationTarget = undefined
+  }
+
   const clearSidebarHoverState = () => {
     if (layout.sidebar.opened()) return
     reset()
   }
 
-  const navigateWithSidebarReset = (href: string) => {
+  const navigateWithSidebarReset = (href: string, projectRun?: number) => {
+    if (projectRun !== undefined && projectNavigationRun !== projectRun) return
+    if (projectRun === undefined) cancelProjectNavigation()
+    else projectNavigationTarget = href
     clearSidebarHoverState()
     navigate(href)
     layout.mobileSidebar.hide()
   }
+
+  createEffect(() => {
+    const current = location.pathname
+    if (!projectNavigationTarget || current === projectNavigationTarget) return
+    cancelProjectNavigation()
+  })
 
   function cycleTheme(direction = 1) {
     const ids = availableThemeEntries().map(([id]) => id)
@@ -447,13 +464,13 @@ export default function LegacyLayout(props: ParentProps) {
             void playSoundById(settings.sounds.permissions())
           }
           if (settings.notifications.permissions()) {
-            void platform.notify(title, description, () => navigate(href))
+            void platform.notify(title, description, () => navigateWithSidebarReset(href))
           }
         }
 
         if (e.details.type === "question.asked") {
           if (settings.notifications.agent()) {
-            void platform.notify(title, description, () => navigate(href))
+            void platform.notify(title, description, () => navigateWithSidebarReset(href))
           }
         }
 
@@ -471,7 +488,7 @@ export default function LegacyLayout(props: ParentProps) {
           actions: [
             {
               label: language.t("notification.action.goToSession"),
-              onClick: () => navigate(href),
+              onClick: () => navigateWithSidebarReset(href),
             },
             {
               label: language.t("common.dismiss"),
@@ -635,10 +652,13 @@ export default function LegacyLayout(props: ParentProps) {
     running: number
   }
 
-  const prefetchChunk = 200
-  const prefetchConcurrency = 2
+  // Remote sessions share the desktop's upload link. Fetch the active session;
+  // only explicit navigation or hover may warm another session.
+  const remoteSession = !!platform.remoteSessionID
+  const prefetchChunk = remoteSession ? 20 : 200
+  const prefetchConcurrency = remoteSession ? 1 : 2
   const prefetchPendingLimit = 10
-  const span = 4
+  const span = remoteSession ? 0 : 4
   const prefetchToken = { value: 0 }
   const prefetchQueues = new Map<string, PrefetchQueue>()
 
@@ -734,6 +754,7 @@ export default function LegacyLayout(props: ParentProps) {
   const prefetchSession = (session: Session, priority: "high" | "low" = "low") => {
     const directory = session.directory
     if (!directory) return
+    if (remoteSession && priority !== "high") return
 
     const cached = untrack(() => !serverSync().session.shouldPrefetch(session.id, prefetchChunk))
     if (cached) return
@@ -890,9 +911,9 @@ export default function LegacyLayout(props: ParentProps) {
     serverSync().homeSessions.remove(session.id)
     if (session.id === params.id) {
       if (nextSession) {
-        navigate(`/${params.dir}/session/${nextSession.id}`)
+        navigateWithSidebarReset(`/${params.dir}/session/${nextSession.id}`)
       } else {
-        navigate(`/${params.dir}/session`)
+        navigateWithSidebarReset(`/${params.dir}/session`)
       }
     }
   }
@@ -1175,6 +1196,8 @@ export default function LegacyLayout(props: ParentProps) {
 
   async function navigateToProject(directory: string | undefined) {
     if (!directory) return
+    const run = ++projectNavigationRun
+    const isCurrent = () => projectNavigationRun === run
     const root = projectRoot(directory)
     server.projects.touch(root)
     // First paint must not wait on directory listing or session.sync —
@@ -1183,7 +1206,7 @@ export default function LegacyLayout(props: ParentProps) {
     const initial = remembered?.id
       ? `/${base64Encode(remembered.directory)}/session/${remembered.id}`
       : `/${base64Encode(root)}/session`
-    navigateWithSidebarReset(initial)
+    navigateWithSidebarReset(initial, run)
 
     const project = layout.projects.list().find((item) => item.worktree === root)
     let dirs = project
@@ -1202,61 +1225,79 @@ export default function LegacyLayout(props: ParentProps) {
         .then((projectID) => serverSDK().api.project.directories({ projectID, location: { directory: root } }))
         .then((items) => items.map((item) => item.directory).filter((item) => pathKey(item) !== pathKey(root)))
         .catch(() => [] as string[])
+      if (!isCurrent()) return false
       dirs = effectiveWorkspaceOrder(root, [root, ...listed], store.workspaceOrder[root])
       return canOpen(target)
     }
     const openSession = async (target: { directory: string; id: string }) => {
-      if (!canOpen(target.directory)) return false
+      if (!isCurrent() || !canOpen(target.directory)) return false
       const sync = serverSync().ensureDirSyncContext(target.directory)
       if (sync.session.get(target.id)) {
+        if (!isCurrent()) return false
         setStore("lastProjectSession", root, { directory: target.directory, id: target.id, at: Date.now() })
-        navigateWithSidebarReset(`/${base64Encode(target.directory)}/session/${target.id}`)
+        navigateWithSidebarReset(`/${base64Encode(target.directory)}/session/${target.id}`, run)
         return true
       }
       const resolved = await sync.session
         .sync(target.id)
         .then(() => sync.session.get(target.id))
         .catch(() => undefined)
+      if (!isCurrent()) return false
       if (!resolved?.directory) return false
       if (!canOpen(resolved.directory)) return false
       setStore("lastProjectSession", root, { directory: resolved.directory, id: resolved.id, at: Date.now() })
-      navigateWithSidebarReset(`/${base64Encode(resolved.directory)}/session/${resolved.id}`)
+      navigateWithSidebarReset(`/${base64Encode(resolved.directory)}/session/${resolved.id}`, run)
       return true
+    }
+    const openLatestSession = async (excluded: Set<string> = new Set()) => {
+      if (!isCurrent()) return false
+      const key = (session: { directory: string; id: string }) => `${pathKey(session.directory)}:${session.id}`
+      const cached = latestRootSession(
+        dirs.map((item) => serverSync().child(item, { bootstrap: false })[0]),
+        Date.now(),
+      )
+      if (cached && !excluded.has(key(cached))) {
+        if (await openSession(cached)) return true
+        excluded.add(key(cached))
+      }
+
+      const items = await Promise.all(
+        dirs.map(async (item) => ({
+          path: { directory: item },
+          session: await listAllSessions(serverSDK().api.session, {
+            directory: item,
+            parentID: null,
+            order: "desc",
+          }).catch(() => []),
+        })),
+      )
+      if (!isCurrent()) return false
+      const latest = latestRootSession(
+        items.map((item) => ({
+          path: item.path,
+          session: item.session.filter((session) => !excluded.has(key(session))),
+        })),
+        Date.now(),
+      )
+      if (!latest || excluded.has(key(latest))) return false
+      return openSession(latest)
     }
 
     // Already navigated above; only hop again if we discover a better session.
     if (remembered?.id) {
-      void refreshDirs(remembered.directory)
-        .then(() => openSession(remembered))
-        .then((opened) => {
-          if (!opened) clearLastProjectSession(root)
-        })
-        .catch(() => undefined)
+      void (async () => {
+        const available = await refreshDirs(remembered.directory)
+        if (!isCurrent()) return
+        if (available && (await openSession(remembered))) return
+        if (!isCurrent()) return
+        clearLastProjectSession(root)
+        const opened = await openLatestSession(new Set([`${pathKey(remembered.directory)}:${remembered.id}`]))
+        if (!opened && isCurrent()) navigateWithSidebarReset(`/${base64Encode(root)}/session`, run)
+      })().catch(() => undefined)
       return
     }
 
-    const latest = latestRootSession(
-      dirs.map((item) => serverSync().child(item, { bootstrap: false })[0]),
-      Date.now(),
-    )
-    if (latest) {
-      void openSession(latest).catch(() => undefined)
-      return
-    }
-
-    void Promise.all(
-      dirs.map(async (item) => ({
-        path: { directory: item },
-        session: await listAllSessions(serverSDK().api.session, {
-          directory: item,
-          parentID: null,
-          order: "desc",
-        }).catch(() => []),
-      })),
-    )
-      .then((items) => latestRootSession(items, Date.now()))
-      .then((fetched) => (fetched ? openSession(fetched) : undefined))
-      .catch(() => undefined)
+    void openLatestSession().catch(() => undefined)
   }
 
   function navigateToSession(session: Session | undefined) {
@@ -1885,6 +1926,7 @@ export default function LegacyLayout(props: ParentProps) {
     sidebarExpanded,
     sidebarHovering,
     clearHoverProjectSoon,
+    cancelProjectNavigation,
     prefetchSession,
     archiveSession,
     workspaceName,
@@ -1931,6 +1973,7 @@ export default function LegacyLayout(props: ParentProps) {
       navList: currentSessions,
       sidebarExpanded,
       clearHoverProjectSoon,
+      cancelProjectNavigation,
       prefetchSession,
       archiveSession,
     },

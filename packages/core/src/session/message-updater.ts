@@ -8,6 +8,7 @@ export type MemoryState = {
 }
 
 export interface Adapter {
+  readonly getCurrentParentID: () => Effect.Effect<SessionMessage.ID | undefined>
   readonly getCurrentAssistant: () => Effect.Effect<SessionMessage.Assistant | undefined>
   readonly getAssistant: (messageID: SessionMessage.ID) => Effect.Effect<SessionMessage.Assistant | undefined>
   readonly getCurrentShell: (callID: string) => Effect.Effect<SessionMessage.Shell | undefined>
@@ -25,6 +26,15 @@ export function memory(state: MemoryState): Adapter {
     state.messages.findLastIndex((message) => message.type === "shell" && message.callID === callID)
 
   return {
+    getCurrentParentID() {
+      return Effect.sync(() => {
+        for (const message of state.messages.toReversed()) {
+          if (message.type === "shell") return
+          if (message.type === "user") return message.id
+          if (message.type === "synthetic" && message.text.trim()) return message.id
+        }
+      })
+    },
     getCurrentAssistant() {
       return Effect.sync(() => {
         const index = latestAssistantIndex()
@@ -185,6 +195,7 @@ export function update(adapter: Adapter, event: SessionEvent.Event) {
       },
       "session.next.step.started": (event) => {
         return Effect.gen(function* () {
+          const parentID = yield* adapter.getCurrentParentID()
           const currentAssistant = yield* adapter.getCurrentAssistant()
           if (currentAssistant) {
             yield* adapter.updateAssistant(
@@ -197,6 +208,7 @@ export function update(adapter: Adapter, event: SessionEvent.Event) {
             SessionMessage.Assistant.make({
               id: event.data.assistantMessageID,
               type: "assistant",
+              parentID,
               agent: event.data.agent,
               model: event.data.model,
               time: { created: event.data.timestamp },

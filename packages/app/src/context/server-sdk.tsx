@@ -6,7 +6,7 @@ import { makeEventListener } from "@solid-primitives/event-listener"
 import { type Accessor, batch, createMemo, createResource, onCleanup, onMount } from "solid-js"
 import { authTokenFromCredentials, createApiForServer, createSdkForServer, type ServerApi } from "@/utils/server"
 import { useLanguage } from "./language"
-import { usePlatform } from "./platform"
+import { usePlatform, type RemoteTransportStatus } from "./platform"
 import { ServerConnection, useServer } from "./server"
 import { createRefCountMap } from "@/utils/refcount"
 import { useGlobal } from "./global"
@@ -18,6 +18,12 @@ const isAbortError = (error: unknown) =>
   error !== null && typeof error === "object" && "name" in error && error.name === "AbortError"
 
 const isStreamClosed = (error: unknown, signal?: AbortSignal) => isAbortError(error) || signal?.aborted === true
+
+export function shouldReconnectRemoteEventStream(status: RemoteTransportStatus) {
+  // Reopen once when the direct channel first becomes usable. Switching its
+  // selected ICE route from checking to direct/TURN does not change the socket.
+  return status === "checking"
+}
 export type ServerEvent = Event & { current?: OpenCodeEvent }
 type QueuedServerEvent = { directory: string; payload: ServerEvent }
 type CurrentDelta = Extract<
@@ -188,9 +194,18 @@ type ServerSDKBase = {
 function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerScope): ServerSDKBase {
   const platform = usePlatform()
   const abort = new AbortController()
+  const remotePeerServer = (() => {
+    if (!platform.remoteSessionID) return false
+    try {
+      return new URL(server.http.url).origin === location.origin
+    } catch {
+      return false
+    }
+  })()
 
   const eventFetch = (() => {
     if (!platform.fetch || !server) return
+    if (remotePeerServer) return platform.fetch
     try {
       const url = new URL(server.http.url)
       const loopback = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "::1"
@@ -255,6 +270,11 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
   let streamErrorLogged = false
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
   let attempt: AbortController | undefined
+  const unsubscribeRemoteTransport = remotePeerServer
+    ? platform.remoteTransport?.subscribe((status) => {
+        if (shouldReconnectRemoteEventStream(status)) attempt?.abort()
+      })
+    : undefined
   let run: Promise<void> | undefined
   let started = false
   let generation = 0
@@ -364,6 +384,7 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
   onCleanup(() => {
     stop("cleanup")
     abort.abort()
+    unsubscribeRemoteTransport?.()
     flush()
   })
 

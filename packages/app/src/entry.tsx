@@ -13,7 +13,8 @@ import pkg from "../package.json"
 import { ServerConnection } from "./context/server"
 import { Brand } from "@openctrlc/identity"
 import { sessionHref } from "./utils/session-route"
-import { takeRemoteWorkspaceSnapshot } from "./utils/remote-workspace"
+import { currentRemoteSessionID, takeRemoteWorkspaceSnapshot } from "./utils/remote-workspace"
+import { RemotePeerClient } from "./utils/remote-peer"
 
 const DEFAULT_SERVER_URL_KEY = `${Brand.runtimeDirectory}.settings.dat:defaultServerUrl`
 
@@ -119,10 +120,31 @@ const clearAuthToken = () => {
   history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : "") + location.hash)
 }
 
+const remoteSessionID = currentRemoteSessionID()
+const remotePeer = remoteSessionID ? new RemotePeerClient(remoteSessionID) : undefined
+const nativeFetch = globalThis.fetch
+
 const platform: Platform = {
   platform: "web",
   draftStore: createBrowserDraftStore(),
   version: pkg.version,
+  remoteSessionID,
+  remoteTransport: remotePeer
+    ? {
+        getStatus: () => remotePeer.status,
+        subscribe: (callback) => remotePeer.subscribe(callback),
+      }
+    : undefined,
+  fetch: Object.assign(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      if (remoteSessionID && new URL(request.url).origin === location.origin)
+        request.headers.set("x-openctrlc-remote-session", remoteSessionID)
+      return (await remotePeer?.fetch(request)) ?? nativeFetch(request)
+    },
+    { preconnect: nativeFetch.preconnect },
+  ),
+  webSocket: (url, protocols) => remotePeer?.webSocket(url, protocols) ?? new WebSocket(url, protocols),
   openExternal,
   restart,
   notify,
@@ -154,7 +176,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 }
 
 if (root instanceof HTMLElement) {
-  const remoteWorkspace = takeRemoteWorkspaceSnapshot()
+  const remoteWorkspace = takeRemoteWorkspaceSnapshot(remoteSessionID)
   if (remoteWorkspace?.activeSessionID && location.pathname === "/") {
     const server = ServerConnection.Key.make(getCurrentUrl())
     history.replaceState(null, "", sessionHref(server, remoteWorkspace.activeSessionID))

@@ -69,12 +69,18 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
     const [closed, setClosed, , closedReady] = persisted(Persist.window("tabs.closed"), createStore<ClosedTab[]>([]))
 
     if (platform.platform === "web" && props.remoteWorkspace) {
-      // Only pin the active session as a tab. Historical sessions stay in the
-      // home list so a remote browser does not fan out full session loads.
       const active = props.remoteWorkspace.activeSessionID
-      const sessions = active ? [{ type: "session" as const, server: fallback, sessionId: active }] : []
+      const sessionIDs = [...new Set(props.remoteWorkspace.sessionIDs)]
+      if (active && !sessionIDs.includes(active)) sessionIDs.push(active)
+      const sessions = sessionIDs.map((sessionId) => ({ type: "session" as const, server: fallback, sessionId }))
       setStore(sessions)
-      if (active && sessions[0]) setRecent("key", tabKey(sessions[0]))
+      setInfo({})
+      for (const item of props.remoteWorkspace.sessionInfo ?? []) {
+        const tab = sessions.find((session) => session.sessionId === item.sessionID)
+        if (tab) setInfo(tabKey(tab), "title", item.title)
+      }
+      const activeTab = sessions.find((session) => session.sessionId === active)
+      if (activeTab) setRecent("key", tabKey(activeTab))
     }
 
     const params = useParams()

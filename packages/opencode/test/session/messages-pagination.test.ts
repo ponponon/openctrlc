@@ -87,7 +87,7 @@ const addUser = Effect.fn("Test.addUser")(function* (sessionID: SessionID, text?
 const addAssistant = Effect.fn("Test.addAssistant")(function* (
   sessionID: SessionID,
   parentID: MessageID,
-  opts?: { summary?: boolean; finish?: string; error?: SessionV1.Assistant["error"] },
+  opts?: { summary?: boolean; finish?: string; error?: SessionV1.Assistant["error"]; completed?: number },
 ) {
   const session = yield* SessionNs.Service
   const id = MessageID.ascending()
@@ -95,7 +95,7 @@ const addAssistant = Effect.fn("Test.addAssistant")(function* (
     id,
     sessionID,
     role: "assistant",
-    time: { created: Date.now() },
+    time: { created: Date.now(), ...(opts?.completed === undefined ? {} : { completed: opts.completed }) },
     parentID,
     modelID: ModelV2.ID.make("test"),
     providerID: ProviderV2.ID.make("test"),
@@ -125,6 +125,55 @@ const addCompactionPart = Effect.fn("Test.addCompactionPart")(function* (
     auto: true,
     tail_start_id: tailStartID,
   } as any)
+})
+
+describe("MessageV2.incomplete", () => {
+  it.instance("loads only unfinished assistant turns and their parts from long sessions", () =>
+    withSession(({ session, sessionID }) =>
+      Effect.gen(function* () {
+        const users = yield* fill(sessionID, 64)
+        const parentID = users.at(-1)!
+        const completed = yield* addAssistant(sessionID, parentID, { completed: Date.now(), finish: "stop" })
+        const interrupted = yield* addAssistant(sessionID, parentID)
+        yield* session.updatePart({
+          id: PartID.ascending(),
+          sessionID,
+          messageID: interrupted,
+          type: "tool",
+          callID: "call_recovery",
+          tool: "read",
+          state: { status: "running", input: {}, time: { start: Date.now() } },
+        } as SessionV1.ToolPart)
+
+        const result = yield* MessageV2.incomplete(sessionID)
+        expect(result.map((item) => item.info.id)).toEqual([interrupted])
+        expect(result[0]?.parts).toHaveLength(1)
+        expect(result[0]?.parts[0]?.messageID).toBe(interrupted)
+        expect(result[0]?.info.id).not.toBe(completed)
+
+        yield* session.recover(sessionID)
+        const recovered = yield* MessageV2.get({ sessionID, messageID: interrupted })
+        const unchanged = yield* MessageV2.get({ sessionID, messageID: completed })
+        if (recovered.info.role !== "assistant" || unchanged.info.role !== "assistant")
+          throw new Error("Expected assistant messages")
+        const recoveredTool = recovered.parts[0]
+        if (!recoveredTool || recoveredTool.type !== "tool") throw new Error("Expected a recovered tool part")
+        expect(recovered.info.time.completed).toBeDefined()
+        expect(recovered.info.finish).toBe("unknown")
+        expect(recoveredTool.state.status).toBe("error")
+        expect(unchanged.info.time.completed).toBeDefined()
+        expect(unchanged.info.finish).toBe("stop")
+
+        const nextParent = yield* addUser(sessionID)
+        const nextInterrupted = yield* addAssistant(sessionID, nextParent)
+        yield* session.recover(sessionID)
+        const nextRecovered = yield* MessageV2.get({ sessionID, messageID: nextInterrupted })
+        if (nextRecovered.info.role !== "assistant") throw new Error("Expected an assistant message")
+        expect(nextRecovered.info.time.completed).toBeDefined()
+        expect(nextRecovered.info.finish).toBe("unknown")
+      }),
+    ),
+  )
 })
 
 describe("MessageV2.page", () => {

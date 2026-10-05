@@ -223,6 +223,17 @@ describe("server session", () => {
     expect(ctx.store.lineage.peek("child")).toEqual(result)
   })
 
+  test("resolves a remembered home-list session without another detail request", async () => {
+    const ctx = setup({ root: session("root") })
+    ctx.store.remember(session("root"))
+
+    const result = await ctx.store.lineage.resolve("root")
+
+    expect(result.session.id).toBe("root")
+    expect(result.root.id).toBe("root")
+    expect(ctx.get).toEqual([])
+  })
+
   test("loads session content through the server client", async () => {
     const ctx = setup({ root: session("root") })
 
@@ -267,6 +278,27 @@ describe("server session", () => {
     expect(store.data.message.root.map((message) => message.id)).toEqual([user.id, assistant.id])
   })
 
+  test("drops stale messages after a non-empty final current-API page", async () => {
+    const stale = userMessage("msg_old_stale", { time: { created: 1 } })
+    const current = {
+      id: "msg_current",
+      type: "user",
+      text: "current",
+      time: { created: 2 },
+    } as const
+    const messageApi = {
+      list: async () => ({ data: [current], cursor: { previous: null, next: null } }),
+    } as unknown as MessageApi
+    const store = createServerSession({} as OpencodeClient, {} as SessionApi, messageApi)
+    store.remember(session("child"))
+    store.apply({ type: "message.updated", properties: { info: stale } })
+
+    await store.sync("child")
+
+    expect(store.data.message.child?.map((message) => message.id)).toEqual([current.id])
+    expect(store.data.session_message.child?.map((message) => message.id)).toEqual([current.id])
+  })
+
   test("extends a current page to include the user for split assistant turns", async () => {
     const user = { id: "msg_1_user", type: "user", text: "hello", time: { created: 1 } } as const
     const assistant = (id: string, created: number) => ({
@@ -307,6 +339,55 @@ describe("server session", () => {
       ...assistants.map((item) => item.id),
     ])
     expect(assistants.map((item) => store.data.part[item.id]?.[0]?.type)).toEqual(["text", "text", "text"])
+  })
+
+  test("projects assistant parents from the first page without fetching history", async () => {
+    const user = { id: "msg_parent", type: "user", text: "continue this task", time: { created: 1 } } as const
+    const assistants = [2, 3, 4].map((created) => ({
+      id: `msg_assistant_${created}`,
+      type: "assistant" as const,
+      parentID: user.id,
+      agent: "build",
+      model: { id: "model", providerID: "provider" },
+      content: [{ type: "text" as const, text: `answer ${created}` }],
+      time: { created, completed: created },
+    }))
+    const requests: unknown[] = []
+    const messageApi = {
+      list: async (input: unknown) => {
+        requests.push(input)
+        return {
+          data: assistants.toReversed(),
+          parents: [user],
+          cursor: { previous: null, next: "older" },
+        }
+      },
+    } as unknown as MessageApi
+    const client = {
+      session: {
+        message: () => {
+          throw new Error("individual parent requests should not run")
+        },
+      },
+    } as unknown as OpencodeClient
+    const sessionApi = {
+      message: () => {
+        throw new Error("individual parent requests should not run")
+      },
+    } as unknown as SessionApi
+    const store = createServerSession(client, sessionApi, messageApi)
+    store.remember(session("root"))
+
+    await store.sync("root")
+
+    expect(requests).toEqual([{ sessionID: "root", limit: 20, order: "desc" }])
+    expect(store.data.session_message.root.map((message) => message.id)).toEqual([
+      user.id,
+      ...assistants.map((item) => item.id),
+    ])
+    expect(
+      store.data.message.root.map((message) => (message.role === "assistant" ? message.parentID : undefined)),
+    ).toEqual([undefined, user.id, user.id, user.id])
   })
 
   test("indexes V1 messages for the current timeline projection", async () => {
@@ -364,6 +445,31 @@ describe("server session", () => {
     expect(client.rootRequests).toEqual([{ sessionID: "child", messageID: user.id }])
     expect(store.data.message.child).toEqual([user, ...assistants])
     expect(store.history.more("child")).toBe(true)
+  })
+
+  test("backfills a full initial page of missing assistant parents concurrently", async () => {
+    const roots = Array.from({ length: 20 }, () => Promise.withResolvers<SingleMessageResponse>())
+    const users = roots.map((_, index) => userMessage(`message-${index + 1}`))
+    const assistants = users.map((user, index) => assistantMessage(`message-${index + 21}`, user.id))
+    const client = rootMessageClient(
+      [
+        response(
+          assistants.map((info) => ({ info, parts: [] })),
+          "older",
+        ),
+      ],
+      roots.map((root) => root.promise),
+    )
+    const store = createServerSession(client)
+    const loading = store.sync("child")
+
+    await client.rootRequested(20)
+    expect(client.rootRequests).toHaveLength(20)
+    roots.forEach((root, index) => root.resolve(singleResponse(users[index]!)))
+    await loading
+
+    expect(client.rootRequests).toHaveLength(20)
+    expect(store.data.message.child).toHaveLength(40)
   })
 
   test("keeps assistant history when its deleted parent cannot be backfilled", async () => {
@@ -1507,6 +1613,29 @@ describe("server session", () => {
     const older = userMessage("msg_z", { time: { created: 1 } })
     const boundary = userMessage("msg_m", { time: { created: 2 } })
     const stale = userMessage("msg_a", { time: { created: 3 } })
+    const store = createServerSession(
+      messageClient(
+        response(
+          [
+            { info: older, parts: [] },
+            { info: stale, parts: [] },
+          ],
+          "older",
+        ),
+        response([{ info: boundary, parts: [] }], "older"),
+      ),
+    )
+    await store.sync("child")
+
+    await store.sync("child", { force: true })
+
+    expect(store.data.message.child).toEqual([older, boundary])
+  })
+
+  test("compares numeric creation times before message IDs at incomplete refresh boundaries", async () => {
+    const older = userMessage("msg_z", { time: { created: 8 } })
+    const stale = userMessage("msg_a", { time: { created: 10 } })
+    const boundary = userMessage("msg_m", { time: { created: 9 } })
     const store = createServerSession(
       messageClient(
         response(

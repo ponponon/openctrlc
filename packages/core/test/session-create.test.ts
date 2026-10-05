@@ -428,14 +428,14 @@ describe("SessionV2.create", () => {
       const session = yield* SessionV2.Service
       const created = yield* session.create({ location })
       const { db } = yield* Database.Service
-      const assistant = (input: { id: string; created: number; input: number; output: number }) => ({
+      const assistant = (input: { id: string; created: number; completed?: number; input: number; output: number }) => ({
         id: SessionV1.MessageID.make(input.id),
         session_id: created.id,
         time_created: input.created,
         time_updated: input.created,
         data: {
           role: "assistant" as const,
-          time: { created: input.created },
+          time: { created: input.created, ...(input.completed === undefined ? {} : { completed: input.completed }) },
           parentID: SessionV1.MessageID.make(`${input.id}_parent`),
           modelID: ModelV2.ID.make("test-model"),
           providerID: ProviderV2.ID.make("test-provider"),
@@ -450,9 +450,10 @@ describe("SessionV2.create", () => {
       yield* db
         .insert(MessageTable)
         .values([
-          assistant({ id: "msg_context_first", created: 1, input: 10, output: 20 }),
-          assistant({ id: "msg_context_second", created: 2, input: 30, output: 40 }),
-          assistant({ id: "msg_context_empty", created: 3, input: 0, output: 0 }),
+          assistant({ id: "msg_context_first", created: 1, completed: 101, input: 10, output: 20 }),
+          assistant({ id: "msg_context_second", created: 2, completed: 102, input: 30, output: 40 }),
+          assistant({ id: "msg_context_empty", created: 3, completed: 103, input: 0, output: 0 }),
+          assistant({ id: "msg_context_incomplete", created: 4, input: 900, output: 800 }),
         ])
         .run()
         .pipe(Effect.orDie)
@@ -522,12 +523,14 @@ describe("SessionV2.create", () => {
       })
 
       const projected = yield* stored()
+      if (!projected) throw new Error("Projected transcript row is missing")
       expect(projected.bytes).toBeGreaterThan(0)
       expect((yield* session.get(created.id)).storage).toEqual({ bytes: projected.bytes })
 
       yield* events.publish(SessionV1.Event.PartRemoved, { sessionID: created.id, messageID, partID })
 
       const removed = yield* stored()
+      if (!removed) throw new Error("Projected transcript row is missing after removal")
       expect(removed.bytes).toBeLessThan(projected.bytes)
       expect((yield* session.list()).map((item) => item.storage)).toEqual([{ bytes: removed.bytes }])
     }),

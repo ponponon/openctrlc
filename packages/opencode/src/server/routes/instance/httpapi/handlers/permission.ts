@@ -9,14 +9,9 @@ export const permissionHandlers = HttpApiBuilder.group(InstanceHttpApi, "permiss
   Effect.gen(function* () {
     const svc = yield* Permission.Service
 
-    // Pending permissions are rare; a few seconds of memoization avoids remote
-    // re-fetch storms when several panels mount together.
-    let listCache: { at: number; value: unknown } | undefined
     const list = Effect.fn("PermissionHttpApi.list")(function* () {
-      if (listCache && Date.now() - listCache.at < 5_000) return listCache.value as never
-      const value = yield* svc.list()
-      listCache = { at: Date.now(), value }
-      return value
+      // The service reads live, directory-scoped pending requests from memory.
+      return yield* svc.list()
     })
 
     const reply = Effect.fn("PermissionHttpApi.reply")(function* (ctx: {

@@ -27,6 +27,7 @@ import { eq } from "drizzle-orm"
 import { inArray } from "drizzle-orm"
 import { lt } from "drizzle-orm"
 import { or } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 import { MessageTable, PartTable, SessionTable } from "@openctrlc/core/session/sql"
 import { ProviderError } from "@/provider/error"
 import { iife } from "@/util/iife"
@@ -468,6 +469,24 @@ export const page = Effect.fn("MessageV2.page")(function* (input: {
     more,
     cursor: more && tail ? cursor.encode({ id: tail.id, time: tail.time_created }) : undefined,
   }
+})
+
+export const incomplete = Effect.fn("MessageV2.incomplete")(function* (sessionID: SessionID) {
+  const { db } = yield* Database.Service
+  const rows = yield* db
+    .select()
+    .from(MessageTable)
+    .where(
+      and(
+        eq(MessageTable.session_id, sessionID),
+        sql`json_extract(${MessageTable.data}, '$.role') = 'assistant'`,
+        sql`json_type(${MessageTable.data}, '$.time.completed') IS NULL`,
+      ),
+    )
+    .orderBy(desc(MessageTable.time_created), desc(MessageTable.id))
+    .all()
+    .pipe(Effect.orDie)
+  return yield* hydrate(db, rows)
 })
 
 export function stream(sessionID: SessionID) {

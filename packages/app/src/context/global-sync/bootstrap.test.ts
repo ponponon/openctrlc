@@ -15,6 +15,7 @@ import {
   loadProvidersQuery,
   loadReferencesQuery,
   loadSkillsQuery,
+  shouldLoadFullProviderCatalog,
 } from "./bootstrap"
 import type { State, VcsCache } from "./types"
 import { ServerScope } from "@/utils/server-scope"
@@ -334,6 +335,12 @@ describe("config queries", () => {
 })
 
 describe("query keys", () => {
+  test("keeps remote full catalogs lazy until the user requests them", () => {
+    expect(shouldLoadFullProviderCatalog(false, false)).toBe(true)
+    expect(shouldLoadFullProviderCatalog(true, false)).toBe(false)
+    expect(shouldLoadFullProviderCatalog(true, true)).toBe(true)
+  })
+
   test("partitions identical directories by server scope", () => {
     const client = {} as Parameters<typeof loadPathQuery>[2]
     const api = {} as CatalogApi
@@ -341,7 +348,12 @@ describe("query keys", () => {
 
     expect([...loadPathQuery(ServerScope.local, "/repo", client).queryKey]).toEqual(["local", "/repo", "path"])
     expect([...loadPathQuery(remote, "/repo", client).queryKey]).toEqual(["https://debian.example", "/repo", "path"])
-    expect([...loadProvidersQuery(remote, null, api).queryKey]).toEqual(["https://debian.example", null, "providers"])
+    expect([...loadProvidersQuery(remote, null, api).queryKey]).toEqual([
+      "https://debian.example",
+      null,
+      "providers",
+      "summary",
+    ])
   })
 
   test("loads the current provider and model catalog", async () => {
@@ -373,6 +385,25 @@ describe("query keys", () => {
       ["default", { location: { directory: "/repo" } }],
     ])
     expect(result.connected).toEqual(["openai"])
+  })
+
+  test("loads the requested provider catalog view without fetching separate model lists", async () => {
+    const calls: unknown[] = []
+    const client = {
+      provider: {
+        list: async (input: unknown) => {
+          calls.push(input)
+          return { data: { all: [], default: {}, connected: [] } }
+        },
+      },
+    } as unknown as OpencodeClient
+
+    const result = await new QueryClient().fetchQuery(
+      loadProvidersQuery(ServerScope.local, "/repo", {} as CatalogApi, client, "summary"),
+    )
+
+    expect(calls).toEqual([{ directory: "/repo", view: "summary" }])
+    expect(result).toMatchObject({ all: new Map(), connected: [], default: {} })
   })
 
   test("loads agents from the current location-scoped endpoint", async () => {

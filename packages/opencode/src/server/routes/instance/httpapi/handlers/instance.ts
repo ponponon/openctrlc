@@ -37,15 +37,11 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       }
     })
 
-    let vcsCache: { at: number; value: unknown } | undefined
     const getVcs = Effect.fn("InstanceHttpApi.vcs")(function* () {
-      if (vcsCache && Date.now() - vcsCache.at < 30_000) return vcsCache.value as never
       const [branch, default_branch] = yield* Effect.all([vcs.branch(), vcs.defaultBranch()], {
         concurrency: "unbounded",
       })
-      const value = { branch, default_branch }
-      vcsCache = { at: Date.now(), value }
-      return value
+      return { branch, default_branch }
     })
 
     const getVcsStatus = Effect.fn("InstanceHttpApi.vcsStatus")(function* () {
@@ -77,37 +73,17 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       )
     })
 
-    // Command templates are multi-line prompts; the palette only needs metadata.
-    // Keep the `template` key for schema compatibility but send an empty string.
-    let commandCache: { at: number; value: unknown } | undefined
     const getCommand = Effect.fn("InstanceHttpApi.command")(function* () {
-      if (commandCache && Date.now() - commandCache.at < 60_000) return commandCache.value as never
-      const list = yield* command.list()
-      const value = Array.isArray(list)
-        ? list.map((item) => {
-            if (!item || typeof item !== "object") return item
-            return { ...item, template: "" } as typeof item
-          })
-        : list
-      commandCache = { at: Date.now(), value }
-      return value
+      return yield* command.list()
     })
 
-    let agentCache: { at: number; value: unknown } | undefined
     const getAgent = Effect.fn("InstanceHttpApi.agent")(function* () {
-      if (agentCache && Date.now() - agentCache.at < 60_000) return agentCache.value as never
-      const value = yield* agent.list()
-      agentCache = { at: Date.now(), value }
-      return value
+      return yield* agent.list()
     })
 
-    let skillCache: { at: number; value: unknown } | undefined
     const getSkill = Effect.fn("InstanceHttpApi.skill")(function* () {
-      if (skillCache && Date.now() - skillCache.at < 60_000) return skillCache.value as never
       yield* skill.refresh()
-      const value = yield* skill.all()
-      skillCache = { at: Date.now(), value }
-      return value
+      return yield* skill.all()
     })
 
     const getLsp = Effect.fn("InstanceHttpApi.lsp")(function* () {

@@ -40,6 +40,7 @@ export type WorkspaceSidebarContext = {
   sidebarExpanded: Accessor<boolean>
   sidebarHovering: Accessor<boolean>
   clearHoverProjectSoon: () => void
+  cancelProjectNavigation: () => void
   prefetchSession: (session: Session, priority?: "high" | "low") => void
   archiveSession: (session: Session) => Promise<void>
   workspaceName: (directory: string, projectId?: string, branch?: string) => string | undefined
@@ -254,6 +255,7 @@ const WorkspaceSessionList = (props: {
         mobile={props.mobile}
         sidebarExpanded={props.ctx.sidebarExpanded}
         clearHoverProjectSoon={props.ctx.clearHoverProjectSoon}
+        cancelProjectNavigation={props.ctx.cancelProjectNavigation}
       />
     </Show>
     <Show when={props.loading()}>
@@ -270,6 +272,7 @@ const WorkspaceSessionList = (props: {
           showChild
           sidebarExpanded={props.ctx.sidebarExpanded}
           clearHoverProjectSoon={props.ctx.clearHoverProjectSoon}
+          cancelProjectNavigation={props.ctx.cancelProjectNavigation}
           prefetchSession={props.ctx.prefetchSession}
           archiveSession={props.ctx.archiveSession}
         />

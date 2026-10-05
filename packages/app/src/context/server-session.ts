@@ -1,6 +1,10 @@
 import { Binary } from "@openctrlc/core/util/binary"
 import { retry } from "@openctrlc/core/util/retry"
-import type { OpenCodeEvent, SessionApi, SessionMessageInfo } from "@opencode-ai/client/promise"
+import type {
+  OpenCodeEvent,
+  SessionApi,
+  SessionMessageInfo,
+} from "@opencode-ai/client/promise"
 import type {
   Message,
   OpencodeClient,
@@ -28,12 +32,14 @@ type MessageApi = ServerApi["message"]
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 const SKIP_PARTS = new Set(["patch", "step-start", "step-finish"])
 const initialMessagePageSize = 20
+const parentMessageBatchSize = initialMessagePageSize
 const historyMessagePageSize = 200
 const sessionInfoLimit = 2_048
 const maxOrphanPartsPerSession = 256
 const emptyIDs: ReadonlySet<string> = new Set()
+type SessionMessageWithParent = SessionMessageInfo & { parentID?: string }
 
-function needsOlderTurnRoot(source: readonly SessionMessageInfo[]) {
+function needsOlderTurnRoot(source: readonly SessionMessageWithParent[]) {
   const boundary = source.find(
     (message) =>
       message.type === "user" ||
@@ -41,7 +47,13 @@ function needsOlderTurnRoot(source: readonly SessionMessageInfo[]) {
       message.type === "assistant" ||
       (message.type === "synthetic" && message.description?.trim()),
   )
-  return boundary?.type === "assistant"
+  return boundary?.type === "assistant" && !boundary.parentID
+}
+
+type CurrentSessionMessagePage = {
+  data: SessionMessageWithParent[]
+  parents?: SessionMessageWithParent[]
+  cursor: { previous?: string | null; next?: string | null }
 }
 
 type OptimisticItem = {
@@ -54,14 +66,14 @@ type OptimisticItem = {
 type MessagePage = {
   session: Message[]
   part: { id: string; part: Part[] }[]
-  source?: SessionMessageInfo[]
+  source?: SessionMessageWithParent[]
   sourceMode?: "latest" | "older"
   projectSource?: boolean
   cursor?: string
   complete: boolean
 }
 
-function legacyMessageSource(items: { info: Message; parts: Part[] }[]): SessionMessageInfo[] {
+function legacyMessageSource(items: { info: Message; parts: Part[] }[]): SessionMessageWithParent[] {
   return items
     .slice()
     .sort((a, b) => compareMessages(a.info, b.info))
@@ -202,7 +214,7 @@ export function createServerSession(
     permission: {} as Record<string, PermissionRequest[]>,
     question: {} as Record<string, QuestionRequest[]>,
     message: {} as Record<string, Message[]>,
-    session_message: {} as Record<string, SessionMessageInfo[]>,
+    session_message: {} as Record<string, SessionMessageWithParent[]>,
     part: {} as Record<string, Part[]>,
     part_text_accum_delta: {} as Record<string, string>,
     session_working(id: string) {
@@ -572,10 +584,12 @@ export function createServerSession(
 
   const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
     if (messageApi && (await options?.protocol) !== "v1") {
-      const request = (cursor?: string) =>
+      const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
         (options?.retry ?? retry)(() => {
           onAttempt?.()
-          return messageApi.list(cursor ? { sessionID, limit, cursor } : { sessionID, limit, order: "desc" })
+          return messageApi
+            .list(cursor ? { sessionID, limit, cursor } : { sessionID, limit, order: "desc" })
+            .then((response) => response as unknown as CurrentSessionMessagePage)
         })
       const first = await request(before)
       const pages = [first]
@@ -585,7 +599,11 @@ export function createServerSession(
         if (!response.data.length) break
       }
       const response = pages.at(-1)!
-      const source = pages.flatMap((page) => page.data).toReversed()
+      const source = [
+        ...new Map(
+          pages.flatMap((page) => [...page.data, ...(page.parents ?? [])]).map((message) => [message.id, message]),
+        ).values(),
+      ].sort(compareMessages)
       const normalized = normalizeSessionMessages(sessionID, source)
       return {
         session: normalized.messages.sort(compareMessages),
@@ -596,7 +614,7 @@ export function createServerSession(
         sourceMode: before ? ("older" as const) : ("latest" as const),
         projectSource: true,
         cursor: response.cursor.next ?? undefined,
-        complete: response.data.length === 0,
+        complete: !response.cursor.next,
       }
     }
     const response = await (options?.retry ?? retry)(() => {
@@ -717,10 +735,24 @@ export function createServerSession(
       ? (() => {
           const incoming = new Map(page.source.map((message) => [message.id, message]))
           const existing = data.session_message[sessionID] ?? []
-          const current = existing.filter((message) => !incoming.has(message.id))
+          const boundary = page.source[0]
+          const current = existing.filter(
+            (message) =>
+              !incoming.has(message.id) &&
+              (load?.touchedSource.has(message.id) ||
+                page.sourceMode === "older" ||
+                (!page.complete &&
+                  (!boundary ||
+                    message.time.created < boundary.time.created ||
+                    (message.time.created === boundary.time.created && cmp(message.id, boundary.id) < 0)))),
+          )
           const live = new Map(existing.map((message) => [message.id, message]))
-          return (page.sourceMode === "older" ? [...page.source, ...current] : [...current, ...page.source]).map(
-            (message) => (load?.touchedSource.has(message.id) ? (live.get(message.id) ?? message) : message),
+          return (page.sourceMode === "older" ? [...page.source, ...current] : [...current, ...page.source]).flatMap(
+            (message) => {
+              if (!load?.touchedSource.has(message.id)) return [message]
+              const updated = live.get(message.id)
+              return updated ? [updated] : []
+            },
           )
         })()
       : undefined
@@ -813,21 +845,26 @@ export function createServerSession(
             ),
           ),
         ]
-        for (const parentID of parentIDs) {
+        for (let index = 0; index < parentIDs.length; index += parentMessageBatchSize) {
           if (generations.get(sessionID) !== active) break
-          const parent = await fetchMessage(sessionID, parentID, () =>
-            resetMessageLoad(sessionID, load, messageLoadBaseline(load, parentID)),
-          ).catch((error) => {
-            const cause = error instanceof Error && typeof error.cause === "object" ? error.cause : undefined
-            if (cause && "status" in cause && cause.status === 404) {
-              load.removedMessages.add(parentID)
-              return
-            }
-            throw error
-          })
-          if (!parent) continue
-          if (parent.message.role !== "user") throw new Error(`Assistant parent is not a user message: ${parentID}`)
-          parents.push(parent)
+          const batch = await Promise.all(
+            parentIDs.slice(index, index + parentMessageBatchSize).map(async (parentID) => {
+              const parent = await fetchMessage(sessionID, parentID, () =>
+                resetMessageLoad(sessionID, load, messageLoadBaseline(load, parentID)),
+              ).catch((error) => {
+                const cause = error instanceof Error && typeof error.cause === "object" ? error.cause : undefined
+                if (cause && "status" in cause && cause.status === 404) {
+                  load.removedMessages.add(parentID)
+                  return
+                }
+                throw error
+              })
+              if (!parent) return
+              if (parent.message.role !== "user") throw new Error(`Assistant parent is not a user message: ${parentID}`)
+              return parent
+            }),
+          )
+          parents.push(...batch.filter((parent): parent is NonNullable<typeof parent> => !!parent))
         }
       }
       if (generations.get(sessionID) !== active) return

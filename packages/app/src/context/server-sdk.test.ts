@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test"
-import { adaptServerEvent, coalesceServerEvents, enqueueServerEvent, resumeStreamAfterPageShow } from "./server-sdk"
+import {
+  adaptServerEvent,
+  coalesceServerEvents,
+  enqueueServerEvent,
+  resumeStreamAfterPageShow,
+  shouldReconnectRemoteEventStream,
+} from "./server-sdk"
 import type { OpenCodeEvent } from "@opencode-ai/client/promise"
 import type { Event } from "@openctrlc/sdk/v2/client"
 
@@ -12,6 +18,23 @@ describe("resumeStreamAfterPageShow", () => {
     resumeStreamAfterPageShow({ persisted: true } as PageTransitionEvent, start)
 
     expect(starts).toBe(1)
+  })
+})
+
+describe("shouldReconnectRemoteEventStream", () => {
+  test("reconnects once when the peer becomes ready", () => {
+    expect(shouldReconnectRemoteEventStream("checking")).toBe(true)
+  })
+
+  test("does not reopen the event stream when the selected ICE route changes", () => {
+    expect(shouldReconnectRemoteEventStream("direct")).toBe(false)
+    expect(shouldReconnectRemoteEventStream("turn")).toBe(false)
+  })
+
+  test("keeps the relay event stream when direct transport is unavailable", () => {
+    expect(shouldReconnectRemoteEventStream("connecting")).toBe(false)
+    expect(shouldReconnectRemoteEventStream("relay")).toBe(false)
+    expect(shouldReconnectRemoteEventStream("unavailable")).toBe(false)
   })
 })
 

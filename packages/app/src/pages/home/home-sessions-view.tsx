@@ -442,7 +442,7 @@ function HomeSessionRow(props: HomeSessionsViewProps & { record: HomeSessionReco
         onMouseDown={(event) => {
           if (event.button === 1) event.preventDefault()
         }}
-        onMouseEnter={() => props.onPrefetchSession?.(props.record.session)}
+        onPointerEnter={() => props.onPrefetchSession?.(props.record.session)}
         onClick={(event) => props.onOpenSession(props.record.session, { background: isBackgroundOpen(event) })}
         onAuxClick={(event) => {
           if (!isBackgroundOpen(event)) return

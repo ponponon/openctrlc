@@ -39,7 +39,7 @@ import { SessionID, MessageID, PartID } from "./schema"
 
 import type { Provider } from "@/provider/provider"
 import { Global } from "@openctrlc/core/global"
-import { Effect, Layer, Option, Context, Schema, Types } from "effect"
+import { Effect, Layer, Option, Context, Schema, Types, SynchronizedRef, Exit } from "effect"
 import { NonNegativeInt, optional } from "@openctrlc/core/schema"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderV2 } from "@openctrlc/core/provider"
@@ -495,6 +495,7 @@ const layer: Layer.Layer<
   Effect.gen(function* () {
     const { db } = yield* Database.Service
     const database = yield* Database.Service
+    const recoveryCache = yield* SynchronizedRef.make(new Map<SessionID, Effect.Effect<void>>())
     const background = yield* BackgroundJob.Service
     const events = yield* EventV2Bridge.Service
     const flags = yield* RuntimeFlags.Service
@@ -632,6 +633,13 @@ const layer: Layer.Layer<
     const updateMessage = <T extends SessionV1.Info>(msg: T): Effect.Effect<T> =>
       Effect.gen(function* () {
         yield* events.publish(SessionV1.Event.MessageUpdated, { sessionID: msg.sessionID, info: msg })
+        if (msg.role === "assistant" && msg.time.completed === undefined) {
+          yield* SynchronizedRef.update(recoveryCache, (cache) => {
+            const next = new Map(cache)
+            next.delete(msg.sessionID)
+            return next
+          })
+        }
         return msg
       }).pipe(Effect.withSpan("Session.updateMessage"))
 
@@ -665,22 +673,57 @@ const layer: Layer.Layer<
     })
 
     const recover = Effect.fn("Session.recover")(function* (sessionID: SessionID) {
-      const messages = yield* loadMessages(sessionID).pipe(Effect.catchTag("NotFoundError", () => Effect.succeed([])))
-      const changes = recoverInterruptedMessages(messages, Date.now())
-      yield* Effect.forEach(
-        changes,
-        (change) =>
-          Effect.gen(function* () {
-            yield* Effect.forEach(change.parts, updatePart, { discard: true })
-            yield* updateMessage(change.message)
-            yield* Effect.logWarning("recovered interrupted session turn", {
-              "session.id": sessionID,
-              messageID: change.message.id,
-              toolCount: change.parts.length,
-            })
-          }),
-        { discard: true },
+      const cached = yield* SynchronizedRef.modifyEffect(
+        recoveryCache,
+        Effect.fnUntraced(function* (cache) {
+          const current = cache.get(sessionID)
+          if (current) {
+            const next = new Map(cache)
+            next.delete(sessionID)
+            next.set(sessionID, current)
+            return [current, next] as const
+          }
+          const next = yield* Effect.cached(
+            Effect.gen(function* () {
+              const messages = yield* MessageV2.incomplete(sessionID).pipe(
+                Effect.provideService(Database.Service, database),
+              )
+              const changes = recoverInterruptedMessages(messages, Date.now())
+              yield* Effect.forEach(
+                changes,
+                (change) =>
+                  Effect.gen(function* () {
+                    yield* Effect.forEach(change.parts, updatePart, { discard: true })
+                    yield* updateMessage(change.message)
+                    yield* Effect.logWarning("recovered interrupted session turn", {
+                      "session.id": sessionID,
+                      messageID: change.message.id,
+                      toolCount: change.parts.length,
+                    })
+                  }),
+                { discard: true },
+              )
+            }),
+          )
+          const updated = new Map(cache).set(sessionID, next)
+          while (updated.size > 2_048) {
+            const oldest = updated.keys().next().value
+            if (!oldest) break
+            updated.delete(oldest)
+          }
+          return [next, updated] as const
+        }),
       )
+      const result = yield* Effect.exit(cached)
+      if (Exit.isFailure(result)) {
+        yield* SynchronizedRef.update(recoveryCache, (cache) => {
+          if (cache.get(sessionID) !== cached) return cache
+          const updated = new Map(cache)
+          updated.delete(sessionID)
+          return updated
+        })
+        return yield* Effect.failCause(result.cause)
+      }
     })
 
     const getPart: Interface["getPart"] = Effect.fn("Session.getPart")(function* (input) {

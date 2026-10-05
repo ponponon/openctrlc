@@ -31,6 +31,7 @@ export function createChildStoreManager(input: {
   onDispose: (directory: string) => void
   translate: (key: string, vars?: Record<string, string | number>) => string
   queryOptions: QueryOptionsApi
+  providerView?: (directory: string) => "summary" | "full"
   global: {
     provider: NormalizedProviderListResponse
   }
@@ -193,7 +194,7 @@ export function createChildStoreManager(input: {
           const mcpResourceQuery = useQuery(() => ({ ...input.queryOptions.mcpResources(key), enabled: mcpEnabled() }))
           const lspQuery = useQuery(() => ({ ...input.queryOptions.lsp(key), enabled: instanceQueriesEnabled() }))
           const providerQuery = useQuery(() => ({
-            ...input.queryOptions.providers(key),
+            ...input.queryOptions.providers(key, input.providerView?.(key) ?? "summary"),
             enabled: instanceQueriesEnabled(),
           }))
           const referenceQuery = useQuery(() => ({

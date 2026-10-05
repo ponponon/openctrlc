@@ -26,6 +26,22 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
       typeof sessionID === "string" && sessionID.length > 0 && sessionID.length <= maxSessionIDLength,
   )
   if (sessionIDs.length !== input.sessionIDs.length) return
+  const sessionIDSet = new Set(sessionIDs)
+  if (input.sessionInfo !== undefined && (!Array.isArray(input.sessionInfo) || input.sessionInfo.length > maxSessions))
+    return
+  const sessionInfo = (input.sessionInfo as unknown[] | undefined)?.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return []
+    const info = item as Record<string, unknown>
+    if (
+      typeof info.sessionID !== "string" ||
+      !sessionIDSet.has(info.sessionID) ||
+      typeof info.title !== "string" ||
+      info.title.length > 200
+    )
+      return []
+    return [{ sessionID: info.sessionID, title: info.title }]
+  })
+  if (sessionInfo && input.sessionInfo && sessionInfo.length !== input.sessionInfo.length) return
   if (
     input.lastProject !== undefined &&
     (typeof input.lastProject !== "string" || input.lastProject.length > maxPathLength)
@@ -43,23 +59,25 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
     projects,
     ...(typeof input.lastProject === "string" ? { lastProject: input.lastProject } : {}),
     sessionIDs,
+    ...(sessionInfo ? { sessionInfo } : {}),
     ...(typeof input.activeSessionID === "string" ? { activeSessionID: input.activeSessionID } : {}),
     ...(typeof input.hostName === "string" ? { hostName: input.hostName } : {}),
   }
 }
 
-export function takeRemoteWorkspaceSnapshot() {
+export function takeRemoteWorkspaceSnapshot(sessionID?: string) {
   if (typeof sessionStorage === "undefined" && typeof localStorage === "undefined") return
+  const key = remoteWorkspaceStorageKey(sessionID)
   let value: string | null = null
   try {
-    value = sessionStorage.getItem(storageKey)
-    sessionStorage.removeItem(storageKey)
+    value = sessionStorage.getItem(key)
+    sessionStorage.removeItem(key)
   } catch {}
   // New tabs share the boot cookie with the first tab but not sessionStorage;
   // keep a localStorage fallback so they still restore the desktop workspace.
   if (!value) {
     try {
-      value = localStorage.getItem(storageKey)
+      value = localStorage.getItem(key)
     } catch {}
   }
   if (!value || value.length > 64 * 1024) return
@@ -69,7 +87,7 @@ export function takeRemoteWorkspaceSnapshot() {
     if (name) {
       cachedHostName = name
       try {
-        localStorage.setItem(hostNameKey, name)
+        localStorage.setItem(remoteHostNameStorageKey(sessionID), name)
       } catch {}
     }
     const relaySession =
@@ -88,12 +106,17 @@ function readCookie(name: string) {
   return hit?.slice(hit.indexOf("=") + 1).trim()
 }
 
-export function remoteHostName() {
+export function remoteHostName(sessionID = currentRemoteSessionID()) {
   if (cachedHostName) return cachedHostName
   try {
-    cachedHostName = localStorage.getItem(hostNameKey) ?? undefined
+    cachedHostName = localStorage.getItem(remoteHostNameStorageKey(sessionID)) ?? undefined
   } catch {}
   return cachedHostName
+}
+
+export function currentRemoteSessionID() {
+  const active = readCookie("oc_active") ?? readCookie("__Host-oc_active")
+  return active && /^[A-Za-z0-9_-]{16}$/.test(active) ? active : undefined
 }
 
 const desktopsKey = "openctrlc.remote-desktops"
@@ -137,6 +160,10 @@ export function switchRemoteDesktop(sessionID: string) {
   location.reload()
 }
 
-export function remoteWorkspaceStorageKey() {
-  return storageKey
+export function remoteWorkspaceStorageKey(sessionID?: string) {
+  return sessionID ? `${storageKey}:${sessionID}` : storageKey
+}
+
+function remoteHostNameStorageKey(sessionID?: string) {
+  return sessionID ? `${hostNameKey}:${sessionID}` : hostNameKey
 }
