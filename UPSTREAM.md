@@ -129,6 +129,23 @@ remaining 14 and the statistics portion of `a79ecfe109` are recorded below.
   removed even on failure. The independent manual npm path is documented
   separately and does not automatically consume this CI artifact.
 
+## Locally fixed upstream defects
+
+Upstream code that is already wrong in the baseline (or in an integrated
+commit) and is repaired only in OpenCtrlC. Selective sync must keep the local
+fix; do not restore the upstream line when a later commit touches the same
+call site.
+
+- `titlebar.tsx` `onNavigate` `scrollIntoView` (introduced upstream in
+  `9431356715` `fix(app): handle tab overflow and scrolling in titlebar`
+  (#30886, 2026-06-05, Brendan Allan): the call used
+  `scrollIntoView({ behavior: "instant" })` with default `block: "start"`.
+  Clicking an offscreen leading tab therefore also scrolled overflow ancestors
+  vertically and clipped the v2 titlebar chips (`省流` / lite-network). Fixed
+  locally in `b5f3983a` by passing `{ block: "nearest", inline: "nearest" }`
+  and setting `overflow-y-hidden` on `[data-slot="titlebar-tabs-scroll"]`.
+  Regression: `packages/app/e2e/regression/titlebar-tab-scroll-anchor.spec.ts`.
+
 ## Deferred upstream commits
 
 These were reviewed but intentionally left for an isolated follow-up because
