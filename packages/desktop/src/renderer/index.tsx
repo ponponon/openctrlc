@@ -90,9 +90,7 @@ function DesktopMemoryRouter(props: BaseRouterProps & { windowID: string }) {
   // Restored session tabs need the session chrome chunk immediately; otherwise
   // first paint after restart waits on a cold 1MB route import.
   if (initialUrl.includes("/session/")) {
-    void import("@openctrlc/app")
-      .then((mod) => mod.warmSessionRoute())
-      .catch(() => undefined)
+    void import("@openctrlc/app").then((mod) => mod.warmSessionRoute()).catch(() => undefined)
   }
   onCleanup(
     history.listen((value) =>

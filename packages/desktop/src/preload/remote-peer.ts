@@ -13,16 +13,30 @@ const api = {
     ipcRenderer.on("remote-peer:event", handler)
     return () => ipcRenderer.removeListener("remote-peer:event", handler)
   },
-  ready(peerID: string) { ipcRenderer.send("remote-peer:ready", peerID) },
-  route(peerID: string, route: PeerRoute, bytes: PeerRouteBytes) { ipcRenderer.send("remote-peer:route", peerID, route, bytes) },
-  signal(peerID: string, signal: PeerSignal) { ipcRenderer.send("remote-peer:signal", peerID, signal) },
-  send(peerID: string, data: string | ArrayBuffer) { ipcRenderer.send("remote-peer:message", peerID, data) },
-  drained(peerID: string, bytes: number, sent: boolean) { ipcRenderer.send("remote-peer:drained", peerID, bytes, sent) },
-  closed(peerID: string) { ipcRenderer.send("remote-peer:closed", peerID) },
+  ready(peerID: string) {
+    ipcRenderer.send("remote-peer:ready", peerID)
+  },
+  route(peerID: string, route: PeerRoute, bytes: PeerRouteBytes) {
+    ipcRenderer.send("remote-peer:route", peerID, route, bytes)
+  },
+  signal(peerID: string, signal: PeerSignal) {
+    ipcRenderer.send("remote-peer:signal", peerID, signal)
+  },
+  send(peerID: string, data: string | ArrayBuffer) {
+    ipcRenderer.send("remote-peer:message", peerID, data)
+  },
+  drained(peerID: string, bytes: number, sent: boolean) {
+    ipcRenderer.send("remote-peer:drained", peerID, bytes, sent)
+  },
+  closed(peerID: string) {
+    ipcRenderer.send("remote-peer:closed", peerID)
+  },
 }
 
 contextBridge.exposeInMainWorld("remotePeerHost", api)
 
 declare global {
-  interface Window { remotePeerHost: typeof api }
+  interface Window {
+    remotePeerHost: typeof api
+  }
 }

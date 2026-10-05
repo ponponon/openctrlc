@@ -520,7 +520,11 @@ function ModelSelectorPopoverV2View(props: {
           </div>
           <div class="h-px bg-v2-border-border-muted" />
           <Show when={props.catalogLoading && props.hasModels()}>
-            <div class="flex items-center gap-2 px-3 py-2 text-[12px] font-[440] text-v2-text-text-muted" role="status" aria-live="polite">
+            <div
+              class="flex items-center gap-2 px-3 py-2 text-[12px] font-[440] text-v2-text-text-muted"
+              role="status"
+              aria-live="polite"
+            >
               <Spinner class="size-3.5 shrink-0 text-v2-icon-icon-muted" />
               <span>{language.t("dialog.model.loading")}</span>
             </div>
@@ -559,7 +563,11 @@ function ModelSelectorPopoverV2View(props: {
                       </Show>
                     }
                   >
-                    <div class="flex h-12 items-center gap-2 px-3 text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint" role="status" aria-live="polite">
+                    <div
+                      class="flex h-12 items-center gap-2 px-3 text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint"
+                      role="status"
+                      aria-live="polite"
+                    >
                       <Spinner class="size-3.5 shrink-0 text-v2-icon-icon-muted" />
                       {language.t("dialog.model.loading")}
                     </div>

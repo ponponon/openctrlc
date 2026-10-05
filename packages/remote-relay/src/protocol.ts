@@ -109,8 +109,12 @@ export type PeerRouteBytes = { directBytes: number; turnBytes: number }
 export function isPeerRouteBytes(value: unknown): value is PeerRouteBytes {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false
   const bytes = value as Record<string, unknown>
-  return Number.isSafeInteger(bytes.directBytes) && (bytes.directBytes as number) >= 0 &&
-    Number.isSafeInteger(bytes.turnBytes) && (bytes.turnBytes as number) >= 0
+  return (
+    Number.isSafeInteger(bytes.directBytes) &&
+    (bytes.directBytes as number) >= 0 &&
+    Number.isSafeInteger(bytes.turnBytes) &&
+    (bytes.turnBytes as number) >= 0
+  )
 }
 
 export type PeerSignal =
@@ -154,10 +158,14 @@ export function isPeerSignal(value: unknown): value is PeerSignal {
     return typeof signal.sdp === "string" && signal.sdp.length > 0 && signal.sdp.length <= 60_000
   return (
     signal.type === "candidate" &&
-    typeof signal.candidate === "string" && signal.candidate.length <= 4096 &&
+    typeof signal.candidate === "string" &&
+    signal.candidate.length <= 4096 &&
     (signal.sdpMid === null || (typeof signal.sdpMid === "string" && signal.sdpMid.length <= 256)) &&
-    (signal.sdpMLineIndex === null || (typeof signal.sdpMLineIndex === "number" &&
-      Number.isInteger(signal.sdpMLineIndex) && signal.sdpMLineIndex >= 0 && signal.sdpMLineIndex < 256))
+    (signal.sdpMLineIndex === null ||
+      (typeof signal.sdpMLineIndex === "number" &&
+        Number.isInteger(signal.sdpMLineIndex) &&
+        signal.sdpMLineIndex >= 0 &&
+        signal.sdpMLineIndex < 256))
   )
 }
 

@@ -97,9 +97,7 @@ function SessionTabEntry(props: {
     ({ id, ctx }) => ctx.sync.session.resolve(id).catch(() => undefined),
   )
   const session = createMemo(() => cachedSession() ?? loadedSession())
-  const missingSession = createMemo(
-    () => props.active() && !!props.serverCtx() && !loadedSession.loading && !session(),
-  )
+  const missingSession = createMemo(() => props.active() && !!props.serverCtx() && !loadedSession.loading && !session())
   const deferred = createMemo(() => platform.platform === "web" && !props.active())
   const visible = createMemo(() => !!session() || missingSession() || !!persisted()?.title || deferred())
   let prefetched = false
@@ -165,8 +163,7 @@ function SessionTabEntry(props: {
         forceTruncate={props.forceTruncate}
         session={session}
         fallbackTitle={
-          persisted()?.title ??
-          (missingSession() || deferred() ? language.t("session.tab.unknown") : undefined)
+          persisted()?.title ?? (missingSession() || deferred() ? language.t("session.tab.unknown") : undefined)
         }
         onRename={rename}
         onNavigate={props.onNavigate}

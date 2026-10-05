@@ -1050,13 +1050,16 @@ export const dict = {
   "remote.transport.checking": "経路を確認中",
   "remote.transport.checkingHint": "P2P チャネルは接続済みです。通信が直接接続か TURN リレー経由かを確認しています。",
   "remote.transport.direct": "P2P 直接接続",
-  "remote.transport.directHint": "P2P チャネルが使用可能です。新しい API リクエストとイベントストリームはこのチャネルを使います。開いているターミナルは一度再接続して経路を切り替えます。",
+  "remote.transport.directHint":
+    "P2P チャネルが使用可能です。新しい API リクエストとイベントストリームはこのチャネルを使います。開いているターミナルは一度再接続して経路を切り替えます。",
   "remote.transport.turn": "TURN リレー",
-  "remote.transport.turnHint": "WebRTC は TURN リレー経由で接続しています。通信量に応じて中継料金が発生する場合があります。",
+  "remote.transport.turnHint":
+    "WebRTC は TURN リレー経由で接続しています。通信量に応じて中継料金が発生する場合があります。",
   "remote.transport.relay": "Relay 接続",
   "remote.transport.relayHint": "アプリの通信は現在 OpenCtrlC Relay 経由です。直接接続は自動的に再試行されます。",
   "remote.transport.unavailable": "Relay のみ",
-  "remote.transport.unavailableHint": "このセッションでは直接接続を利用できません。アプリの通信は Relay 経由で続行します。",
+  "remote.transport.unavailableHint":
+    "このセッションでは直接接続を利用できません。アプリの通信は Relay 経由で続行します。",
   "remoteAccess.viewerExpiring": "しばらく未使用です。承認を維持するには早く再接続してください",
   "remote.desktop.offlineTitle": "デスクトップがオフラインです",
   "remote.desktop.offlineDescription":

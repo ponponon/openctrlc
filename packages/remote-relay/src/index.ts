@@ -16,12 +16,7 @@ import {
 import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { sanitizeResponseHeaders, shouldGzipToViewer } from "./response-encoding"
 import { peerRouteCounts, recordPeerRoute, type PeerRouteState } from "./peer-usage"
-import {
-  createPeerIceServers,
-  removeTurnIceServers,
-  stunServersConfigured,
-  turnCredentialsConfigured,
-} from "./turn"
+import { createPeerIceServers, removeTurnIceServers, stunServersConfigured, turnCredentialsConfigured } from "./turn"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -128,11 +123,14 @@ function schedulePersist(delay = 250) {
   if (persistTimer && persistDueAt <= dueAt) return
   if (persistTimer) clearTimeout(persistTimer)
   persistDueAt = dueAt
-  persistTimer = setTimeout(() => {
-    persistTimer = undefined
-    persistDueAt = 0
-    persistState()
-  }, Math.max(0, dueAt - Date.now()))
+  persistTimer = setTimeout(
+    () => {
+      persistTimer = undefined
+      persistDueAt = 0
+      persistState()
+    },
+    Math.max(0, dueAt - Date.now()),
+  )
 }
 
 function persistState() {
@@ -304,8 +302,12 @@ const server = Bun.serve<SocketData>({
       if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
       if (session.host?.readyState !== 1) return new Response("Desktop disconnected", { status: 503, headers: noStore })
       if (session.peers.size >= maxSockets) return new Response("Too many peers", { status: 429, headers: noStore })
-      if (server.upgrade(request, { data: { role: "viewer", mode: "peer", sessionID: session.id,
-        viewerToken: viewer.token, id: randomToken(12) } })) return
+      if (
+        server.upgrade(request, {
+          data: { role: "viewer", mode: "peer", sessionID: session.id, viewerToken: viewer.token, id: randomToken(12) },
+        })
+      )
+        return
       return new Response("WebSocket upgrade required", { status: 426, headers: noStore })
     }
     if (request.method === "GET" && request.headers.get("sec-fetch-dest") === "document") {
@@ -654,11 +656,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     session.peers.get(value.peerID)?.send(JSON.stringify({ type: "peer.signal", signal: value.signal }))
     return
   }
-  if (
-    value.type === "peer.route" &&
-    typeof value.peerID === "string" &&
-    session.peers.has(value.peerID)
-  ) {
+  if (value.type === "peer.route" && typeof value.peerID === "string" && session.peers.has(value.peerID)) {
     const delta = recordPeerRoute(
       session.peerRoutes,
       value.peerID,
@@ -675,10 +673,12 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
     if (value.type === "peer.close") {
       session.peerRoutes.delete(value.peerID)
       const capacityLimited = value.code === 4429
-      session.peers.get(value.peerID)?.close(
-        capacityLimited ? 4429 : 1000,
-        capacityLimited ? "Direct peer capacity reached" : "Desktop closed direct connection",
-      )
+      session.peers
+        .get(value.peerID)
+        ?.close(
+          capacityLimited ? 4429 : 1000,
+          capacityLimited ? "Direct peer capacity reached" : "Desktop closed direct connection",
+        )
     }
     return
   }
@@ -928,12 +928,13 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     // them before upload. Never compress a body that still has an encoding.
     if (shouldGzipToViewer(request, responseHeaders)) {
       responseHeaders.set("content-encoding", "gzip")
-      return new Response(body.pipeThrough(
-        new CompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>,
-      ), {
-        status: result.status,
-        headers: responseHeaders,
-      })
+      return new Response(
+        body.pipeThrough(new CompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>),
+        {
+          status: result.status,
+          headers: responseHeaders,
+        },
+      )
     }
     return new Response(body, {
       status: result.status,
@@ -1130,8 +1131,8 @@ function sessionFor(request: Request) {
   const cookies = parseCookies(request.headers.get("cookie"))
   // Pin API and signaling traffic to the desktop selected when this tab booted.
   // A failed explicit selection must never fall through to another desktop's cookie.
-  const selected = request.headers.get("x-openctrlc-remote-session") ??
-    new URL(request.url).searchParams.get("_oc_remote_session")
+  const selected =
+    request.headers.get("x-openctrlc-remote-session") ?? new URL(request.url).searchParams.get("_oc_remote_session")
   if (selected !== null) {
     if (!/^[A-Za-z0-9_-]{16}$/.test(selected)) return
     const hit = viewerForToken(cookies[viewerCookieName(selected)])

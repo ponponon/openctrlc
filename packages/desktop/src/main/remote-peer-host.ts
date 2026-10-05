@@ -1,6 +1,12 @@
 import { app, BrowserWindow, ipcMain } from "electron"
 import { join } from "node:path"
-import { isPeerRouteBytes, isPeerSignal, type PeerIceServer, type PeerRoute, type PeerSignal } from "@openctrlc/remote-relay/protocol"
+import {
+  isPeerRouteBytes,
+  isPeerSignal,
+  type PeerIceServer,
+  type PeerRoute,
+  type PeerSignal,
+} from "@openctrlc/remote-relay/protocol"
 import type { RemoteAccessService } from "./remote-access"
 
 const peerIDPattern = /^[A-Za-z0-9_-]{16}$/
@@ -32,11 +38,12 @@ export function registerRemotePeerHost(remoteAccess: RemoteAccessService) {
       return
     }
     const list = queued.get(peerID) ?? []
-    const bytes = event.type === "send"
-      ? event.bytes
-      : event.type === "signal"
-        ? new TextEncoder().encode(JSON.stringify(event.signal)).byteLength
-        : 0
+    const bytes =
+      event.type === "send"
+        ? event.bytes
+        : event.type === "signal"
+          ? new TextEncoder().encode(JSON.stringify(event.signal)).byteLength
+          : 0
     if (list.length >= 256 || totalQueuedBytes + bytes > maxQueuedPeerBytes) {
       remoteAccess.receivePeerClosed(peerID)
       return
@@ -48,8 +55,13 @@ export function registerRemotePeerHost(remoteAccess: RemoteAccessService) {
   }
 
   const belongsToPeerWindow = (event: Electron.IpcMainEvent, peerID: unknown): peerID is string =>
-    !!window && !window.isDestroyed() && event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame &&
-    typeof peerID === "string" && peerIDPattern.test(peerID) && peers.has(peerID)
+    !!window &&
+    !window.isDestroyed() &&
+    event.sender === window.webContents &&
+    event.senderFrame === window.webContents.mainFrame &&
+    typeof peerID === "string" &&
+    peerIDPattern.test(peerID) &&
+    peers.has(peerID)
 
   const onReady = (event: Electron.IpcMainEvent, peerID: unknown) => {
     if (!belongsToPeerWindow(event, peerID)) return
@@ -117,25 +129,28 @@ export function registerRemotePeerHost(remoteAccess: RemoteAccessService) {
         })
         peerWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }))
         peerWindow.webContents.on("will-navigate", (event) => event.preventDefault())
-        void peerWindow.loadFile(join(__dirname, "../renderer/peer.html")).then(() => {
-          if (window !== peerWindow || peerWindow.isDestroyed()) return
-          ready = true
-          for (const [id, events] of queued)
-            for (const item of events) peerWindow.webContents.send("remote-peer:event", { ...item, peerID: id })
-          queued.clear()
-          queuedPeerBytes.clear()
-          totalQueuedBytes = 0
-        }).catch(() => {
-          if (window !== peerWindow) return
-          ready = false
-          window = undefined
-          for (const id of peers) remoteAccess.receivePeerClosed(id)
-          peers.clear()
-          queued.clear()
-          queuedPeerBytes.clear()
-          totalQueuedBytes = 0
-          if (!peerWindow.isDestroyed()) peerWindow.destroy()
-        })
+        void peerWindow
+          .loadFile(join(__dirname, "../renderer/peer.html"))
+          .then(() => {
+            if (window !== peerWindow || peerWindow.isDestroyed()) return
+            ready = true
+            for (const [id, events] of queued)
+              for (const item of events) peerWindow.webContents.send("remote-peer:event", { ...item, peerID: id })
+            queued.clear()
+            queuedPeerBytes.clear()
+            totalQueuedBytes = 0
+          })
+          .catch(() => {
+            if (window !== peerWindow) return
+            ready = false
+            window = undefined
+            for (const id of peers) remoteAccess.receivePeerClosed(id)
+            peers.clear()
+            queued.clear()
+            queuedPeerBytes.clear()
+            totalQueuedBytes = 0
+            if (!peerWindow.isDestroyed()) peerWindow.destroy()
+          })
         return
       }
       dispatch(peerID, { type: "open", iceServers })

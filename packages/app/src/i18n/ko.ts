@@ -803,17 +803,22 @@ export const dict = {
   "remote.liteNetwork": "절약",
   "remote.liteNetworkHint": "네트워크가 느리거나 데이터 요금이 적용되어 미리 가져오기와 무거운 미리보기를 제한합니다",
   "remote.transport.connecting": "릴레이 · P2P 중",
-  "remote.transport.connectingHint": "P2P 연결을 협상 중입니다. 연결이 완료될 때까지 앱 요청은 릴레이를 통해 전달됩니다.",
+  "remote.transport.connectingHint":
+    "P2P 연결을 협상 중입니다. 연결이 완료될 때까지 앱 요청은 릴레이를 통해 전달됩니다.",
   "remote.transport.checking": "경로 확인 중",
-  "remote.transport.checkingHint": "P2P 채널이 연결되었습니다. 트래픽이 직접 연결인지 TURN 릴레이를 통하는지 확인 중입니다.",
+  "remote.transport.checkingHint":
+    "P2P 채널이 연결되었습니다. 트래픽이 직접 연결인지 TURN 릴레이를 통하는지 확인 중입니다.",
   "remote.transport.direct": "P2P 직접 연결",
-  "remote.transport.directHint": "P2P 채널이 준비되었습니다. 새 API 요청과 실시간 이벤트 스트림이 이 채널을 사용하며, 열려 있는 터미널은 한 번 다시 연결해 경로를 전환합니다.",
+  "remote.transport.directHint":
+    "P2P 채널이 준비되었습니다. 새 API 요청과 실시간 이벤트 스트림이 이 채널을 사용하며, 열려 있는 터미널은 한 번 다시 연결해 경로를 전환합니다.",
   "remote.transport.turn": "TURN 릴레이",
-  "remote.transport.turnHint": "WebRTC가 TURN 릴레이를 통해 연결되어 있어 사용량에 따라 중계 요금이 발생할 수 있습니다.",
+  "remote.transport.turnHint":
+    "WebRTC가 TURN 릴레이를 통해 연결되어 있어 사용량에 따라 중계 요금이 발생할 수 있습니다.",
   "remote.transport.relay": "릴레이 연결",
   "remote.transport.relayHint": "앱 요청이 현재 OpenCtrlC 릴레이를 통과합니다. 직접 연결은 자동으로 다시 시도됩니다.",
   "remote.transport.unavailable": "릴레이만 사용",
-  "remote.transport.unavailableHint": "이 세션에서는 직접 연결을 사용할 수 없습니다. 앱 요청은 릴레이를 통해 계속 전달됩니다.",
+  "remote.transport.unavailableHint":
+    "이 세션에서는 직접 연결을 사용할 수 없습니다. 앱 요청은 릴레이를 통해 계속 전달됩니다.",
   "remoteAccess.viewerExpiring": "오랫동안 사용하지 않았습니다. 승인을 유지하려면 곧 다시 연결하세요",
   "remote.desktop.offlineTitle": "데스크톱 연결 끊김",
   "remote.desktop.offlineDescription":

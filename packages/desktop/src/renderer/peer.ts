@@ -15,7 +15,8 @@ window.remotePeerHost.subscribe((event) => {
   if (event.type === "send") {
     const peer = peers.get(event.peerID)
     if (!peer) return window.remotePeerHost.drained(event.peerID, event.bytes, false)
-    void peer.send(typeof event.data === "string" ? event.data : new Uint8Array(event.data))
+    void peer
+      .send(typeof event.data === "string" ? event.data : new Uint8Array(event.data))
       .then((sent) => window.remotePeerHost.drained(event.peerID, event.bytes, sent))
     return
   }

@@ -17,12 +17,14 @@ export function selectedPeerRouteReport(stats: RTCStatsReport) {
   const remote = stats.get(pair.remoteCandidateId)
   if (local?.type !== "local-candidate" || remote?.type !== "remote-candidate") return
   const counters = pair as unknown as Record<string, unknown>
-  const bytesSent = Number.isSafeInteger(counters.bytesSent) && (counters.bytesSent as number) >= 0
-    ? counters.bytesSent as number
-    : undefined
-  const bytesReceived = Number.isSafeInteger(counters.bytesReceived) && (counters.bytesReceived as number) >= 0
-    ? counters.bytesReceived as number
-    : undefined
+  const bytesSent =
+    Number.isSafeInteger(counters.bytesSent) && (counters.bytesSent as number) >= 0
+      ? (counters.bytesSent as number)
+      : undefined
+  const bytesReceived =
+    Number.isSafeInteger(counters.bytesReceived) && (counters.bytesReceived as number) >= 0
+      ? (counters.bytesReceived as number)
+      : undefined
   return {
     route: local.candidateType === "relay" || remote.candidateType === "relay" ? "turn" : "direct",
     pairID: pair.id,
@@ -50,23 +52,29 @@ export class PeerChannel {
   #pairCounters = new Map<string, { bytesSent: number; bytesReceived: number }>()
   #routeBytes: PeerRouteBytes = { directBytes: 0, turnBytes: 0 }
 
-  constructor(private readonly options: {
-    offer: boolean
-    signal: (signal: PeerSignal) => void
-    message: (data: string | Uint8Array) => void
-    ready: () => void
-    closed: () => void
-    route?: (route: "direct" | "turn", bytes: PeerRouteBytes) => void
-    iceServers?: PeerIceServer[]
-  }) {
+  constructor(
+    private readonly options: {
+      offer: boolean
+      signal: (signal: PeerSignal) => void
+      message: (data: string | Uint8Array) => void
+      ready: () => void
+      closed: () => void
+      route?: (route: "direct" | "turn", bytes: PeerRouteBytes) => void
+      iceServers?: PeerIceServer[]
+    },
+  ) {
     this.#connection = new RTCPeerConnection({
       iceServers: options.iceServers ?? [],
     })
     this.#timer = setTimeout(() => this.close(), PEER_NEGOTIATION_TIMEOUT_MS)
     this.#connection.onicecandidate = (event) => {
       if (!event.candidate || this.#closed) return
-      options.signal({ type: "candidate", candidate: event.candidate.candidate,
-        sdpMid: event.candidate.sdpMid, sdpMLineIndex: event.candidate.sdpMLineIndex })
+      options.signal({
+        type: "candidate",
+        candidate: event.candidate.candidate,
+        sdpMid: event.candidate.sdpMid,
+        sdpMLineIndex: event.candidate.sdpMLineIndex,
+      })
     }
     this.#connection.onconnectionstatechange = () => {
       if (this.#connection.connectionState === "failed" || this.#connection.connectionState === "closed") this.close()
@@ -80,37 +88,44 @@ export class PeerChannel {
     }
     if (!options.offer) return
     this.#attach(this.#connection.createDataChannel("openctrlc-v1", { ordered: true }))
-    this.#signals = this.#connection.createOffer().then(async (description) => {
-      if (this.#closed) return
-      await this.#connection.setLocalDescription(description)
-      options.signal({ type: "offer", sdp: description.sdp! })
-    }).catch(() => this.close())
+    this.#signals = this.#connection
+      .createOffer()
+      .then(async (description) => {
+        if (this.#closed) return
+        await this.#connection.setLocalDescription(description)
+        options.signal({ type: "offer", sdp: description.sdp! })
+      })
+      .catch(() => this.close())
   }
 
-  get ready() { return !this.#closed && this.#channel?.readyState === "open" }
+  get ready() {
+    return !this.#closed && this.#channel?.readyState === "open"
+  }
 
   receiveSignal(signal: unknown) {
     if (!isPeerSignal(signal) || this.#closed) return this.close()
-    this.#signals = this.#signals.then(async () => {
-      if (this.#closed) return
-      if (signal.type === "candidate") {
-        if (!this.#connection.remoteDescription) {
-          if (this.#candidates.length >= 128) return this.close()
-          this.#candidates.push(signal)
+    this.#signals = this.#signals
+      .then(async () => {
+        if (this.#closed) return
+        if (signal.type === "candidate") {
+          if (!this.#connection.remoteDescription) {
+            if (this.#candidates.length >= 128) return this.close()
+            this.#candidates.push(signal)
+            return
+          }
+          await this.#connection.addIceCandidate(signal)
           return
         }
-        await this.#connection.addIceCandidate(signal)
-        return
-      }
-      if ((this.options.offer && signal.type !== "answer") || (!this.options.offer && signal.type !== "offer"))
-        return this.close()
-      await this.#connection.setRemoteDescription(signal)
-      for (const candidate of this.#candidates.splice(0)) await this.#connection.addIceCandidate(candidate)
-      if (signal.type !== "offer") return
-      const answer = await this.#connection.createAnswer()
-      await this.#connection.setLocalDescription(answer)
-      this.options.signal({ type: "answer", sdp: answer.sdp! })
-    }).catch(() => this.close())
+        if ((this.options.offer && signal.type !== "answer") || (!this.options.offer && signal.type !== "offer"))
+          return this.close()
+        await this.#connection.setRemoteDescription(signal)
+        for (const candidate of this.#candidates.splice(0)) await this.#connection.addIceCandidate(candidate)
+        if (signal.type !== "offer") return
+        const answer = await this.#connection.createAnswer()
+        await this.#connection.setLocalDescription(answer)
+        this.options.signal({ type: "answer", sdp: answer.sdp! })
+      })
+      .catch(() => this.close())
   }
 
   send(data: string | Uint8Array): Promise<boolean> {
@@ -126,15 +141,23 @@ export class PeerChannel {
     new DataView(frame.buffer).setUint32(1, bytes.byteLength)
     frame.set(bytes, 5)
     this.#queuedBytes += bytes.byteLength
-    const write = this.#writes.then(async () => {
-      for (let offset = 0; offset < frame.length; offset += chunkBytes) {
-        const channel = this.#channel
-        if (!channel || !this.ready) return false
-        if (channel.bufferedAmount > 256 * 1024 && !await this.#drain(channel)) return false
-        channel.send(frame.slice(offset, offset + chunkBytes).buffer)
-      }
-      return true
-    }).catch(() => { this.close(); return false }).finally(() => { this.#queuedBytes -= bytes.byteLength })
+    const write = this.#writes
+      .then(async () => {
+        for (let offset = 0; offset < frame.length; offset += chunkBytes) {
+          const channel = this.#channel
+          if (!channel || !this.ready) return false
+          if (channel.bufferedAmount > 256 * 1024 && !(await this.#drain(channel))) return false
+          channel.send(frame.slice(offset, offset + chunkBytes).buffer)
+        }
+        return true
+      })
+      .catch(() => {
+        this.close()
+        return false
+      })
+      .finally(() => {
+        this.#queuedBytes -= bytes.byteLength
+      })
     this.#writes = write
     return write
   }
@@ -200,7 +223,10 @@ export class PeerChannel {
       }
       const drained = () => done(this.ready)
       const closed = () => done(false)
-      const timer = setTimeout(() => { this.close(); done(false) }, 10_000)
+      const timer = setTimeout(() => {
+        this.close()
+        done(false)
+      }, 10_000)
       channel.addEventListener("bufferedamountlow", drained, { once: true })
       channel.addEventListener("close", closed, { once: true })
       if (channel.bufferedAmount <= channel.bufferedAmountLowThreshold) done(this.ready)
@@ -210,26 +236,29 @@ export class PeerChannel {
   #reportRoute() {
     const route = this.options.route
     if (this.#closed || this.#channel?.readyState !== "open" || !route) return
-    void this.#connection.getStats().then((stats) => {
-      if (this.#closed || this.#channel?.readyState !== "open") return
-      const selected = selectedPeerRouteReport(stats)
-      if (!selected) return
-      if (selected.bytesSent !== undefined && selected.bytesReceived !== undefined) {
-        const previous = this.#pairCounters.get(selected.pairID) ?? { bytesSent: 0, bytesReceived: 0 }
-        const bytesSent = selected.bytesSent >= previous.bytesSent
-          ? selected.bytesSent - previous.bytesSent
-          : selected.bytesSent
-        const bytesReceived = selected.bytesReceived >= previous.bytesReceived
-          ? selected.bytesReceived - previous.bytesReceived
-          : selected.bytesReceived
-        const key = selected.route === "direct" ? "directBytes" : "turnBytes"
-        this.#routeBytes[key] += bytesSent + bytesReceived
-        this.#pairCounters.set(selected.pairID, {
-          bytesSent: selected.bytesSent,
-          bytesReceived: selected.bytesReceived,
-        })
-      }
-      route(selected.route, { ...this.#routeBytes })
-    }).catch(() => undefined)
+    void this.#connection
+      .getStats()
+      .then((stats) => {
+        if (this.#closed || this.#channel?.readyState !== "open") return
+        const selected = selectedPeerRouteReport(stats)
+        if (!selected) return
+        if (selected.bytesSent !== undefined && selected.bytesReceived !== undefined) {
+          const previous = this.#pairCounters.get(selected.pairID) ?? { bytesSent: 0, bytesReceived: 0 }
+          const bytesSent =
+            selected.bytesSent >= previous.bytesSent ? selected.bytesSent - previous.bytesSent : selected.bytesSent
+          const bytesReceived =
+            selected.bytesReceived >= previous.bytesReceived
+              ? selected.bytesReceived - previous.bytesReceived
+              : selected.bytesReceived
+          const key = selected.route === "direct" ? "directBytes" : "turnBytes"
+          this.#routeBytes[key] += bytesSent + bytesReceived
+          this.#pairCounters.set(selected.pairID, {
+            bytesSent: selected.bytesSent,
+            bytesReceived: selected.bytesReceived,
+          })
+        }
+        route(selected.route, { ...this.#routeBytes })
+      })
+      .catch(() => undefined)
   }
 }

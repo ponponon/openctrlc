@@ -725,16 +725,19 @@ export const Terminal = (props: TerminalProps) => {
         socket.addEventListener("close", handleClose)
       }
 
-      const unsubscribeRemoteTransport = sameOrigin && platform.remoteTransport?.subscribe((status) => {
-        if (
-          (status !== "checking" && status !== "direct" && status !== "turn") ||
-          socketTransport === "peer" ||
-          !ws ||
-          ws.readyState >= WebSocket.CLOSING
-        ) return
-        switchingTransport = true
-        ws.close(4001, "Switching to direct connection")
-      })
+      const unsubscribeRemoteTransport =
+        sameOrigin &&
+        platform.remoteTransport?.subscribe((status) => {
+          if (
+            (status !== "checking" && status !== "direct" && status !== "turn") ||
+            socketTransport === "peer" ||
+            !ws ||
+            ws.readyState >= WebSocket.CLOSING
+          )
+            return
+          switchingTransport = true
+          ws.close(4001, "Switching to direct connection")
+        })
       if (unsubscribeRemoteTransport) cleanups.push(unsubscribeRemoteTransport)
 
       open()

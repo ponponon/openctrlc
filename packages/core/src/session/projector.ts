@@ -112,11 +112,7 @@ function applyUsage(
 // counts UTF-8 bytes, so this matches `length(cast(data as blob))` without a round trip.
 const payloadBytes = (value: unknown) => (value === undefined ? 0 : Buffer.byteLength(JSON.stringify(value)))
 
-function applyStorage(
-  db: DatabaseService,
-  sessionID: (typeof SessionTable.$inferSelect)["id"],
-  delta: number,
-) {
+function applyStorage(db: DatabaseService, sessionID: (typeof SessionTable.$inferSelect)["id"], delta: number) {
   if (delta === 0) return Effect.void
   return db
     .update(SessionTable)

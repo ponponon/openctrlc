@@ -11,17 +11,20 @@ describe("remote response encoding", () => {
 
     expect(headers.get("content-encoding")).toBe("gzip")
     expect(headers.has("content-length")).toBe(false)
-    expect(shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip" } }), headers))
-      .toBe(false)
+    expect(
+      shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip" } }), headers),
+    ).toBe(false)
   })
 
   test("compresses unencoded JSON only when the viewer accepts gzip", () => {
     const headers = new Headers({ "content-type": "application/json; charset=utf-8" })
 
-    expect(shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip" } }), headers))
-      .toBe(true)
-    expect(shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip;q=0" } }), headers))
-      .toBe(false)
+    expect(
+      shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip" } }), headers),
+    ).toBe(true)
+    expect(
+      shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip;q=0" } }), headers),
+    ).toBe(false)
     expect(shouldGzipToViewer(new Request("https://example.test"), headers)).toBe(false)
   })
 
@@ -34,7 +37,8 @@ describe("remote response encoding", () => {
 
     expect(headers.has("content-encoding")).toBe(false)
     expect(headers.has("content-length")).toBe(false)
-    expect(shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip" } }), headers))
-      .toBe(false)
+    expect(
+      shouldGzipToViewer(new Request("https://example.test", { headers: { "accept-encoding": "gzip" } }), headers),
+    ).toBe(false)
   })
 })

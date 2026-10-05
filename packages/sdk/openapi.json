@@ -5085,6 +5085,15 @@
               "type": "string"
             },
             "required": false
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["summary", "full"]
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -23999,6 +24008,12 @@
               "$ref": "#/components/schemas/SessionMessage"
             }
           },
+          "parents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionMessage"
+            }
+          },
           "cursor": {
             "type": "object",
             "properties": {
@@ -27516,6 +27531,26 @@
             "required": ["input", "output", "reasoning", "cache"],
             "additionalProperties": false
           },
+          "storage": {
+            "type": "object",
+            "properties": {
+              "bytes": {
+                "type": "number"
+              }
+            },
+            "required": ["bytes"],
+            "additionalProperties": false
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "tokens": {
+                "type": "number"
+              }
+            },
+            "required": ["tokens"],
+            "additionalProperties": false
+          },
           "time": {
             "type": "object",
             "properties": {
@@ -28059,6 +28094,10 @@
           "type": {
             "type": "string",
             "enum": ["assistant"]
+          },
+          "parentID": {
+            "type": "string",
+            "pattern": "^msg_"
           },
           "agent": {
             "type": "string"

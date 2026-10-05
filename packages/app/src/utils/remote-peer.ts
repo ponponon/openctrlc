@@ -92,8 +92,12 @@ export class RemotePeerClient {
     })
   }
 
-  get ready() { return this.#peer?.ready === true }
-  get status() { return this.#status }
+  get ready() {
+    return this.#peer?.ready === true
+  }
+  get status() {
+    return this.#status
+  }
 
   subscribe(callback: (status: RemoteTransportStatus) => void) {
     this.#statusListeners.add(callback)
@@ -194,7 +198,11 @@ export class RemotePeerClient {
       if (this.#socket !== socket) return
       if (typeof event.data !== "string") return
       let message: Record<string, unknown>
-      try { message = JSON.parse(event.data) } catch { return }
+      try {
+        message = JSON.parse(event.data)
+      } catch {
+        return
+      }
       if (message.type === "peer.ready" && typeof message.peerID === "string") {
         this.#peer?.close()
         let peer!: PeerChannel
@@ -332,8 +340,14 @@ export class RemotePeerClient {
         void this.#send({ type: "request.cancel", id })
       }
       pending = {
-        start: (value) => { clearTimeout(timer); resolve(value) },
-        fail: (error) => { cleanup(); reject(error) },
+        start: (value) => {
+          clearTimeout(timer)
+          resolve(value)
+        },
+        fail: (error) => {
+          cleanup()
+          reject(error)
+        },
         cleanup,
         responseCreditBytes: 0,
       }
@@ -348,10 +362,24 @@ export class RemotePeerClient {
       if (request.signal.aborted) abort()
     })
     if (!this.#pending.has(id)) return await response
-    const headers = Object.fromEntries([...request.headers.entries()].filter(([name]) =>
-      !["cookie", "authorization", "host", "origin", "referer", "x-openctrlc-remote-session"].includes(name.toLowerCase())))
+    const headers = Object.fromEntries(
+      [...request.headers.entries()].filter(
+        ([name]) =>
+          !["cookie", "authorization", "host", "origin", "referer", "x-openctrlc-remote-session"].includes(
+            name.toLowerCase(),
+          ),
+      ),
+    )
     if (typeof DecompressionStream === "function") headers["x-openctrlc-remote-accept-encoding"] = "gzip"
-    if (!await this.#send({ type: "request.start", id, method: request.method, path: new URL(request.url).pathname + new URL(request.url).search, headers })) {
+    if (
+      !(await this.#send({
+        type: "request.start",
+        id,
+        method: request.method,
+        path: new URL(request.url).pathname + new URL(request.url).search,
+        headers,
+      }))
+    ) {
       this.#pending.delete(id)
       pending.cleanup()
       return undefined
@@ -361,7 +389,11 @@ export class RemotePeerClient {
         if (request.body) {
           const reader = request.body.getReader()
           let uploadComplete = false
-          pending.cancelUpload = () => reader.cancel().then(() => undefined).catch(() => undefined)
+          pending.cancelUpload = () =>
+            reader
+              .cancel()
+              .then(() => undefined)
+              .catch(() => undefined)
           try {
             while (true) {
               if (this.#pending.get(id) !== pending || request.signal.aborted) {
@@ -384,7 +416,7 @@ export class RemotePeerClient {
                   id,
                   item.value.subarray(offset, offset + 24 * 1024),
                 )
-                if (!peer?.ready || !await peer.send(frame)) throw new Error("Direct connection ended")
+                if (!peer?.ready || !(await peer.send(frame))) throw new Error("Direct connection ended")
               }
             }
           } finally {
@@ -394,7 +426,7 @@ export class RemotePeerClient {
           }
         }
         if (this.#pending.get(id) !== pending) return
-        if (!await this.#send({ type: "request.end", id })) throw new Error("Direct connection ended")
+        if (!(await this.#send({ type: "request.end", id }))) throw new Error("Direct connection ended")
       } catch (error) {
         const value = this.#pending.get(id)
         this.#pending.delete(id)
@@ -404,7 +436,9 @@ export class RemotePeerClient {
         void this.#send({ type: "request.cancel", id })
       }
     })()
-    try { return await response } catch (error) {
+    try {
+      return await response
+    } catch (error) {
       if (!this.#closed && (request.method === "GET" || request.method === "HEAD")) return fetch(request)
       throw error
     }
@@ -416,14 +450,17 @@ export class RemotePeerClient {
       return new WebSocket(relayTarget, protocols)
     }
     const socket = new RemotePeerWebSocket(this, () => new WebSocket(relayTarget, protocols))
-    socket.connect(target.pathname + target.search, typeof protocols === "string" ? [protocols] : protocols ?? [])
+    socket.connect(target.pathname + target.search, typeof protocols === "string" ? [protocols] : (protocols ?? []))
     return socket as unknown as WebSocket
   }
 
   async socketSend(id: string, data: string | ArrayBuffer | Uint8Array) {
     if (typeof data === "string") return this.#send({ type: "socket.message", id, data, binary: false })
     const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
-    return this.#peer?.send(encodeBinaryFrame(BinaryFrameKind.SocketMessage, id, bytes, BinaryFrameFlag.PayloadBinary)) ?? false
+    return (
+      this.#peer?.send(encodeBinaryFrame(BinaryFrameKind.SocketMessage, id, bytes, BinaryFrameFlag.PayloadBinary)) ??
+      false
+    )
   }
 
   socketOpen(id: string, path: string, protocols: string[]) {
@@ -471,11 +508,16 @@ export class RemotePeerClient {
       const frame = decodeBinaryFrame(data)
       if (!frame) return
       if (frame.kind === BinaryFrameKind.SocketMessage) {
-        window.dispatchEvent(new CustomEvent(`openctrlc:socket:${frame.id}:message`, { detail: {
-          data: frame.flags & BinaryFrameFlag.PayloadBinary
-            ? frame.payload.slice()
-            : new TextDecoder().decode(frame.payload),
-        } }))
+        window.dispatchEvent(
+          new CustomEvent(`openctrlc:socket:${frame.id}:message`, {
+            detail: {
+              data:
+                frame.flags & BinaryFrameFlag.PayloadBinary
+                  ? frame.payload.slice()
+                  : new TextDecoder().decode(frame.payload),
+            },
+          }),
+        )
         return
       }
       if (frame.kind === BinaryFrameKind.ResponseChunk)
@@ -483,7 +525,11 @@ export class RemotePeerClient {
       return
     }
     let message: Record<string, unknown>
-    try { message = JSON.parse(data) } catch { return }
+    try {
+      message = JSON.parse(data)
+    } catch {
+      return
+    }
     if (message.type === "peer.pong") {
       this.#lastPeerPong = Date.now()
       return
@@ -494,9 +540,14 @@ export class RemotePeerClient {
       return
     }
     if (message.type === "socket.message") {
-      window.dispatchEvent(new CustomEvent(`openctrlc:socket:${message.id}:message`, { detail: {
-        data: message.binary === true && typeof message.data === "string" ? decodeBase64(message.data) : message.data,
-      } }))
+      window.dispatchEvent(
+        new CustomEvent(`openctrlc:socket:${message.id}:message`, {
+          detail: {
+            data:
+              message.binary === true && typeof message.data === "string" ? decodeBase64(message.data) : message.data,
+          },
+        }),
+      )
       return
     }
     if (message.type === "socket.close") {
@@ -516,7 +567,9 @@ export class RemotePeerClient {
       }
       const body = new ReadableStream<Uint8Array>(
         {
-          start: (controller) => { pending.controller = controller },
+          start: (controller) => {
+            pending.controller = controller
+          },
           pull: (controller) => this.#grantResponseCredit(message.id as string, pending, controller),
           cancel: () => {
             pending.cleanup()
@@ -624,8 +677,12 @@ class RemotePeerWebSocket extends EventTarget {
   #openTimer?: ReturnType<typeof setTimeout>
   #closeTimer?: ReturnType<typeof setTimeout>
 
-  get binaryType() { return this.#binaryType }
-  get bufferedAmount() { return this.#bufferedAmount }
+  get binaryType() {
+    return this.#binaryType
+  }
+  get bufferedAmount() {
+    return this.#bufferedAmount
+  }
   set binaryType(value: BinaryType) {
     if (value !== "blob" && value !== "arraybuffer") return
     this.#binaryType = value
@@ -658,14 +715,20 @@ class RemotePeerWebSocket extends EventTarget {
     this.#listen(`openctrlc:socket:${this.#id}:message`, ((event: CustomEvent<{ data: unknown }>) => {
       const data = event.detail.data
       if (data instanceof Uint8Array) {
-        this.#emit("message", new MessageEvent("message", {
-          data: this.binaryType === "arraybuffer" ? data.slice().buffer : new Blob([data.slice().buffer]),
-        }))
+        this.#emit(
+          "message",
+          new MessageEvent("message", {
+            data: this.binaryType === "arraybuffer" ? data.slice().buffer : new Blob([data.slice().buffer]),
+          }),
+        )
         return
       }
-      this.#emit("message", new MessageEvent("message", {
-        data,
-      }))
+      this.#emit(
+        "message",
+        new MessageEvent("message", {
+          data,
+        }),
+      )
     }) as EventListener)
     this.#listen("openctrlc:remote-peer-down", (() => {
       if (this.readyState === RemotePeerWebSocket.CLOSED || this.#fallback) return
@@ -692,27 +755,33 @@ class RemotePeerWebSocket extends EventTarget {
   }
 
   send(data: string | ArrayBuffer | Blob | ArrayBufferView) {
-    if (this.readyState !== RemotePeerWebSocket.OPEN) throw new DOMException("WebSocket is not open", "InvalidStateError")
-    const size = typeof data === "string"
-      ? new TextEncoder().encode(data).byteLength
-      : data instanceof Blob
-        ? data.size
-        : data.byteLength
+    if (this.readyState !== RemotePeerWebSocket.OPEN)
+      throw new DOMException("WebSocket is not open", "InvalidStateError")
+    const size =
+      typeof data === "string"
+        ? new TextEncoder().encode(data).byteLength
+        : data instanceof Blob
+          ? data.size
+          : data.byteLength
     this.#bufferedAmount += size
-    this.#sendQueue = this.#sendQueue.then(async () => {
-      if (this.#sendFailed || this.readyState === RemotePeerWebSocket.CLOSED) return
-      const payload = data instanceof Blob
-        ? new Uint8Array(await data.arrayBuffer())
-        : typeof data === "string" || data instanceof ArrayBuffer || data instanceof Uint8Array
-          ? data
-          : new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-      if (!await this.#client.socketSend(this.#id, payload)) throw new Error("Direct WebSocket send failed")
-    }).catch(() => {
-      this.#sendFailed = true
-      this.#finish(1011, "Direct WebSocket send failed", true)
-    }).finally(() => {
-      this.#bufferedAmount = Math.max(0, this.#bufferedAmount - size)
-    })
+    this.#sendQueue = this.#sendQueue
+      .then(async () => {
+        if (this.#sendFailed || this.readyState === RemotePeerWebSocket.CLOSED) return
+        const payload =
+          data instanceof Blob
+            ? new Uint8Array(await data.arrayBuffer())
+            : typeof data === "string" || data instanceof ArrayBuffer || data instanceof Uint8Array
+              ? data
+              : new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+        if (!(await this.#client.socketSend(this.#id, payload))) throw new Error("Direct WebSocket send failed")
+      })
+      .catch(() => {
+        this.#sendFailed = true
+        this.#finish(1011, "Direct WebSocket send failed", true)
+      })
+      .finally(() => {
+        this.#bufferedAmount = Math.max(0, this.#bufferedAmount - size)
+      })
   }
 
   close(code = 1000, reason = "") {
@@ -727,8 +796,7 @@ class RemotePeerWebSocket extends EventTarget {
       return
     }
     void this.#sendQueue.then(() => {
-      if (this.readyState === RemotePeerWebSocket.CLOSING)
-        return this.#client.socketClose(this.#id, code, reason)
+      if (this.readyState === RemotePeerWebSocket.CLOSING) return this.#client.socketClose(this.#id, code, reason)
     })
   }
 
@@ -771,15 +839,23 @@ class RemotePeerWebSocket extends EventTarget {
     }
   }
 
-  #listen(name: string, callback: EventListener) { window.addEventListener(name, callback); this.#subs.push([name, callback]) }
-  #emit(name: string, event: Event) { this.dispatchEvent(event); if (name === "open") this.onopen?.(event); if (name === "message") this.onmessage?.(event as MessageEvent); if (name === "close") this.onclose?.(event as CloseEvent); if (name === "error") this.onerror?.(event) }
+  #listen(name: string, callback: EventListener) {
+    window.addEventListener(name, callback)
+    this.#subs.push([name, callback])
+  }
+  #emit(name: string, event: Event) {
+    this.dispatchEvent(event)
+    if (name === "open") this.onopen?.(event)
+    if (name === "message") this.onmessage?.(event as MessageEvent)
+    if (name === "close") this.onclose?.(event as CloseEvent)
+    if (name === "error") this.onerror?.(event)
+  }
   #finish(code: number, reason: string, error = false) {
     if (this.readyState === RemotePeerWebSocket.CLOSED) return
     this.readyState = RemotePeerWebSocket.CLOSED
     this.#bufferedAmount = 0
     this.#cleanup()
-    for (const [name, listener] of this.#fallbackListeners)
-      this.#fallback?.removeEventListener(name, listener)
+    for (const [name, listener] of this.#fallbackListeners) this.#fallback?.removeEventListener(name, listener)
     this.#fallbackListeners = []
     if (this.#fallback && this.#fallback.readyState < WebSocket.CLOSING) this.#fallback.close()
     this.#fallback = undefined

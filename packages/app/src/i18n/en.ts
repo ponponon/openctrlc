@@ -1079,17 +1079,23 @@ export const dict = {
   "remote.liteNetwork": "Lite",
   "remote.liteNetworkHint": "Slow or metered network — heavy previews and prefetch are limited",
   "remote.transport.connecting": "Relay · P2P…",
-  "remote.transport.connectingHint": "Requests currently use the relay while a peer-to-peer connection is being negotiated.",
+  "remote.transport.connectingHint":
+    "Requests currently use the relay while a peer-to-peer connection is being negotiated.",
   "remote.transport.checking": "Checking route",
-  "remote.transport.checkingHint": "The peer-to-peer channel is active; checking whether traffic is direct or TURN-relayed.",
+  "remote.transport.checkingHint":
+    "The peer-to-peer channel is active; checking whether traffic is direct or TURN-relayed.",
   "remote.transport.direct": "Direct connection",
-  "remote.transport.directHint": "The peer-to-peer channel is ready. New API requests and live event streams use it; an open terminal reconnects once to use this route.",
+  "remote.transport.directHint":
+    "The peer-to-peer channel is ready. New API requests and live event streams use it; an open terminal reconnects once to use this route.",
   "remote.transport.turn": "TURN relay",
-  "remote.transport.turnHint": "WebRTC is connected through a TURN relay, so traffic may count toward relay usage charges.",
+  "remote.transport.turnHint":
+    "WebRTC is connected through a TURN relay, so traffic may count toward relay usage charges.",
   "remote.transport.relay": "Relay connection",
-  "remote.transport.relayHint": "Requests currently pass through the OpenCtrlC relay. Direct connection will retry automatically.",
+  "remote.transport.relayHint":
+    "Requests currently pass through the OpenCtrlC relay. Direct connection will retry automatically.",
   "remote.transport.unavailable": "Relay only",
-  "remote.transport.unavailableHint": "Direct connection is unavailable for this session. App requests continue through the relay.",
+  "remote.transport.unavailableHint":
+    "Direct connection is unavailable for this session. App requests continue through the relay.",
   "remoteAccess.viewerExpiring": "Unused for a while — reconnect soon to keep this approval",
   "remote.desktop.offlineTitle": "Desktop is offline",
   "remote.desktop.offlineDescription":

@@ -1089,7 +1089,8 @@ export const dict = {
   "remote.transport.checking": "线路识别中",
   "remote.transport.checkingHint": "点对点通道已连接，正在确认当前流量走直连还是 TURN 中继。",
   "remote.transport.direct": "点对点直连",
-  "remote.transport.directHint": "点对点通道已就绪；新 API 请求和实时事件流会使用此通道，已打开的终端会短暂重连一次后切换过去。",
+  "remote.transport.directHint":
+    "点对点通道已就绪；新 API 请求和实时事件流会使用此通道，已打开的终端会短暂重连一次后切换过去。",
   "remote.transport.turn": "TURN 中继",
   "remote.transport.turnHint": "WebRTC 连接通过 TURN 中继传输，流量可能计入中继费用。",
   "remote.transport.relay": "中继连接",

@@ -193,13 +193,16 @@ export class RemoteAccessService {
       if (!frame) return this.#closePeer(peerID, "Invalid peer frame")
       const rejected = this.#peerRejectedStreams.get(frame.id)
       if (rejected) {
-        if (frame.kind !== BinaryFrameKind.RequestChunk ||
-          consumeRejectedPeerStream(rejected, peerID, "request.chunk", frame.payload.byteLength) !== "discard")
+        if (
+          frame.kind !== BinaryFrameKind.RequestChunk ||
+          consumeRejectedPeerStream(rejected, peerID, "request.chunk", frame.payload.byteLength) !== "discard"
+        )
           return this.#closePeer(peerID, "Invalid rejected peer stream")
         return
       }
       if (this.#peerRoutes.get(frame.id) !== peerID) return this.#closePeer(peerID, "Unowned binary stream")
-      if (frame.kind === BinaryFrameKind.RequestChunk && !this.#countPeerUpload(frame.id, frame.payload.byteLength)) return
+      if (frame.kind === BinaryFrameKind.RequestChunk && !this.#countPeerUpload(frame.id, frame.payload.byteLength))
+        return
       this.#handleBinary(new Uint8Array(data))
       return
     }
@@ -219,7 +222,7 @@ export class RemoteAccessService {
           peerID,
           message.type === "request.chunk" && typeof message.data !== "string" ? "invalid.chunk" : message.type,
           message.type === "request.chunk" && typeof message.data === "string"
-            ? Math.floor(message.data.length * 3 / 4)
+            ? Math.floor((message.data.length * 3) / 4)
             : 0,
         )
         if (outcome === "clear") this.#clearRejectedPeerStream(message.id)
@@ -244,11 +247,14 @@ export class RemoteAccessService {
           }, 30_000),
         }
         this.#peerRejectedStreams.set(id, rejectedStream)
-        this.#peerTransport?.send(peerID, JSON.stringify(
-          message.type === "socket.open"
-            ? { type: "socket.close", id, code: 1013, reason: "Too many direct requests" }
-            : { type: "response.error", id, message: "Too many direct requests" },
-        ))
+        this.#peerTransport?.send(
+          peerID,
+          JSON.stringify(
+            message.type === "socket.open"
+              ? { type: "socket.close", id, code: 1013, reason: "Too many direct requests" }
+              : { type: "response.error", id, message: "Too many direct requests" },
+          ),
+        )
         return
       }
       active.add(id)
@@ -257,15 +263,22 @@ export class RemoteAccessService {
       return this.#closePeer(peerID, "Unowned peer stream")
     }
     if (message.type === "response.credit") {
-      if (!Number.isInteger(message.bytes) || (message.bytes as number) < 1 ||
-        (message.bytes as number) > PEER_RESPONSE_CHUNK_BYTES) {
+      if (
+        !Number.isInteger(message.bytes) ||
+        (message.bytes as number) < 1 ||
+        (message.bytes as number) > PEER_RESPONSE_CHUNK_BYTES
+      ) {
         return this.#closePeer(peerID, "Invalid response credit")
       }
       this.#grantPeerResponseCredit(message.id as string, message.bytes as number, peerID)
       return
     }
-    if (message.type === "request.chunk" && typeof message.data === "string" &&
-      !this.#countPeerUpload(message.id as string, Math.floor(message.data.length * 3 / 4))) return
+    if (
+      message.type === "request.chunk" &&
+      typeof message.data === "string" &&
+      !this.#countPeerUpload(message.id as string, Math.floor((message.data.length * 3) / 4))
+    )
+      return
     if (message.type === "request.end" || message.type === "request.cancel" || message.type === "socket.close")
       this.#peerInputEnded.add(message.id as string)
     this.#handleMessage(message)
@@ -853,7 +866,11 @@ export class RemoteAccessService {
   }
 
   #handleMessage(message: Record<string, unknown>) {
-    if (message.type === "peer.open" && typeof message.peerID === "string" && /^[A-Za-z0-9_-]{16}$/.test(message.peerID)) {
+    if (
+      message.type === "peer.open" &&
+      typeof message.peerID === "string" &&
+      /^[A-Za-z0-9_-]{16}$/.test(message.peerID)
+    ) {
       if (this.#peerRequests.has(message.peerID)) return
       if (this.#peerRequests.size >= 8) {
         this.#send({ type: "peer.close", peerID: message.peerID, code: 4429 })
@@ -1056,12 +1073,12 @@ export class RemoteAccessService {
     const abort = new AbortController()
     const stream = new ReadableStream<Uint8Array>({
       start: (controller) => {
-          this.#requests.set(message.id as string, {
-            controller,
-            aborted: abort,
-            receivedBytes: 0,
-            peerID: this.#peerRoutes.get(message.id as string),
-          })
+        this.#requests.set(message.id as string, {
+          controller,
+          aborted: abort,
+          receivedBytes: 0,
+          peerID: this.#peerRoutes.get(message.id as string),
+        })
       },
       cancel: () => abort.abort(),
     })
@@ -1092,7 +1109,7 @@ export class RemoteAccessService {
     }
     void fetch(target, init)
       .then(async (response) => {
-      const responseHeaders = Object.fromEntries(
+        const responseHeaders = Object.fromEntries(
           [...response.headers.entries()].filter(
             ([name]) =>
               ![
@@ -1111,24 +1128,27 @@ export class RemoteAccessService {
         delete responseHeaders["content-encoding"]
         const contentType = responseHeaders["content-type"]?.toLowerCase() ?? ""
         const acceptedEncodings = new Map(
-          (acceptEncoding ?? "").toLowerCase().split(",").map((item) => {
-            const [encoding, ...parameters] = item.trim().split(";")
-            const quality = parameters.find((parameter) => parameter.trim().startsWith("q="))
-            return [encoding, quality === undefined ? 1 : Number(quality.trim().slice(2))] as const
-          }),
+          (acceptEncoding ?? "")
+            .toLowerCase()
+            .split(",")
+            .map((item) => {
+              const [encoding, ...parameters] = item.trim().split(";")
+              const quality = parameters.find((parameter) => parameter.trim().startsWith("q="))
+              return [encoding, quality === undefined ? 1 : Number(quality.trim().slice(2))] as const
+            }),
         )
         const gzipQuality = acceptedEncodings.get("gzip") ?? acceptedEncodings.get("*") ?? 0
         const compress =
           !!response.body &&
-          Number.isFinite(gzipQuality) && gzipQuality > 0 && gzipQuality <= 1 &&
+          Number.isFinite(gzipQuality) &&
+          gzipQuality > 0 &&
+          gzipQuality <= 1 &&
           !contentType.includes("text/event-stream") &&
           /^(text\/|application\/(json|javascript|xml|jsonml|xhtml|x-ndjson))/.test(contentType)
         const responseBody = compress ? response.body!.pipeThrough(new CompressionStream("gzip")) : response.body
         if (compress) {
           responseHeaders["content-encoding"] = "gzip"
-          responseHeaders.vary = responseHeaders.vary
-            ? `${responseHeaders.vary}, Accept-Encoding`
-            : "Accept-Encoding"
+          responseHeaders.vary = responseHeaders.vary ? `${responseHeaders.vary}, Accept-Encoding` : "Accept-Encoding"
         }
         const location = responseHeaders.location
         if (location) {
@@ -1162,7 +1182,7 @@ export class RemoteAccessService {
         while (true) {
           const chunk = await reader.read()
           if (chunk.done) break
-          for (let start = 0; start < chunk.value.length;) {
+          for (let start = 0; start < chunk.value.length; ) {
             const id = message.id as string
             const peerID = this.#requests.get(id)?.peerID
             if (peerID && this.#peerRoutes.get(id) !== peerID) {
@@ -1182,7 +1202,7 @@ export class RemoteAccessService {
             }
             const slice = chunk.value.subarray(start, start + credit)
             const queuedBytes = this.#binaryChunks ? slice.byteLength + 128 : Math.ceil(slice.byteLength / 3) * 4 + 128
-            if (peerID && !await this.#waitPeerCapacity(peerID, queuedBytes)) {
+            if (peerID && !(await this.#waitPeerCapacity(peerID, queuedBytes))) {
               abort.abort()
               if (this.#peerRoutes.get(id) === peerID)
                 this.#send({ type: "response.error", id, message: "The direct response stream stopped" })
@@ -1421,7 +1441,8 @@ export class RemoteAccessService {
 
   #grantPeerResponseCredit(id: string, bytes: number, peerID: string) {
     const available = this.#peerResponseCredit.get(id) ?? 0
-    if (available + bytes > PEER_RESPONSE_BUFFER_BYTES) return this.#closePeer(peerID, "Response credit exceeded its window")
+    if (available + bytes > PEER_RESPONSE_BUFFER_BYTES)
+      return this.#closePeer(peerID, "Response credit exceeded its window")
     this.#peerResponseCredit.set(id, available + bytes)
     this.#wakePeerCreditWaiters(id, true)
   }

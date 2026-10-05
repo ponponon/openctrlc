@@ -211,7 +211,9 @@ export function createHomeSessionsController(home: HomeController) {
       canCreate: () => !!home.project.newSession(),
       create: home.project.openNewSession,
       prefetch: (session: Session) => {
-        const record = records().find((item) => item.session.id === session.id) ?? allRecords().find((item) => item.session.id === session.id)
+        const record =
+          records().find((item) => item.session.id === session.id) ??
+          allRecords().find((item) => item.session.id === session.id)
         if (record) prefetchSession(record)
       },
       open: (session: Session, options?: OpenSessionOptions) => {

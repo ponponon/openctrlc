@@ -53,9 +53,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
     const svc = yield* ProviderAuth.Service
     const authStore = yield* Auth.Service
 
-    const list = Effect.fn("ProviderHttpApi.list")(function* (ctx: {
-      query?: { view?: string }
-    }) {
+    const list = Effect.fn("ProviderHttpApi.list")(function* (ctx: { query?: { view?: string } }) {
       const view = ctx.query?.view === "summary" ? ("summary" as const) : ("full" as const)
       const config = yield* cfg.get()
       const all = yield* ModelsDev.Service.use((s) => s.get())

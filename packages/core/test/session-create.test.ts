@@ -428,7 +428,13 @@ describe("SessionV2.create", () => {
       const session = yield* SessionV2.Service
       const created = yield* session.create({ location })
       const { db } = yield* Database.Service
-      const assistant = (input: { id: string; created: number; completed?: number; input: number; output: number }) => ({
+      const assistant = (input: {
+        id: string
+        created: number
+        completed?: number
+        input: number
+        output: number
+      }) => ({
         id: SessionV1.MessageID.make(input.id),
         session_id: created.id,
         time_created: input.created,

@@ -166,8 +166,8 @@ async function waitForStableSessionSwitch(page: Page) {
       { timeout: 30_000 },
     )
   } catch (error) {
-    const samples = await page.evaluate(
-      () => (window as Window & { __sessionSwitchProbe?: SessionSwitchProbe }).__sessionSwitchProbe?.samples.slice(-3),
+    const samples = await page.evaluate(() =>
+      (window as Window & { __sessionSwitchProbe?: SessionSwitchProbe }).__sessionSwitchProbe?.samples.slice(-3),
     )
     throw new Error(`Session switch did not stabilize: ${JSON.stringify(samples)}`, { cause: error })
   }
@@ -212,35 +212,39 @@ export async function waitForStableTimeline(page: Page, lastID: string) {
   await expect
     .poll(
       async () => {
-        samples.push(await page.evaluate((lastID) => {
-          const root = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")]
-            .filter((element) => {
-              if (!element.querySelector("[data-timeline-row]")) return false
+        samples.push(
+          await page.evaluate((lastID) => {
+            const root = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")]
+              .filter((element) => {
+                if (!element.querySelector("[data-timeline-row]")) return false
+                const rect = element.getBoundingClientRect()
+                const style = getComputedStyle(element)
+                return (
+                  rect.width > 0 &&
+                  rect.height > 0 &&
+                  style.display !== "none" &&
+                  style.visibility !== "hidden" &&
+                  style.opacity !== "0"
+                )
+              })
+              .sort((a, b) => {
+                const left = a.getBoundingClientRect()
+                const right = b.getBoundingClientRect()
+                return right.width * right.height - left.width * left.height
+              })[0]
+            if (!root) return { last: false }
+            const view = root.getBoundingClientRect()
+            const last = [...root.querySelectorAll<HTMLElement>("[data-message-id]")].some((element) => {
+              if (element.dataset.messageId !== lastID) return false
               const rect = element.getBoundingClientRect()
-              const style = getComputedStyle(element)
-              return (
-                rect.width > 0 &&
-                rect.height > 0 &&
-                style.display !== "none" &&
-                style.visibility !== "hidden" &&
-                style.opacity !== "0"
-              )
+              return rect.bottom > view.top && rect.top < view.bottom
             })
-            .sort((a, b) => {
-              const left = a.getBoundingClientRect()
-              const right = b.getBoundingClientRect()
-              return right.width * right.height - left.width * left.height
-            })[0]
-          if (!root) return { last: false }
-          const view = root.getBoundingClientRect()
-          const last = [...root.querySelectorAll<HTMLElement>("[data-message-id]")].some((element) => {
-            if (element.dataset.messageId !== lastID) return false
-            const rect = element.getBoundingClientRect()
-            return rect.bottom > view.top && rect.top < view.bottom
-          })
-          const spacer = root.querySelector<HTMLElement>('[data-timeline-row="bottom-spacer"]')?.getBoundingClientRect()
-          return { last, bottomErrorPx: spacer ? spacer.bottom - view.bottom : undefined }
-        }, lastID))
+            const spacer = root
+              .querySelector<HTMLElement>('[data-timeline-row="bottom-spacer"]')
+              ?.getBoundingClientRect()
+            return { last, bottomErrorPx: spacer ? spacer.bottom - view.bottom : undefined }
+          }, lastID),
+        )
         return isStableDestination(samples.slice(-3))
       },
       { timeout: 30_000 },

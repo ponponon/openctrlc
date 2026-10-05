@@ -1,11 +1,14 @@
 export function shouldGzipToViewer(request: Request, responseHeaders: Headers) {
   if (responseHeaders.has("content-encoding")) return false
   const acceptedEncodings = new Map(
-    (request.headers.get("accept-encoding") ?? "").toLowerCase().split(",").map((item) => {
-      const [encoding, ...parameters] = item.trim().split(";")
-      const quality = parameters.find((parameter) => parameter.trim().startsWith("q="));
-      return [encoding, quality === undefined ? 1 : Number(quality.trim().slice(2))] as const
-    }),
+    (request.headers.get("accept-encoding") ?? "")
+      .toLowerCase()
+      .split(",")
+      .map((item) => {
+        const [encoding, ...parameters] = item.trim().split(";")
+        const quality = parameters.find((parameter) => parameter.trim().startsWith("q="))
+        return [encoding, quality === undefined ? 1 : Number(quality.trim().slice(2))] as const
+      }),
   )
   const gzipQuality = acceptedEncodings.get("gzip") ?? acceptedEncodings.get("*") ?? 0
   if (!Number.isFinite(gzipQuality) || gzipQuality <= 0 || gzipQuality > 1) return false

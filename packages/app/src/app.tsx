@@ -74,15 +74,11 @@ import { SessionSkeleton } from "@/pages/session-skeleton"
 
 // Session chrome (timeline, diffs, composer, terminal) is the bulk of the bundle.
 // Keep it out of the remote first paint; only load when a session route mounts.
-const SessionRouteView = lazy(() =>
-  import("@/pages/session-route-view").then((m) => ({ default: m.SessionRouteView })),
-)
+const SessionRouteView = lazy(() => import("@/pages/session-route-view").then((m) => ({ default: m.SessionRouteView })))
 const TargetSessionRouteView = lazy(() =>
   import("@/pages/session-route-view").then((m) => ({ default: m.TargetSessionRouteView })),
 )
-const SessionBoundary = lazy(() =>
-  import("@/pages/session-route-view").then((m) => ({ default: m.SessionBoundary })),
-)
+const SessionBoundary = lazy(() => import("@/pages/session-route-view").then((m) => ({ default: m.SessionBoundary })))
 const File = lazy(() => import("@openctrlc/session-ui/file").then((m) => ({ default: m.File })))
 const NewSession = lazy(() => import("@/pages/new-session"))
 

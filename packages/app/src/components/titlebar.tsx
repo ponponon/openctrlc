@@ -30,7 +30,12 @@ import { useLanguage } from "@/context/language"
 import { useSettings } from "@/context/settings"
 import { WindowsAppMenu } from "./windows-app-menu"
 import { applyPath, backPath, forwardPath } from "./titlebar-history"
-import { remoteHostName, listRemoteDesktops, switchRemoteDesktop, activeRemoteSessionID } from "@/utils/remote-workspace"
+import {
+  remoteHostName,
+  listRemoteDesktops,
+  switchRemoteDesktop,
+  activeRemoteSessionID,
+} from "@/utils/remote-workspace"
 import { readNetworkQuality, onNetworkQualityChange } from "@/utils/network-quality"
 import { TitlebarTabStrip } from "@/components/titlebar-tab-strip"
 import { makeEventListener } from "@solid-primitives/event-listener"

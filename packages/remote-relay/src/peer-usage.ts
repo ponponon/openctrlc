@@ -11,9 +11,12 @@ export function recordPeerRoute(
 ) {
   if (
     (route !== "direct" && route !== "turn") ||
-    !Number.isSafeInteger(directBytes) || (directBytes as number) < 0 ||
-    !Number.isSafeInteger(turnBytes) || (turnBytes as number) < 0
-  ) return
+    !Number.isSafeInteger(directBytes) ||
+    (directBytes as number) < 0 ||
+    !Number.isSafeInteger(turnBytes) ||
+    (turnBytes as number) < 0
+  )
+    return
   const previous = routes.get(peerID)
   const next: PeerRouteState = {
     route: route === "direct" ? "direct" : "turn",

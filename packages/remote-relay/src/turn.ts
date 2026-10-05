@@ -81,12 +81,7 @@ export function createTurnIceServerCache(
   }
 }
 
-export function createCoturnIceServers(
-  sessionID: string,
-  urls: string[],
-  sharedSecret: string,
-  now = Date.now(),
-) {
+export function createCoturnIceServers(sessionID: string, urls: string[], sharedSecret: string, now = Date.now()) {
   if (!sessionID || !urls.length || sharedSecret.length < 32) return
   const username = `${Math.floor(now / 1000) + turnCredentialLifetimeSeconds}:${sessionID}`
   const credential = createHmac("sha1", sharedSecret).update(username).digest("base64")
@@ -120,7 +115,14 @@ export function removeTurnIceServers(sessionID: string) {
 function readICEURLs(name: string, scheme: RegExp) {
   const value = process.env[name]?.trim()
   if (!value) return []
-  const urls = [...new Set(value.split(",").map((url) => url.trim()).filter(Boolean))]
+  const urls = [
+    ...new Set(
+      value
+        .split(",")
+        .map((url) => url.trim())
+        .filter(Boolean),
+    ),
+  ]
   if (urls.length > 8 || urls.some((url) => url.length > 512 || !scheme.test(url))) return []
   return urls
 }

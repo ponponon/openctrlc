@@ -7,5 +7,10 @@ type NetworkInformation = {
 export function isLiteNetwork() {
   const info = (navigator as Navigator & { connection?: NetworkInformation }).connection
   if (!info) return false
-  return info.saveData === true || info.effectiveType === "slow-2g" || info.effectiveType === "2g" || info.effectiveType === "3g"
+  return (
+    info.saveData === true ||
+    info.effectiveType === "slow-2g" ||
+    info.effectiveType === "2g" ||
+    info.effectiveType === "3g"
+  )
 }

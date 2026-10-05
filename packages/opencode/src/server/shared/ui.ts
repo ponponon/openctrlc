@@ -82,7 +82,9 @@ export function serveEmbeddedUIEffect(
   const mapped = embeddedWebUI[requestPath.replace(/^\//, "")] ?? embeddedWebUI["index.html"] ?? null
   if (!mapped) return Effect.succeed(notFound())
   const candidates = resolveEmbeddedFileCandidates(mapped)
-  return readFirstEmbedded(fs, candidates).pipe(Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : notFound())))
+  return readFirstEmbedded(fs, candidates).pipe(
+    Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : notFound())),
+  )
 }
 
 function readFirstEmbedded(

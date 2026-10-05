@@ -281,17 +281,14 @@ function ResolvedTargetSessionRoute() {
   const targetDirectory = () => directory()!
 
   createEffect(
-    on(
-      [serverKey, () => params.id] as const,
-      ([, sessionID]) => {
-        const server = sync()
-        if (!server.session.shouldPrefetch(sessionID, 20)) return
-        // Start the transcript request as soon as the target is selected. The
-        // root-session lookup can take one network round trip per parent, so it
-        // must not hold the first message page behind the lineage walk.
-        void server.session.prefetch(sessionID, 20).catch(() => {})
-      },
-    ),
+    on([serverKey, () => params.id] as const, ([, sessionID]) => {
+      const server = sync()
+      if (!server.session.shouldPrefetch(sessionID, 20)) return
+      // Start the transcript request as soon as the target is selected. The
+      // root-session lookup can take one network round trip per parent, so it
+      // must not hold the first message page behind the lineage walk.
+      void server.session.prefetch(sessionID, 20).catch(() => {})
+    }),
   )
 
   createEffect(() => {

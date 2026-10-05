@@ -1,10 +1,6 @@
 import { Binary } from "@openctrlc/core/util/binary"
 import { retry } from "@openctrlc/core/util/retry"
-import type {
-  OpenCodeEvent,
-  SessionApi,
-  SessionMessageInfo,
-} from "@opencode-ai/client/promise"
+import type { OpenCodeEvent, SessionApi, SessionMessageInfo } from "@opencode-ai/client/promise"
 import type {
   Message,
   OpencodeClient,

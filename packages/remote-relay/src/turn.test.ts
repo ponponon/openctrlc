@@ -2,11 +2,13 @@ import { describe, expect, test } from "bun:test"
 import { createCoturnIceServers, createTurnIceServerCache } from "./turn"
 import type { PeerIceServer } from "./protocol"
 
-const iceServers: PeerIceServer[] = [{
-  urls: "turn:turn.example.test:3478",
-  username: "temporary-user",
-  credential: "temporary-secret",
-}]
+const iceServers: PeerIceServer[] = [
+  {
+    urls: "turn:turn.example.test:3478",
+    username: "temporary-user",
+    credential: "temporary-secret",
+  },
+]
 
 describe("createCoturnIceServers", () => {
   test("creates session-scoped credentials with a bounded expiry", () => {
@@ -31,11 +33,7 @@ describe("createCoturnIceServers", () => {
     expect(createCoturnIceServers("session", [], "a-shared-secret-with-at-least-32-characters")).toBeUndefined()
     expect(createCoturnIceServers("session", ["turn:turn.example.test:3478"], "short")).toBeUndefined()
     expect(
-      createCoturnIceServers(
-        "session",
-        ["https://example.test"],
-        "a-shared-secret-with-at-least-32-characters",
-      ),
+      createCoturnIceServers("session", ["https://example.test"], "a-shared-secret-with-at-least-32-characters"),
     ).toBeUndefined()
   })
 })
@@ -66,10 +64,13 @@ describe("createTurnIceServerCache", () => {
   test("refreshes credentials five minutes before their TTL expires", async () => {
     let currentTime = 0
     let calls = 0
-    const cache = createTurnIceServerCache(async () => {
-      calls += 1
-      return iceServers
-    }, () => currentTime)
+    const cache = createTurnIceServerCache(
+      async () => {
+        calls += 1
+        return iceServers
+      },
+      () => currentTime,
+    )
 
     await cache.get("session-a")
     currentTime += 12 * 60 * 60 * 1000 - 5 * 60 * 1000 + 1
@@ -81,10 +82,13 @@ describe("createTurnIceServerCache", () => {
   test("cools down failed requests and retries after the cooldown", async () => {
     let currentTime = 0
     let calls = 0
-    const cache = createTurnIceServerCache(async () => {
-      calls += 1
-      return undefined
-    }, () => currentTime)
+    const cache = createTurnIceServerCache(
+      async () => {
+        calls += 1
+        return undefined
+      },
+      () => currentTime,
+    )
 
     expect(await cache.get("session-a")).toBeUndefined()
     expect(await cache.get("session-a")).toBeUndefined()
@@ -100,7 +104,10 @@ describe("createTurnIceServerCache", () => {
     let calls = 0
     const cache = createTurnIceServerCache(() => {
       calls += 1
-      if (calls === 1) return new Promise((resolve) => { resolveFirst = resolve })
+      if (calls === 1)
+        return new Promise((resolve) => {
+          resolveFirst = resolve
+        })
       return Promise.resolve(iceServers)
     })
 

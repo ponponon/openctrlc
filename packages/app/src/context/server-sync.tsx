@@ -256,7 +256,8 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     // model selection; otherwise it competes with the desktop's limited upload.
     enabled:
       shouldLoadFullProviderCatalog(!!platform.remoteSessionID, fullGlobalProvidersRequested()) &&
-      !providerQuery.isLoading && providerQuery.isSuccess,
+      !providerQuery.isLoading &&
+      providerQuery.isSuccess,
   }))
   const activeSessionsQuery = useQuery(() =>
     loadActiveSessionsQuery(serverSDK.scope, {

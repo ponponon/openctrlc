@@ -553,9 +553,7 @@ function HomeSessionStorage(props: { record: HomeSessionRecord }) {
         <div class="flex min-w-0 items-center gap-4">
           <span class="shrink-0 text-v2-text-text-muted">{language.t("context.usage.tokens")}</span>
           <span class="ml-auto min-w-0 truncate text-right text-v2-text-text-base">
-            {current.limit
-              ? `${count(current.tokens ?? 0)} / ${count(current.limit)}`
-              : count(current.tokens ?? 0)}
+            {current.limit ? `${count(current.tokens ?? 0)} / ${count(current.limit)}` : count(current.tokens ?? 0)}
           </span>
         </div>
         <Show when={current.percent}>

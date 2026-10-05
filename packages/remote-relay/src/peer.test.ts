@@ -25,7 +25,13 @@ describe("selectedPeerRoute", () => {
       selectedPeerRoute(
         stats([
           { id: "transport", type: "transport", selectedCandidatePairId: "pair" },
-          { id: "pair", type: "candidate-pair", state: "succeeded", localCandidateId: "local", remoteCandidateId: "remote" },
+          {
+            id: "pair",
+            type: "candidate-pair",
+            state: "succeeded",
+            localCandidateId: "local",
+            remoteCandidateId: "remote",
+          },
           { id: "local", type: "local-candidate", candidateType: "host" },
           { id: "remote", type: "remote-candidate", candidateType: "srflx" },
         ]),
@@ -38,7 +44,13 @@ describe("selectedPeerRoute", () => {
       selectedPeerRoute(
         stats([
           { id: "transport", type: "transport", selectedCandidatePairId: "pair" },
-          { id: "pair", type: "candidate-pair", state: "succeeded", localCandidateId: "local", remoteCandidateId: "remote" },
+          {
+            id: "pair",
+            type: "candidate-pair",
+            state: "succeeded",
+            localCandidateId: "local",
+            remoteCandidateId: "remote",
+          },
           { id: "local", type: "local-candidate", candidateType: "relay" },
           { id: "remote", type: "remote-candidate", candidateType: "srflx" },
         ]),
@@ -51,7 +63,15 @@ describe("selectedPeerRoute", () => {
       selectedPeerRouteReport(
         stats([
           { id: "transport", type: "transport", selectedCandidatePairId: "pair" },
-          { id: "pair", type: "candidate-pair", state: "succeeded", localCandidateId: "local", remoteCandidateId: "remote", bytesSent: 1234, bytesReceived: 5678 },
+          {
+            id: "pair",
+            type: "candidate-pair",
+            state: "succeeded",
+            localCandidateId: "local",
+            remoteCandidateId: "remote",
+            bytesSent: 1234,
+            bytesReceived: 5678,
+          },
           { id: "local", type: "local-candidate", candidateType: "host" },
           { id: "remote", type: "remote-candidate", candidateType: "srflx" },
         ]),
@@ -63,7 +83,14 @@ describe("selectedPeerRoute", () => {
     expect(
       selectedPeerRoute(
         stats([
-          { id: "pair", type: "candidate-pair", selected: true, state: "succeeded", localCandidateId: "local", remoteCandidateId: "remote" },
+          {
+            id: "pair",
+            type: "candidate-pair",
+            selected: true,
+            state: "succeeded",
+            localCandidateId: "local",
+            remoteCandidateId: "remote",
+          },
           { id: "local", type: "local-candidate", candidateType: "host" },
           { id: "remote", type: "remote-candidate", candidateType: "host" },
         ]),
@@ -76,7 +103,13 @@ describe("selectedPeerRoute", () => {
       selectedPeerRoute(
         stats([
           { id: "transport", type: "transport" },
-          { id: "pair", type: "candidate-pair", state: "in-progress", localCandidateId: "local", remoteCandidateId: "remote" },
+          {
+            id: "pair",
+            type: "candidate-pair",
+            state: "in-progress",
+            localCandidateId: "local",
+            remoteCandidateId: "remote",
+          },
           { id: "local", type: "local-candidate", candidateType: "host" },
           { id: "remote", type: "remote-candidate", candidateType: "host" },
         ]),

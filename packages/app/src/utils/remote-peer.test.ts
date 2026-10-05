@@ -19,7 +19,11 @@ describe("remotePeerReconnectDelay", () => {
 
 describe("remoteSocketTarget", () => {
   test("adds the remote session only to same-origin WebSocket URLs", () => {
-    const { target, relayTarget, sameOrigin } = remoteSocketTarget("wss://app.example.test/pty?existing=1", "https://app.example.test", "session-secret")
+    const { target, relayTarget, sameOrigin } = remoteSocketTarget(
+      "wss://app.example.test/pty?existing=1",
+      "https://app.example.test",
+      "session-secret",
+    )
 
     expect(sameOrigin).toBe(true)
     expect(target.searchParams.get("existing")).toBe("1")
@@ -29,7 +33,11 @@ describe("remoteSocketTarget", () => {
   })
 
   test("does not disclose the remote session to cross-origin WebSocket URLs", () => {
-    const { target, relayTarget, sameOrigin } = remoteSocketTarget("wss://other.example.test/pty?existing=1", "https://app.example.test", "session-secret")
+    const { target, relayTarget, sameOrigin } = remoteSocketTarget(
+      "wss://other.example.test/pty?existing=1",
+      "https://app.example.test",
+      "session-secret",
+    )
 
     expect(sameOrigin).toBe(false)
     expect(target.searchParams.get("existing")).toBe("1")
@@ -38,7 +46,11 @@ describe("remoteSocketTarget", () => {
   })
 
   test("treats HTTP and WebSocket schemes on the same host as one origin", () => {
-    const { target, relayTarget, sameOrigin } = remoteSocketTarget("ws://app.example.test/pty", "http://app.example.test", "session-secret")
+    const { target, relayTarget, sameOrigin } = remoteSocketTarget(
+      "ws://app.example.test/pty",
+      "http://app.example.test",
+      "session-secret",
+    )
 
     expect(sameOrigin).toBe(true)
     expect(target.searchParams.has("_oc_remote_session")).toBe(false)
@@ -46,7 +58,11 @@ describe("remoteSocketTarget", () => {
   })
 
   test("does not equate insecure WebSocket with a secure page origin", () => {
-    const { relayTarget, sameOrigin } = remoteSocketTarget("ws://app.example.test/pty", "https://app.example.test", "session-secret")
+    const { relayTarget, sameOrigin } = remoteSocketTarget(
+      "ws://app.example.test/pty",
+      "https://app.example.test",
+      "session-secret",
+    )
 
     expect(sameOrigin).toBe(false)
     expect(relayTarget.searchParams.has("_oc_remote_session")).toBe(false)

@@ -12,7 +12,11 @@ const userSeed = fixture.messages[fixture.targetID][0]!
 const user = {
   ...userSeed,
   info: { ...userSeed.info, id: userID, time: { created: 1700001000000 } },
-  parts: userSeed.parts.map((part, index) => ({ ...part, id: `prt_parent_hydration_user_${index}`, messageID: userID })),
+  parts: userSeed.parts.map((part, index) => ({
+    ...part,
+    id: `prt_parent_hydration_user_${index}`,
+    messageID: userID,
+  })),
 }
 const assistantSeed = fixture.messages[fixture.targetID][3]!
 const assistants = Array.from({ length: 20 }, (_, index) => {
@@ -42,33 +46,24 @@ benchmark("loads assistant-only session pages with sidecar turn roots", async ({
   benchmark.setTimeout(180_000)
   const results = [] as Awaited<ReturnType<typeof trial>>[]
   for (let run = 0; run < 5; run++) {
-    results.push(
-      await withBenchmarkPage(
-        browser,
-        `session-parent-hydration-${run}`,
-        trial,
-        testInfo,
-      ),
-    )
+    results.push(await withBenchmarkPage(browser, `session-parent-hydration-${run}`, trial, testInfo))
   }
   const timing = results.map((result) => result.metrics.firstCorrectObservedMs!).sort((a, b) => a - b)
-  report(
-    {
-      results: results.map((result) => ({
-        ...result.metrics,
-        requestCounts: result.requestCounts,
-        pageLimits: result.pageLimits,
-      })),
-      summary: {
-        firstCorrectObservedMs: { min: timing[0], median: timing[2], max: timing.at(-1) },
-        blankSamples: results.map((result) => result.metrics.blankSamples),
-        requestCounts: {
-          list: results.map((result) => result.requestCounts.list),
-          parent: results.map((result) => result.requestCounts.parent),
-        },
+  report({
+    results: results.map((result) => ({
+      ...result.metrics,
+      requestCounts: result.requestCounts,
+      pageLimits: result.pageLimits,
+    })),
+    summary: {
+      firstCorrectObservedMs: { min: timing[0], median: timing[2], max: timing.at(-1) },
+      blankSamples: results.map((result) => result.metrics.blankSamples),
+      requestCounts: {
+        list: results.map((result) => result.requestCounts.list),
+        parent: results.map((result) => result.requestCounts.parent),
       },
     },
-  )
+  })
 })
 
 async function trial(page: Page) {
@@ -77,7 +72,8 @@ async function trial(page: Page) {
   let sidecarCount = -1
   page.on("response", async (response) => {
     if (!response.url().includes(fixture.targetID) || !response.url().includes("message")) return
-    const count = ((await response.json().catch(() => undefined)) as { parents?: unknown[] } | undefined)?.parents?.length ?? 0
+    const count =
+      ((await response.json().catch(() => undefined)) as { parents?: unknown[] } | undefined)?.parents?.length ?? 0
     sidecarCount = Math.max(sidecarCount, count)
   })
   await mockOpenCodeServer(page, {
