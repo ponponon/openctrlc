@@ -86,6 +86,11 @@ const SessionBoundary = lazy(() =>
 const File = lazy(() => import("@openctrlc/session-ui/file").then((m) => ({ default: m.File })))
 const NewSession = lazy(() => import("@/pages/new-session"))
 
+/** Warm the session chrome chunk before a restored session route mounts. */
+export function warmSessionRoute() {
+  return import("@/pages/session-route-view").then(() => undefined)
+}
+
 const setDesktopTitlebar = (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => {
   const api = (
     window as Window & {

@@ -105,6 +105,7 @@ import { useUsageExceededDialogs } from "./session/usage-exceeded-dialogs"
 import { createSessionOwnership } from "./session/session-ownership"
 import { createSessionLineage } from "./session/session-lineage"
 import { SessionSearchBar } from "./session/session-search-bar"
+import { SessionSkeleton } from "./session-skeleton"
 import {
   createSessionSearchIndex,
   findSessionSearchMatches,
@@ -172,7 +173,13 @@ export function SessionPage() {
 export function TargetSessionRouteContent() {
   const params = useParams<{ serverKey: string; id: string }>()
   const serverSync = useServerSync()
-  const directory = createMemo(() => serverSync().session.lineage.peek(params.id)?.session.directory)
+  const tabs = useTabs()
+  const serverKey = createMemo(() => requireServerKey(params.serverKey))
+  const directory = createMemo(
+    () =>
+      serverSync().session.get(params.id)?.directory ??
+      tabs.info[`${serverKey()}\n${sessionHref(serverKey(), params.id)}`]?.directory,
+  )
   return (
     // Settings must keep the target-server SDK, sync, and models context and remain registered
     // when session content falls back to the route error boundary.
@@ -260,13 +267,32 @@ function ResolvedTargetSessionRoute() {
   const params = useParams<{ serverKey: string; id: string }>()
   const tabs = useTabs()
   const sync = useServerSync()
+  const language = useLanguage()
   const serverKey = createMemo(() => requireServerKey(params.serverKey))
+  const target = createMemo(() => sync().session.get(params.id))
   const current = createSessionLineage(
     () => params.id,
     () => sync().session.lineage,
   )
-  const directory = createMemo(() => current()?.session.directory)
+  // Tab restore already knows the workspace; reuse it so restart does not wait
+  // on a session-detail round trip just to mount the transcript shell.
+  const cachedTabInfo = createMemo(() => tabs.info[`${serverKey()}\n${sessionHref(serverKey(), params.id)}`])
+  const directory = createMemo(() => target()?.directory ?? cachedTabInfo()?.directory)
   const targetDirectory = () => directory()!
+
+  createEffect(
+    on(
+      [serverKey, () => params.id] as const,
+      ([, sessionID]) => {
+        const server = sync()
+        if (!server.session.shouldPrefetch(sessionID, 20)) return
+        // Start the transcript request as soon as the target is selected. The
+        // root-session lookup can take one network round trip per parent, so it
+        // must not hold the first message page behind the lineage walk.
+        void server.session.prefetch(sessionID, 20).catch(() => {})
+      },
+    ),
+  )
 
   createEffect(() => {
     const session = current()
@@ -278,11 +304,13 @@ function ResolvedTargetSessionRoute() {
   })
 
   return (
-    // Non-keyed: closes only while the target's directory is unknown (uncached
-    // lineage mid-resolution), which tears down the workspace subtree including
-    // the terminal. Same-workspace tab switches keep it open because warm
-    // targets resolve synchronously from the sync cache.
-    <Show when={directory()}>
+    // Non-keyed: wait only for the target session metadata needed to identify
+    // its workspace. Parent/root lineage continues in the background so it
+    // cannot delay mounting the transcript and workspace providers.
+    <Show
+      when={directory()}
+      fallback={<SessionSkeleton title={cachedTabInfo()?.title} status={language.t("session.loading")} />}
+    >
       <SDKProvider directory={targetDirectory}>
         <DirectoryDataProvider directory={targetDirectory} server={serverKey}>
           <TargetSessionPage />
@@ -2385,19 +2413,7 @@ export default function Page() {
               <Show
                 when={messagesReady() ? params.id : undefined}
                 keyed
-                fallback={
-                  <div class="flex flex-col gap-4 px-4 py-6" aria-busy="true" aria-live="polite">
-                    <div class="flex justify-end">
-                      <div class="h-14 w-2/3 animate-pulse rounded-2xl rounded-br-md bg-v2-background-bg-layer-01" />
-                    </div>
-                    <div class="h-4 w-1/3 animate-pulse rounded bg-v2-background-bg-layer-01" />
-                    <div class="h-28 w-full animate-pulse rounded-2xl rounded-bl-md bg-v2-background-bg-layer-01" />
-                    <div class="flex justify-end">
-                      <div class="h-10 w-1/2 animate-pulse rounded-2xl rounded-br-md bg-v2-background-bg-layer-01" />
-                    </div>
-                    <div class="h-20 w-4/5 animate-pulse rounded-2xl rounded-bl-md bg-v2-background-bg-layer-01" />
-                  </div>
-                }
+                fallback={<SessionSkeleton status={language.t("session.messages.loading")} />}
               >
                 {(_id) => (
                   <MessageTimeline

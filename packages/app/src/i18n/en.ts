@@ -878,6 +878,7 @@ export const dict = {
   "session.messages.renderEarlier": "Render earlier messages",
   "session.messages.loadingEarlier": "Loading earlier messages...",
   "session.messages.loadEarlier": "Load earlier messages",
+  "session.loading": "Loading session...",
   "session.messages.loading": "Loading messages...",
   "session.messages.jumpToLatest": "Jump to latest",
   "session.messages.newOutputs.one": "{{count}} new output",

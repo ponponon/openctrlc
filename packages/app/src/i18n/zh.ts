@@ -938,6 +938,7 @@ export const dict = {
   "session.messages.renderEarlier": "显示更早的消息",
   "session.messages.loadingEarlier": "正在加载更早的消息...",
   "session.messages.loadEarlier": "加载更早的消息",
+  "session.loading": "正在加载会话...",
   "session.messages.loading": "正在加载消息...",
   "session.messages.jumpToLatest": "跳转到最新",
   "session.messages.newOutputs.one": "{{count}} 条新输出",

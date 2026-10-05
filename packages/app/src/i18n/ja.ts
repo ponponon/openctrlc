@@ -911,6 +911,7 @@ export const dict = {
   "session.messages.renderEarlier": "以前のメッセージを表示",
   "session.messages.loadingEarlier": "以前のメッセージを読み込み中...",
   "session.messages.loadEarlier": "以前のメッセージを読み込む",
+  "session.loading": "セッションを読み込み中...",
   "session.messages.loading": "メッセージを読み込み中...",
   "session.messages.jumpToLatest": "最新へジャンプ",
   "session.messages.newOutputs.one": "新しい出力 {{count}} 件",

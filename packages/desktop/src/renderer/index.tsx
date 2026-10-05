@@ -87,6 +87,13 @@ function DesktopMemoryRouter(props: BaseRouterProps & { windowID: string }) {
   const history = createMemoryHistory()
   const initialUrl = getLastActiveUrl(typeof localStorage === "object" ? localStorage : undefined, props.windowID)
   if (initialUrl !== "/") history.set({ value: initialUrl, replace: true, scroll: false })
+  // Restored session tabs need the session chrome chunk immediately; otherwise
+  // first paint after restart waits on a cold 1MB route import.
+  if (initialUrl.includes("/session/")) {
+    void import("@openctrlc/app")
+      .then((mod) => mod.warmSessionRoute())
+      .catch(() => undefined)
+  }
   onCleanup(
     history.listen((value) =>
       setLastActiveUrl(typeof localStorage === "object" ? localStorage : undefined, props.windowID, value),

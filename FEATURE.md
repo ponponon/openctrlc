@@ -2336,7 +2336,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 远程性能：会话页/File/KaTeX 均按需；入口 JS 约 1.49MB（原 3.26MB），主 CSS 不含 KaTeX；哈希资源一年缓存；弱网（saveData/2G/3G）跳过预取并对图片/音频点按加载，顶栏显示「省流」；V1/V2 共用 `/provider?view=summary|full` 两阶段目录，摘要先到，远程完整目录仅在用户打开模型选择器时加载，避免 V2 启动绕过摘要并全量请求 `/api/model`；打开会话时只加载当前目标，不自动预热相邻会话；键盘显式切换时最多串行预热目标会话的首 20 条，鼠标悬停不请求远程正文；缺失的父级用户消息以最多 20 个并发请求补齐，避免多次网络往返串行累加；会话打开 20 条/页、折叠 diff、虚拟列表、气泡骨架。
 - 远程首页不自动预载会话路由代码，也不预取会话正文，减少首次打开时经桌面上行搬运的无用资源；用户指向具体会话时才预载路由，正文按用户操作加载。桌面本地首页仍在空闲时预载路由。
 
-- 交互即时化（桌面/远程统一）：开 tab、切项目、选模型、新建草稿均先改 UI 再补数据；禁止用 startTransition 包住含懒加载的导航。会话时间线首条消息到达即渲染；Inter 拉丁子集 + font-display:swap；hover 预取会话路由包与消息。
+- 交互即时化（桌面/远程统一）：开 tab、切项目、选模型、新建草稿均先改 UI 再补数据；禁止用 startTransition 包住含懒加载的导航。会话时间线在首个可见 user turn 到达时渐进渲染；只有 orphan assistant 时继续显示加载骨架，避免原始消息数组非空但没有可见行的空白；Inter 拉丁子集 + font-display:swap；hover 预取会话路由包与消息。
 
 - 远程首屏验收：侧栏项目数与桌面一致（或至少 > 0），首页会话列表非空；新开标签页/强刷后仍能看到项目与会话。改动 workspace 同步、bootstrap 或 tabs 恢复后必须复验这三条。
 - 浏览器授权上限保存在桌面设置中；新版本桌面通过 `session.create` 发送上限，活动会话通过 `session.limit.update` 实时更新，Relay 以 `session.limit.updated` 回报生效值。连接到尚未支持自定义上限的旧 Relay 时，UI 按旧版 3 个浏览器容量显示，并提示需更新 Relay 后设置才会生效。
@@ -2700,6 +2700,8 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 
 助手消息创建时保存它所属的用户/合成提示 ID。读取旧会话时，服务端用带索引的边界查询补出缺失关联；消息页响应同时携带当前页助手所需、但本页未包含的根消息。客户端可以在一次消息页请求后还原完整的用户与助手顺序，不必先串行读取多页历史再逐条回取根消息。补齐旧消息的 parentID 时，服务端内部按序号正序计算回合根，再严格按查询结果原顺序返回消息；分页游标仍只根据原始消息页生成，根消息侧载不改变历史游标。
 
+V2 消息页最多返回 200 条记录；当页内引用了不在本页的父消息时，服务端最多并发回填 32 条父记录，避免大页请求一次性创建数百个数据库查询。常见的 20 条首屏页仍可在一批内完成。
+
 ### 验证方式
 
 - `packages/core/test/session-projector.test.ts` 覆盖新助手关联到最近提示，以及模拟旧存储记录缺失 parentID 时的服务端按页回填。
@@ -2724,6 +2726,7 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 
 - `packages/app/src/utils/remote-peer.test.ts` 覆盖跨域不泄露、HTTP/WS 同源映射、安全页面拒绝不安全 WS，以及会话标识仅进入 Relay 地址。
 - `packages/app/e2e/regression/remote-peer-channel.spec.ts` 的 Chromium 测试覆盖直连握手失败后 Relay 建连、路径与会话标识、运行中修改 `binaryType`；P2P、断开及上传取消回归均通过。
+- 桌面同时承载的直接连接达到 8 条时，Relay 用专用容量关闭码通知后续浏览器；浏览器继续走 HTTPS Relay，并把下一次 P2P 尝试延后 60 秒，避免快速重连占用信令资源。
 
 ## 会话页面与根会话解析并行启动
 
@@ -2743,3 +2746,35 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 - `infra/remote-relay/README.md` 记录启用命令、云安全组要求与 Relay 环境变量。
 - 生产环境未开启此 profile；修改仓库配置不会自行变更服务器防火墙或重启 Relay。
 - STUN 不承载工作区数据；当直接连接失败且后续未配置 TURN 时，客户端仍使用现有 HTTPS Relay。
+
+## 重启后会话首屏加速与加载占位
+
+### 功能目标
+
+桌面端重启恢复上次会话时，不再被「会话详情接口 + 1MB 会话路由 chunk」串行拖住；加载过程中显示对比度正确、可读的会话骨架与状态文案，而不是大片空白加一行突兀的“正在加载会话…”。
+
+### 实现范围
+
+- 会话目录信息优先复用 `tabs.info`（上次会话已落盘的 title/directory）：`ResolvedTargetSessionRoute` 与 `TargetSessionRouteContent` 在 `session.get` 尚未返回时用 tab 缓存的 `directory` 挂载工作区，避免重启后为拿目录再等一次详情请求。
+- 桌面 `DesktopMemoryRouter` 在恢复的 last-active-url 是会话路由时，提前 `warmSessionRoute()` 加载会话 chrome chunk（`session-route-view`），与启动初始化并行，减少首屏冷启动等待。
+- `SessionSkeleton` 改为居中布局，脉冲条使用 `bg-v2-background-bg-layer-02`。浅色主题下 `bg-deep` 与 `bg-layer-01` 同为 `--v2-grey-100`，旧骨架在浅色下完全不可见；改用 layer-02 后浅/深色都有对比度。
+- 会话元数据占位显示已知 tab 标题 + `session.loading`；消息占位统一走 `SessionSkeleton` + `session.messages.loading`，不再内联另一套几乎不可见的骨架。
+
+### 代码位置
+
+- `packages/app/src/pages/session-skeleton.tsx`：可见骨架与可选 title/status。
+- `packages/app/src/pages/session.tsx`：`tabs.info` 目录回退、占位接线。
+- `packages/app/src/app.tsx`、`packages/app/src/index.ts`：`warmSessionRoute` 导出。
+- `packages/desktop/src/renderer/index.tsx`：恢复会话路由时预热 chunk。
+
+### 验证方式
+
+- `packages/app`、`packages/desktop` 执行 `bun run typecheck`。
+- 会话接口基线（sidecar 热路径）：`GET /session/:id` 约 4ms，`GET /session/:id/message?limit=20` 约 10–20ms；慢的是重启后前端冷加载 1MB 会话路由，而不是服务端查询。
+- 手动：重启桌面后打开恢复的会话 tab，应先看到可见骨架（含标题/状态），并尽快进入时间线，而不是长时间空白 + 左侧一行小字。
+- `e2e/regression/session-lineage-loading.spec.ts` 仍要求 `role="status"` 与 `session.loading` 文案，骨架保留这两点。
+
+### 边界
+
+- `tabs.info` 只提供 title/directory，完整会话元数据仍由 `session.get` / lineage 解析补齐；目录缺失且 tab 缓存也没有时，仍显示占位。
+- 预热只针对恢复到的会话路由，不恢复“省流”模式下对其它会话的 hover 预取。

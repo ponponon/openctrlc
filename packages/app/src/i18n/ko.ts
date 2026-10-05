@@ -682,6 +682,7 @@ export const dict = {
   "session.messages.renderEarlier": "이전 메시지 렌더링",
   "session.messages.loadingEarlier": "이전 메시지 로드 중...",
   "session.messages.loadEarlier": "이전 메시지 로드",
+  "session.loading": "세션을 불러오는 중...",
   "session.messages.loading": "메시지 로드 중...",
   "session.messages.jumpToLatest": "최신으로 이동",
   "session.messages.newOutputs.one": "새 출력 {{count}}개",
