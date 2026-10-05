@@ -79,27 +79,33 @@ if [ "$mode" = --config-only ]; then
   exit 0
 fi
 
-relay_uid=$(id -u)
-relay_gid=$(id -g)
-if [ "$relay_uid" -eq 0 ]; then
+deploy_uid=$(id -u)
+deploy_gid=$(id -g)
+if [ "$deploy_uid" -eq 0 ]; then
   echo "Run the Relay deployment as a non-root account so the container stays unprivileged" >&2
   exit 1
+fi
+
+install -d -m 0755 "$relay/packages" "$relay/infra/remote-relay"
+if [ -L "$relay/data" ]; then
+  echo "Refusing a symlinked Relay data directory: $relay/data" >&2
+  exit 1
+fi
+if [ -d "$relay/data" ]; then
+  relay_uid=$(stat -c %u "$relay/data")
+  relay_gid=$(stat -c %g "$relay/data")
+  if [ "$relay_uid" -eq 0 ]; then
+    echo "Refusing to run the Relay container as root; migrate $relay/data to a non-root owner first" >&2
+    exit 1
+  fi
+else
+  install -d -m 0700 "$relay/data"
+  relay_uid=$deploy_uid
+  relay_gid=$deploy_gid
 fi
 export OPENCTRLC_RELAY_UID=$relay_uid
 export OPENCTRLC_RELAY_GID=$relay_gid
 
-install -d -m 0755 "$relay/packages" "$relay/infra/remote-relay"
-install -d -m 0700 "$relay/data"
-if ! chmod 0700 "$relay/data"; then
-  echo "Cannot secure $relay/data; make it owned by the deployment account before deploying" >&2
-  exit 1
-fi
-if [ -f "$relay/data/remote-sessions.json" ]; then
-  if ! chmod 0600 "$relay/data/remote-sessions.json"; then
-    echo "Cannot secure the Relay session state file; make it owned by the deployment account before deploying" >&2
-    exit 1
-  fi
-fi
 printf '%s\n' 'Managed by OpenCtrlC Remote Relay deployment.' > "$managed_marker"
 rm -rf "$relay/packages/remote-relay.next"
 install -d -m 0755 "$relay/packages/remote-relay.next"
@@ -112,6 +118,20 @@ mv "$relay/packages/remote-relay.next" "$relay/packages/remote-relay"
 cp "$root/infra/remote-relay/compose.yaml" "$compose"
 cp "$root/infra/remote-relay/openresty.conf" "$relay/infra/remote-relay/openresty.conf"
 docker compose --project-name openctrlc-remote --project-directory "$relay" -f "$compose" build relay
+docker run --rm --user 0:0 --volume "$relay/data:/data:rw" \
+  --env "RELAY_UID=$relay_uid" --env "RELAY_GID=$relay_gid" \
+  --entrypoint /bin/sh openctrlc/remote-relay:local -ec '
+    chown "$RELAY_UID:$RELAY_GID" /data
+    chmod 0700 /data
+    if [ -L /data/remote-sessions.json ]; then
+      echo "Refusing a symlinked Relay session state file" >&2
+      exit 1
+    fi
+    if [ -f /data/remote-sessions.json ]; then
+      chown "$RELAY_UID:$RELAY_GID" /data/remote-sessions.json
+      chmod 0600 /data/remote-sessions.json
+    fi
+  '
 docker compose --project-name openctrlc-remote --project-directory "$relay" -f "$compose" up -d --no-build
 
 healthy=false

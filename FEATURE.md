@@ -2836,3 +2836,14 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 - `packages/app/src/utils/remote-peer.ts`：探测通过后才开始 P2P；网络暂时失败时退避重试，旧版或未配置的 Relay 保持中继传输。
 - `packages/remote-relay/src/peer.test.ts`：覆盖错误协议版本、未配置 ICE 和有效能力响应。
 - 启用公网 P2P 仍需部署对应 Relay 与 STUN/TURN 设置，并在大陆移动网络和美国网络真实验收；代码合并本身不改变线上服务。
+
+## Relay 重复部署保留持久化目录属主
+
+Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并将其传给 Compose，因此经加固为 Relay 容器专用 UID 的 `0700` 数据目录，升级时仍由相同的非 root 服务用户访问。新安装则使用部署账户 UID/GID。镜像构建后由一次性 root helper 容器把数据目录及恢复文件分别设为 `0700`/`0600` 并修正属主；服务容器仍以非 root 运行。脚本拒绝数据目录或状态文件是符号链接的情况，避免权限修正跟随链接改动宿主机其他路径。
+
+### 代码与验证
+
+- `infra/remote-relay/deploy.sh`：复用已有数据属主并用限时 helper 收紧权限。
+- `infra/remote-relay/README.md`：说明新安装和升级时容器 UID 的行为。
+- `sh -n infra/remote-relay/deploy.sh` 与 `git diff --check`。
+- 此变更未部署到线上；代理不可用，且不能在没有 Coturn 镜像与 UDP 网络验证时声称公网 P2P 已启用。
