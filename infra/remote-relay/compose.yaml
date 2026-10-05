@@ -69,10 +69,8 @@ services:
       - -n
       - --log-file=stdout
       - --stun-only
-      - --no-cli
       - --no-tcp
       - --no-tls
-      - --no-dtls
       - --listening-port=3478
     logging:
       driver: json-file
