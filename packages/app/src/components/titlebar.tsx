@@ -24,7 +24,7 @@ import { KeybindV2 } from "@openctrlc/ui/v2/keybind-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
 
 import { LayoutRoute, useLayout } from "@/context/layout"
-import { usePlatform } from "@/context/platform"
+import { usePlatform, type RemoteTransportStatus } from "@/context/platform"
 import { useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
 import { useSettings } from "@/context/settings"
@@ -842,18 +842,89 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
   const platform = usePlatform()
   const language = useLanguage()
   const channel = import.meta.env.VITE_OPENCTRLC_CHANNEL
-  const [host, setHost] = createSignal(remoteHostName())
+  const [host, setHost] = createSignal(remoteHostName(platform.remoteSessionID))
   const [liteNet, setLiteNet] = createSignal(readNetworkQuality().lite)
+  const [transport, setTransport] = createSignal<RemoteTransportStatus>(
+    platform.remoteTransport?.getStatus() ?? "relay",
+  )
   const desktops = createMemo(() => listRemoteDesktops())
   const activeId = createMemo(() => activeRemoteSessionID())
 
   onMount(() => {
     setLiteNet(readNetworkQuality().lite)
-    onNetworkQualityChange((quality) => setLiteNet(quality.lite))
+    const unsubscribeNetwork = onNetworkQualityChange((quality) => setLiteNet(quality.lite))
+    const unsubscribe = platform.remoteTransport?.subscribe(setTransport)
+    onCleanup(() => {
+      unsubscribeNetwork()
+      unsubscribe?.()
+    })
   })
 
+  const transportState = createMemo(() => {
+    if (!platform.remoteSessionID) return
+    const status = transport()
+    if (status === "direct")
+      return {
+        label: language.t("remote.transport.direct"),
+        hint: language.t("remote.transport.directHint"),
+        class: "bg-v2-state-bg-success text-v2-state-fg-success",
+        dot: "bg-v2-state-fg-success",
+      }
+    if (status === "turn")
+      return {
+        label: language.t("remote.transport.turn"),
+        hint: language.t("remote.transport.turnHint"),
+        class: "bg-v2-background-bg-layer-01 text-v2-text-text-muted",
+        dot: "bg-v2-text-text-muted",
+      }
+    if (status === "checking")
+      return {
+        label: language.t("remote.transport.checking"),
+        hint: language.t("remote.transport.checkingHint"),
+        class: "bg-v2-state-bg-warning text-v2-state-fg-warning",
+        dot: "bg-v2-state-fg-warning",
+      }
+    if (status === "connecting")
+      return {
+        label: language.t("remote.transport.connecting"),
+        hint: language.t("remote.transport.connectingHint"),
+        class: "bg-v2-state-bg-warning text-v2-state-fg-warning",
+        dot: "bg-v2-state-fg-warning",
+      }
+    if (status === "unavailable")
+      return {
+        label: language.t("remote.transport.unavailable"),
+        hint: language.t("remote.transport.unavailableHint"),
+        class: "bg-v2-background-bg-layer-01 text-v2-text-text-muted",
+        dot: "bg-v2-text-text-muted",
+      }
+    return {
+      label: language.t("remote.transport.relay"),
+      hint: language.t("remote.transport.relayHint"),
+      class: "bg-v2-background-bg-layer-01 text-v2-text-text-muted",
+      dot: "bg-v2-text-text-muted",
+    }
+  })
+
+  const transportChip = () => (
+    <Show when={transportState()}>
+      {(state) => (
+        <div
+          class={`flex max-w-[150px] min-w-0 items-center gap-1.5 truncate rounded-sm px-2 text-12-regular ${state().class}`}
+          title={state().hint}
+          aria-label={state().hint}
+          role="status"
+          aria-live="polite"
+        >
+          <span class={`size-1.5 shrink-0 rounded-full ${state().dot}`} aria-hidden="true" />
+          <span class="truncate">{state().label}</span>
+        </div>
+      )}
+    </Show>
+  )
+
   createEffect(() => {
-    const known = remoteHostName()
+    const known = remoteHostName(platform.remoteSessionID)
     if (known) {
       setHost(known)
       return
@@ -918,6 +989,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
             {language.t("remote.liteNetwork")}
           </div>
         </Show>
+        {transportChip()}
         {hostChip()}
       </>
     )
@@ -938,6 +1010,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           {language.t("remote.liteNetwork")}
         </div>
       </Show>
+      {transportChip()}
       {hostChip()}
     </>
   )

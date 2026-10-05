@@ -209,6 +209,8 @@ export const Terminal = (props: TerminalProps) => {
       : undefined
   const scrollY = typeof local.pty.scrollY === "number" ? local.pty.scrollY : undefined
   let ws: WebSocket | undefined
+  let switchingTransport = false
+  let pendingInput = ""
   let term: Term | undefined
   let _ghostty: Ghostty
   let serializeAddon: SerializeAddon
@@ -484,7 +486,16 @@ export const Terminal = (props: TerminalProps) => {
       })
       cleanups.push(() => disposeIfDisposable(onResize))
       const onData = t.onData((data) => {
-        if (ws?.readyState === WebSocket.OPEN) ws.send(data)
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(data)
+          return
+        }
+        if (!switchingTransport) return
+        if (pendingInput.length + data.length > 256 * 1024) {
+          debugTerminal("terminal input queue full during reconnect")
+          return
+        }
+        pendingInput += data
       })
       cleanups.push(() => disposeIfDisposable(onData))
       const onKey = t.onKey((key) => {
@@ -529,11 +540,14 @@ export const Terminal = (props: TerminalProps) => {
 
       const once = { value: false }
       const decoder = new TextDecoder()
+      let socketTransport: "peer" | "relay" = "relay"
 
       const fail = (err: unknown) => {
         if (disposed) return
         if (once.value) return
         once.value = true
+        switchingTransport = false
+        pendingInput = ""
         local.onConnectError?.(err)
       }
 
@@ -618,26 +632,32 @@ export const Terminal = (props: TerminalProps) => {
         if (once.value) return
         if (disposed) return
 
-        const socket = new WebSocket(
-          terminalWebSocketURL({
-            protocol,
-            url,
-            id,
-            directory,
-            cursor: seek,
-            ticket,
-            sameOrigin,
-            username,
-            password,
-            authToken,
-          }),
-        )
+        const socketURL = terminalWebSocketURL({
+          protocol,
+          url,
+          id,
+          directory,
+          cursor: seek,
+          ticket,
+          sameOrigin,
+          username,
+          password,
+          authToken,
+        })
+        const socket = platform.webSocket?.(socketURL) ?? new WebSocket(socketURL)
+        const transport = platform.remoteTransport?.getStatus()
+        socketTransport = transport === "checking" || transport === "direct" || transport === "turn" ? "peer" : "relay"
         socket.binaryType = "arraybuffer"
         ws = socket
 
         const handleOpen = () => {
           if (disposed) return
           tries = 0
+          switchingTransport = false
+          if (pendingInput) {
+            socket.send(pendingInput)
+            pendingInput = ""
+          }
           local.onConnect?.()
           scheduleSize(t.cols, t.rows)
           if (t.getMode(2031)) t.write("\x1b[?996n")
@@ -685,6 +705,7 @@ export const Terminal = (props: TerminalProps) => {
         }
 
         const handleClose = (event: CloseEvent) => {
+          const switched = switchingTransport
           if (ws === socket) ws = undefined
           if (drop === stop) drop = undefined
           socket.removeEventListener("open", handleOpen)
@@ -692,7 +713,8 @@ export const Terminal = (props: TerminalProps) => {
           socket.removeEventListener("error", handleError)
           socket.removeEventListener("close", handleClose)
           if (disposed) return
-          if (event.code === 1000) return
+          if (event.code === 1000 && !switched) return
+          switchingTransport = true
           retry(new Error(language.t("terminal.connectionLost.abnormalClose", { code: event.code })))
         }
 
@@ -702,6 +724,18 @@ export const Terminal = (props: TerminalProps) => {
         socket.addEventListener("error", handleError)
         socket.addEventListener("close", handleClose)
       }
+
+      const unsubscribeRemoteTransport = sameOrigin && platform.remoteTransport?.subscribe((status) => {
+        if (
+          (status !== "checking" && status !== "direct" && status !== "turn") ||
+          socketTransport === "peer" ||
+          !ws ||
+          ws.readyState >= WebSocket.CLOSING
+        ) return
+        switchingTransport = true
+        ws.close(4001, "Switching to direct connection")
+      })
+      if (unsubscribeRemoteTransport) cleanups.push(unsubscribeRemoteTransport)
 
       open()
     }
@@ -719,6 +753,8 @@ export const Terminal = (props: TerminalProps) => {
 
   onCleanup(() => {
     disposed = true
+    switchingTransport = false
+    pendingInput = ""
     if (fitFrame !== undefined) cancelAnimationFrame(fitFrame)
     if (sizeTimer !== undefined) clearTimeout(sizeTimer)
     if (reconn !== undefined) clearTimeout(reconn)

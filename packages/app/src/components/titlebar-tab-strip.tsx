@@ -14,6 +14,7 @@ import { useGlobal, type ServerCtx } from "@/context/global"
 import { useLanguage } from "@/context/language"
 import { useCommand } from "@/context/command"
 import { useTabs } from "@/context/tabs"
+import { usePlatform } from "@/context/platform"
 import { createTabPromptState } from "@/context/prompt"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import { showToast } from "@/utils/toast"
@@ -82,20 +83,25 @@ function SessionTabEntry(props: {
   onClose: () => void
 }) {
   const tabs = useTabs()
+  const platform = usePlatform()
   const language = useLanguage()
   const sdk = createMemo(() => props.serverCtx()?.sdk ?? null)
   const cachedSession = createMemo(() => props.serverCtx()?.sync.session.peek(props.tab.sessionId))
   const persisted = createMemo(() => tabs.info[props.id])
   const [loadedSession] = createResource(
     () => {
+      if (platform.platform === "web" && !props.active()) return null
       const ctx = props.serverCtx()
       return ctx ? { id: props.tab.sessionId, ctx } : null
     },
     ({ id, ctx }) => ctx.sync.session.resolve(id).catch(() => undefined),
   )
   const session = createMemo(() => cachedSession() ?? loadedSession())
-  const missingSession = createMemo(() => !!props.serverCtx() && !loadedSession.loading && !session())
-  const visible = createMemo(() => !!session() || missingSession() || !!persisted()?.title)
+  const missingSession = createMemo(
+    () => props.active() && !!props.serverCtx() && !loadedSession.loading && !session(),
+  )
+  const deferred = createMemo(() => platform.platform === "web" && !props.active())
+  const visible = createMemo(() => !!session() || missingSession() || !!persisted()?.title || deferred())
   let prefetched = false
 
   const rename = async (title: string) => {
@@ -122,7 +128,7 @@ function SessionTabEntry(props: {
   createEffect(() => {
     const ctx = props.serverCtx()
     const value = session()
-    if (!ctx || !value || prefetched) return
+    if (!props.active() || !ctx || !value || prefetched) return
     prefetched = true
     createRoot((dispose) => {
       try {
@@ -158,7 +164,10 @@ function SessionTabEntry(props: {
         active={props.active}
         forceTruncate={props.forceTruncate}
         session={session}
-        fallbackTitle={persisted()?.title ?? (missingSession() ? language.t("session.tab.unknown") : undefined)}
+        fallbackTitle={
+          persisted()?.title ??
+          (missingSession() || deferred() ? language.t("session.tab.unknown") : undefined)
+        }
         onRename={rename}
         onNavigate={props.onNavigate}
         onClose={props.onClose}

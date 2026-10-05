@@ -35,77 +35,89 @@ async function installSessionSwitchProbe(
     const initialReviewNodes: Record<string, Element | null> = {}
     const sample = () => {
       if (!running || started === undefined) return
-      setTimeout(() => {
-        if (!running || started === undefined) return
-        const observedAtMs = performance.now() - started
-        const reviewPanel = document.querySelector<HTMLElement>("#review-panel")
-        const reviewFile = reviewPanel?.querySelector('[data-component="file"][data-mode="diff"]')
-        const initialReviewFile = initialReviewNodes.file
-        const replacedLevels = Object.entries(reviewLevels).flatMap(([name, selector]) => {
-          const initial = initialReviewNodes[name]
-          if (!initial) return []
-          const current = document.querySelector(selector)
-          return current && current !== initial ? [name] : []
+      const observedAtMs = performance.now() - started
+      const reviewPanel = document.querySelector<HTMLElement>("#review-panel")
+      const reviewFile = reviewPanel?.querySelector('[data-component="file"][data-mode="diff"]')
+      const initialReviewFile = initialReviewNodes.file
+      const replacedLevels = Object.entries(reviewLevels).flatMap(([name, selector]) => {
+        const initial = initialReviewNodes[name]
+        if (!initial) return []
+        const current = document.querySelector(selector)
+        return current && current !== initial ? [name] : []
+      })
+      const review = reviewPanel
+        ? {
+            fileHost: !!reviewFile,
+            fileHostReplaced: !!initialReviewFile && !!reviewFile && reviewFile !== initialReviewFile,
+            header:
+              reviewPanel
+                .querySelector<HTMLElement>('[data-slot="session-review-v2-file-header"]')
+                ?.textContent?.trim() ?? "",
+            replacedLevels,
+          }
+        : undefined
+      const root = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")]
+        .filter((element) => {
+          if (!element.querySelector("[data-timeline-row]")) return false
+          const rect = element.getBoundingClientRect()
+          const style = getComputedStyle(element)
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            style.opacity !== "0"
+          )
         })
-        const review = reviewPanel
-          ? {
-              fileHost: !!reviewFile,
-              fileHostReplaced: !!initialReviewFile && !!reviewFile && reviewFile !== initialReviewFile,
-              header:
-                reviewPanel
-                  .querySelector<HTMLElement>('[data-slot="session-review-v2-file-header"]')
-                  ?.textContent?.trim() ?? "",
-              replacedLevels,
-            }
-          : undefined
-        const root = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")].find((element) =>
-          element.querySelector("[data-timeline-row]"),
-        )
-        if (root) {
-          const view = root.getBoundingClientRect()
-          const visible = [...root.querySelectorAll<HTMLElement>("[data-message-id]")]
-            .filter((element) => {
-              const rect = element.getBoundingClientRect()
-              return rect.bottom > view.top && rect.top < view.bottom
-            })
-            .map((element) => element.dataset.messageId!)
-          const hasVisibleRows = [...root.querySelectorAll<HTMLElement>("[data-timeline-key]")].some((element) => {
+        .sort((a, b) => {
+          const left = a.getBoundingClientRect()
+          const right = b.getBoundingClientRect()
+          return right.width * right.height - left.width * left.height
+        })[0]
+      if (root) {
+        const view = root.getBoundingClientRect()
+        const visible = [...root.querySelectorAll<HTMLElement>("[data-message-id]")]
+          .filter((element) => {
             const rect = element.getBoundingClientRect()
             return rect.bottom > view.top && rect.top < view.bottom
           })
-          const requiredPartVisible = requiredPartID
-            ? [...root.querySelectorAll<HTMLElement>("[data-timeline-part-id]")].some((element) => {
-                if (element.dataset.timelinePartId !== requiredPartID) return false
-                const rect = element.getBoundingClientRect()
-                return rect.width > 0 && rect.height > 0 && rect.bottom > view.top && rect.top < view.bottom
-              })
-            : undefined
-          const spacer = root.querySelector<HTMLElement>('[data-timeline-row="bottom-spacer"]')?.getBoundingClientRect()
-          samples.push({
-            observedAtMs,
-            destination: visible.filter((id) => destination.has(id)),
-            source: visible.filter((id) => source.has(id)),
-            hasVisibleRows,
-            last: visible.includes(lastID),
-            requiredPartVisible,
-            bottomAnchorRequired: requireBottomAnchor !== false,
-            bottomErrorPx: spacer ? spacer.bottom - view.bottom : undefined,
-            review,
-          })
-        } else {
-          samples.push({
-            observedAtMs,
-            destination: [],
-            source: [],
-            hasVisibleRows: false,
-            last: false,
-            requiredPartVisible: requiredPartID ? false : undefined,
-            bottomAnchorRequired: requireBottomAnchor !== false,
-            review,
-          })
-        }
-        requestAnimationFrame(sample)
-      }, 0)
+          .map((element) => element.dataset.messageId!)
+        const hasVisibleRows = [...root.querySelectorAll<HTMLElement>("[data-timeline-key]")].some((element) => {
+          const rect = element.getBoundingClientRect()
+          return rect.bottom > view.top && rect.top < view.bottom
+        })
+        const requiredPartVisible = requiredPartID
+          ? [...root.querySelectorAll<HTMLElement>("[data-timeline-part-id]")].some((element) => {
+              if (element.dataset.timelinePartId !== requiredPartID) return false
+              const rect = element.getBoundingClientRect()
+              return rect.width > 0 && rect.height > 0 && rect.bottom > view.top && rect.top < view.bottom
+            })
+          : undefined
+        const spacer = root.querySelector<HTMLElement>('[data-timeline-row="bottom-spacer"]')?.getBoundingClientRect()
+        samples.push({
+          observedAtMs,
+          destination: visible.filter((id) => destination.has(id)),
+          source: visible.filter((id) => source.has(id)),
+          hasVisibleRows,
+          last: visible.includes(lastID),
+          requiredPartVisible,
+          bottomAnchorRequired: requireBottomAnchor !== false,
+          bottomErrorPx: spacer ? spacer.bottom - view.bottom : undefined,
+          review,
+        })
+      } else {
+        samples.push({
+          observedAtMs,
+          destination: [],
+          source: [],
+          hasVisibleRows: false,
+          last: false,
+          requiredPartVisible: requiredPartID ? false : undefined,
+          bottomAnchorRequired: requireBottomAnchor !== false,
+          review,
+        })
+      }
+      requestAnimationFrame(sample)
     }
     document.addEventListener(
       "click",
@@ -130,24 +142,35 @@ async function installSessionSwitchProbe(
 }
 
 async function waitForStableSessionSwitch(page: Page) {
-  await page.waitForFunction(() => {
-    const samples = (window as Window & { __sessionSwitchProbe?: SessionSwitchProbe }).__sessionSwitchProbe?.samples
-    if (!samples) return false
-    return samples.some((_, index) => {
-      const stable = samples.slice(index, index + 3)
-      return (
-        stable.length === 3 &&
-        stable.every(
-          (sample) =>
-            sample.destination.length > 0 &&
-            sample.source.length === 0 &&
-            sample.last &&
-            sample.requiredPartVisible !== false &&
-            (sample.bottomAnchorRequired === false || Math.abs(sample.bottomErrorPx ?? Infinity) <= 1),
-        )
-      )
-    })
-  })
+  try {
+    await page.waitForFunction(
+      () => {
+        const samples = (window as Window & { __sessionSwitchProbe?: SessionSwitchProbe }).__sessionSwitchProbe?.samples
+        if (!samples) return false
+        return samples.some((_, index) => {
+          const stable = samples.slice(index, index + 3)
+          return (
+            stable.length === 3 &&
+            stable.every(
+              (sample) =>
+                sample.destination.length > 0 &&
+                sample.source.length === 0 &&
+                sample.last &&
+                sample.requiredPartVisible !== false &&
+                (sample.bottomAnchorRequired === false || Math.abs(sample.bottomErrorPx ?? Infinity) <= 1),
+            )
+          )
+        })
+      },
+      undefined,
+      { timeout: 30_000 },
+    )
+  } catch (error) {
+    const samples = await page.evaluate(
+      () => (window as Window & { __sessionSwitchProbe?: SessionSwitchProbe }).__sessionSwitchProbe?.samples.slice(-3),
+    )
+    throw new Error(`Session switch did not stabilize: ${JSON.stringify(samples)}`, { cause: error })
+  }
 }
 
 async function collectSessionSwitchResult(page: Page) {
@@ -189,38 +212,38 @@ export async function waitForStableTimeline(page: Page, lastID: string) {
   await expect
     .poll(
       async () => {
-        samples.push(
-          await page.evaluate(
-            (lastID) =>
-              new Promise<Pick<SessionSwitchSample, "last" | "bottomErrorPx">>((resolve) => {
-                requestAnimationFrame(() =>
-                  setTimeout(() => {
-                    const root = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")].find((element) =>
-                      element.querySelector("[data-timeline-row]"),
-                    )
-                    if (!root) {
-                      resolve({ last: false })
-                      return
-                    }
-                    const view = root.getBoundingClientRect()
-                    const last = [...root.querySelectorAll<HTMLElement>("[data-message-id]")].some((element) => {
-                      if (element.dataset.messageId !== lastID) return false
-                      const rect = element.getBoundingClientRect()
-                      return rect.bottom > view.top && rect.top < view.bottom
-                    })
-                    const spacer = root
-                      .querySelector<HTMLElement>('[data-timeline-row="bottom-spacer"]')
-                      ?.getBoundingClientRect()
-                    resolve({ last, bottomErrorPx: spacer ? spacer.bottom - view.bottom : undefined })
-                  }, 0),
-                )
-              }),
-            lastID,
-          ),
-        )
+        samples.push(await page.evaluate((lastID) => {
+          const root = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")]
+            .filter((element) => {
+              if (!element.querySelector("[data-timeline-row]")) return false
+              const rect = element.getBoundingClientRect()
+              const style = getComputedStyle(element)
+              return (
+                rect.width > 0 &&
+                rect.height > 0 &&
+                style.display !== "none" &&
+                style.visibility !== "hidden" &&
+                style.opacity !== "0"
+              )
+            })
+            .sort((a, b) => {
+              const left = a.getBoundingClientRect()
+              const right = b.getBoundingClientRect()
+              return right.width * right.height - left.width * left.height
+            })[0]
+          if (!root) return { last: false }
+          const view = root.getBoundingClientRect()
+          const last = [...root.querySelectorAll<HTMLElement>("[data-message-id]")].some((element) => {
+            if (element.dataset.messageId !== lastID) return false
+            const rect = element.getBoundingClientRect()
+            return rect.bottom > view.top && rect.top < view.bottom
+          })
+          const spacer = root.querySelector<HTMLElement>('[data-timeline-row="bottom-spacer"]')?.getBoundingClientRect()
+          return { last, bottomErrorPx: spacer ? spacer.bottom - view.bottom : undefined }
+        }, lastID))
         return isStableDestination(samples.slice(-3))
       },
-      { timeout: 30_000, intervals: [0] },
+      { timeout: 30_000 },
     )
     .toBe(true)
 }

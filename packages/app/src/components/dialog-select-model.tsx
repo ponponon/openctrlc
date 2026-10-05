@@ -1,11 +1,13 @@
 import { Popover as Kobalte } from "@kobalte/core/popover"
-import { Component, ComponentProps, createEffect, createMemo, For, JSX, Show } from "solid-js"
+import { Component, ComponentProps, createEffect, createMemo, For, JSX, onMount, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLocal } from "@/context/local"
+import { useServerSync } from "@/context/server-sync"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { popularProviders } from "@/hooks/use-providers"
 import { Button } from "@openctrlc/ui/button"
 import { IconButton } from "@openctrlc/ui/icon-button"
+import { Spinner } from "@openctrlc/ui/spinner"
 import { ScrollView } from "@openctrlc/ui/scroll-view"
 import { Tag } from "@openctrlc/ui/tag"
 import { Dialog } from "@openctrlc/ui/dialog"
@@ -31,6 +33,29 @@ type ModelItem = ReturnType<ModelState["list"]>[number]
 
 const modelKey = (model: ModelItem) => `${model.provider.id}:${model.id}`
 const manageKey = "action:manage"
+const retryKey = "action:retry"
+
+function useProviderCatalogLoader() {
+  const serverSync = useServerSync()
+  const local = useLocal()
+  const [state, setState] = createStore({ loading: false, error: false })
+  let pending: Promise<void> | undefined
+
+  const load = () => {
+    if (pending) return pending
+    setState({ loading: true, error: false })
+    pending = serverSync()
+      .loadFullProviders(decode64(local.slug()))
+      .catch(() => setState("error", true))
+      .finally(() => {
+        setState("loading", false)
+        pending = undefined
+      })
+    return pending
+  }
+
+  return { state, load }
+}
 
 const sortModelGroups = (a: { category: string; items: ModelItem[] }, b: { category: string; items: ModelItem[] }) => {
   const aIndex = popularProviders.indexOf(a.category)
@@ -50,6 +75,9 @@ const ModelList: Component<{
   onSelect: () => void
   action?: JSX.Element
   model?: ModelState
+  loading?: boolean
+  loadError?: boolean
+  onRetry?: () => void
 }> = (props) => {
   const model = props.model ?? useLocal().model
   const language = useLanguage()
@@ -62,53 +90,86 @@ const ModelList: Component<{
   )
 
   return (
-    <List
-      class={`flex-1 px-3 min-h-0 [&_[data-slot=list-scroll]]:flex-1 [&_[data-slot=list-scroll]]:min-h-0 ${props.class ?? ""}`}
-      search={{ placeholder: language.t("dialog.model.search.placeholder"), autofocus: true, action: props.action }}
-      emptyMessage={language.t("dialog.model.empty")}
-      key={(x) => `${x.provider.id}:${x.id}`}
-      items={models}
-      current={model.current()}
-      filterKeys={["provider.name", "name", "id"]}
-      sortBy={(a, b) => a.name.localeCompare(b.name)}
-      groupBy={(x) => x.provider.name}
-      sortGroupsBy={(a, b) => {
-        const aProvider = a.items[0].provider.id
-        const bProvider = b.items[0].provider.id
-        if (popularProviders.includes(aProvider) && !popularProviders.includes(bProvider)) return -1
-        if (!popularProviders.includes(aProvider) && popularProviders.includes(bProvider)) return 1
-        return popularProviders.indexOf(aProvider) - popularProviders.indexOf(bProvider)
-      }}
-      itemWrapper={(item, node) => (
-        <Tooltip
-          class="w-full"
-          placement="right-start"
-          gutter={12}
-          openDelay={0}
-          value={<ModelTooltip model={item} latest={item.latest} free={isFree(item.provider.id, item.cost)} />}
-        >
-          {node}
-        </Tooltip>
-      )}
-      onSelect={(x) => {
-        model.set(x ? { modelID: x.id, providerID: x.provider.id } : undefined, {
-          recent: true,
-        })
-        props.onSelect()
-      }}
-    >
-      {(i) => (
-        <div class="w-full flex items-center gap-x-2 text-13-regular">
-          <span class="truncate">{i.name}</span>
-          <Show when={isFree(i.provider.id, i.cost)}>
-            <Tag>{language.t("model.tag.free")}</Tag>
-          </Show>
-          <Show when={i.latest}>
-            <Tag>{language.t("model.tag.latest")}</Tag>
-          </Show>
+    <>
+      <Show when={props.loading && models().length > 0}>
+        <div class="flex items-center gap-2 px-4 py-2 text-12-regular text-text-weak" role="status" aria-live="polite">
+          <Spinner class="size-3.5 shrink-0" />
+          <span>{language.t("dialog.model.loading")}</span>
         </div>
-      )}
-    </List>
+      </Show>
+      <List
+        class={`flex-1 px-3 min-h-0 [&_[data-slot=list-scroll]]:flex-1 [&_[data-slot=list-scroll]]:min-h-0 ${props.class ?? ""}`}
+        search={{
+          placeholder: language.t("dialog.model.search.placeholder"),
+          autofocus: true,
+          action: (
+            <div class="flex items-center gap-1">
+              <Show when={props.loadError}>
+                <Button
+                  variant="ghost"
+                  class="h-6 px-1.5 text-12-medium"
+                  aria-label={language.t("dialog.model.retry")}
+                  onClick={() => props.onRetry?.()}
+                >
+                  {language.t("dialog.model.retry")}
+                </Button>
+              </Show>
+              {props.action}
+            </div>
+          ),
+        }}
+        emptyMessage={
+          props.loading
+            ? language.t("dialog.model.loading")
+            : props.loadError && models().length === 0
+              ? language.t("dialog.model.loadFailed")
+              : language.t("dialog.model.empty")
+        }
+        loadingMessage={language.t("dialog.model.loading")}
+        key={(x) => `${x.provider.id}:${x.id}`}
+        items={models}
+        current={model.current()}
+        filterKeys={["provider.name", "name", "id"]}
+        sortBy={(a, b) => a.name.localeCompare(b.name)}
+        groupBy={(x) => x.provider.name}
+        sortGroupsBy={(a, b) => {
+          const aProvider = a.items[0].provider.id
+          const bProvider = b.items[0].provider.id
+          if (popularProviders.includes(aProvider) && !popularProviders.includes(bProvider)) return -1
+          if (!popularProviders.includes(aProvider) && popularProviders.includes(bProvider)) return 1
+          return popularProviders.indexOf(aProvider) - popularProviders.indexOf(bProvider)
+        }}
+        itemWrapper={(item, node) => (
+          <Tooltip
+            class="w-full"
+            placement="right-start"
+            gutter={12}
+            openDelay={0}
+            value={<ModelTooltip model={item} latest={item.latest} free={isFree(item.provider.id, item.cost)} />}
+          >
+            {node}
+          </Tooltip>
+        )}
+        onSelect={(x) => {
+          model.set(x ? { modelID: x.id, providerID: x.provider.id } : undefined, {
+            recent: true,
+          })
+          props.onSelect()
+        }}
+      >
+        {(i) => (
+          <div class="w-full flex items-center gap-x-2 text-13-regular">
+            <span class="truncate">{i.name}</span>
+            <Show when={isFree(i.provider.id, i.cost)}>
+              <Tag>{language.t("model.tag.free")}</Tag>
+            </Show>
+            <Show when={i.latest}>
+              <Tag>{language.t("model.tag.latest")}</Tag>
+            </Show>
+          </div>
+        )}
+      </List>
+    </>
   )
 }
 
@@ -131,6 +192,7 @@ export function ModelSelectorPopover(props: {
   })
   const dialog = useDialog()
   const local = useLocal()
+  const catalog = useProviderCatalogLoader()
   const directory = () => decode64(local.slug())
 
   const close = (dismiss: Dismiss) => {
@@ -159,6 +221,7 @@ export function ModelSelectorPopover(props: {
       onOpenChange={(next) => {
         if (next) setStore("dismiss", null)
         setStore("open", next)
+        if (next) void catalog.load()
       }}
       modal={false}
       placement="top-start"
@@ -189,6 +252,9 @@ export function ModelSelectorPopover(props: {
           <ModelList
             provider={props.provider}
             model={props.model}
+            loading={catalog.state.loading}
+            loadError={catalog.state.error}
+            onRetry={() => void catalog.load()}
             onSelect={() => close("select")}
             class="p-1"
             action={
@@ -229,6 +295,7 @@ export function ModelSelectorPopoverV2(props: {
   onClose?: () => void
 }) {
   const dialog = useDialog()
+  const catalog = useProviderCatalogLoader()
   const controller = createModelSelectorController({
     model: props.model,
     provider: () => props.provider,
@@ -242,11 +309,16 @@ export function ModelSelectorPopoverV2(props: {
       groups={controller.groups}
       current={controller.current}
       select={controller.select}
+      hasModels={() => controller.models("").length > 0}
       onManage={() => {
         void import("./dialog-manage-models").then((module) => {
           void dialog.show(() => <module.DialogManageModelsV2 />)
         })
       }}
+      onOpen={() => void catalog.load()}
+      catalogLoading={catalog.state.loading}
+      catalogError={catalog.state.error}
+      onRetry={() => void catalog.load()}
       onClose={() => props.onClose?.()}
     />
   )
@@ -294,10 +366,15 @@ function createModelSelectorController(input: {
 function ModelSelectorPopoverV2View(props: {
   trigger: ModelSelectorTrigger
   models: (search: string) => ModelItem[]
+  hasModels: () => boolean
   groups: (models: ModelItem[]) => { category: string; items: ModelItem[] }[]
   current: () => string | undefined
   select: (item: ModelItem) => void
   onManage: () => void
+  onOpen: () => void
+  catalogLoading: boolean
+  catalogError: boolean
+  onRetry: () => void
   onClose: () => void
 }) {
   const language = useLanguage()
@@ -308,7 +385,7 @@ function ModelSelectorPopoverV2View(props: {
 
   const models = createMemo(() => props.models(store.search))
   const groups = createMemo(() => props.groups(models()))
-  const keys = () => [...models().map(modelKey), manageKey]
+  const keys = () => [...models().map(modelKey), ...(props.catalogError ? [retryKey] : []), manageKey]
   const initialActive = () => {
     const selected = props.current()
     const options = keys()
@@ -319,6 +396,7 @@ function ModelSelectorPopoverV2View(props: {
     store.active ? contentRef?.querySelector<HTMLElement>(`[data-option-key="${CSS.escape(store.active)}"]`) : undefined
   const setOpen = (open: boolean) => {
     if (open) {
+      props.onOpen()
       dismiss.allowTriggerRestore()
       setStore({ open: true, active: initialActive() })
       setTimeout(() =>
@@ -347,6 +425,10 @@ function ModelSelectorPopoverV2View(props: {
       selectModel(item)
       return
     }
+    if (store.active === retryKey) {
+      props.onRetry()
+      return
+    }
     if (store.active === manageKey) manage()
   }
   const moveActive = (delta: number) => {
@@ -359,7 +441,7 @@ function ModelSelectorPopoverV2View(props: {
   }
   const setSearch = (value: string) => {
     const first = props.models(value)[0]
-    setStore({ search: value, active: first ? modelKey(first) : manageKey })
+    setStore({ search: value, active: first ? modelKey(first) : props.catalogError ? retryKey : manageKey })
   }
 
   createEffect(() => {
@@ -437,14 +519,51 @@ function ModelSelectorPopoverV2View(props: {
             </div>
           </div>
           <div class="h-px bg-v2-border-border-muted" />
+          <Show when={props.catalogLoading && props.hasModels()}>
+            <div class="flex items-center gap-2 px-3 py-2 text-[12px] font-[440] text-v2-text-text-muted" role="status" aria-live="polite">
+              <Spinner class="size-3.5 shrink-0 text-v2-icon-icon-muted" />
+              <span>{language.t("dialog.model.loading")}</span>
+            </div>
+          </Show>
           <ScrollView data-slot="model-selector-scroll" class="max-h-[220px] min-h-0">
             <div class="flex flex-col p-0.5 pt-0">
               <Show
                 when={models().length > 0}
                 fallback={
-                  <div class="flex h-12 items-center px-3 text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint">
-                    {language.t("dialog.model.empty")}
-                  </div>
+                  <Show
+                    when={props.catalogLoading}
+                    fallback={
+                      <Show
+                        when={props.catalogError && !props.hasModels()}
+                        fallback={
+                          <div class="flex h-12 items-center px-3 text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint">
+                            {language.t("dialog.model.empty")}
+                          </div>
+                        }
+                      >
+                        <div class="flex flex-col gap-2 px-3 py-3 text-[13px] font-[440] leading-5 text-v2-text-text-muted">
+                          <p role="alert">{language.t("dialog.model.loadFailed")}</p>
+                          <MenuV2.Item
+                            data-option-key={retryKey}
+                            classList={{ "!bg-v2-overlay-simple-overlay-hover": store.active === retryKey }}
+                            closeOnSelect={false}
+                            onMouseEnter={() => {
+                              setStore("active", retryKey)
+                              setTimeout(() => searchRef?.focus())
+                            }}
+                            onSelect={props.onRetry}
+                          >
+                            {language.t("dialog.model.retry")}
+                          </MenuV2.Item>
+                        </div>
+                      </Show>
+                    }
+                  >
+                    <div class="flex h-12 items-center gap-2 px-3 text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint" role="status" aria-live="polite">
+                      <Spinner class="size-3.5 shrink-0 text-v2-icon-icon-muted" />
+                      {language.t("dialog.model.loading")}
+                    </div>
+                  </Show>
                 }
               >
                 <For each={groups()}>
@@ -500,6 +619,23 @@ function ModelSelectorPopoverV2View(props: {
               </Show>
             </div>
           </ScrollView>
+          <Show when={props.catalogError && props.hasModels()}>
+            <div class="flex flex-col gap-1 border-t border-v2-border-border-muted px-3 py-2 text-[12px] font-[440] leading-4 text-v2-text-text-muted">
+              <p role="alert">{language.t("dialog.model.loadFailed")}</p>
+              <MenuV2.Item
+                data-option-key={retryKey}
+                classList={{ "!bg-v2-overlay-simple-overlay-hover": store.active === retryKey }}
+                closeOnSelect={false}
+                onMouseEnter={() => {
+                  setStore("active", retryKey)
+                  setTimeout(() => searchRef?.focus())
+                }}
+                onSelect={props.onRetry}
+              >
+                {language.t("dialog.model.retry")}
+              </MenuV2.Item>
+            </div>
+          </Show>
           <div class="h-px bg-v2-border-border-muted" />
           <div class="flex flex-col p-0.5">
             <MenuV2.Item
@@ -525,7 +661,10 @@ export const DialogSelectModel: Component<{ provider?: string; model?: ModelStat
   const dialog = useDialog()
   const language = useLanguage()
   const local = useLocal()
+  const catalog = useProviderCatalogLoader()
   const directory = () => decode64(local.slug())
+
+  onMount(() => void catalog.load())
 
   const provider = () => {
     void import("./dialog-connect-provider").then((x) => {
@@ -548,7 +687,14 @@ export const DialogSelectModel: Component<{ provider?: string; model?: ModelStat
         </Button>
       }
     >
-      <ModelList provider={props.provider} model={props.model} onSelect={() => dialog.close()} />
+      <ModelList
+        provider={props.provider}
+        model={props.model}
+        loading={catalog.state.loading}
+        loadError={catalog.state.error}
+        onRetry={() => void catalog.load()}
+        onSelect={() => dialog.close()}
+      />
       <Button variant="ghost" class="ml-3 mt-5 mb-6 text-text-base self-start" onClick={manage}>
         {language.t("dialog.model.manage")}
       </Button>

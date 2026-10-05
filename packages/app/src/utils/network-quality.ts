@@ -8,6 +8,7 @@ type NetworkInformation = {
   saveData?: boolean
   effectiveType?: string
   addEventListener?: (type: "change", listener: () => void) => void
+  removeEventListener?: (type: "change", listener: () => void) => void
 }
 
 function connection(): NetworkInformation | undefined {
@@ -32,5 +33,5 @@ export function onNetworkQualityChange(listener: (quality: NetworkQuality) => vo
   if (!info?.addEventListener) return () => {}
   const handler = () => listener(readNetworkQuality())
   info.addEventListener("change", handler)
-  return () => {}
+  return () => info.removeEventListener?.("change", handler)
 }

@@ -6,22 +6,16 @@ import { fixture } from "./session-timeline-stress.fixture"
 import { installStressSessionTabs, stressSessionHref } from "./timeline-test-helpers"
 import { measureSessionSwitch, waitForStableTimeline } from "./session-tab-switch-probe"
 
-type ParentHydrationBenchmarkMode = "natural" | "candidate"
-
-const mode = process.env.SESSION_PARENT_HYDRATION_BENCHMARK_MODE ?? "natural"
-if (mode !== "natural" && mode !== "candidate") throw new Error(`Unknown parent hydration benchmark mode: ${mode}`)
 const userID = "msg_parent_hydration_user"
+const expectedPageSize = 20
+const userSeed = fixture.messages[fixture.targetID][0]!
 const user = {
-  ...fixture.messages[fixture.targetID][0]!,
-  info: { ...fixture.messages[fixture.targetID][0]!.info, id: userID, time: { created: 1700001000000 } },
-  parts: fixture.messages[fixture.targetID][0]!.parts.map((part, index) => ({
-    ...part,
-    id: `prt_parent_hydration_user_${index}`,
-    messageID: userID,
-  })),
+  ...userSeed,
+  info: { ...userSeed.info, id: userID, time: { created: 1700001000000 } },
+  parts: userSeed.parts.map((part, index) => ({ ...part, id: `prt_parent_hydration_user_${index}`, messageID: userID })),
 }
 const assistantSeed = fixture.messages[fixture.targetID][3]!
-const assistants = Array.from({ length: 14 }, (_, index) => {
+const assistants = Array.from({ length: 20 }, (_, index) => {
   const messageID = `msg_parent_hydration_${String(index).padStart(2, "0")}`
   return {
     ...assistantSeed,
@@ -38,25 +32,21 @@ const assistants = Array.from({ length: 14 }, (_, index) => {
     })),
   }
 })
-const messages = [user, ...assistants]
+const messages = assistants
 const target = fixture.sessions.find((session) => session.id === fixture.targetID)!
-const lastID = userID
 const lastAssistant = assistants.at(-1)!
-const lastPart = lastAssistant.parts.at(-1)!
-const lastPartID =
-  lastPart.type === "tool"
-    ? lastPart.id
-    : `${lastAssistant.info.id}:${lastPart.type}:${lastAssistant.parts.filter((part) => part.type === lastPart.type).length - 1}`
+const lastID = userID
+const lastPartID = `${lastAssistant.info.id}:text:0`
 
-benchmark("hydrates an orphaned latest turn after a cold session click", async ({ browser, report }, testInfo) => {
+benchmark("loads assistant-only session pages with sidecar turn roots", async ({ browser, report }, testInfo) => {
   benchmark.setTimeout(180_000)
   const results = [] as Awaited<ReturnType<typeof trial>>[]
   for (let run = 0; run < 5; run++) {
     results.push(
       await withBenchmarkPage(
         browser,
-        `session-parent-hydration-${mode}-${run}`,
-        (page) => trial(page, mode),
+        `session-parent-hydration-${run}`,
+        trial,
         testInfo,
       ),
     )
@@ -64,7 +54,11 @@ benchmark("hydrates an orphaned latest turn after a cold session click", async (
   const timing = results.map((result) => result.metrics.firstCorrectObservedMs!).sort((a, b) => a - b)
   report(
     {
-      results: results.map((result) => ({ ...result.metrics, historyGateCount: result.historyGateCount })),
+      results: results.map((result) => ({
+        ...result.metrics,
+        requestCounts: result.requestCounts,
+        pageLimits: result.pageLimits,
+      })),
       summary: {
         firstCorrectObservedMs: { min: timing[0], median: timing[2], max: timing.at(-1) },
         blankSamples: results.map((result) => result.metrics.blankSamples),
@@ -72,18 +66,22 @@ benchmark("hydrates an orphaned latest turn after a cold session click", async (
           list: results.map((result) => result.requestCounts.list),
           parent: results.map((result) => result.requestCounts.parent),
         },
-        historyGateCount: results.map((result) => result.historyGateCount),
       },
     },
-    { mode },
   )
 })
 
-async function trial(page: Page, mode: ParentHydrationBenchmarkMode) {
+async function trial(page: Page) {
   const requests: { type: "list" | "parent"; before?: string }[] = []
-  const history = mode === "candidate" ? Promise.withResolvers<void>() : undefined
-  let historyGates = 0
+  const pageLimits: number[] = []
+  let sidecarCount = -1
+  page.on("response", async (response) => {
+    if (!response.url().includes(fixture.targetID) || !response.url().includes("message")) return
+    const count = ((await response.json().catch(() => undefined)) as { parents?: unknown[] } | undefined)?.parents?.length ?? 0
+    sidecarCount = Math.max(sidecarCount, count)
+  })
   await mockOpenCodeServer(page, {
+    protocol: "v2",
     sessions: fixture.sessions.filter((session) => session.id === fixture.sourceID),
     provider: fixture.provider,
     directory: fixture.directory,
@@ -93,19 +91,13 @@ async function trial(page: Page, mode: ParentHydrationBenchmarkMode) {
       if (request.sessionID === fixture.targetID && request.phase === "start")
         requests.push({ type: "list", before: request.before })
     },
-    beforeMessagesResponse: (request) => {
-      if (mode !== "candidate" || request.sessionID !== fixture.targetID || !request.before) return Promise.resolve()
-      historyGates++
-      return history!.promise
-    },
     onMessage: (request) => {
-      if (request.sessionID === fixture.targetID && request.messageID === userID) requests.push({ type: "parent" })
+      if (request.sessionID === fixture.targetID && parents.has(request.messageID)) requests.push({ type: "parent" })
     },
-    message: (sessionID, messageID) => {
-      if (sessionID !== fixture.targetID || messageID !== userID) return
-      return user
-    },
+    parentMessages: (sessionID) => (sessionID === fixture.targetID ? [user] : []),
+    message: (sessionID, messageID) => (sessionID === fixture.targetID && messageID === userID ? user : undefined),
     pageMessages: (sessionID, limit, before) => {
+      if (sessionID === fixture.targetID) pageLimits.push(limit)
       const items = sessionID === fixture.targetID ? messages : fixture.messages[fixture.sourceID]
       const end = before ? items.findIndex((message) => message.info.id === before) : items.length
       const start = Math.max(0, end - limit)
@@ -148,7 +140,7 @@ async function trial(page: Page, mode: ParentHydrationBenchmarkMode) {
     { href, title: target.title },
   )
   const metrics = await measureSessionSwitch(page, {
-    destinationIDs: messages.map((message) => message.info.id),
+    destinationIDs: [userID],
     sourceIDs: fixture.messages[fixture.sourceID].map((message) => message.info.id),
     lastID,
     requiredPartID: lastPartID,
@@ -157,16 +149,17 @@ async function trial(page: Page, mode: ParentHydrationBenchmarkMode) {
     switch: async () => {
       await page.locator("#parent-hydration-target").click()
       await expectSessionTitle(page, target.title)
+      await expect.poll(() => sidecarCount).toBe(1)
     },
-  }).finally(() => history?.resolve())
+  })
   expect(metrics.firstCorrectObservedMs).not.toBeNull()
   const requestCounts = {
     list: requests.filter((request) => request.type === "list").length,
     parent: requests.filter((request) => request.type === "parent").length,
   }
-  if (mode === "candidate") {
-    expect(requestCounts.parent).toBe(0)
-    expect(historyGates).toBe(0)
-  }
-  return { metrics, requestCounts, historyGateCount: historyGates }
+  expect(requestCounts.list).toBe(1)
+  expect(sidecarCount).toBe(1)
+  expect(requestCounts.parent).toBe(0)
+  expect(pageLimits).toEqual([expectedPageSize])
+  return { metrics, requestCounts, pageLimits }
 }
