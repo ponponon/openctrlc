@@ -1093,3 +1093,7 @@ Bun `with { type: "file" }` 打进 bundle 后是 `./index-*.html` 相对路径�
 ## 不能对 wire schema 做字段级裁剪来瘦身 HTTP 响应
 
 `Provider.ListResult` 校验很严：删掉 `model.api`、`options`，或把 `capabilities.attachment` 等假值键去掉，都会 400 `Missing key`。远程 `/provider` 因此整接口挂掉。安全做法是 **summary/full 两阶段**：summary 里未连接厂商 `models: {}`，已连接厂商保持完整模型对象；实测 6.6MB → 143KB（~2%）。改响应字段前必须对照 Schema（`packages/schema`）或跑真实 decode，不能只看 UI 是否读该字段。
+
+## scrollIntoView 默认 block:"start" 会连带滚动 overflow 祖先并裁剪标题栏
+
+点击标题栏前面需要横向滚动的会话 tab 时，标题栏高度看起来“往上缩”，左侧「省流」徽章被裁掉一半；点击后面已可见的 tab 则正常。根因是导航回调里的 `el?.scrollIntoView({ behavior: "instant" })` 没有指定 `block`/`inline`，默认 `block: "start"` 会把目标元素顶边对齐到每个可滚动祖先的顶部。标题栏内层是 `h-full overflow-hidden`，tab 横向滚动容器写的是 `overflow-x-auto`（按 CSS 规范 `overflow-y` 会被计算成 `auto`，同样可被程序滚动）。只有当前 tab 需要横向滚动时 `scrollIntoView` 才真正滚动，此时它也会把 overflow 祖先纵向 scrollTop 推上去，padding 顶上的 chips 就被裁掉了；点击已可见的 tab 不触发滚动，所以看起来“只有前面的 tab 有问题”。修复是显式传 `{ block: "nearest", inline: "nearest" }`，并给横向 tab 条加 `overflow-y-hidden`，避免 `overflow-x-auto` 把纵向也变成可滚动。以后凡是标题栏、工具条、粘性头等“绝对不能纵向滚”的条里做元素定位滚动，都必须显式限制滚动轴，不能依赖 `scrollIntoView` 默认值。

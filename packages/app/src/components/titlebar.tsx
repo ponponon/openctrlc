@@ -428,7 +428,9 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                   onOverflowChange={setTabsAreOverflowing}
                   onNavigate={(tab, el) => {
                     tabs.select(tab)
-                    el?.scrollIntoView({ behavior: "instant" })
+                    // block/inline must be "nearest": default block:"start" scrolls overflow
+                    // ancestors vertically and clips titlebar chips (e.g. lite-network).
+                    el?.scrollIntoView({ behavior: "instant", block: "nearest", inline: "nearest" })
                   }}
                   onClose={(tab) => {
                     const index = tabsStore.findIndex((item) => tabKey(item) === tabKey(tab))
