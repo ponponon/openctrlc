@@ -3,7 +3,7 @@ export * from "./session/schema"
 
 import { DateTime, Effect, Layer, Schema, Context, Stream } from "effect"
 import { ListAnchor } from "@openctrlc/schema/session"
-import { and, asc, desc, eq, gt, inArray, like, lt, or, sql, type SQL } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, like, lt, lte, ne, or, sql, type SQL } from "drizzle-orm"
 import { ProjectV2 } from "./project"
 import { WorkspaceV2 } from "./workspace"
 import { ModelV2 } from "./model"
@@ -346,7 +346,62 @@ const layer = Layer.effect(
         const rows = yield* (input.limit === undefined ? query.all() : query.limit(input.limit).all()).pipe(
           Effect.orDie,
         )
-        return yield* Effect.forEach(direction === "previous" ? rows.toReversed() : rows, decode)
+        const ordered = direction === "previous" ? rows.toReversed() : rows
+        const messages = yield* Effect.forEach(ordered, decode)
+        const assistants = ordered.filter(
+          (row, index) =>
+            row.type === "assistant" && !(messages[index]?.type === "assistant" && messages[index].parentID),
+        )
+        if (!assistants.length) return messages
+
+        const minimum = Math.min(...assistants.map((row) => row.seq))
+        const maximum = Math.max(...assistants.map((row) => row.seq))
+        const roots = and(
+          eq(SessionMessageTable.session_id, input.sessionID),
+          inArray(SessionMessageTable.type, ["user", "synthetic", "shell"]),
+          or(
+            ne(SessionMessageTable.type, "synthetic"),
+            sql`length(trim(json_extract(${SessionMessageTable.data}, '$.text'))) > 0`,
+          ),
+        )
+        const [prior, boundaries] = yield* Effect.all([
+          db
+            .select()
+            .from(SessionMessageTable)
+            .where(and(roots, lt(SessionMessageTable.seq, minimum)))
+            .orderBy(desc(SessionMessageTable.seq))
+            .limit(1)
+            .get(),
+          db
+            .select()
+            .from(SessionMessageTable)
+            .where(and(roots, gte(SessionMessageTable.seq, minimum), lte(SessionMessageTable.seq, maximum)))
+            .orderBy(asc(SessionMessageTable.seq))
+            .all(),
+        ]).pipe(Effect.orDie)
+        const decodedBoundaries = yield* Effect.forEach(boundaries, decode)
+        let parentID: SessionMessage.ID | undefined
+        if (prior) {
+          const message = yield* decode(prior)
+          if (message.type === "user" || message.type === "synthetic") parentID = message.id
+        }
+        let index = 0
+        const bySequence = ordered
+          .map((row, position) => ({ row, message: messages[position] }))
+          .sort((a, b) => a.row.seq - b.row.seq)
+        const recovered = new Map<string, SessionMessage.Message>()
+        for (const { row, message } of bySequence) {
+          while (boundaries[index] && boundaries[index]!.seq < row.seq) {
+            const boundary = decodedBoundaries[index]!
+            parentID = boundary.type === "shell" ? undefined : boundary.id
+            index += 1
+          }
+          recovered.set(
+            row.id,
+            message?.type === "assistant" && !message.parentID && parentID ? { ...message, parentID } : message!,
+          )
+        }
+        return ordered.map((row) => recovered.get(row.id)!)
       }),
       message: Effect.fn("V2Session.message")(function* (input) {
         const stored = yield* store.message(input.messageID)
@@ -488,6 +543,7 @@ const contextTokens = sql<number | null>`(
   from ${MessageTable} context_message
   where context_message.session_id = ${outerSessionID}
     and json_extract(context_message.data, '$.role') = 'assistant'
+    and json_extract(context_message.data, '$.time.completed') is not null
     and ${stepTokenTotal} > 0
   order by context_message.time_created desc, context_message.id desc
   limit 1
