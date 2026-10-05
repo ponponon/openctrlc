@@ -1,10 +1,10 @@
 # 远程服务的低成本上线与收入规划
 
-核对日期：2026-10-05。本文是规划，不代表 P2P、Cloudflare Relay、计费或额度控制已经实现。价格以供应商当前账单及官方条款为准；金额使用美元原价，不预设汇率。
+核对日期：2026-10-05。本文是规划，不代表 Cloudflare 承载、计费或额度控制已经在生产启用。生产版仍使用自建 HTTPS/WebSocket Relay；工作区里有尚未发布、尚未完成端到端验证的 WebRTC 数据通道，可选用服务端生成的 Cloudflare TURN 短时凭据，失败后退回 HTTPS Relay。未配置 TURN 服务端密钥时仍只有 STUN + HTTPS Relay。价格以供应商当前账单及官方条款为准；金额使用美元原价，不预设汇率。
 
 ## 推荐顺序
 
-先复用现有京东云服务器，减少经过它的数据：按构建版本分发公开网页资源，手机与桌面优先通过 WebRTC DataChannel 直接通信。直连失败才使用托管 TURN 或现有 HTTPS Relay。Cloudflare Workers / Durable Objects 适合后续承接连接协调，先从免费额度或最低付费档开始，不购买大带宽云主机。
+先复用现有京东云服务器，减少经过它的数据：按构建版本分发公开网页资源，手机与桌面优先通过 WebRTC DataChannel 直接通信。并行验证 Cloudflare Durable Objects 是否能以低成本承接全球 WebSocket 数据中继；直连和 DO 路径不可用时，再使用有额度的 TURN 或现有 HTTPS Relay。先从免费额度或最低付费档开始，不购买大带宽云主机。
 
 普通用户继续使用“桌面开启 → 手机扫码 → 首次批准 → 继续同一工作区”的流程，连接方式自动选择。自建节点是可选功能，公共默认服务要能独立完成该流程。
 
@@ -12,9 +12,9 @@
 
 ## 现状与需要改变的路径
 
-当前 `packages/remote-relay/src/index.ts` 使用 Bun 服务和进程内连接映射；桌面通过 WSS 连接它，浏览器的 HTTP、事件流和 WebSocket 请求再转发给桌面本机服务。没有 WebRTC/P2P 通道，首次访问的 JS、CSS、字体等也经过中继。浏览器缓存可以减少重复下载，不能免去第一次下载。
+生产 `packages/remote-relay/src/index.ts` 使用 Bun 服务和进程内连接映射；桌面通过 WSS 连接它，浏览器的 HTTP、事件流和 WebSocket 请求再转发给桌面本机服务。当前工作区实现了 WebRTC 信令与 DataChannel 请求转发，并支持通过环境变量让服务端签发 Cloudflare TURN 短时凭据，但这段代码尚未部署和端到端验证；不能据此声称生产中继流量已经下降或公网/大陆网络均可直连。网页静态资源仍经过中继，浏览器缓存只能减少重复下载，不能免去首次下载。
 
-既有服务器为 2 核 / 8 GB / 5 Mbps，Relay 容器限制为 1 CPU / 512 MiB。`maxSessions = 10000` 是准入保护值，不能证明该配置支持一万活跃用户。
+既有服务器为 2 核 / 8 GB / 5 Mbps，Relay 容器限制为 1 CPU / 512 MiB。`maxSessions = 10000` 是 retained session 总量的准入保护值，包含已断开的桌面；仍有授权浏览器的断线会话最多保留 30 天。它既不等于在线桌面数，也不能证明该配置支持一万活跃用户；达到总量时，离线但授权有效的会话也可能占槽并拒绝新建。上线前应分别设计活跃连接上限、断线会话保留和用户可见的容量反馈，不能悄悄删除有效授权。
 
 建议的路径：
 
@@ -46,11 +46,23 @@ flowchart TD
 
 这些是不同产品的额度。Workers 的无出站费用不能套用到 TURN；网页免费托管不能消除私有会话的传输成本。Workers/DO 的 CPU、计算时长、请求和持久化存储仍可能收费。免费 DO 超额度会使相应操作失败，不适合把无限制公共服务建立在免费额度不会耗尽的假设上。
 
-当前 Relay 不能原样上传 Workers：Bun 服务、Node 文件读写和跨连接状态需要适配。普通 Worker 全局变量不能可靠地连接两次独立请求中的桌面与手机；通常要使用 DO 做协调。只在京东云 Relay 前套 Worker 反向代理，京东云仍需向它发送全部数据，5 Mbps 瓶颈依旧存在。
+## Workers / Durable Objects 能不能承载真正的数据中继
 
-DO 迁移需要使用可休眠 WebSocket，授权持久化，空闲时不维持应用计时器。持续活跃对象按分配的 128 MB 计算 GB-s，与实际内存占用无关。当前 30 秒一次的应用心跳，在一万台桌面全天在线时有 2,880 万条消息/天；即使按官方 20:1 计算折算，也达到 144 万次/天，超过 10 万免费请求。不能把旧心跳协议直接搬过去就宣称永久免费。
+可以作为一个值得验证的备选架构，但不是把现有 Bun Relay 原样搬上去：让桌面端和浏览器分别通过 WebSocket 连接到同一个 Durable Object，由它配对两端、转发分块后的请求与响应。数据必须在 Cloudflare Worker/DO 内完成转发；如果 Worker 只是反向代理到现有京东云 Relay，数据仍要穿过京东云的 5 Mbps 出口，瓶颈和服务器带宽费用都还在。Cloudflare 文档说明 DO 实例可横向扩展；单个对象有 32,768 WebSocket 连接上限及约 1,000 请求/秒的软上限，实际并发仍受处理逻辑、CPU 和内存影响。这说明“按会话拆分对象”值得验证，不代表我们的应用已通过一万用户压测。
 
-来源：[Worker WebSocket 的协调边界](https://developers.cloudflare.com/workers/runtime-apis/websockets/)、[DO WebSocket 休眠](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)、[DO 计算计费](https://developers.cloudflare.com/durable-objects/platform/pricing/)。
+这种方案的优势是 Cloudflare Workers/DO 没有额外的数据出口/带宽费用；DO 支持保持 WebSocket 连接并在空闲时休眠。但它依然按 DO 请求、活动计算时长和存储计费。DO 的 WebSocket 入站消息按 20:1 折算请求；应用层持续发送很多小帧时，消息账单和处理成本会增长。应做二进制分块、背压和取消传播，避免过细帧；不能为了压低消息数把帧攒得太大，损害交互延迟。运行时断连、对象休眠恢复、双向流和连接迁移也必须端到端验证。
+
+按当前 Relay 的 30 秒应用心跳估算，1 万个全天在线的桌面每天会产生 2,880 万条心跳；若它们都作为 DO WebSocket 入站消息处理，按 20:1 折算约 144 万次计费请求/天，已超过 DO 免费档每天 10 万次请求，免费操作会失败而不是自动转成按量付费。若改用 Workers Paid，按 30 天、每个桌面每 30 秒一条入站应用心跳计算，月请求约 4,320 万次；扣除 100 万次包含量，超额部分按百万次向上取整为 4,300 万次，约 $6.45 请求费，加 $5 月费后约 **$11.45/月请求与订阅费**。此估算假设 Worker 的 WebSocket 升级请求、CPU 用量都未超过 Workers Paid 已包含额度；它只是单一桌面心跳的 DO 请求维度，不含浏览器心跳、DO 活跃计算时长、持久化存储和其他 Workers 用量。若每个会话的浏览器也以相同频率发一条入站应用消息，请求与订阅费粗估约 $17.90/月。真实计费应以压测账单指标核对。可评估使用 WebSocket 协议 ping/pong（浏览器标准 WebSocket API 不开放发送协议 ping）或 DO 自动响应减少处理成本，但要验证桌面在线状态和断线回收语义，不能直接把免费档当作容量方案。
+
+上面的 $11.45 是**心跳请求的下限示例，不是 DO 数据中继报价**。转发正文会增加入站 WebSocket 消息、被唤醒的计算时长和存储用量；分帧越碎，消息计数越高。TURN 按 GB 出站计费，DO 则偏向按消息与计算量计费。必须用真实帧大小和活跃时长分别压测、核对账单后，才能判断哪条回退路径更便宜。
+
+建议把它作为**Cloudflare 全球节点的数据面实验**，而不是立刻替换生产 Relay：先用几十个测试会话比较 DO 中继、P2P、TURN 的首屏时间、带宽、每小时计费维度和断线恢复；再压测活跃连接数和二进制流量。中国大陆是否能稳定连接 Cloudflare 全球网络仍要按电信/联通/移动实测；大陆节点继续保留京东云或 P2P 路径。DO 的容量和成本在基准数据出来前都不作承诺。
+
+当前 Bun Relay 不能原样部署到 Workers：运行时、持久化授权状态和跨连接协议都需要适配。普通 Worker 的进程内状态不能可靠地配对桌面与浏览器；需要 Durable Objects 维护会话。上面的 DO 数据中继是可行性实验，不代表现有 Relay 已迁移；只在京东云 Relay 前套 Worker 反向代理，京东云仍需发送全部数据，5 Mbps 瓶颈依旧存在。
+
+DO 迁移需要使用可休眠 WebSocket，持久化授权状态，并在空闲时避免定时器阻止休眠。DO 计算时长按分配的 128 MB 计算 GB-s，与实际内存占用无关。免费额度超限会失败；上线前要将消息计数、活动计算时长和存储量分别纳入预算。
+
+来源：[Worker WebSocket 的协调边界](https://developers.cloudflare.com/workers/runtime-apis/websockets/)、[DO WebSocket 休眠](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)、[DO 容量限制](https://developers.cloudflare.com/durable-objects/platform/limits/)、[DO 计算计费](https://developers.cloudflare.com/durable-objects/platform/pricing/)。
 
 ## 中国大陆与海外的体验
 
