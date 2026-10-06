@@ -31,6 +31,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+public=${public%/}
+
 fail=0
 ok() {
   echo "PASS  $1"
@@ -75,7 +77,21 @@ else
   echo "skip  UI source header missing (page is likely pair/bootstrap without app shell)"
 fi
 
-# 3) app shell JS must contain the OpenCtrlC workspace key
+# 3) public Relay must expose its peer capability endpoint without viewer credentials
+peer_capabilities=$(curl --fail --silent --show-error --max-time 5 "$public/_remote/capabilities" || true)
+if [ -z "$peer_capabilities" ]; then
+  bad "peer capability endpoint unreachable or unauthorized"
+elif printf '%s' "$peer_capabilities" | jq -e '.peerProtocol == 1 and (.iceConfigured | type == "boolean")' >/dev/null; then
+  if [ "$(printf '%s' "$peer_capabilities" | jq -r '.iceConfigured')" = "true" ]; then
+    ok "peer capability endpoint and ICE configured"
+  else
+    ok "peer capability endpoint available; ICE is not configured (Relay fallback remains active)"
+  fi
+else
+  bad "peer capability endpoint returned an unsupported payload"
+fi
+
+# 4) app shell JS must contain the OpenCtrlC workspace key
 html=$(curl_public "$public/" || true)
 js_path=$(printf '%s' "$html" | sed -n 's/.*src="\(\/assets\/[^"]*\.js\)".*/\1/p' | head -1)
 if [ -n "$js_path" ]; then

@@ -149,6 +149,13 @@ if [ "$healthy" != true ]; then
   exit 1
 fi
 
+peer_capabilities=$(curl --fail --silent --max-time 5 http://127.0.0.1:4097/_remote/capabilities || true)
+if ! printf '%s' "$peer_capabilities" | jq -e '.peerProtocol == 1 and (.iceConfigured | type == "boolean")' >/dev/null; then
+  echo "Relay peer capability endpoint did not report the expected protocol; OpenResty was not reloaded" >&2
+  docker compose --project-name openctrlc-remote --project-directory "$relay" -f "$compose" logs --tail=50 relay >&2
+  exit 1
+fi
+
 had_conf=false
 if docker exec "$openresty" test -e "$host_conf"; then
   had_conf=true
