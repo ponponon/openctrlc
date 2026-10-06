@@ -595,12 +595,7 @@ export class RemoteAccessService {
         reject(error)
       }
       timeout = setTimeout(() => fail(new Error("Relay connection timed out")), resume ? 12_000 : 20_000)
-      const activate = (
-        url: string,
-        relayViewerLimit: unknown,
-        binaryChunks: boolean,
-        gzipResponseUpload: boolean,
-      ) => {
+      const activate = (url: string, relayViewerLimit: unknown, binaryChunks: boolean, gzipResponseUpload: boolean) => {
         if (generation !== this.#generation || this.#state.status === "stopped") {
           fail(new Error("Mobile access stopped"))
           return
@@ -692,12 +687,7 @@ export class RemoteAccessService {
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
           persistSession({ sessionID: message.sessionID, hostToken: message.hostToken })
-          activate(
-            message.url,
-            message.viewerLimit,
-            message.binaryChunks === true,
-            message.gzipResponseUpload === true,
-          )
+          activate(message.url, message.viewerLimit, message.binaryChunks === true, message.gzipResponseUpload === true)
           return
         }
         if (resume && message.type === "session.resumed") {
@@ -709,12 +699,7 @@ export class RemoteAccessService {
             fail(new RemoteSessionUnavailable("The relay could not restore the previous session"))
             return
           }
-          activate(
-            message.url,
-            message.viewerLimit,
-            message.binaryChunks === true,
-            message.gzipResponseUpload === true,
-          )
+          activate(message.url, message.viewerLimit, message.binaryChunks === true, message.gzipResponseUpload === true)
           return
         }
         if (resume && message.type === "session.resume.error") {
