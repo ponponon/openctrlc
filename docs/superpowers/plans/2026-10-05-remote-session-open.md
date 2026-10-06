@@ -56,12 +56,20 @@
 - 目标会话本地服务端请求仍是毫秒级，不能把“手机 10 秒”归因给本地查询。过去公网页面采样里大 Provider 响应与慢消息 TTFB 重叠，可能争用上行；新 provider summary 代码必须随应用重启后复测，旧页面结果不能代表新 bundle。
 - 新改动的 App、Desktop 类型检查通过；Relay 入口 Bun bundle 构建通过；`git diff --check` 通过。本轮未运行单测/E2E、未重启服务，也未做真实手机/公网验收；因此仍不能宣称工作区新快照与完整 P2P 链路已在生产环境验证。
 
-## 2026-10-06 Relay 版本错配与压缩上行
+## 2026-10-06 Relay 版本错配与压缩上行（待公网复验）
 
-- 对照公网响应与部署时间，确认线上 Relay 容器仍是 2026-10-04 创建的旧版本。当前代码中的 Relay 能力接口在公网返回 `401 Remote session required`，而新版源码会在会话认证前返回能力信息；线上健康接口也没有新版 P2P 路径字段。健康页成功只能证明根页面/进程可响应，不能证明授权转发链路版本一致。
-- 新桌面端收到浏览器 `Accept-Encoding: gzip` 后会先在本机解压上游响应，再重新 gzip 以减少桌面到 Relay 的上行。旧 Relay 仍把上传内容当作未压缩文本再 gzip，造成双重压缩；浏览器只解开一层时拿到的仍是 gzip 字节，表现为白屏。当前修复让 Relay 在创建/恢复握手里明确声明 `gzipResponseUpload`，桌面只在声明支持时压缩 Relay 上传；旧 Relay 缺少字段时退回未压缩行为。P2P 压缩只对已登记 Peer 的 DataChannel 请求开放。
+- 先前对照公网响应与部署时间，判断线上 Relay 很可能仍是 2026-10-04 创建的旧版本：公网能力接口行为与当前源码不同，健康响应也没有新版 P2P 路径字段。这个迹象支持“公网部署落后于源码”，但单凭版本字段不能证明白屏发生在哪一层。
+- 代码路径审查发现一种可能的编码错配：新桌面端收到浏览器 `Accept-Encoding: gzip` 后会先在本机解压上游响应，再重新 gzip 以减少桌面到 Relay 的上行；新 Relay 通过 `gzipResponseUpload` 协商后才按压缩内容处理。旧 Relay 若不认识该协商字段，就必须让桌面回退为未压缩上传。工作区已加入该兼容修复，但此前关于“双重压缩就是当前白屏根因”的表述过于确定；要确认公网的实际故障层，仍需对同一次浏览器导航同时保存原始响应头、传输字节和 Relay/桌面日志。
 - `packages/desktop/src/main/remote-response-encoding.test.ts` 覆盖新旧 Relay 协商、P2P 独立压缩、伪造内部头拒绝、`q=0`、SSE 和无响应体；此前已记录 Desktop/Relay typecheck、关联单测、Relay bundle 和 Electron build 通过。代码仍需发布并由维护者更新桌面端后，才能在公网完整验证。
 - 生产 Relay 当前没有 ICE 配置，故客户端能力检查不通过时应直接使用 HTTPS Relay，而不是等待 12 秒后才回退。只有配置 ICE 后的 P2P 协商才有 12 秒超时。此前 Feature 与部署文档把这两种情况写反，现已更正。
 - 生产资源边界：主机名义带宽为 5 Mbit/s；Relay 容器限制为 1 CPU/512 MiB；`maxSessions = 10,000` 是保留会话记录的准入上限，不是经过测量的 10,000 用户并发能力。公网目前实际仍由 Relay 承载数据；不应把尚未部署的 P2P 计入带宽节省。
 - 2026-10-06 只读采样：生产健康状态为 1 个保留会话、1 个桌面在线、4 个已授权浏览器、0 个 Relay WebSocket viewer、0 个等待请求；健康响应没有新版 P2P 字段且 `persistence` 为 null。Relay 容器瞬时 CPU 约 0.17%、内存约 100 MiB/512 MiB；Docker NetIO 是进程累计值，不是实时带宽。该空闲采样不能推断并发上限，累计 `traffic` 字段也不能替代按时间差计算的出口速率或云厂商账单。
 - Cloudflare Workers、Durable Objects 等 Worker 转发不纳入远程中继方案。低成本方向是让可直连浏览器尽量使用 WebRTC，保留自托管 HTTPS Relay 作为信令与可靠回退，再依据真实路径计数和服务器出口流量扩容；10,000 并发容量需要单独压测，不能从会话上限推断。
+
+## 2026-10-06 公网白屏复查
+
+- Kimi Bridge 打开 `https://openctrlc-remote.quniv.cn/` 后，页面主体呈现以 gzip 魔数样式字节开头的文本，随后空白；Resource Timing 记录主文档 `responseStart` 约 82 ms、`responseEnd` 约 84 ms，说明这次白屏不是主文档等待几十秒才返回。
+- 同一浏览器上下文中，对根 URL 发起 `fetch(..., { cache: "no-store" })` 得到 200、`Content-Encoding: gzip`，浏览器解码后的正文以 `<!doctype html>` 开头；但页面导航的 DOM 与这个 fetch 正文不一致。该证据说明导航路径与无缓存 fetch 的响应处理存在差异，尚不能判定是桌面上传、Relay、OpenResty 缓存/压缩还是浏览器导航缓存导致。
+- 同一公网域名下，`/_remote/capabilities` 返回 HTML fallback 而不是当前 Relay 源码预期的能力 JSON，`/healthz` 返回 404。这进一步表明当前公网路由/部署与工作区源码不一致；在拿到带状态码、响应头和原始传输体的导航 HAR，或查看对应服务日志前，不应将具体根因说成已确认。
+- 当前本机桌面服务对先前指定的会话元数据与消息列表请求均返回 404，因此本轮无法针对那条会话重新测端到端加载时延。之前保存的本地 API 毫秒级基线仍然只适用于当时那条本地会话；早前公网采样的 6.6 MB provider 响应和 39.8 秒父会话 TTFB 也不能代表当前这个空白根页面。
+- 线上 Relay/桌面服务未重启、未部署、未更新。下一次定位需要从同一次失败导航采集：完整请求 URL、状态码、`Content-Encoding`、`Content-Length`、`Vary`、`ETag`/缓存头、解压后和原始响应体前几十字节，以及桌面端/Relay 对应时间段日志；然后用当前发布版复测。禁止仅凭截图归因或宣称修复完成。
