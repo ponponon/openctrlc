@@ -47,7 +47,13 @@ function sessionRead<T>(request: (signal: AbortSignal) => Promise<T>) {
       reject(error)
     }, sessionReadTimeoutMs)
   })
-  return Promise.race([Promise.resolve().then(() => request(controller.signal)), deadline]).finally(() => {
+  let pending: Promise<T>
+  try {
+    pending = request(controller.signal)
+  } catch (error) {
+    pending = Promise.reject(error)
+  }
+  return Promise.race([pending, deadline]).finally(() => {
     if (timeout !== undefined) clearTimeout(timeout)
   })
 }
