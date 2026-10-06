@@ -1058,7 +1058,7 @@ export function createServerSession(
     return Promise.all([session, messages]).then(() => {})
   }
 
-  const prefetch = async (sessionID: string, limit: number) => {
+  const prefetch = async (sessionID: string, limit = defaultMessagePageSize) => {
     touch(sessionID)
     await inflight.get(sessionID)
     if (
@@ -1634,7 +1634,7 @@ export function createServerSession(
     prefetch,
     catchUpAfterReconnect,
     catchUpSession,
-    shouldPrefetch(sessionID: string, limit: number) {
+    shouldPrefetch(sessionID: string, limit = defaultMessagePageSize) {
       if (data.message[sessionID] === undefined) return true
       if (Date.now() - (meta.at[sessionID] ?? 0) > 15_000) return true
       if (meta.complete[sessionID]) return false

@@ -112,12 +112,15 @@ export function createCompatibleApi(input: CompatibleInput): CompatibleApi {
     if (pending) return pending
 
     const check = (async () => {
-      const current = await input.current.message.list({ sessionID, limit: 1 })
+      const current = await input.current.message.list({ sessionID, limit: 1 }).catch((error) => {
+        if (!isNotFoundError(error)) throw error
+        return undefined
+      })
       if (getProtocol() === "v1") {
         sessionProtocols.set(sessionID, "v1")
         return "v1" as const
       }
-      if (current.data.length > 0) {
+      if (current?.data.length) {
         sessionProtocols.set(sessionID, "v2")
         return "v2" as const
       }
@@ -220,6 +223,7 @@ function routeApi<T extends object>(
           Promise.resolve().then(() => {
             const selectedProtocol = protocol()
             const routeID = JSON.stringify([...path, String(property)])
+            const sessionCreate = path.length === 1 && path[0] === "session" && property === "create"
             const input = args[0]
             const sessionID =
               input &&
@@ -237,7 +241,18 @@ function routeApi<T extends object>(
             const selectedParent = path.reduce((value, key) => Reflect.get(value, key), selected)
             const method = Reflect.get(selectedParent, property)
             if (typeof method !== "function") throw new Error(`API method unavailable: ${String(property)}`)
-            const result = Promise.resolve(Reflect.apply(method, selectedParent, args))
+            const result = Promise.resolve(Reflect.apply(method, selectedParent, args)).then((value) => {
+              if (
+                sessionCreate &&
+                value &&
+                typeof value === "object" &&
+                "id" in value &&
+                typeof value.id === "string"
+              ) {
+                sessionProtocols.set(value.id, useLegacy ? "v1" : "v2")
+              }
+              return value
+            })
             if (useLegacy || sessionProtocol === "v2" || (!sessionID && selectedProtocol !== undefined)) return result
 
             return result.catch((error) => {
@@ -245,11 +260,22 @@ function routeApi<T extends object>(
               if (sessionProtocol === "v2" || (detected !== "v1" && !isNotFoundError(error))) throw error
               const fallbackParent = path.reduce((value, key) => Reflect.get(value, key), legacy)
               const fallback = Reflect.get(fallbackParent, property)
-              if (typeof fallback !== "function") throw error
+              // Untouched namespaces in the V1 facade inherit the V2 method;
+              // retrying that same method on 404 only adds another remote round trip.
+              if (typeof fallback !== "function" || fallbackParent === selectedParent || fallback === method) throw error
               return Promise.resolve(Reflect.apply(fallback, fallbackParent, args)).then(
                 (value) => {
                   if (typeof sessionID === "string") sessionProtocols.set(sessionID, "v1")
                   else legacyRoutes.add(routeID)
+                  if (
+                    sessionCreate &&
+                    value &&
+                    typeof value === "object" &&
+                    "id" in value &&
+                    typeof value.id === "string"
+                  ) {
+                    sessionProtocols.set(value.id, "v1")
+                  }
                   return value
                 },
                 (fallbackError) => {

@@ -3048,12 +3048,21 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 
 远程浏览器首开会话时只请求最近 10 条消息，桌面本地仍保留 20 条。消息详情可能包含较大的工具输出，远程传输还会占用桌面上行；缩小远程首屏响应后，更早的历史继续由时间线按需加载，不改变服务端数据或本地桌面行为。
 
-- 代码：`packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`。
+- 路由预取与常规同步共用会话存储的默认首屏页大小，避免路由入口硬编码 20 条而绕过远程 10 条配置。
+- 代码：`packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`、`packages/app/src/pages/session.tsx`。
 - 验证：`packages/app` 类型检查通过；未运行测试，未做公网 Relay 下的实测首屏计时。
+
+## 新建会话首次操作复用创建时的协议判断
+
+新建会话成功时，兼容 API 会把返回的 Session ID 和实际使用的协议写入逐会话缓存。新会话的首次发送或权限操作因此不必再先探测一页消息；旧 V1 会话的独立回退逻辑保持不变。
+
+- 代码：`packages/app/src/utils/server-compat.ts`。
+- 验证：`packages/app` 类型检查通过；未运行测试。
 
 ## 协议探测 pending 时会话仍立即加载
 
 - `server-compat` 的 API 方法在下一微任务读取已 settle 的协议结果；若探测仍 pending，立即使用当前 V2 方法，不等待探测 Promise。
+- V1 facade 中未单独适配的 API 命名空间沿用当前实现；如果 V2 方法返回 404，兼容层不再把同一个方法重复请求一次，直接把结果交给明确的 V1 读取回退。
 - 会话读取优先使用已缓存的逐会话协议。全局协议仅在没有会话提示时作快速路由提示；V2 服务上的旧 V1 会话仍会根据该会话的消息读取结果识别，不能把全局 V2 当作所有 Session 都是 V2。
 - 重试中的每次新请求都会重建 SSE 事件基线；首次基线在同步调用栈内建立，避免协议选择所需的微任务让实时事件抢先进入缓存后又被覆盖。
 - 兼容 API 的递归 Proxy 始终用根 API 对象解析完整路径，避免进入第二层命名空间后把根路径重复应用到嵌套对象。
