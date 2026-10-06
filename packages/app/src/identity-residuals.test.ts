@@ -93,6 +93,14 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     ],
     ["e2e/regression/session-request-docks.spec.ts", ["openctrlc.global.dat:permission"]],
     ["e2e/regression/review-terminal-stacked.spec.ts", ["openctrlc.global.dat:layout"]],
+    [
+      "e2e/regression/session-lineage-loading.spec.ts",
+      [
+        "openctrlc.global.dat:language",
+        "openctrlc.global.dat:server",
+        "openctrlc.window.browser.dat:tabs",
+      ],
+    ],
     ["e2e/regression/session-list-path-loading.spec.ts", ["openctrlc.global.dat:server"]],
     [
       "e2e/regression/session-timeline-scroll-restore.spec.ts",
@@ -112,6 +120,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
       "e2e/regression/terminal-tab-switch.spec.ts",
       ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
     ],
+    ["e2e/regression/titlebar-tab-scroll-anchor.spec.ts", ["openctrlc.window.browser.dat:tabs"]],
     [
       "e2e/regression/new-session-panel-corner.spec.ts",
       ["openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
@@ -177,6 +186,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     "e2e/reproduction/session-search-bar/vite.config.ts",
     "e2e/regression/prompt-input-v2-command-draft.spec.ts",
     "e2e/regression/prompt-thinking-level.spec.ts",
+    "e2e/regression/remote-peer-channel.spec.ts",
     "e2e/regression/review-image-flash.spec.ts",
     "e2e/regression/review-line-comment.spec.ts",
     "e2e/regression/session-search-tool-hit.spec.ts",

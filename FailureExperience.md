@@ -1529,3 +1529,7 @@ Relay 可以在桌面离线期间保留已批准浏览器的会话最长 30 天�
 ## 回退解析器的静态 import 会把 KaTeX 带进会话首屏
 
 Markdown 正常解析已经放进 Worker，但主线程为了 Worker 故障时即时降级，静态 import 了同一个 KaTeX parser。结果 KaTeX 的 609 KB 源码也进入 session route；即使普通会话没有公式，打开会话仍必须下载这部分代码。以后首屏 fallback 只保留基础 Markdown，Worker 故障且需要数学排版时再动态加载完整 parser；用生产构建的 gzip chunk 大小验证是否真正拆开，同时保留 KaTeX 正常/回退解析测试，不能只看源码里用了 Worker 就认定首屏很轻。
+
+## 新增使用持久化状态的 E2E fixture 要同步登记基线
+
+Linux CI 的 app 单测因 `identity-residuals.test.ts` 的 E2E fixture 基线未包含新加入的 `session-lineage-loading`、`titlebar-tab-scroll-anchor` 和 `remote-peer-channel` 文件而失败。以后新增或移动 E2E fixture 时，同一变更必须把有持久化键的文件登记到 `expectedPersistence`，无持久化键的文件登记到 `expectedNoPersistence`；本地运行完整 app unit tests 后再推送。
