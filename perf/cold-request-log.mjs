@@ -14,7 +14,9 @@ const seconds = Number(process.argv[2] ?? 120)
 
 let page = null
 for (let i = 0; i < 1200; i++) {
-  const list = await fetch(`${CDP}/json/list`).then((r) => r.json()).catch(() => null)
+  const list = await fetch(`${CDP}/json/list`)
+    .then((r) => r.json())
+    .catch(() => null)
   page = list?.find((item) => item.type === "page")
   if (page) break
   await new Promise((resolve) => setTimeout(resolve, 100))
@@ -45,14 +47,23 @@ socket.addEventListener("message", (event) => {
   }
   const params = message.params
   if (message.method === "Network.requestWillBeSent") {
-    requests.set(params.requestId, { url: params.request.url, at: Date.now() - t0, done: null, status: null, failed: null })
+    requests.set(params.requestId, {
+      url: params.request.url,
+      at: Date.now() - t0,
+      done: null,
+      status: null,
+      failed: null,
+    })
     if (/prompt-input|markdown|session-route-view|shiki|pierre/.test(params.request.url)) {
       milestones.push(`+${Date.now() - t0}ms REQ  ${safeUrl(params.request.url)}`)
     }
   }
   if (message.method === "Network.responseReceived") {
     const entry = requests.get(params.requestId)
-    if (entry) { entry.status = params.response.status; entry.done = Date.now() - t0 }
+    if (entry) {
+      entry.status = params.response.status
+      entry.done = Date.now() - t0
+    }
   }
   if (message.method === "Network.loadingFailed") {
     const entry = requests.get(params.requestId)
@@ -80,17 +91,25 @@ console.log("\n-- milestones (session-critical modules) --")
 for (const line of milestones.slice(0, 60)) console.log("  " + line)
 
 console.log("\n-- never completed --")
-for (const r of stuck.slice(0, 30)) console.log(`  t+${String(r.at).padStart(7)}ms  ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 120)}`)
+for (const r of stuck.slice(0, 30))
+  console.log(`  t+${String(r.at).padStart(7)}ms  ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 120)}`)
 
 console.log("\n-- slowest 20 completed --")
-for (const r of rows.filter((r) => r.done !== null).sort((a, b) => b.done - b.at - (a.done - a.at)).slice(0, 20)) {
-  console.log(`  ${String(r.done - r.at).padStart(7)}ms ${String(r.status).padStart(4)} ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 110)}`)
+for (const r of rows
+  .filter((r) => r.done !== null)
+  .sort((a, b) => b.done - b.at - (a.done - a.at))
+  .slice(0, 20)) {
+  console.log(
+    `  ${String(r.done - r.at).padStart(7)}ms ${String(r.status).padStart(4)} ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 110)}`,
+  )
 }
 
 const state = await send("Runtime.evaluate", {
   expression: `(() => ({ skeleton: document.querySelectorAll(".animate-pulse").length, bodyLen: (document.body?.innerText ?? "").length, composer: !!document.querySelector('[data-component="prompt-input"]') }))()`,
   returnByValue: true,
-}).then((r) => r.result.value).catch(() => null)
+})
+  .then((r) => r.result.value)
+  .catch(() => null)
 console.log("\nfinal renderer state:", JSON.stringify(state))
 
 socket.close()

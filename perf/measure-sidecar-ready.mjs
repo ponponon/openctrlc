@@ -11,14 +11,21 @@ const REPO = process.cwd()
 
 const pidsOn = (port) => {
   try {
-    return execSync(`lsof -nP -iTCP:${port} -sTCP:LISTEN -t`).toString().split("\n").map((s) => s.trim()).filter(Boolean)
+    return execSync(`lsof -nP -iTCP:${port} -sTCP:LISTEN -t`)
+      .toString()
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean)
   } catch {
     return []
   }
 }
 
 const occupied = ["9222", "5173"].filter((port) => pidsOn(port).length > 0)
-if (occupied.length) throw new Error("CDP/Vite ports already occupied; close the existing dev app manually. This script never kills unrelated processes.")
+if (occupied.length)
+  throw new Error(
+    "CDP/Vite ports already occupied; close the existing dev app manually. This script never kills unrelated processes.",
+  )
 
 const started = Date.now()
 const child = spawn("bun", ["run", "dev:desktop"], {
@@ -29,7 +36,11 @@ const child = spawn("bun", ["run", "dev:desktop"], {
 })
 const stopChild = () => {
   if (!child.pid || child.exitCode !== null || child.signalCode !== null) return
-  try { process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM") } catch { child.kill("SIGTERM") }
+  try {
+    process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM")
+  } catch {
+    child.kill("SIGTERM")
+  }
 }
 process.on("SIGINT", () => {
   stopChild()

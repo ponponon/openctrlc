@@ -687,11 +687,7 @@ export function createServerSession(
   }
 
   const fetchMessage = async (sessionID: string, messageID: string, onAttempt?: () => void) => {
-    if (
-      sessionApi &&
-      (await options?.protocol) !== "v1" &&
-      options?.sessionProtocols?.get(sessionID) !== "v1"
-    ) {
+    if (sessionApi && (await options?.protocol) !== "v1" && options?.sessionProtocols?.get(sessionID) !== "v1") {
       const response = await sessionRead((signal) =>
         (options?.retry ?? retry)(() => {
           onAttempt?.()
@@ -971,11 +967,12 @@ export function createServerSession(
     const cached = data.message[sessionID] !== undefined && meta.limit[sessionID] !== undefined
     if (cached && data.info[sessionID] && !options?.force) return Promise.resolve()
     const session = resolve(sessionID, options)
-    const messages = cached && !options?.force
-      ? Promise.resolve()
-      : runInflight(inflight, sessionID, () =>
-          loadMessages(sessionID, options?.messageLimit ?? meta.limit[sessionID] ?? initialMessagePageSize),
-        )
+    const messages =
+      cached && !options?.force
+        ? Promise.resolve()
+        : runInflight(inflight, sessionID, () =>
+            loadMessages(sessionID, options?.messageLimit ?? meta.limit[sessionID] ?? initialMessagePageSize),
+          )
     return Promise.all([session, messages]).then(() => {})
   }
 

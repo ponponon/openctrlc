@@ -2906,16 +2906,16 @@ Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并�
 
 ### 实测数据（2026-10-06，本机 `bun run dev:desktop`）
 
-| 阶段 | 修复前 | 修复后 |
-| --- | --- | --- |
-| predev（plugin + 内嵌 UI 全量 vite build + CLI 下载） | 12–26s | 0.09s（产物新鲜时跳过） |
-| electron-vite 就绪 + app starting | ~13s | ~13s |
-| server ready | +3–5s | +3s |
-| 窗口创建 | 等 sidecar loading task 结束后才 restoreMainWindows | 与 sidecar 并行，先开窗口 |
-| shell env `zsh -il` | 每次启动探测（日志可见 20s 级间隔） | 24h 文件缓存 |
-| `GET /session/:id` | 4–20ms | 未变 |
-| 渲染层热加载到会话内容 | ~1s | 未变 |
-| **冷启动后会话正文可见** | **实测 120s+ 仍骨架** | **仍可复现卡在 SessionSkeleton** |
+| 阶段                                                  | 修复前                                              | 修复后                           |
+| ----------------------------------------------------- | --------------------------------------------------- | -------------------------------- |
+| predev（plugin + 内嵌 UI 全量 vite build + CLI 下载） | 12–26s                                              | 0.09s（产物新鲜时跳过）          |
+| electron-vite 就绪 + app starting                     | ~13s                                                | ~13s                             |
+| server ready                                          | +3–5s                                               | +3s                              |
+| 窗口创建                                              | 等 sidecar loading task 结束后才 restoreMainWindows | 与 sidecar 并行，先开窗口        |
+| shell env `zsh -il`                                   | 每次启动探测（日志可见 20s 级间隔）                 | 24h 文件缓存                     |
+| `GET /session/:id`                                    | 4–20ms                                              | 未变                             |
+| 渲染层热加载到会话内容                                | ~1s                                                 | 未变                             |
+| **冷启动后会话正文可见**                              | **实测 120s+ 仍骨架**                               | **仍可复现卡在 SessionSkeleton** |
 
 ### 已修复
 
@@ -2957,7 +2957,7 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 
 - perf/README.md：安全默认值、命令说明和 CDP 回环监听要求。
 - perf/safe-output.mjs：统一隐藏会话/配对路径标识、用户目录和 URL 查询值。
-- perf/*.mjs：参数化当前会话与目录，默认避免正文输出、自动重载和误杀无关开发进程。
+- perf/\*.mjs：参数化当前会话与目录，默认避免正文输出、自动重载和误杀无关开发进程。
 
 ## 远程会话预取不跳过会话元数据同步
 

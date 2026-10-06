@@ -25,7 +25,11 @@ const record = (label, ms) => {
 let child
 const stopChild = () => {
   if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return
-  try { process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM") } catch { child.kill("SIGTERM") }
+  try {
+    process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM")
+  } catch {
+    child.kill("SIGTERM")
+  }
 }
 
 const portFree = async (port) => {
@@ -89,7 +93,9 @@ const STATE = `(() => {
 
 const main = async () => {
   if (!(await portFree("9222")) || !(await portFree("5173"))) {
-    console.log("CDP/Vite ports 9222 or 5173 are already occupied. Close the existing dev app manually, then retry; this script never kills unrelated processes.")
+    console.log(
+      "CDP/Vite ports 9222 or 5173 are already occupied. Close the existing dev app manually, then retry; this script never kills unrelated processes.",
+    )
     process.exitCode = 2
     return
   }
@@ -122,7 +128,9 @@ const main = async () => {
   let page = null
   for (let i = 0; i < 900; i++) {
     await new Promise((resolve) => setTimeout(resolve, 200))
-    const list = await fetch(`${CDP}/json/list`).then((r) => r.json()).catch(() => null)
+    const list = await fetch(`${CDP}/json/list`)
+      .then((r) => r.json())
+      .catch(() => null)
     page = list?.find((item) => item.type === "page")
     if (page) break
   }

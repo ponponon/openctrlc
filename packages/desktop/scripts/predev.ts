@@ -75,14 +75,16 @@ async function shouldBuildPlugin() {
   if (!(await mtime(join(repoRoot, "plugin/dist/index.js")))) return true
   const out = await newestModifiedAt([join(repoRoot, "plugin/dist")])
   if (!out) return true
-  return (await newestModifiedAt([
-    join(repoRoot, "plugin/src"),
-    join(repoRoot, "sdk/src"),
-    join(repoRoot, "schema/src"),
-    join(repoRoot, "plugin/package.json"),
-    join(repoRoot, "plugin/tsconfig.json"),
-    join(repoRoot, "../bun.lock"),
-  ])) > out
+  return (
+    (await newestModifiedAt([
+      join(repoRoot, "plugin/src"),
+      join(repoRoot, "sdk/src"),
+      join(repoRoot, "schema/src"),
+      join(repoRoot, "plugin/package.json"),
+      join(repoRoot, "plugin/tsconfig.json"),
+      join(repoRoot, "../bun.lock"),
+    ])) > out
+  )
 }
 
 async function shouldDownloadCli() {

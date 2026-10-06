@@ -60,7 +60,12 @@ describe("detectServerProtocol", () => {
     })
 
     expect(await detectServerProtocol(server, fetcher)).toBe("v2")
-    expect(calls).toEqual(new Map([["/global/health", 2], ["/api/health", 2]]))
+    expect(calls).toEqual(
+      new Map([
+        ["/global/health", 2],
+        ["/api/health", 2],
+      ]),
+    )
   })
 
   test("bounds repeated transient protocol failures to two retries", async () => {
@@ -76,7 +81,12 @@ describe("detectServerProtocol", () => {
       v1Probe: "http-503",
       v2Probe: "http-503",
     })
-    expect(calls).toEqual(new Map([["/global/health", 3], ["/api/health", 3]]))
+    expect(calls).toEqual(
+      new Map([
+        ["/global/health", 3],
+        ["/api/health", 3],
+      ]),
+    )
   })
 
   test("does not mistake two malformed health responses for an empty V2 server", async () => {

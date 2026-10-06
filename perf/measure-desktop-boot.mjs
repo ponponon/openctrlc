@@ -15,7 +15,11 @@ const keep = process.argv.includes("--keep")
 let child
 const stopChild = () => {
   if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return
-  try { process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM") } catch { child.kill("SIGTERM") }
+  try {
+    process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM")
+  } catch {
+    child.kill("SIGTERM")
+  }
 }
 const record = (label, ms, extra = {}) => {
   results.push({ label, ms, ...extra })
@@ -94,7 +98,9 @@ const evaluate = async (client, expression) => {
 const main = async () => {
   // Refuse to start if an instance is already up; the single-instance lock would
   // just focus the existing window and make the measurement meaningless.
-  const existing = await fetch(`${CDP}/json/list`).then((r) => r.json()).catch(() => null)
+  const existing = await fetch(`${CDP}/json/list`)
+    .then((r) => r.json())
+    .catch(() => null)
   if (existing?.some((item) => item.type === "page")) {
     console.log("A dev instance is already running on CDP 9222. Stop it first.")
     process.exit(2)
@@ -125,7 +131,9 @@ const main = async () => {
   let page = null
   for (let i = 0; i < 600; i++) {
     await new Promise((resolve) => setTimeout(resolve, 250))
-    const list = await fetch(`${CDP}/json/list`).then((r) => r.json()).catch(() => null)
+    const list = await fetch(`${CDP}/json/list`)
+      .then((r) => r.json())
+      .catch(() => null)
     page = list?.find((item) => item.type === "page")
     if (page) break
   }

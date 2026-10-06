@@ -79,12 +79,16 @@ console.log("directory count:", dirs.length, "(paths omitted)")
 console.log("\n-- serial (one at a time) --")
 console.log(`${"ms".padStart(7)} ${"status".padStart(9)} ${"bytes".padStart(9)} ${"rows".padStart(5)}  directory`)
 for (const row of output.rows.filter((r) => r.mode === "serial")) {
-  console.log(`${String(row.ms).padStart(7)} ${String(row.status).padStart(9)} ${String(row.bytes).padStart(9)} ${String(row.ids).padStart(5)}  #${row.dir}`)
+  console.log(
+    `${String(row.ms).padStart(7)} ${String(row.status).padStart(9)} ${String(row.bytes).padStart(9)} ${String(row.ids).padStart(5)}  #${row.dir}`,
+  )
 }
 console.log(`\n-- concurrent (${dirs.length} at once, like restore) --`)
 console.log(`${"ms".padStart(7)} ${"status".padStart(9)} ${"bytes".padStart(9)} ${"rows".padStart(5)}  directory`)
 for (const row of output.rows.filter((r) => r.mode === "concurrent").sort((a, b) => b.ms - a.ms)) {
-  console.log(`${String(row.ms).padStart(7)} ${String(row.status).padStart(9)} ${String(row.bytes).padStart(9)} ${String(row.ids).padStart(5)}  #${row.dir}`)
+  console.log(
+    `${String(row.ms).padStart(7)} ${String(row.status).padStart(9)} ${String(row.bytes).padStart(9)} ${String(row.ids).padStart(5)}  #${row.dir}`,
+  )
 }
 console.log("\nconcurrent wall total:", output.concurrentTotal, "ms")
 

@@ -1081,8 +1081,7 @@ function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | und
   const sessionInfo = (input.sessionInfo as unknown[] | undefined)?.flatMap((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return []
     const info = item as Record<string, unknown>
-    if (typeof info.sessionID !== "string" || !sessionIDSet.has(info.sessionID))
-      return []
+    if (typeof info.sessionID !== "string" || !sessionIDSet.has(info.sessionID)) return []
     if (info.title !== undefined && (typeof info.title !== "string" || info.title.length > 200)) return []
     if (info.protocol !== undefined && info.protocol !== "v1" && info.protocol !== "v2") return []
     if (info.title === undefined && info.protocol === undefined) return []
@@ -1507,7 +1506,8 @@ function pairPage(mode: "pair" | "expired" | "home" | "already" | "disconnected"
       expired: "This link has expired. Create a new QR code on your desktop.",
       already: "This browser is already approved. Opening your workspace…",
       error: "Could not connect. Check the connection and scan again.",
-      disconnected: "Your desktop is not connected to OpenCtrlC Relay. Make sure OpenCtrlC is running with mobile access enabled. This page will retry automatically.",
+      disconnected:
+        "Your desktop is not connected to OpenCtrlC Relay. Make sure OpenCtrlC is running with mobile access enabled. This page will retry automatically.",
       retry: "Try again now",
     },
     zh: {
@@ -1543,7 +1543,8 @@ function pairPage(mode: "pair" | "expired" | "home" | "already" | "disconnected"
       expired: "このリンクの有効期限が切れました。デスクトップで新しい QR コードを作成してください。",
       already: "このブラウザーは承認済みです。ワークスペースを開いています…",
       error: "接続できません。ネットワークを確認して再度スキャンしてください。",
-      disconnected: "デスクトップが OpenCtrlC Relay に接続されていません。OpenCtrlC が起動し、モバイルアクセスが有効であることを確認してください。このページは自動的に再試行します。",
+      disconnected:
+        "デスクトップが OpenCtrlC Relay に接続されていません。OpenCtrlC が起動し、モバイルアクセスが有効であることを確認してください。このページは自動的に再試行します。",
       retry: "今すぐ再試行",
     },
     ko: {
@@ -1561,7 +1562,8 @@ function pairPage(mode: "pair" | "expired" | "home" | "already" | "disconnected"
       expired: "링크가 만료되었습니다. 데스크톱에서 새 QR 코드를 만드세요.",
       already: "이 브라우저는 이미 승인되어 있습니다. 작업 공간을 여는 중…",
       error: "연결할 수 없습니다. 네트워크를 확인하고 다시 스캔하세요.",
-      disconnected: "데스크톱이 OpenCtrlC Relay에 연결되어 있지 않습니다. OpenCtrlC가 실행 중이고 모바일 액세스가 켜져 있는지 확인하세요. 이 페이지는 자동으로 다시 시도합니다.",
+      disconnected:
+        "데스크톱이 OpenCtrlC Relay에 연결되어 있지 않습니다. OpenCtrlC가 실행 중이고 모바일 액세스가 켜져 있는지 확인하세요. 이 페이지는 자동으로 다시 시도합니다.",
       retry: "지금 다시 시도",
     },
   }

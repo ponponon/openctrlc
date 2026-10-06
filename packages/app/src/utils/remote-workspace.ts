@@ -32,8 +32,7 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
   const sessionInfo = (input.sessionInfo as unknown[] | undefined)?.flatMap((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return []
     const info = item as Record<string, unknown>
-    if (typeof info.sessionID !== "string" || !sessionIDSet.has(info.sessionID))
-      return []
+    if (typeof info.sessionID !== "string" || !sessionIDSet.has(info.sessionID)) return []
     if (info.title !== undefined && (typeof info.title !== "string" || info.title.length > 200)) return []
     if (info.protocol !== undefined && info.protocol !== "v1" && info.protocol !== "v2") return []
     if (info.title === undefined && info.protocol === undefined) return []
@@ -73,9 +72,7 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
 
 export function remoteSessionProtocols(snapshot?: RemoteWorkspaceSnapshot) {
   return new Map(
-    snapshot?.sessionInfo?.flatMap((item) =>
-      item.protocol ? [[item.sessionID, item.protocol] as const] : [],
-    ) ?? [],
+    snapshot?.sessionInfo?.flatMap((item) => (item.protocol ? [[item.sessionID, item.protocol] as const] : [])) ?? [],
   )
 }
 

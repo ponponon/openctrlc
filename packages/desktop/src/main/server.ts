@@ -75,8 +75,7 @@ function readShellEnvCache(userDataPath: string) {
     const entries = Object.entries(env)
     if (
       entries.some(
-        ([key, value]) =>
-          !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || key === "__proto__" || typeof value !== "string",
+        ([key, value]) => !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || key === "__proto__" || typeof value !== "string",
       )
     )
       return null

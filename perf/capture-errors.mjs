@@ -39,12 +39,22 @@ socket.addEventListener("message", (event) => {
   const params = message.params
   if (message.method === "Network.requestWillBeSent") {
     const url = params.request.url
-    requests.set(params.requestId, { url, started: params.timestamp, finished: null, status: null, failed: null, type: params.type })
+    requests.set(params.requestId, {
+      url,
+      started: params.timestamp,
+      finished: null,
+      status: null,
+      failed: null,
+      type: params.type,
+    })
     if (firstModuleAt === null && /localhost:5173/.test(url)) firstModuleAt = params.timestamp
   }
   if (message.method === "Network.responseReceived") {
     const entry = requests.get(params.requestId)
-    if (entry) { entry.status = params.response.status; entry.finished = params.timestamp }
+    if (entry) {
+      entry.status = params.response.status
+      entry.finished = params.timestamp
+    }
   }
   if (message.method === "Network.loadingFailed") {
     const entry = requests.get(params.requestId)
@@ -83,11 +93,21 @@ const rows = [...requests.values()].map((row) => ({ ...row, url: safeUrl(row.url
 const vite = rows.filter((r) => /localhost:5173/.test(r.url))
 const api = rows.filter((r) => !/localhost:5173/.test(r.url))
 console.log(`=== total ${rows.length} requests: ${vite.length} vite modules, ${api.length} api/other ===`)
-console.log("first vite module request at t+", firstModuleAt ? Math.round((firstModuleAt - Math.min(...rows.map((r) => r.started))) * 1000) : null, "ms")
+console.log(
+  "first vite module request at t+",
+  firstModuleAt ? Math.round((firstModuleAt - Math.min(...rows.map((r) => r.started))) * 1000) : null,
+  "ms",
+)
 
-const byDuration = rows.filter((r) => r.finished).map((r) => ({ ...r, dur: Math.round((r.finished - r.started) * 1000) })).sort((a, b) => b.dur - a.dur)
+const byDuration = rows
+  .filter((r) => r.finished)
+  .map((r) => ({ ...r, dur: Math.round((r.finished - r.started) * 1000) }))
+  .sort((a, b) => b.dur - a.dur)
 console.log("\n-- slowest 20 requests --")
-for (const r of byDuration.slice(0, 20)) console.log(`${String(r.dur).padStart(7)}ms ${String(r.status ?? r.failed).padStart(14)} ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 100)}`)
+for (const r of byDuration.slice(0, 20))
+  console.log(
+    `${String(r.dur).padStart(7)}ms ${String(r.status ?? r.failed).padStart(14)} ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 100)}`,
+  )
 
 const pendingRows = rows.filter((r) => !r.finished && !r.failed)
 console.log(`\n-- still pending at ${seconds}s: ${pendingRows.length} --`)
@@ -95,7 +115,8 @@ for (const r of pendingRows.slice(0, 20)) console.log(`        ${r.url.replace(/
 
 const failed = rows.filter((r) => r.failed || (r.status && r.status >= 400))
 console.log(`\n-- failed / >=400: ${failed.length} --`)
-for (const r of failed.slice(0, 30)) console.log(`${String(r.status ?? r.failed).padStart(16)} ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 110)}`)
+for (const r of failed.slice(0, 30))
+  console.log(`${String(r.status ?? r.failed).padStart(16)} ${r.url.replace(/^https?:\/\/[^/]+/, "").slice(0, 110)}`)
 
 console.log(`\n-- errors/exceptions captured: ${errors.length} --`)
 for (const e of errors.slice(0, 30)) console.log(`[${e.kind}] ${e.type ?? "diagnostic text omitted"}`)

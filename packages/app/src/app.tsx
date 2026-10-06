@@ -754,13 +754,12 @@ function RemoteTabsHydrator() {
     const key = ServerConnection.key(connection)
     const context = global.ensureServerCtx(connection)
     return JSON.stringify(
-      tabs.store
-        .flatMap((tab) => {
-          if (tab.type !== "session" || tab.server !== key) return []
-          const protocol = context.sdk.sessionProtocols.get(tab.sessionId)
-          if (!protocol || context.sync.session.data.session_message[tab.sessionId] === undefined) return []
-          return [`${tab.sessionId}:${protocol}`]
-        }),
+      tabs.store.flatMap((tab) => {
+        if (tab.type !== "session" || tab.server !== key) return []
+        const protocol = context.sdk.sessionProtocols.get(tab.sessionId)
+        if (!protocol || context.sync.session.data.session_message[tab.sessionId] === undefined) return []
+        return [`${tab.sessionId}:${protocol}`]
+      }),
     )
   })
 
