@@ -2,7 +2,7 @@ import { expect, test, type Page, type Route } from "@playwright/test"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import { currentSession } from "../utils/mock-server"
 
-const server = "http://127.0.0.1:4096"
+const server = `http://${process.env.PLAYWRIGHT_SERVER_HOST ?? "127.0.0.1"}:${process.env.PLAYWRIGHT_SERVER_PORT ?? "4096"}`
 const sessions = [
   session("ses_strip_a", "Strip A session"),
   session("ses_strip_b", "Strip B session"),
