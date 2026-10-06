@@ -208,4 +208,6 @@
 - 19:23（北京时间）通过 SSH 只读复核：Relay 健康，运行约 44 小时；保留 1 个会话、0 个在线桌面、4 个浏览器授权、0 个在线浏览器/待处理请求；健康响应没有持久化状态，数据目录仍不能恢复旧授权。`/_remote/capabilities` 返回 401，主机没有监听 UDP 3478，因此生产 P2P 与 STUN 目前都没有启用。没有重启或改动线上服务。
 - 本轮本地验证：`packages/app` 远程 peer/protocol 单测 17/17；`packages/remote-relay` peer/ICE 单测 12/12；MiMo 翻译脚本单测 18/18；App、Desktop、Relay、OpenCode 四个包的 `bun run typecheck` 均通过。这些结果不替代公网手机/美国网络验收。
 - MiMo 代码复核仅找到翻译脚本默认使用 `xiaomi-token-plan-cn/mimo-v2.6-flash`。它是本机 Token Plan provider 名称；脚本支持 `--model` 覆盖，应用运行时没有发现该模型的集成变更。单测证明参数与流程，不证明其他贡献者拥有这个 provider，因此这是开发脚本的可移植性风险，不是桌面运行时故障。
+- Kimi Bridge 只读借用当前远程会话标签页，未读取正文或请求体：浏览器导航 DCL 2.512 秒、load 2.548 秒、FCP 2.672 秒；Performance Resource Timing 显示 8 个脱敏后的 `/session/:id` 请求分别等待 119.444–119.519 秒后返回 HTTP 502，响应传输仅 856 字节。DOM 时间线消息节点数为 0。结合同一时段 Relay 无在线桌面，确认当前空白页不是几十 KB 会话正文受 5 Mbps 带宽限制；但旧 Relay 没有逐请求日志，无法仅凭这些记录断定 502 的精确上游断点。
+- 代码复核另发现一个待实测的加载等待：`server-session.ts` 的 `fetchMessages` 与 `fetchMessage` 在检查已恢复的单会话 V1 提示前，先等待全局 `options.protocol`。若全局健康探测耗时，已知 V1 会话仍被这段 Promise 挡住。App 指令要求修改会话加载前记录并比较生产基线；当前线上请求以 502 结束，没有成功首屏，不能拿来作为有效前后对比基线，所以暂不改该路径。
 - 下一步生产切换需要替换旧 Relay 并启用自托管 STUN。由于当前旧服务没有可恢复快照，替换会让 4 个浏览器重新配对；在用户明确接受这项影响前，继续只做本地代码审查和不触碰现网的准备工作。
