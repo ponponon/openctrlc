@@ -95,11 +95,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     ["e2e/regression/review-terminal-stacked.spec.ts", ["openctrlc.global.dat:layout"]],
     [
       "e2e/regression/session-lineage-loading.spec.ts",
-      [
-        "openctrlc.global.dat:language",
-        "openctrlc.global.dat:server",
-        "openctrlc.window.browser.dat:tabs",
-      ],
+      ["openctrlc.global.dat:language", "openctrlc.global.dat:server", "openctrlc.window.browser.dat:tabs"],
     ],
     ["e2e/regression/session-list-path-loading.spec.ts", ["openctrlc.global.dat:server"]],
     [
