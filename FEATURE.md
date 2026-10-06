@@ -2861,14 +2861,14 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 
 ## 远程工作区快照携带会话协议提示
 
-桌面端已加载且有标题的会话会把已确认的 V1/V2 存储代际随轻量工作区快照发给获批浏览器；标题仍必填，以兼容只认识标题字段的旧 Relay。浏览器在创建 Server SDK 前恢复该提示；已知 V1 的旧会话可直接读取 V1 消息，不再先等待一个空的 V2 消息页后再串行读取 V1。没有协议提示时继续走原有检测与回退逻辑，不能据此跳过实际消息加载。当前生产旧 Relay 会丢弃 `sessionIDs`，需升级 Relay 后这项提示与完整标签同步才会生效。
+桌面端已加载且有标题的会话会把已确认的 V1/V2 存储代际随轻量工作区快照发给获批浏览器；标题仍必填，以兼容只认识标题字段的旧 Relay。浏览器在创建 Server SDK 前恢复该提示；已知 V1 的旧会话可直接读取 V1 消息，不再先等待一个空的 V2 消息页后再串行读取 V1。读取 V1 消息、补齐父消息和断线回放时也会先检查单会话提示，不等待可能仍在探测的全局协议 Promise。没有协议提示时继续走原有检测与回退逻辑，不能据此跳过实际消息加载。当前生产旧 Relay 会丢弃 `sessionIDs`，需升级 Relay 后这项提示与完整标签同步才会生效。
 
 ### 代码位置与验证
 
 - `packages/app/src/context/platform.tsx`、`packages/app/src/entry.tsx`：在创建远程 Server SDK 前提供恢复的工作区快照。
 - `packages/app/src/utils/remote-workspace.ts`、`packages/desktop/src/main/remote-access.ts`、`packages/remote-relay/src/protocol.ts`、`packages/remote-relay/src/index.ts`：验证并传递可选会话协议提示。
 - `packages/app/src/context/server-sdk.tsx`、`packages/app/src/app.tsx`：初始化每会话协议缓存；桌面消息加载完成后刷新快照。快照依赖通过稳定的已加载协议摘要追踪，避免每个流式消息增量都重新发布。
-- `packages/app/src/context/server-session.test.ts`、`packages/app/src/utils/remote-workspace.test.ts`：覆盖恢复 V1 后跳过 V2 探测以及快照协议校验。
+- `packages/app/src/context/server-session.test.ts`、`packages/app/src/utils/remote-workspace.test.ts`：覆盖恢复 V1 后跳过 V2 探测与全局协议等待、父消息回填和断线回放，以及快照协议校验。
 - `packages/app`、`packages/remote-relay`、`packages/desktop` 类型检查均通过；App 两个聚焦测试文件 97 项通过。
 
 此优化只去掉已知 V1 会话的一次串行 Relay 往返，尚未测得公网端到端节省时长，不能据此宣称修复了全部 10 秒慢加载。旧版线上 Relay 只在内存中保存会话与授权状态，部署重启前必须先设计保留这些状态的迁移方案并在维护窗口验收。

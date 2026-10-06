@@ -484,8 +484,12 @@ describe("server session", () => {
       },
     } as unknown as MessageApi
     const sessionProtocols = new Map<string, "v1" | "v2">([["root", "v1"]])
+    let protocolReads = 0
     const store = createServerSession(legacy, {} as SessionApi, messageApi, {
-      protocol: Promise.resolve("v2"),
+      get protocol() {
+        protocolReads++
+        return Promise.resolve("v2" as const)
+      },
       sessionProtocols,
     })
     store.remember(session("root"))
@@ -494,6 +498,7 @@ describe("server session", () => {
 
     expect(legacy.requests).toEqual([{ sessionID: "root", limit: 20, before: undefined }])
     expect(store.data.session_message.root).toMatchObject([{ id: user.id, type: "user", text: "text" }])
+    expect(protocolReads).toBe(0)
   })
 
   test("remembers an empty V2 session after checking its legacy history once", async () => {
@@ -528,7 +533,20 @@ describe("server session", () => {
       ],
       [singleResponse(user)],
     )
-    const store = createServerSession(client)
+    const sessionProtocols = new Map<string, "v1" | "v2">([["child", "v1"]])
+    let protocolReads = 0
+    const store = createServerSession(
+      client,
+      { get: async () => session("child", "root") } as unknown as SessionApi,
+      {} as MessageApi,
+      {
+        get protocol() {
+          protocolReads++
+          return Promise.resolve("v2" as const)
+        },
+        sessionProtocols,
+      },
+    )
 
     await store.sync("child")
 
@@ -536,6 +554,7 @@ describe("server session", () => {
     expect(client.rootRequests).toEqual([{ sessionID: "child", messageID: user.id }])
     expect(store.data.message.child).toEqual([user, ...assistants])
     expect(store.history.more("child")).toBe(true)
+    expect(protocolReads).toBe(0)
   })
 
   test("backfills a full initial page of missing assistant parents concurrently", async () => {
@@ -2143,8 +2162,12 @@ describe("server session", () => {
         throw new Error("V2 message endpoint called for V1 history")
       },
     } as unknown as MessageApi
+    let protocolReads = 0
     const store = createServerSession(client, sessionApi, messageApi, {
-      protocol: Promise.resolve("v2"),
+      get protocol() {
+        protocolReads++
+        return Promise.resolve("v2" as const)
+      },
       sessionProtocols,
     })
     store.remember(session("root"))
@@ -2164,5 +2187,6 @@ describe("server session", () => {
     expect(logCalls).toEqual([])
     expect(client.requests).toHaveLength(2)
     expect(store.data.part[message.id]).toEqual([textPart(message.id, { text: "after" })])
+    expect(protocolReads).toBe(0)
   })
 })

@@ -629,7 +629,7 @@ export function createServerSession(
       }
     }
 
-    if (messageApi && (await options?.protocol) !== "v1" && options?.sessionProtocols?.get(sessionID) !== "v1") {
+    if (messageApi && options?.sessionProtocols?.get(sessionID) !== "v1" && (await options?.protocol) !== "v1") {
       const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
         sessionRead((signal) =>
           (options?.retry ?? retry)(() => {
@@ -687,7 +687,7 @@ export function createServerSession(
   }
 
   const fetchMessage = async (sessionID: string, messageID: string, onAttempt?: () => void) => {
-    if (sessionApi && (await options?.protocol) !== "v1" && options?.sessionProtocols?.get(sessionID) !== "v1") {
+    if (sessionApi && options?.sessionProtocols?.get(sessionID) !== "v1" && (await options?.protocol) !== "v1") {
       const response = await sessionRead((signal) =>
         (options?.retry ?? retry)(() => {
           onAttempt?.()
@@ -994,8 +994,8 @@ export function createServerSession(
     const start = lastSeq.get(sessionID)
     if (start === undefined) return false
     if (!sessionApi?.log) return false
-    if ((await options?.protocol) === "v1") return false
     if (options?.sessionProtocols?.get(sessionID) === "v1") return false
+    if ((await options?.protocol) === "v1") return false
     try {
       let after = start
       // Guard against a runaway more:true loop from a buggy server.
