@@ -6,6 +6,7 @@
 
 import { spawn } from "node:child_process"
 import { writeFileSync } from "node:fs"
+import { createServer } from "node:net"
 import { safeUrl } from "./safe-output.mjs"
 
 const REPO = process.cwd()
@@ -14,13 +15,22 @@ const results = []
 const keep = process.argv.includes("--keep")
 let child
 const stopChild = () => {
-  if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return
+  if (!child?.pid) return
   try {
     process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM")
   } catch {
-    child.kill("SIGTERM")
+    if (process.platform === "win32") child.kill("SIGTERM")
   }
 }
+const portFree = (port) =>
+  new Promise((resolve, reject) => {
+    const server = createServer()
+    server.once("error", (error) => {
+      if (error.code === "EADDRINUSE") return resolve(false)
+      reject(error)
+    })
+    server.listen({ host: "127.0.0.1", port }, () => server.close(() => resolve(true)))
+  })
 const record = (label, ms, extra = {}) => {
   results.push({ label, ms, ...extra })
   console.log(`${String(ms).padStart(7)}ms  ${label}${Object.keys(extra).length ? "  " + JSON.stringify(extra) : ""}`)
@@ -98,12 +108,10 @@ const evaluate = async (client, expression) => {
 const main = async () => {
   // Refuse to start if an instance is already up; the single-instance lock would
   // just focus the existing window and make the measurement meaningless.
-  const existing = await fetch(`${CDP}/json/list`)
-    .then((r) => r.json())
-    .catch(() => null)
-  if (existing?.some((item) => item.type === "page")) {
-    console.log("A dev instance is already running on CDP 9222. Stop it first.")
-    process.exit(2)
+  if (!(await portFree(9222)) || !(await portFree(5173))) {
+    console.log("CDP/Vite 开发端口已被占用。为保护现有桌面进程，本次测量已停止；不会连接、刷新或结束现有进程。")
+    process.exitCode = 2
+    return
   }
 
   const started = Date.now()
@@ -191,7 +199,7 @@ const main = async () => {
   if (!keep) stopChild()
 }
 
-process.on("SIGINT", () => {
+process.once("SIGINT", () => {
   stopChild()
   process.exit(130)
 })

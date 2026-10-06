@@ -6,7 +6,8 @@
 //
 // Usage: run from the repository root: node perf/measure-cold-start.mjs [--keep] [--warm]
 
-import { spawn, execSync } from "node:child_process"
+import { spawn } from "node:child_process"
+import { createServer } from "node:net"
 import { writeFileSync } from "node:fs"
 import { safeUrl } from "./safe-output.mjs"
 
@@ -24,22 +25,23 @@ const record = (label, ms) => {
 // Never stop processes merely because they own the conventional dev ports.
 let child
 const stopChild = () => {
-  if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return
+  if (!child?.pid) return
   try {
     process.kill(process.platform === "win32" ? child.pid : -child.pid, "SIGTERM")
   } catch {
-    child.kill("SIGTERM")
+    if (process.platform === "win32") child.kill("SIGTERM")
   }
 }
 
-const portFree = async (port) => {
-  try {
-    const out = execSync(`lsof -nP -iTCP:${port} -sTCP:LISTEN -t`).toString()
-    return out.trim() === ""
-  } catch {
-    return true
-  }
-}
+const portFree = (port) =>
+  new Promise((resolve, reject) => {
+    const server = createServer()
+    server.once("error", (error) => {
+      if (error.code === "EADDRINUSE") return resolve(false)
+      reject(error)
+    })
+    server.listen({ host: "127.0.0.1", port }, () => server.close(() => resolve(true)))
+  })
 
 const connect = async (url) => {
   const socket = new WebSocket(url)
@@ -92,7 +94,7 @@ const STATE = `(() => {
 })()`
 
 const main = async () => {
-  if (!(await portFree("9222")) || !(await portFree("5173"))) {
+  if (!(await portFree(9222)) || !(await portFree(5173))) {
     console.log(
       "CDP/Vite ports 9222 or 5173 are already occupied. Close the existing dev app manually, then retry; this script never kills unrelated processes.",
     )
@@ -193,7 +195,7 @@ const main = async () => {
   stopChild()
 }
 
-process.on("SIGINT", () => {
+process.once("SIGINT", () => {
   stopChild()
   process.exit(130)
 })

@@ -34,6 +34,7 @@ class CDP {
       const entry = client.#pending.get(message.id)
       if (!entry) return
       client.#pending.delete(message.id)
+      clearTimeout(entry.timer)
       if (message.error) entry.reject(new Error(message.error.message))
       else entry.resolve(message.result)
     })
@@ -43,12 +44,13 @@ class CDP {
   send(method, params = {}) {
     const id = ++this.#id
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (!this.#pending.delete(id)) return
+        reject(new Error("CDP command timed out"))
+      }, 120000)
       this.#pending.set(id, { resolve, reject })
       this.#socket.send(JSON.stringify({ id, method, params }))
-      setTimeout(() => {
-        if (!this.#pending.delete(id)) return
-        reject(new Error(`timeout: ${method}`))
-      }, 120000)
+      this.#pending.get(id).timer = timer
     })
   }
 
@@ -108,7 +110,6 @@ const main = async () => {
 
   const before = await client.evaluate(`(() => ({
     url: location.origin + location.pathname.replace(/\\/session\\/[^/]+/, "/session/:redacted"),
-    storageKeys: Object.keys(localStorage),
     nav: (() => { const n = performance.getEntriesByType("navigation")[0]; return n ? { domContentLoaded: Math.round(n.domContentLoadedEventEnd), load: Math.round(n.loadEventEnd) } : null })(),
     bodyLength: (document.body?.innerText || "").length
   }))()`)
@@ -116,8 +117,6 @@ const main = async () => {
   console.log("=== BEFORE ===")
   console.log("url:", before.url)
   console.log("nav:", JSON.stringify(before.nav))
-  console.log("localStorage keys:", before.storageKeys)
-  for (const key of before.storageKeys) console.log(`  ${key}`)
   console.log("body length:", before.bodyLength)
 
   if (!reload) {

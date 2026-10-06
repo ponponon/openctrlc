@@ -4,13 +4,13 @@ Run these scripts from the repository root against a development desktop with CD
 
 ## Safety defaults
 
-- Scripts omit prompt text, transcript bodies, local-storage values, session IDs, and URL query values from output.
+- Scripts omit prompt text, transcript bodies, local-storage keys/values, session IDs, credentials, and URL query values from output.
 - inspect-renderer.mjs captures a screenshot only with --screenshot; screenshots may contain visible conversation content.
 - capture-network.mjs, capture-errors.mjs, and watch-module-load.mjs observe the current page. Pass --reload only when it is safe to reload.
 - measure-session-load.mjs reloads only with --reload.
 - probe-sidecar.mjs uses the session currently open in the renderer and hides its identifier.
 - probe-session-list.mjs uses the current working directory by default. Optional directory arguments are sent to the local sidecar but are not printed.
-- Cold-start scripts require their development ports to be free. They refuse to start when an existing instance is detected and only terminate the process group they started; they never kill processes just because they own ports 9222 or 5173.
+- Cold-start scripts require ports 9222 and 5173 to be free. They fail closed if a port is occupied, never connect to or reload an existing renderer, and only terminate the isolated process group they started.
 - Measurement JSON is written only to /tmp and contains timing/DOM-size summaries, not transcript or startup-log text.
 
 These scripts use the local renderer's authenticated sidecar context. Keep the CDP listener bound to loopback and do not expose port 9222 to the network.
@@ -31,3 +31,5 @@ These scripts use the local renderer's authenticated sidecar context. Keep the C
 | node perf/cold-request-log.mjs [seconds]             | Observe early requests after a fresh renderer appears.                    |
 | node perf/watch-module-load.mjs [seconds] [--reload] | Observe module loading and skeleton duration.                             |
 | node perf/inspect-renderer.mjs [--screenshot]        | Inspect renderer structure without reading stored values or page text.    |
+
+`probe-session-reads.mjs` measures the V2 and legacy session detail/message endpoints for the session already open in the renderer. It reads response byte counts only, caps each body at 4 MiB, and times out each request after 12 seconds. It does not inspect local storage or print the active session route.

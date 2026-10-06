@@ -24,15 +24,19 @@ socket.addEventListener("message", (event) => {
   const entry = pending.get(message.id)
   if (!entry) return
   pending.delete(message.id)
+  clearTimeout(entry.timer)
   message.error ? entry.reject(new Error(message.error.message)) : entry.resolve(message.result)
 })
 const send = (method, params = {}) =>
   new Promise((resolve, reject) => {
-    const next = ++id
-    pending.set(next, { resolve, reject })
-    socket.send(JSON.stringify({ id: next, method, params }))
-    setTimeout(() => pending.delete(next) && reject(new Error(`timeout ${method}`)), 30000)
-  })
+  const next = ++id
+  const timer = setTimeout(() => {
+    if (!pending.delete(next)) return
+    reject(new Error("CDP command timed out"))
+  }, 30000)
+  pending.set(next, { resolve, reject, timer })
+  socket.send(JSON.stringify({ id: next, method, params }))
+})
 const evaluate = async (expression) => {
   const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.text ?? "evaluate failed")
@@ -44,7 +48,7 @@ const state = await evaluate(`(() => {
   const nav = performance.getEntriesByType("navigation")[0];
   const route = performance.getEntriesByType("resource").filter((r) => /session-route-view/.test(r.name));
   return {
-    href: location.href,
+    routeKind: location.pathname.includes("/session/") ? "session" : "other",
     navDomContentLoaded: nav ? Math.round(nav.domContentLoadedEventEnd) : null,
     skeleton: document.querySelectorAll(".animate-pulse").length,
     bodyLen: (document.body?.innerText ?? "").length,
