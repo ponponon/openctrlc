@@ -214,6 +214,6 @@
 
 ## 2026-10-06 Relay 响应头挂起保护
 
-- 只读检查生产容器源码确认，`proxyRequest` 在转发请求后直接等待桌面端 `response.start`，没有自己的响应头 deadline。当前代码只有收到桌面 WebSocket close 或协议错误时才释放等待；半断开的 WebSocket 若仍报告 OPEN，代理请求可能长时间 pending。此缺口与浏览器观察到的约 119.5 秒 TTFB 相符，但 OpenResty 最近 3 小时容器日志没有匹配到 `upstream timed out`/502，且不是用户截图时段日志，因此尚未证明 502 的具体生成层。
-- Relay 本地变更为等待桌面响应头最多 15 秒；超时后从 pending map 删除请求、向桌面发送 `request.cancel`，并返回 504。桌面正常开始 SSE/HTTP 响应后不受该计时器限制；已完全断开的桌面仍立即返回 503。浏览器主动取消也会尽早释放头部等待。
-- 新增 timeout helper 单测；`packages/remote-relay` 全部 20 项单测通过，`bun run typecheck` 和 `bun build src/index.ts --target=bun` 通过。尚未更新或重启生产容器；当前生产 Relay 无法从挂载目录恢复 4 个旧版浏览器授权，替换前仍须确认是否接受重新配对。
+- 只读检查生产与当前容器源码确认，`proxyRequest` 在转发请求后直接等待桌面端 `response.start`，没有自己的响应头 deadline；Relay 设置的 Bun HTTP `idleTimeout` 是 120 秒。Bun 官方文档说明，尚未写出响应头、处理函数仍在等待的 HTTP 请求也会被该空闲计时器关闭。结合浏览器观察到的约 119.5 秒 TTFB 和 502，最吻合的解释是 Bun 在 120 秒关闭待响应请求，OpenResty 随后把上游断开显示为 502；最近 3 小时容器日志没有匹配到该事件，但不是用户截图时段日志，所以这一层推断仍需部署后通过同一请求复测确认。
+- Relay 本地变更为等待桌面响应头最多 15 秒；超时后从 pending map 删除请求、向桌面发送 `request.cancel`，并返回 504。对于响应类型为 `text/event-stream` 的连接，收到响应头后为该 HTTP 请求关闭 Bun idle timeout，避免安静的事件流被 120 秒全局超时截断；已完全断开的桌面仍立即返回 503。浏览器主动取消也会尽早释放头部等待。
+- 新增 timeout 与 SSE idle-timeout 用例；`packages/remote-relay` 全部 22 项单测通过，`bun run typecheck` 和 `bun build src/index.ts --target=bun` 通过。Bun 官方 HTTP server 文档确认 `idleTimeout` 也会关闭尚未写出响应头的等待请求，并允许通过 `server.timeout(request, 0)` 为已确认的 SSE 请求关闭空闲期限。尚未更新或重启生产容器；当前生产 Relay 无法从挂载目录恢复 4 个旧版浏览器授权，替换前仍须确认是否接受重新配对。

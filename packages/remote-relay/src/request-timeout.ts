@@ -5,6 +5,10 @@ export class ResponseHeadersTimeoutError extends Error {
   }
 }
 
+export function keepEventStreamAlive(responseHeaders: Headers, setRequestTimeout: (seconds: number) => void) {
+  if (responseHeaders.get("content-type")?.toLowerCase().includes("text/event-stream")) setRequestTimeout(0)
+}
+
 export function withResponseHeadersTimeout<T>(promise: Promise<T>, timeoutMs: number) {
   let timer: ReturnType<typeof setTimeout> | undefined
   return Promise.race([

@@ -1545,3 +1545,5 @@ Linux CI 的 app 单测因 `identity-residuals.test.ts` 的 E2E fixture 基线�
 ## Relay 等待响应头不能只依赖 WebSocket close
 
 生产 Relay 的 HTTP 转发请求会等桌面端发出响应头；半断开的桌面 WebSocket 可能仍报告 OPEN，close 事件迟迟不来，导致浏览器请求直到外层代理超时才失败。即使发现约 120 秒的请求，也不能仅凭时长断言是 OpenResty 产生了 502；应检查同一时段网关日志与 Relay 代码。Relay 自身仍需给响应头等待设有限 deadline，并在超时后移除 pending、通知桌面取消、返回明确的 504；超时只限制响应头，不能中断已开始的 SSE/HTTP 响应体。
+
+Bun 的 HTTP `idleTimeout` 同样覆盖尚未写出响应头、处理函数仍在等待的请求；120 秒空闲超时会把未返回的代理响应变成上游连接中断。长响应头等待要由 Relay 自己的较短 deadline 结束；响应类型确认是 SSE 后，再用 `server.timeout(request, 0)` 取消该请求的全局空闲期限，避免安静事件流被截断。

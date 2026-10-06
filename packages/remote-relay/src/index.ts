@@ -17,7 +17,7 @@ import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "n
 import { sanitizeResponseHeaders, shouldGzipToViewer } from "./response-encoding"
 import { peerRouteCounts, recordPeerRoute, type PeerRouteState } from "./peer-usage"
 import { createPeerIceServers, removeTurnIceServers, stunServersConfigured, turnCredentialsConfigured } from "./turn"
-import { ResponseHeadersTimeoutError, withResponseHeadersTimeout } from "./request-timeout"
+import { keepEventStreamAlive, ResponseHeadersTimeoutError, withResponseHeadersTimeout } from "./request-timeout"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -304,7 +304,7 @@ const server = Bun.serve<SocketData>({
       if (!viewer.session.host || viewer.session.host.readyState !== 1) return htmlResponse(pairPage("disconnected"))
       if (!hasWorkspaceBootstrapCookie(request, viewer.session.id))
         return workspaceBootstrapResponse(viewer.session.workspace, "/", viewer.session.id)
-      const response = await proxyRequest(viewer.session, request, viewer.token)
+      const response = await proxyRequest(viewer.session, request, viewer.token, (seconds) => server.timeout(request, seconds))
       if (response.status === 503 && /desktop(?: is)? disconnected/i.test(await response.clone().text()))
         return htmlResponse(pairPage("disconnected"))
       return response
@@ -361,7 +361,7 @@ const server = Bun.serve<SocketData>({
         return
       return new Response("WebSocket upgrade required", { status: 426 })
     }
-    return proxyRequest(session, request, viewer.token)
+    return proxyRequest(session, request, viewer.token, (seconds) => server.timeout(request, seconds))
   },
   websocket: {
     maxPayloadLength: 2 * 1024 * 1024,
@@ -867,7 +867,12 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
 }
 
-async function proxyRequest(session: RelaySession, request: Request, viewerToken: string) {
+async function proxyRequest(
+  session: RelaySession,
+  request: Request,
+  viewerToken: string,
+  setRequestTimeout: (seconds: number) => void,
+) {
   if (!session.host || session.host.readyState !== 1) return new Response("Desktop is disconnected", { status: 503 })
   if (request.headers.get("upgrade")) return new Response("Unsupported upgrade", { status: 400 })
   if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
@@ -936,6 +941,7 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
   try {
     const result = await withResponseHeadersTimeout(headersPromise, responseHeadersTimeoutMs)
     const responseHeaders = sanitizeResponseHeaders(result.headers)
+    keepEventStreamAlive(responseHeaders, setRequestTimeout)
     applyAssetCachePolicy(path, request.method, result.status, responseHeaders)
     if (!responseHeaders.get("cache-control")?.startsWith("public,")) {
       for (const cookie of viewerCookie(viewerToken, session.id)) responseHeaders.append("set-cookie", cookie)
