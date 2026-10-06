@@ -41,6 +41,10 @@ const heartbeatInterval = 30_000
 const heartbeatTimeout = 90_000
 const reconnectDelays = [1_000, 2_000, 4_000, 8_000, 15_000, 30_000, 60_000]
 const legacyViewerLimit = 3
+const legacyRelayURL = "wss://openctrlc-remote.quniv.cn/v1/host"
+// Keep the target for new sessions separate so a future blue-green rollout can switch it
+// without moving already-paired sessions away from the Relay that owns their credentials.
+const defaultRelayURL = "wss://openctrlc-remote.quniv.cn/v1/host"
 
 class RemoteSessionUnavailable extends Error {}
 
@@ -64,6 +68,7 @@ export class RemoteAccessService {
   >()
   #sessionID?: string
   #hostToken?: string
+  #relayURL?: string
   #binaryChunks = false
   #gzipResponseUpload = false
   #server?: ServerReadyData
@@ -102,6 +107,8 @@ export class RemoteAccessService {
     if (savedSession) {
       this.#sessionID = savedSession.sessionID
       this.#hostToken = savedSession.hostToken
+      // Sessions created before relay URLs were persisted still belong to the original Relay.
+      this.#relayURL = savedSession.relayURL ?? legacyRelayURL
     }
     // Surface "coming back up" immediately so a remembered-on session never looks switched off.
     const restore = this.isEnabled() || Boolean(savedSession)
@@ -355,6 +362,7 @@ export class RemoteAccessService {
     const socket = this.#socket
     const sessionID = this.#sessionID
     const hostToken = this.#hostToken
+    const relayURL = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#relayURL ?? legacyRelayURL
     let stopRequest: Promise<void> | undefined
     ++this.#generation
     this.#clearReconnect()
@@ -365,7 +373,7 @@ export class RemoteAccessService {
     if (socket?.readyState === WebSocket.OPEN && sessionID && hostToken) {
       socket.send(JSON.stringify({ type: "session.stop", sessionID, hostToken }))
     } else if (sessionID && hostToken) {
-      stopRequest = this.#sendStopOnNewSocket(sessionID, hostToken)
+      stopRequest = this.#sendStopOnNewSocket(sessionID, hostToken, relayURL)
     }
     this.#setState({
       status: "stopped",
@@ -380,6 +388,7 @@ export class RemoteAccessService {
     this.#gzipResponseUpload = false
     this.#sessionID = undefined
     this.#hostToken = undefined
+    this.#relayURL = undefined
     this.#server = undefined
     this.#notifiedPairRequests.clear()
     for (const request of this.#requests.values()) request.aborted.abort()
@@ -449,8 +458,7 @@ export class RemoteAccessService {
     return Promise.resolve()
   }
 
-  #sendStopOnNewSocket(sessionID: string, hostToken: string) {
-    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+  #sendStopOnNewSocket(sessionID: string, hostToken: string, relay: string) {
     return new Promise<void>((resolve) => {
       let timeout: ReturnType<typeof setTimeout> | undefined
       let settled = false
@@ -535,18 +543,20 @@ export class RemoteAccessService {
     try {
       this.#server = await withTimeout(this.getServer(), 45_000, "Local server startup timed out")
       if (generation !== this.#generation || this.#state.status === "stopped") return this.#state
-      const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+      const defaultRelay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL
+      const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#relayURL ?? legacyRelayURL
       if (!this.#sessionID || !this.#hostToken) {
         const saved = readPersistedSession()
         if (saved) {
           this.#sessionID = saved.sessionID
           this.#hostToken = saved.hostToken
+          this.#relayURL = saved.relayURL ?? legacyRelayURL
         }
       }
       if (this.#sessionID && this.#hostToken) {
         try {
           await this.#connect(relay, generation, true)
-          persistSession({ sessionID: this.#sessionID, hostToken: this.#hostToken })
+          persistSession({ sessionID: this.#sessionID, hostToken: this.#hostToken, relayURL: relay })
           getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
           return this.#state
         } catch (error) {
@@ -558,12 +568,13 @@ export class RemoteAccessService {
           if (sessionGone) {
             this.#sessionID = undefined
             this.#hostToken = undefined
+            this.#relayURL = undefined
             persistSession(undefined)
           }
           if (generation !== this.#generation) return this.#state
         }
       }
-      await this.#connect(relay, generation, false)
+      await this.#connect(this.#relayURL ?? defaultRelay, generation, false)
       getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
       return this.#state
     } catch (error) {
@@ -584,6 +595,7 @@ export class RemoteAccessService {
 
   #connect(relay: string, generation: number, resume: boolean) {
     return new Promise<void>((resolve, reject) => {
+      this.#relayURL = relay
       const socket = new WebSocket(relay)
       socket.binaryType = "arraybuffer"
       this.#socket = socket
@@ -690,12 +702,14 @@ export class RemoteAccessService {
           }
           this.#sessionID = message.sessionID
           this.#hostToken = message.hostToken
-          persistSession({ sessionID: message.sessionID, hostToken: message.hostToken })
+          persistSession({ sessionID: message.sessionID, hostToken: message.hostToken, relayURL: relay })
           activate(message.url, message.viewerLimit, message.binaryChunks === true, message.gzipResponseUpload === true)
           return
         }
         if (resume && message.type === "session.resumed") {
           if (
+            typeof message.sessionID !== "string" ||
+            typeof message.hostToken !== "string" ||
             message.sessionID !== this.#sessionID ||
             message.hostToken !== this.#hostToken ||
             typeof message.url !== "string"
@@ -703,6 +717,8 @@ export class RemoteAccessService {
             fail(new RemoteSessionUnavailable("The relay could not restore the previous session"))
             return
           }
+          this.#relayURL = relay
+          persistSession({ sessionID: message.sessionID, hostToken: message.hostToken, relayURL: relay })
           activate(message.url, message.viewerLimit, message.binaryChunks === true, message.gzipResponseUpload === true)
           return
         }
@@ -791,7 +807,7 @@ export class RemoteAccessService {
 
   async #resume(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
+    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#relayURL ?? legacyRelayURL
     try {
       await this.#connect(relay, generation, !this.#reconnectCreateSession)
     } catch (error) {
@@ -1468,16 +1484,35 @@ export class RemoteAccessService {
 }
 
 function readPersistedSession() {
-  const raw = getStore().get(REMOTE_ACCESS_SESSION_KEY) as { sessionID?: unknown; hostToken?: unknown } | undefined
+  const raw = getStore().get(REMOTE_ACCESS_SESSION_KEY) as
+    | { sessionID?: unknown; hostToken?: unknown; relayURL?: unknown }
+    | undefined
   if (!raw || typeof raw.sessionID !== "string" || typeof raw.hostToken !== "string") return undefined
   if (!raw.sessionID || !raw.hostToken) return undefined
-  return { sessionID: raw.sessionID, hostToken: raw.hostToken }
+  const relayURL = normalizeRelayURL(raw.relayURL)
+  return { sessionID: raw.sessionID, hostToken: raw.hostToken, ...(relayURL ? { relayURL } : {}) }
 }
 
-function persistSession(session: { sessionID: string; hostToken: string } | undefined) {
+function persistSession(session: { sessionID: string; hostToken: string; relayURL?: string } | undefined) {
   const store = getStore()
-  if (session) store.set(REMOTE_ACCESS_SESSION_KEY, session)
-  else store.delete(REMOTE_ACCESS_SESSION_KEY)
+  if (!session) return store.delete(REMOTE_ACCESS_SESSION_KEY)
+  const relayURL = normalizeRelayURL(session.relayURL)
+  store.set(REMOTE_ACCESS_SESSION_KEY, {
+    sessionID: session.sessionID,
+    hostToken: session.hostToken,
+    ...(relayURL ? { relayURL } : {}),
+  })
+}
+
+function normalizeRelayURL(value: unknown) {
+  if (typeof value !== "string" || value.length > 2_048) return
+  try {
+    const url = new URL(value)
+    if ((url.protocol !== "ws:" && url.protocol !== "wss:") || !url.hostname || url.username || url.password) return
+    return url.toString()
+  } catch {
+    return
+  }
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
