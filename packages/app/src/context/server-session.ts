@@ -47,13 +47,19 @@ function sessionRead<T>(request: (signal: AbortSignal) => Promise<T>) {
       reject(error)
     }, sessionReadTimeoutMs)
   })
+  // The deadline promise needs its own handler. Promise.race attaches its
+  // rejection handler to whichever input settles first, so once the real request
+  // fails, a still-pending deadline has no handler left; when the timer later
+  // fires, that rejection is unhandled and the desktop renderer treats it as
+  // fatal, blanking the window. Promise.all subscribes to both inputs up front.
+  deadline.catch(() => undefined)
   let pending: Promise<T>
   try {
     pending = request(controller.signal)
   } catch (error) {
     pending = Promise.reject(error)
   }
-  return Promise.race([pending, deadline]).finally(() => {
+  return Promise.all([pending, deadline]).then(([result]) => result).finally(() => {
     if (timeout !== undefined) clearTimeout(timeout)
   })
 }
