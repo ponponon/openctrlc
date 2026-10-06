@@ -13,6 +13,7 @@ import { useLanguage } from "@/context/language"
 import { getAvatarColors, type LocalProject, useLayout } from "@/context/layout"
 import { useNotification } from "@/context/notification"
 import { usePermission } from "@/context/permission"
+import { usePlatform } from "@/context/platform"
 import { messageAgentColor } from "@/utils/agent"
 import { sessionTitle } from "@/utils/session-title"
 import { sessionPermissionRequest } from "../session/composer/session-request-tree"
@@ -149,6 +150,7 @@ const SessionRow = (props: {
 export const SessionItem = (props: SessionItemProps): JSX.Element => {
   const params = useParams()
   const layout = useLayout()
+  const platform = usePlatform()
   const language = useLanguage()
   const notification = useNotification()
   const permission = usePermission()
@@ -191,7 +193,7 @@ export const SessionItem = (props: SessionItemProps): JSX.Element => {
     const idx = list.findIndex((item) => item.id === props.session.id && item.directory === props.session.directory)
     if (idx === -1) return
 
-    for (let step = 1; step <= span; step++) {
+    for (let step = 1; step <= (platform.remoteSessionID ? 0 : span); step++) {
       const next = list[idx + step]
       if (next) props.prefetchSession(next, step === 1 ? "high" : priority)
 

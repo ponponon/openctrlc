@@ -2967,3 +2967,13 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 - `packages/app/src/context/server-session.ts`：`sync()` 并行解析 Session 元数据与共享消息页任务。
 - `packages/app/src/context/server-session.test.ts`：覆盖消息预取先于 `sync()` 启动的竞态。
 - `bun test --conditions=solid --preload ./happydom.ts src/context/server-session.test.ts`：94 项通过；`bun typecheck` 通过。
+
+## 远程侧栏只预取当前会话
+
+远程浏览器与桌面共享上行带宽。侧栏按下或键盘聚焦会话时，远程模式只预取目标会话，不再顺带预取前后会话；本地模式仍保留相邻会话预热。主页预取只有在 Session 同步成功后才记录为已完成，失败后下次交互可以重试。
+
+### 代码位置与验证
+
+- `packages/app/src/pages/layout/sidebar-items.tsx`：远程模式将相邻会话预取跨度设为 0。
+- `packages/app/src/pages/home/home-sessions-controller.tsx`：分开记录已成功预取与进行中的预取，避免暂时失败导致永久跳过。
+- `packages/app`：`bun run typecheck` 通过。

@@ -107,6 +107,7 @@ export function createHomeSessionsController(home: HomeController) {
   const records = createMemo(() => allRecords().slice(0, HOME_SESSION_LIMIT))
   const groups = createMemo(() => groupSessions(records(), language))
   const prefetched = new Set<string>()
+  const prefetching = new Set<string>()
 
   // Warm the session route chunk so the first click does not stall on a 1MB download.
   onMount(() => {
@@ -134,25 +135,30 @@ export function createHomeSessionsController(home: HomeController) {
     // Warm the route chunk on hover; local sessions may also warm message data.
     void import("@/pages/session-route-view").catch(() => undefined)
     const key = `${ServerConnection.key(conn)}\0${record.session.id}`
-    if (prefetched.has(key)) return
-    prefetched.add(key)
+    if (prefetched.has(key) || prefetching.has(key)) return
+    prefetching.add(key)
     createRoot((dispose) => {
       try {
         void ctx.sync.session
           .sync(record.session.id)
-          .then(() =>
-            Promise.all(
+          .then(() => {
+            prefetched.add(key)
+            return Promise.all(
               (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
                 (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
                   if (part.type !== "text" || !part.text) return []
                   return preloadMarkdown(part.text, part.id)
                 }),
               ),
-            ),
-          )
+            )
+          })
           .catch(() => {})
-          .finally(dispose)
+          .finally(() => {
+            prefetching.delete(key)
+            dispose()
+          })
       } catch {
+        prefetching.delete(key)
         dispose()
       }
     })
