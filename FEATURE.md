@@ -3081,3 +3081,11 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 
 - 代码：`packages/desktop/src/main/remote-access.ts`。
 - 验证：`packages/desktop` 的 `bun typecheck` 通过；未运行测试，也未切换生产 Relay。
+
+## P2P Relay 蓝绿部署
+
+新增独立的 P2P Relay 部署目标：它使用单独的工作目录、Docker Compose 项目、会话授权持久化目录、loopback TCP 4098 和 `openctrlc-p2p.quniv.cn` 虚拟主机；旧 `openctrlc-remote.quniv.cn` 实例不会因部署 P2P 服务而重启。P2P 实例附带独立 Coturn STUN-only 服务，使用 UDP 3478 为 WebRTC 探测候选地址；STUN 本身不转发工作区流量，无法直连时继续由 Relay 经 HTTPS/WSS 兜底。
+
+- 代码：`infra/remote-relay/compose-p2p.yaml`、`openresty-p2p.conf`、`deploy.sh`；用 `OPENCTRLC_RELAY_INSTANCE=p2p` 选择实例。
+- 部署脚本会分别检查新实例的本地端口占用、TLS 主机名、Relay 持久化状态、P2P 能力和 Coturn 进程；OpenResty 配置测试失败时回滚对应实例的虚拟主机。
+- 验证：待完成 shell/YAML 静态校验和类型检查。生产 DNS、京东云安全组 UDP 3478 与手机/美国网络直连验收尚未完成；在 UDP 可达性得到外部验证前，不能把新 Relay 设为默认入口。
