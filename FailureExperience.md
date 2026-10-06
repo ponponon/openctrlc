@@ -1527,7 +1527,7 @@ return (...args) => implementation.then((value) => Reflect.apply(Reflect.get(val
 
 本轮已按上述原则移除整棵 API 的 `lazyApi(input.protocol.then(...))` 闸门；协议未决时兼容 API 立即请求当前 V2 方法，仅在仍未识别且收到明确 404 时按方法回退到 V1；若探测期间确认是 V1，则按 V1 重试，并缓存具体方法的回退结果。会话元数据、消息分页和单条消息不再等待协议 Promise，V2 消息请求 404 时使用旧接口；重连消息日志与待办读取也不再让全局探测挡住页面。协议探测请求增加独立硬 deadline 并在超时后 abort，覆盖自定义 fetch 忽略 signal 的情况。`packages/app` 类型检查已通过，本次没有运行测试；真实桌面冷启动与 Relay 链路仍需后续现场验收。
 
-后续复查发现，项目根会话列表的 `loadSessions()` 还有一条独立的 `serverSDK.protocol.then(...)`：虽然 API Proxy 已拆掉全局闸门，列表查询仍等协议探测完成才开始。这会让新目录/空缓存首次加载继续延迟。本轮已把会话列表改为直接调用兼容 API，由按方法路由处理 V1/V2。检查类似问题不能只搜 `lazyApi`，还要搜索关键首屏链路里所有 `await protocol` 和 `protocol.then(...)`，确认等待是否确实不可避免。
+后续复查发现，项目根会话列表的 `loadSessions()` 还有一条独立的 `serverSDK.protocol.then(...)`：虽然 API Proxy 已拆掉全局闸门，列表查询仍等协议探测完成才开始。这会让新目录/空缓存首次加载继续延迟。本轮已把会话列表与运行中会话状态改为直接调用兼容 API，由按方法路由处理 V1/V2。检查类似问题不能只搜 `lazyApi`，还要搜索关键首屏链路里所有 `await protocol` 和 `protocol.then(...)`，确认等待是否确实不可避免。
 
 ## 测量 Electron 时 shell 不能带 ELECTRON_RUN_AS_NODE
 
