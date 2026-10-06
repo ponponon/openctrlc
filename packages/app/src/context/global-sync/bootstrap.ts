@@ -167,16 +167,15 @@ export async function bootstrapGlobal(input: {
   setGlobalStore: SetStoreFunction<GlobalStore>
   queryClient: QueryClient
 }) {
-  const slow = [
-    () => input.queryClient.fetchQuery(loadGlobalConfigQuery(input.scope, input.serverSDK, input.protocol)),
-    () => input.queryClient.fetchQuery(loadProvidersQuery(input.scope, null, input.serverAPI, input.serverSDK)),
-    () => input.queryClient.fetchQuery(loadPathQuery(input.scope, null, input.serverSDK, input.protocol)),
+  // Config and path queries are already started by ServerSync's useQueries.
+  // Their V1 compatibility path can wait for protocol detection, so they must
+  // not hold the home/session entry point behind that unrelated probe.
+  await runAll([
     () =>
       input.queryClient
         .fetchQuery(loadProjectsQuery(input.scope, input.serverAPI.project))
         .then((data) => input.setGlobalStore("project", data)),
-  ]
-  await runAll(slow)
+  ])
   // showErrors({
   //   errors: errors(),
   //   title: input.requestFailedTitle,

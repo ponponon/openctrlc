@@ -3088,4 +3088,11 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 
 - 代码：`infra/remote-relay/compose-p2p.yaml`、`openresty-p2p.conf`、`deploy.sh`；用 `OPENCTRLC_RELAY_INSTANCE=p2p` 选择实例。
 - 部署脚本会分别检查新实例的本地端口占用、TLS 主机名、Relay 持久化状态、P2P 能力和 Coturn 进程；OpenResty 配置测试失败时回滚对应实例的虚拟主机。
-- 验证：待完成 shell/YAML 静态校验和类型检查。生产 DNS、京东云安全组 UDP 3478 与手机/美国网络直连验收尚未完成；在 UDP 可达性得到外部验证前，不能把新 Relay 设为默认入口。
+- 验证：`sh -n`、Compose YAML 关键字段解析、`git diff --check` 通过；`packages/remote-relay`、`packages/app` 和 `packages/desktop` 的 `bun typecheck` 通过。生产 DNS、京东云安全组 UDP 3478 与手机/美国网络直连验收尚未完成；在 UDP 可达性得到外部验证前，不能把新 Relay 设为默认入口。
+
+## 首页就绪不等待可选的全局协议兼容查询
+
+首页/会话入口只等待项目列表；全局配置、路径和 Provider 查询仍在后台并行加载。这样 V1/V2 协议探测变慢时，不会让首页一直停在加载状态，配置和路径数据就绪后仍会通过查询状态自动补齐。
+
+- 代码：`packages/app/src/context/global-sync/bootstrap.ts`、`packages/app/src/context/server-sync.tsx`。
+- 验证：`packages/app` 的 `bun typecheck` 通过；未做生产冷启动计时。
