@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { PEER_RESPONSE_CHUNK_BYTES } from "@openctrlc/remote-relay/protocol"
 import {
   decodePeerResponseBody,
+  isUnsupportedRemotePeerCapabilityStatus,
   PEER_CAPACITY_RETRY_DELAY_MS,
   remotePeerReconnectDelay,
   remoteSocketTarget,
@@ -14,6 +15,16 @@ describe("remotePeerReconnectDelay", () => {
     expect(remotePeerReconnectDelay(1, 1000)).toBe(2_000)
     expect(remotePeerReconnectDelay(3)).toBe(8_000)
     expect(remotePeerReconnectDelay(99)).toBe(30_000)
+  })
+})
+
+describe("isUnsupportedRemotePeerCapabilityStatus", () => {
+  test("treats authentication and unsupported-route responses as a permanent Relay capability mismatch", () => {
+    expect([401, 403, 404, 501].map(isUnsupportedRemotePeerCapabilityStatus)).toEqual([true, true, true, true])
+  })
+
+  test("keeps server failures and throttling eligible for retry", () => {
+    expect([429, 500, 502, 503].map(isUnsupportedRemotePeerCapabilityStatus)).toEqual([false, false, false, false])
   })
 })
 

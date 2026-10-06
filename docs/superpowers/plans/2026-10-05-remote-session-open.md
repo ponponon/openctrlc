@@ -95,3 +95,9 @@
 - 现在 wrapper 在握手完成后暴露该连接实际走 P2P 或 Relay；若 P2P 在建立过程变可用且这条 WebSocket 落到 Relay，只补一次切换重连，以免不支持的端点反复循环。
 - 首次 Playwright 运行中两条路径用例失败。追查发现测试假信令端可能在伪 WebSocket 创建前丢掉 offer/candidate，并非浏览器无法建立 WebRTC；增加按序缓存后，独立 Chromium 的完整 `remote-peer-channel.spec.ts` 5/5 通过，`typecheck:e2e` 通过。
 - 本次仅证明本机 Chromium + 假 Relay 信令的 DataChannel、终端直连、Relay 回退和上传取消；真实桌面 hidden renderer 到手机、TURN/UDP 阻断、跨大陆网络和公网生产部署仍未验收。未重启桌面 App 或线上 Relay。
+
+## 2026-10-06 京东云 Relay 版本核对
+
+- 只读检查确认公网 OpenResty 将请求转发至本机 `127.0.0.1:4097` 的 `openctrlc-remote-relay` 容器；公网与 Relay 本机端口的 `GET /_remote/capabilities` 都返回 401。线上部署目录的 Relay 源文件创建于 2026-10-04，且该版本没有当前仓库中的公开能力路由。由此确认这是生产 Relay 版本落后，不是 Cloudflare Workers 或 OpenResty 路由造成；当前客户端仍通过旧 Relay 传输，但无法启用 P2P。
+- 客户端现在把能力接口的 401/403/404/501 视为不可用能力，停止反复探测并继续已有 Relay 通道；网络错误及 5xx 仍退避重试。回归用例覆盖状态分类。
+- 线上 Relay 未更新、未重启；桌面 App 未重启。要让公网 P2P 生效，仍需在维护窗口部署当前 Relay 并配置可达的 ICE 服务，再做手机/美国路径实测。此处不将本机源码或本地测试等同于生产修复。

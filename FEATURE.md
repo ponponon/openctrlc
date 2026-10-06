@@ -2846,7 +2846,7 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 
 - `packages/remote-relay/src/index.ts`：返回不含会话信息的协议能力与 ICE 配置状态。
 - `packages/remote-relay/src/protocol.ts`：校验能力响应版本与 ICE 开关。
-- `packages/app/src/utils/remote-peer.ts`：探测通过后才开始 P2P；网络暂时失败时退避重试，旧版或未配置的 Relay 保持中继传输。
+- `packages/app/src/utils/remote-peer.ts`：探测通过后才开始 P2P；网络暂时失败时退避重试；旧版 Relay 将能力接口返回的 401/403/404/501 视为不支持，停止无效探测并保持中继传输。
 - `packages/remote-relay/src/peer.test.ts`：覆盖错误协议版本、未配置 ICE 和有效能力响应。
 - 启用公网 P2P 仍需部署对应 Relay 与 STUN/TURN 设置，并在大陆移动网络和美国网络真实验收；代码合并本身不改变线上服务。
 

@@ -784,15 +784,19 @@ test("a rejected direct upload stops reading and sending its request body", asyn
   expect(result.uploadID).toBe(true)
 })
 
-test("legacy relay skips peer signaling and keeps the relay WebSocket path", async ({ page }) => {
+test("legacy relay 401 skips peer signaling without retrying and keeps the relay WebSocket path", async ({ page }) => {
   const packageRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..")
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? 3000}`
   const origin = new URL(baseURL).origin
+  let capabilityRequests = 0
 
   await page.route(`${origin}/`, (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Legacy Relay harness</title>" }),
   )
-  await page.route(`${origin}/_remote/capabilities`, (route) => route.fulfill({ status: 404, body: "Not found" }))
+  await page.route(`${origin}/_remote/capabilities`, (route) => {
+    capabilityRequests += 1
+    return route.fulfill({ status: 401, body: "Remote session required" })
+  })
   await page.goto(origin)
 
   const result = await page.evaluate(
@@ -840,8 +844,13 @@ test("legacy relay skips peer signaling and keeps the relay WebSocket path", asy
       try {
         const unavailable = await new Promise<string>((resolve) => {
           let unsubscribe: () => void = () => undefined
+          const timeout = setTimeout(() => {
+            unsubscribe()
+            resolve("timeout")
+          }, 2_500)
           unsubscribe = client.subscribe((status) => {
             if (status !== "unavailable") return
+            clearTimeout(timeout)
             unsubscribe()
             resolve(status)
           })
@@ -849,6 +858,7 @@ test("legacy relay skips peer signaling and keeps the relay WebSocket path", asy
         const socket = client.webSocket(`${location.origin.replace(/^http/, "ws")}/pty`)
         const relayURL = new URL((socket as unknown as TestSocket).url)
         socket.close()
+        await new Promise((resolve) => setTimeout(resolve, 1_200))
         return {
           unavailable,
           relayPath: relayURL.pathname,
@@ -869,4 +879,5 @@ test("legacy relay skips peer signaling and keeps the relay WebSocket path", asy
     relaySession: "abcdefghijklmnop",
     socketCount: 1,
   })
+  expect(capabilityRequests).toBe(1)
 })

@@ -21,6 +21,10 @@ export function remotePeerReconnectDelay(attempt: number, closeCode = 0) {
   return Math.max(delays[Math.min(Math.max(0, Math.floor(attempt)), delays.length - 1)], minimumDelay)
 }
 
+export function isUnsupportedRemotePeerCapabilityStatus(status: number) {
+  return status === 401 || status === 403 || status === 404 || status === 501
+}
+
 type PendingResponse = {
   start: (response: Response) => void
   fail: (error: Error) => void
@@ -130,7 +134,7 @@ export class RemotePeerClient {
         signal: controller.signal,
       })
         .then(async (response) => {
-          if (response.status === 404 || response.status === 501) {
+          if (isUnsupportedRemotePeerCapabilityStatus(response.status)) {
             this.#capabilityState = "unsupported"
             this.#peerUnavailable = true
             this.#setStatus("unavailable")
