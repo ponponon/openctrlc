@@ -244,6 +244,27 @@ export function createServerSession(
 ) {
   const sessionApi = messageApi ? (sessionApiOrOptions as SessionApi) : undefined
   const options = messageApi ? currentOptions : (sessionApiOrOptions as ServerSessionOptions | undefined)
+  let detectedProtocol: "v1" | "v2" | undefined
+  let observingProtocol = false
+  const protocolFor = (sessionID: string) => {
+    const known = options?.sessionProtocols?.get(sessionID)
+    if (known) return known
+    if (!observingProtocol) {
+      observingProtocol = true
+      void options?.protocol?.then(
+        (value) => (detectedProtocol = value),
+        () => undefined,
+      )
+    }
+    return detectedProtocol
+  }
+  const settledProtocolFor = async (sessionID: string) => {
+    const known = options?.sessionProtocols?.get(sessionID)
+    if (known) return known
+    const detected = protocolFor(sessionID)
+    await Promise.resolve()
+    return protocolFor(sessionID) ?? detected
+  }
   const [data, setData] = createStore({
     info: {} as Record<string, Session | undefined>,
     session_status: {} as Record<string, SessionStatus>,
@@ -623,12 +644,13 @@ export function createServerSession(
     )
 
   const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
-    let started = false
+    onAttempt?.()
+    let attempts = 0
     const beginRead = () => {
-      if (started) return
-      started = true
-      onAttempt?.()
+      if (attempts > 0) onAttempt?.()
+      attempts++
     }
+    const sessionProtocol = await settledProtocolFor(sessionID)
     const fetchLegacyPage = async () => {
       const response = await sessionRead("legacy-page", (signal) =>
         (options?.retry ?? retry)(() => {
@@ -650,7 +672,7 @@ export function createServerSession(
       }
     }
 
-    if (messageApi && options?.sessionProtocols?.get(sessionID) !== "v1") {
+    if (messageApi && sessionProtocol !== "v1") {
       const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
         sessionRead("message-page", (signal) =>
           (options?.retry ?? retry)(() => {
@@ -721,12 +743,13 @@ export function createServerSession(
   }
 
   const fetchMessage = async (sessionID: string, messageID: string, onAttempt?: () => void) => {
-    let started = false
+    onAttempt?.()
+    let attempts = 0
     const beginRead = () => {
-      if (started) return
-      started = true
-      onAttempt?.()
+      if (attempts > 0) onAttempt?.()
+      attempts++
     }
+    const sessionProtocol = await settledProtocolFor(sessionID)
     const fetchLegacyMessage = async () => {
       const response = await sessionRead("message-v1", (signal) =>
         (options?.retry ?? retry)(() => {
@@ -741,7 +764,7 @@ export function createServerSession(
       }
     }
 
-    if (sessionApi && options?.sessionProtocols?.get(sessionID) !== "v1") {
+    if (sessionApi && sessionProtocol !== "v1") {
       try {
         const response = await sessionRead("message-v2", (signal) =>
           (options?.retry ?? retry)(() => {
@@ -1051,7 +1074,7 @@ export function createServerSession(
     const start = lastSeq.get(sessionID)
     if (start === undefined) return false
     if (!sessionApi?.log) return false
-    if (options?.sessionProtocols?.get(sessionID) === "v1") return false
+    if (protocolFor(sessionID) === "v1") return false
     try {
       let after = start
       // Guard against a runaway more:true loop from a buggy server.
@@ -1680,7 +1703,7 @@ export function createServerSession(
     async todo(sessionID: string, request?: { force?: boolean }) {
       touch(sessionID)
       if (data.todo[sessionID] !== undefined && !request?.force) return
-      if (options?.sessionProtocols?.get(sessionID) === "v2") {
+      if (protocolFor(sessionID) === "v2") {
         setData("todo", sessionID, [])
         return
       }

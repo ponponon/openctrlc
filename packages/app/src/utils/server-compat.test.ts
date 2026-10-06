@@ -37,6 +37,16 @@ function setup(
       }
       if (request.method === "GET" && new URL(request.url).pathname === "/vcs")
         return Response.json(responses?.vcs ?? {})
+      if (request.method === "GET" && /^\/api\/session\/[^/]+$/.test(new URL(request.url).pathname))
+        return Response.json({
+          id: "ses_1",
+          slug: "ses_1",
+          projectID: "project",
+          directory: "/repo",
+          title: "Session",
+          version: "1",
+          time: { created: 1, updated: 1 },
+        })
       if (request.method === "GET") return Response.json([])
       return new Response(undefined, { status: 204 })
     },
@@ -65,6 +75,19 @@ describe("createCompatibleApi", () => {
     expect(await requests[0]!.json()).toMatchObject({ time: { archived: expect.any(Number) } })
   })
   */
+
+  test("starts session detail reads before protocol detection settles", async () => {
+    const protocol = new Promise<"v1" | "v2">(() => {})
+    const { api, requests } = setup(protocol)
+    const read = api.session.get({ sessionID: "ses_1" })
+    const completed = await Promise.race([
+      read.then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 100)),
+    ])
+
+    expect(completed).toBe(true)
+    expect(new URL(requests[0]!.url).pathname).toBe("/api/session/ses_1")
+  })
 
   test("converts current prompts to the V1 prompt contract", async () => {
     const { api, requests } = setup("v1")

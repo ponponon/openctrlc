@@ -244,6 +244,41 @@ describe("server session", () => {
     expect(ctx.store.data.message.root).toEqual([])
   })
 
+  test("loads session metadata and the first page before protocol detection settles", async () => {
+    const requests: unknown[] = []
+    const user = userMessage("msg_user", { sessionID: "root" })
+    const client = {} as OpencodeClient
+    const sessionApi = {
+      async get({ sessionID }: { sessionID: string }) {
+        requests.push(["session", sessionID])
+        return session(sessionID)
+      },
+    } as unknown as SessionApi
+    const messageApi = {
+      async list(input: unknown) {
+        requests.push(["messages", input])
+        return {
+          data: [{ id: user.id, type: "user", text: "hello", time: { created: user.time.created } }],
+          cursor: { previous: null, next: null },
+        }
+      },
+    } as unknown as MessageApi
+    const store = createServerSession(client, sessionApi, messageApi, {
+      protocol: new Promise<"v1" | "v2">(() => {}),
+    })
+    const completed = await Promise.race([
+      store.sync("root").then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 100)),
+    ])
+
+    expect(completed).toBe(true)
+    expect(requests).toEqual([
+      ["session", "root"],
+      ["messages", { sessionID: "root", limit: 20, order: "desc" }],
+    ])
+    expect(store.data.message.root.map((message) => message.id)).toEqual([user.id])
+  })
+
   test("resolves session metadata when sync joins an earlier message prefetch", async () => {
     const pending = deferredResponse()
     const started = Promise.withResolvers<void>()

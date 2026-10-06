@@ -3042,4 +3042,12 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - `packages/app/src/context/server-session.ts`：会话详情、消息分页、父消息、重连补齐和待办读取不再等待全局协议 Promise。
 - `packages/app/src/context/server-sync.tsx`：项目根会话列表与运行中会话状态改走逐方法兼容路由，不再先等待协议探测。
 - `packages/app/src/utils/server-protocol.ts`：探测 fetch 与响应解析共用独立硬 deadline，到期主动 abort。
-- 在 `packages/app` 执行 `bun run typecheck` 通过；按本轮指令未运行测试。未进行桌面冷启动或真实 Relay 环境验收。
+- 原提交仅执行 `packages/app` 类型检查，未运行测试；后续回归验证见下一节。未进行桌面冷启动或真实 Relay 环境验收。
+
+## 协议探测 pending 时会话仍立即加载
+
+- `server-compat` 的 API 方法在下一微任务读取已 settle 的协议结果；若探测仍 pending，立即使用当前 V2 方法，不等待探测 Promise。
+- 会话读取优先使用已缓存的逐会话协议。全局协议仅在没有会话提示时作快速路由提示；V2 服务上的旧 V1 会话仍会根据该会话的消息读取结果识别，不能把全局 V2 当作所有 Session 都是 V2。
+- 重试中的每次新请求都会重建 SSE 事件基线；首次基线在同步调用栈内建立，避免协议选择所需的微任务让实时事件抢先进入缓存后又被覆盖。
+- 兼容 API 的递归 Proxy 始终用根 API 对象解析完整路径，避免进入第二层命名空间后把根路径重复应用到嵌套对象。
+- 在 `packages/app` 执行 `bun run typecheck` 通过；`bun test --conditions=solid --preload ./happydom.ts ./src/utils/server-compat.test.ts ./src/context/server-session.test.ts` 共 105 项通过。未进行桌面冷启动或真实 Relay 网络验收。
