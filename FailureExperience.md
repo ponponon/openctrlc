@@ -1537,3 +1537,7 @@ Markdown 正常解析已经放进 Worker，但主线程为了 Worker 故障时�
 ## 新增使用持久化状态的 E2E fixture 要同步登记基线
 
 Linux CI 的 app 单测因 `identity-residuals.test.ts` 的 E2E fixture 基线未包含新加入的 `session-lineage-loading`、`titlebar-tab-scroll-anchor` 和 `remote-peer-channel` 文件而失败。以后新增或移动 E2E fixture 时，同一变更必须把有持久化键的文件登记到 `expectedPersistence`，无持久化键的文件登记到 `expectedNoPersistence`；本地运行完整 app unit tests 后再推送。
+
+## 中国大陆用户的关键远程链路不能依赖 Cloudflare Workers
+
+用户在中国大陆的实测是 Cloudflare Workers 相关入口容易被防火墙屏蔽。设计 OpenCtrlC 面向大陆与海外共同使用的信令、会话代理或兜底中继时，不得把 Workers、Durable Objects 或其他 Worker 托管转发放进关键路径，也不能只凭供应商全球可用性宣称大陆可达。默认沿用自有域名和自托管 Relay；新增区域或服务先实测大陆移动网络与美国网络，并保留可迁移回退。
