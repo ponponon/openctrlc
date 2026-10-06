@@ -2975,5 +2975,6 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 ### 代码位置与验证
 
 - `packages/app/src/pages/layout/sidebar-items.tsx`：远程模式将相邻会话预取跨度设为 0。
+- `packages/app/src/pages/layout.tsx`：只有远程/本地预取成功后才登记 LRU 和淘汰旧缓存。
 - `packages/app/src/pages/home/home-sessions-controller.tsx`：分开记录已成功预取与进行中的预取，避免暂时失败导致永久跳过。
 - `packages/app`：`bun run typecheck` 通过。

@@ -724,10 +724,13 @@ export default function LegacyLayout(props: ParentProps) {
   }
 
   async function prefetchMessages(directory: string, sessionID: string, token: number) {
-    await serverSync()
+    const completed = await serverSync()
       .session.prefetch(sessionID, prefetchChunk)
-      .catch(() => {})
-    if (prefetchToken.value !== token) return
+      .then(
+        () => true,
+        () => false,
+      )
+    if (!completed || prefetchToken.value !== token) return
     for (const stale of markPrefetched(directory, sessionID)) serverSync().session.evict(stale)
   }
 
