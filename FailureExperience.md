@@ -1496,6 +1496,33 @@ Relay 在桌面短暂掉线时会对健康探测返回 5xx。协议结果被 SDK
 - **因此超时不出现在传输层，也不在协议判定所用的接口上**，而在这两者之间的 SDK 客户端里：`serverSDK.api.session.get(...)` / `input.current.message.list(...)` 这条 Effect 客户端路径。下一轮应直接给这条客户端路径打点（或在 `sessionRead` 里记录 **sessionID + 调用来源**，先确定到底是哪一次读取超时——目前连"哪个 session、哪条读取"都还没确认，这是最该先补的一步）。
 - 已知的同类前科都在这一带：`1d1cef8a`、`bf65eb94`、`ccdc5eb2` 以及"探测 Promise 被 SDK 上下文缓存后长期污染"的旧教训。优先怀疑启动瞬间某个被缓存的探测/协议 Promise 把所有请求挡在后面。
 
+## 把「整个 API」挂在协议探测 Promise 上会让首屏集体挂死
+
+上一节的怀疑已经定位到具体一行。在 `serverRead` 的超时分支打出调用标签后，启动时超时的**全是 `label=info`**（会话元数据读取），6–8 个并发一起在 20000ms 触发，另有 1 个 `legacy-page`：
+
+```
+[session-read] timeout label=info elapsed=20000ms timeout=20000ms   ← ×6
+[session-read] timeout label=legacy-page elapsed=20001ms timeout=20000ms
+```
+
+进一步逐层排除，全部为快：V1 `/session/:id` **2–4ms**、V2 `/api/session/:id` **2ms**（V2 才是新客户端真正打的路径，此前只测了 V1，属于测错对象）、`/session/:id/message?limit=1` **2–3ms**、用 `createOpencodeClient` 直接调 `client.session.get()` **2–3ms**（带 signal 与不带都一样）。也就是说：**同一个调用，经过应用这层封装就挂死，绕开封装就 2ms。**
+
+凶手在 `packages/app/src/utils/server-compat.ts` 结尾：
+
+```ts
+return lazyApi(input.protocol.then((protocol) => (protocol === "v1" ? v1 : current)), input.current)
+```
+
+而 `lazyApi` 把**每个**方法的每次调用都压在这个 `implementation` Promise 上：
+
+```ts
+return (...args) => implementation.then((value) => Reflect.apply(Reflect.get(value, property), value, args))
+```
+
+于是 `input.protocol` 这一个 Promise 成了**整个 API 的单点**：它只要迟迟不 settle，会话读取、消息分页、权限、任何东西都一起排队等待，日志表现就是"接口本身 2ms、应用里却整齐地一起等 20 秒"。`input.protocol` 来自 `server-sdk.tsx` 的 `detectServerProtocol(...)`，而 `server-protocol.ts` 里 `protocolDetectionBudgetMs = 8000`、单次探测 5s 并带重试——所以它还叠加了一层启动期探测预算。
+
+教训：**协议/健康探测的结果只能用来"选实现"，不能当成所有业务调用的前置闸门。** 一旦把某个可能很慢、可能失败、可能被缓存污染的探测 Promise 放在公共调用路径的必经点上，就会出现"每个接口单独测都很快、进到应用里一起超时"这种极难归因的现象。正确做法是让探测自身有界并提供安全默认值，且**每个调用点各自决定**用哪个实现，而不是让整棵 API 树等同一个 Promise；同时这类"命中就缓存"的探测必须能失效重试，不能一次失败就长期污染（参见 `1d1cef8a`、`ccdc5eb2`）。
+
 还要注意一个操作陷阱：早期启动的 Electron 进程可能在 `dev:desktop` 完全起来之前就占着 9222，导致 CDP 探针连到**上一次的旧实例**，量到的数字与本次启动无关。开始测量前先确认 9222/5173 无监听者，并且核对日志里的 `app starting` 时间戳与本次启动一致。
 
 ## 测量 Electron 时 shell 不能带 ELECTRON_RUN_AS_NODE

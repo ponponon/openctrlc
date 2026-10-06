@@ -36,14 +36,21 @@ const sessionReadTimeoutMs = 20_000
 const emptyIDs: ReadonlySet<string> = new Set()
 type SessionMessageWithParent = SessionMessageInfo & { parentID?: string }
 
-function sessionRead<T>(request: (signal: AbortSignal) => Promise<T>) {
+function sessionRead<T>(label: string, request: (signal: AbortSignal) => Promise<T>) {
   const controller = new AbortController()
+  const startedAt = Date.now()
   let timeout: ReturnType<typeof setTimeout> | undefined
   const deadline = new Promise<T>((_resolve, reject) => {
     timeout = setTimeout(() => {
       const error = new Error(`Session request timed out after ${sessionReadTimeoutMs}ms`)
       error.name = "SessionReadTimeoutError"
       controller.abort()
+      // Diagnostics: the timeout alone does not say WHICH read hung, and the
+      // stack only points at this timer. Report the call site and elapsed time so
+      // a hanging read can be identified from the renderer console.
+      console.warn(
+        `[session-read] timeout label=${label} elapsed=${Date.now() - startedAt}ms timeout=${sessionReadTimeoutMs}ms`,
+      )
       reject(error)
     }, sessionReadTimeoutMs)
   })
@@ -383,7 +390,7 @@ export function createServerSession(
     const pending = requests.get(sessionID)
     if (pending) return pending
     const active = generation(sessionID)
-    const request = sessionRead((signal) =>
+    const request = sessionRead("info", (signal) =>
       sessionApi
         ? sessionApi.get({ sessionID }, { signal }).then(normalizeSessionInfo)
         : client.session.get({ sessionID }, { signal }).then((result) => {
@@ -615,7 +622,7 @@ export function createServerSession(
 
   const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
     const fetchLegacyPage = async () => {
-      const response = await sessionRead((signal) =>
+      const response = await sessionRead("legacy-page", (signal) =>
         (options?.retry ?? retry)(() => {
           onAttempt?.()
           return client.session.messages({ sessionID, limit, before }, { signal })
@@ -637,7 +644,7 @@ export function createServerSession(
 
     if (messageApi && options?.sessionProtocols?.get(sessionID) !== "v1" && (await options?.protocol) !== "v1") {
       const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
-        sessionRead((signal) =>
+        sessionRead("message-page", (signal) =>
           (options?.retry ?? retry)(() => {
             onAttempt?.()
             return messageApi
@@ -694,7 +701,7 @@ export function createServerSession(
 
   const fetchMessage = async (sessionID: string, messageID: string, onAttempt?: () => void) => {
     if (sessionApi && options?.sessionProtocols?.get(sessionID) !== "v1" && (await options?.protocol) !== "v1") {
-      const response = await sessionRead((signal) =>
+      const response = await sessionRead("message-v2", (signal) =>
         (options?.retry ?? retry)(() => {
           onAttempt?.()
           return sessionApi.message({ sessionID, messageID }, { signal })
@@ -705,7 +712,7 @@ export function createServerSession(
       if (!message) throw new Error(`Message not found: ${messageID}`)
       return { message, parts: normalized.parts.get(messageID) ?? [] }
     }
-    const response = await sessionRead((signal) =>
+    const response = await sessionRead("message-v1", (signal) =>
       (options?.retry ?? retry)(() => {
         onAttempt?.()
         return client.session.message({ sessionID, messageID }, { signal })
