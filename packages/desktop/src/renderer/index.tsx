@@ -38,6 +38,19 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   throw new Error(t("desktop.error.dev.rootNotFound"))
 }
 
+// Restored session tabs mount inside a lazy route whose module graph is the bulk
+// of the session chrome. Start fetching it here, in parallel with the app shell:
+// the previous `warmSessionRoute()` call sat behind an `import("@openctrlc/app")`
+// round trip, so it only warmed the chunk after the shell had already loaded and
+// the window sat on the loading skeleton. Dev keeps the renderer unbundled, where
+// that ordering decides whether the first paint waits on a cold route import.
+if (import.meta.env.DEV && typeof window.api === "object") {
+  const restored = Object.keys(localStorage).some(
+    (key) => key.endsWith(".last-active-url") && (localStorage.getItem(key) ?? "").includes("/session/"),
+  )
+  if (restored) void import("../../../app/src/pages/session-route-view").catch(() => undefined)
+}
+
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
