@@ -16,9 +16,9 @@ export function createTimelineModel(input: {
   let refreshFrame: number | undefined
   let refreshTimer: number | undefined
 
-  const [resource] = createResource(
+  const [resource, actions] = createResource(
     () => input.sessionID(),
-    (id) => {
+    (id, info) => {
       clearRefresh()
       if (!id) return
 
@@ -36,7 +36,7 @@ export function createTimelineModel(input: {
         }, 0)
       })
 
-      return sync().session.sync(id)
+      return sync().session.sync(id, { force: info.refetching === true })
     },
   )
   const messages = createMemo(() => {
@@ -80,6 +80,10 @@ export function createTimelineModel(input: {
     history: { loadOlder, loading, more },
     lastUserMessage: createMemo(() => visibleUserMessages().at(-1)),
     messages,
+    async retry() {
+      if (!input.sessionID()) return
+      await actions.refetch(true)
+    },
     ready,
     resource,
     userMessages,

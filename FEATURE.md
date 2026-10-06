@@ -2979,3 +2979,14 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 - `packages/app/src/pages/layout.tsx`：只有远程/本地预取成功后才登记 LRU 和淘汰旧缓存。
 - `packages/app/src/pages/home/home-sessions-controller.tsx`：分开记录已成功预取与进行中的预取，避免暂时失败导致永久跳过。
 - `packages/app`：`bun run typecheck` 通过。
+
+## 会话首屏请求超时与局部恢复
+
+会话元数据、消息分页和父消息补齐中的每个 HTTP 读取（含其自动重试）都有 20 秒截止时间；到期会中止请求并显示会话内错误状态，不再无限停留在骨架屏。重试按钮会强制重新读取元数据和消息，绕过可能存在的旧缓存；错误限制在当前会话面板，不要求重启整个应用。页面文案覆盖英文、简体中文、日文和韩文。
+
+### 代码与验证
+
+- `packages/app/src/context/server-session.ts`：为 V1/V2 会话元数据、消息页和父消息读取提供 AbortSignal 与 20 秒截止时间。
+- `packages/app/src/pages/session/timeline/model.ts`：重试强制同步会话。
+- `packages/app/src/pages/session.tsx`、`packages/app/src/i18n/{en,zh,ja,ko}.ts`：会话面板错误状态、可读错误详情和重试入口。
+- 在 `packages/app` 执行 `bun run typecheck`；未运行测试。生产 Relay 的实时会话状态未受影响，未重启或部署。

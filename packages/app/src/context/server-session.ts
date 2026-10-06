@@ -32,8 +32,25 @@ const parentMessageBatchSize = initialMessagePageSize
 const historyMessagePageSize = 200
 const sessionInfoLimit = 2_048
 const maxOrphanPartsPerSession = 256
+const sessionReadTimeoutMs = 20_000
 const emptyIDs: ReadonlySet<string> = new Set()
 type SessionMessageWithParent = SessionMessageInfo & { parentID?: string }
+
+function sessionRead<T>(request: (signal: AbortSignal) => Promise<T>) {
+  const controller = new AbortController()
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<T>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      const error = new Error(`Session request timed out after ${sessionReadTimeoutMs}ms`)
+      error.name = "SessionReadTimeoutError"
+      controller.abort()
+      reject(error)
+    }, sessionReadTimeoutMs)
+  })
+  return Promise.race([Promise.resolve().then(() => request(controller.signal)), deadline]).finally(() => {
+    if (timeout !== undefined) clearTimeout(timeout)
+  })
+}
 
 function needsOlderTurnRoot(source: readonly SessionMessageWithParent[]) {
   const boundary = source.find(
@@ -354,12 +371,14 @@ export function createServerSession(
     const pending = requests.get(sessionID)
     if (pending) return pending
     const active = generation(sessionID)
-    const request = sessionApi
-      ? sessionApi.get({ sessionID }).then(normalizeSessionInfo)
-      : client.session.get({ sessionID }).then((result) => {
-          if (!result.data) throw sessionNotFoundError(sessionID)
-          return result.data
-        })
+    const request = sessionRead((signal) =>
+      sessionApi
+        ? sessionApi.get({ sessionID }, { signal }).then(normalizeSessionInfo)
+        : client.session.get({ sessionID }, { signal }).then((result) => {
+            if (!result.data) throw sessionNotFoundError(sessionID)
+            return result.data
+          }),
+    )
     const resolved = request.then((result) => {
       if (generations.get(sessionID) !== active) return result
       return remember(result)
@@ -584,10 +603,12 @@ export function createServerSession(
 
   const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
     const fetchLegacyPage = async () => {
-      const response = await (options?.retry ?? retry)(() => {
-        onAttempt?.()
-        return client.session.messages({ sessionID, limit, before })
-      })
+      const response = await sessionRead((signal) =>
+        (options?.retry ?? retry)(() => {
+          onAttempt?.()
+          return client.session.messages({ sessionID, limit, before }, { signal })
+        }),
+      )
       const items = (response.data ?? []).filter((item) => !!item?.info?.id)
       return {
         session: items.map((item) => cleanMessage(item.info)).sort(compareMessages),
@@ -604,12 +625,14 @@ export function createServerSession(
 
     if (messageApi && (await options?.protocol) !== "v1" && options?.sessionProtocols?.get(sessionID) !== "v1") {
       const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
-        (options?.retry ?? retry)(() => {
-          onAttempt?.()
-          return messageApi
-            .list(cursor ? { sessionID, limit, cursor } : { sessionID, limit, order: "desc" })
-            .then((response) => response as unknown as CurrentSessionMessagePage)
-        })
+        sessionRead((signal) =>
+          (options?.retry ?? retry)(() => {
+            onAttempt?.()
+            return messageApi
+              .list(cursor ? { sessionID, limit, cursor } : { sessionID, limit, order: "desc" }, { signal })
+              .then((response) => response as unknown as CurrentSessionMessagePage)
+          }),
+        )
       const first = await request(before)
       if (first.data.length > 0) options?.sessionProtocols?.set(sessionID, "v2")
       if (
@@ -663,19 +686,23 @@ export function createServerSession(
       (await options?.protocol) !== "v1" &&
       options?.sessionProtocols?.get(sessionID) !== "v1"
     ) {
-      const response = await (options?.retry ?? retry)(() => {
-        onAttempt?.()
-        return sessionApi.message({ sessionID, messageID })
-      })
+      const response = await sessionRead((signal) =>
+        (options?.retry ?? retry)(() => {
+          onAttempt?.()
+          return sessionApi.message({ sessionID, messageID }, { signal })
+        }),
+      )
       const normalized = normalizeSessionMessages(sessionID, [response])
       const message = normalized.messages[0]
       if (!message) throw new Error(`Message not found: ${messageID}`)
       return { message, parts: normalized.parts.get(messageID) ?? [] }
     }
-    const response = await (options?.retry ?? retry)(() => {
-      onAttempt?.()
-      return client.session.message({ sessionID, messageID })
-    })
+    const response = await sessionRead((signal) =>
+      (options?.retry ?? retry)(() => {
+        onAttempt?.()
+        return client.session.message({ sessionID, messageID }, { signal })
+      }),
+    )
     if (!response.data?.info?.id) throw new Error(`Message not found: ${messageID}`)
     return {
       message: cleanMessage(response.data.info),

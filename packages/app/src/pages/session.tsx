@@ -220,7 +220,12 @@ export function SessionRouteErrorBoundary(
   )
 }
 
-function SessionErrorFallback(props: { error: unknown; sessionID?: string; serverKey?: ServerConnection.Key }) {
+function SessionErrorFallback(props: {
+  error: unknown
+  sessionID?: string
+  serverKey?: ServerConnection.Key
+  onRetry?: () => void
+}) {
   const language = useLanguage()
   const server = useServer()
   const tabs = useTabs()
@@ -255,6 +260,26 @@ function SessionErrorFallback(props: { error: unknown; sessionID?: string; serve
           </Show>
           <ButtonV2 variant="neutral" size="normal" icon="xmark-small" onClick={closeTab}>
             {language.t("session.error.notFound.closeTab")}
+          </ButtonV2>
+        </div>
+      </div>
+    )
+  }
+  if (props.onRetry) {
+    return (
+      <div class="flex-1 min-h-0 overflow-auto">
+        <div class="min-h-full px-6 py-8 flex flex-col items-center justify-center text-center gap-4">
+          <div class="flex flex-col items-center gap-2">
+            <div class="text-16-medium text-text max-w-md">{language.t("session.error.loadFailed")}</div>
+            <div class="text-13-regular text-text-weak max-w-md">
+              {language.t("session.error.loadFailed.description")}
+            </div>
+          </div>
+          <pre class="max-w-full max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-[4px] bg-v2-background-bg-layer-01 px-3 py-2 text-left text-12-regular text-text-faint">
+            {formatServerError(props.error, language.t).slice(0, 2000)}
+          </pre>
+          <ButtonV2 variant="neutral" size="normal" onClick={props.onRetry}>
+            {language.t("session.error.loadFailed.retry")}
           </ButtonV2>
         </div>
       </div>
@@ -2365,7 +2390,17 @@ export default function Page() {
 
   const sessionErrorFallback = (error: unknown, reset: () => void) => {
     createEffect(on(sessionKey, reset, { defer: true }))
-    return <SessionErrorFallback error={error} sessionID={params.id} />
+    return (
+      <SessionErrorFallback
+        error={error}
+        sessionID={params.id}
+        onRetry={() => {
+          const pending = timeline.retry()
+          reset()
+          void pending.catch(() => undefined)
+        }}
+      />
+    )
   }
 
   const sessionPanelContent = () => (
