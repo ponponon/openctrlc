@@ -113,6 +113,7 @@ export function registerRemotePeerHost(remoteAccess: RemoteAccessService) {
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
+            backgroundThrottling: false,
           },
         })
         window = peerWindow

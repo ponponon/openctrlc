@@ -3000,3 +3000,12 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 - `packages/desktop/src/main/remote-access.ts`：移除客户端 3 分钟重连截止；增加新建替代会话的重试状态，并在 Relay 拒绝创建时及时进入退避重试。
 - `packages/app/src/i18n/{en,zh,ja,ko}.ts`：说明持续自动重连、退避行为和授权保留条件。
 - 在 `packages/desktop` 执行 `bun run typecheck`；未运行测试。未连接真实桌面端或移动网络做端到端验收，未部署 Relay。
+
+## 保持隐藏的 WebRTC 宿主及时运行
+
+Electron 承载桌面 WebRTC peer 的专用隐藏窗口关闭后台定时器节流，避免 WebContents 隐藏后推迟 ICE 路径统计、连接维护与缓冲排空任务。此设置只应用于 peer 宿主窗口，不作用于桌面主窗口。
+
+### 代码与验证
+
+- `packages/desktop/src/main/remote-peer-host.ts`：仅为隐藏 peer BrowserWindow 设置 `backgroundThrottling: false`。
+- `packages/desktop`：`bun run typecheck` 通过；未运行测试，未做移动端真实网络验收。
