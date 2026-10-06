@@ -1525,3 +1525,7 @@ Relay WebSocket 主动迁移到 P2P 时，PTY 并没有因路径切换而重建�
 Relay 可以在桌面离线期间保留已批准浏览器的会话最长 30 天，但桌面端曾只自动重试 3 分钟，之后进入错误状态；凭据虽然仍在本地，但手机访问会一直中断，除非用户手动重新开启。以后区分“授权在 Relay 的保留期限”和“客户端自动重连期限”：网络错误应以有上限的退避持续重试，不能让几分钟断网变成需要手动恢复；只有 Relay 明确返回会话已不存在时，才创建替代会话。替代会话创建失败也应留在自动重试状态，并如实说明原授权只有在 Relay 仍保留该会话时才能沿用。
 
 隐藏 Electron WebContents 默认会节流后台定时器。专用 WebRTC peer 窗口依赖这些定时器做连接维护和路径统计，不能因为 `show: false` 就假设定时任务仍准时；应在该专用窗口单独关闭 `backgroundThrottling`，避免影响主窗口的能耗策略。
+
+## 回退解析器的静态 import 会把 KaTeX 带进会话首屏
+
+Markdown 正常解析已经放进 Worker，但主线程为了 Worker 故障时即时降级，静态 import 了同一个 KaTeX parser。结果 KaTeX 的 609 KB 源码也进入 session route；即使普通会话没有公式，打开会话仍必须下载这部分代码。以后首屏 fallback 只保留基础 Markdown，Worker 故障且需要数学排版时再动态加载完整 parser；用生产构建的 gzip chunk 大小验证是否真正拆开，同时保留 KaTeX 正常/回退解析测试，不能只看源码里用了 Worker 就认定首屏很轻。

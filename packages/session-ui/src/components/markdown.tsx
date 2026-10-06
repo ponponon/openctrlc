@@ -16,7 +16,7 @@ import { isServer, render } from "solid-js/web"
 import { Icon as IconV2 } from "@openctrlc/ui/v2/icon"
 import { IconButtonV2 } from "@openctrlc/ui/v2/icon-button-v2"
 import { TooltipV2 } from "@openctrlc/ui/v2/tooltip-v2"
-import { parseMarkdownSync } from "@openctrlc/ui/context/marked-parser"
+import { parseMarkdownSyncFallback } from "@openctrlc/ui/context/marked-parser-sync"
 import { canReusePendingBlock, completedProjection } from "./markdown-projection"
 import type { Block, Projection } from "./markdown-stream"
 import {
@@ -65,8 +65,17 @@ function escape(text: string) {
 }
 
 function fallback(markdown: string) {
-  if (!isServer) return sanitizeMarkdown(parseMarkdownSync(markdown))
+  if (!isServer) return sanitizeMarkdown(parseMarkdownSyncFallback(markdown))
   return escape(markdown).replace(/\r\n?/g, "\n").replace(/\n/g, "<br>")
+}
+
+async function fallbackAfterWorkerFailure(markdown: string) {
+  try {
+    const parser = await import("@openctrlc/ui/context/marked-parser")
+    return sanitizeMarkdown(parser.parseMarkdownSync(markdown))
+  } catch {
+    return fallback(markdown)
+  }
 }
 
 async function code(text: string, language: string | undefined, key: string, complete = false) {
@@ -467,7 +476,7 @@ export function Markdown(
       )
         .then((blocks) => ({ text: src.text, blocks }) satisfies RenderResult)
         .catch(
-          () =>
+          async () =>
             ({
               text: src.text,
               blocks: [
@@ -476,7 +485,7 @@ export function Markdown(
                   mode: "full" as const,
                   raw: src.text,
                   hash: checksum(src.text) ?? "",
-                  html: fallback(src.text),
+                  html: await fallbackAfterWorkerFailure(src.text),
                 },
               ],
             }) satisfies RenderResult,

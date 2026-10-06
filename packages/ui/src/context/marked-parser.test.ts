@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import { createMarkdownParser, parseMarkdownSync } from "./marked-parser"
+import { parseMarkdownSyncFallback } from "./marked-parser-sync"
 
 const parser = createMarkdownParser((code, language) => `<pre data-language="${language}">${code}</pre>`)
 
@@ -26,9 +27,16 @@ test("renders display math embedded in a list item", async () => {
   expect(result).not.toContain("$$")
 })
 
-test("renders strong text in the synchronous fallback parser", () => {
+test("renders strong text in the math-capable synchronous parser", () => {
   const text = "直击**列式存储\n**最底层的工程秘密！"
   const result = parseMarkdownSync(text)
+
+  expect(result).toContain("<strong>")
+  expect(result).not.toContain("**")
+})
+
+test("keeps the first-paint parser independent from KaTeX", () => {
+  const result = parseMarkdownSyncFallback("直击**列式存储**最底层的工程秘密！")
 
   expect(result).toContain("<strong>")
   expect(result).not.toContain("**")

@@ -3,48 +3,19 @@ import katex from "katex"
 import "katex/dist/katex.min.css"
 import { Marked, type MarkedExtension, type Tokens } from "marked"
 import markedShiki from "marked-shiki"
-
-const markdownOptions: MarkedExtension = {
-  renderer: {
-    link(token: Tokens.Link) {
-      const titleAttr = token.title ? ` title="${token.title}"` : ""
-      return `<a href="${token.href}"${titleAttr} class="external-link" target="_blank" rel="noopener noreferrer">${token.text}</a>`
-    },
-  },
-}
+import { adjacentStrong, markdownOptions } from "./marked-parser-common"
 
 export function createMarkdownParser(highlight: (code: string, language: string) => string | Promise<string>) {
-  return new Marked(markdownOptions, katexExtension, markedShiki({ highlight }))
+  return new Marked(markdownOptions, adjacentStrong, katexExtension, markedShiki({ highlight }))
 }
 
 const inlineMathRegex =
   /^(?:\\\(((?:\\.|[^\\\n])*?)\\\)|\\\[([\s\S]+?)\\\]|(\$\$([^\n]+?)\$\$)|(\$(?!\s)((?:\\.|[^$\\\n])*?\S)\$(?!\$)))/
 const blockMathRegex = /^\$\$(?:\r?\n([\s\S]+?)\r?\n\$\$|([^\r\n]+?)\$\$)(?:\r?\n|$)/
 const mathDelimiters = ["\\(", "\\[", "$$", "$"]
-const strongRegex = /^(\*\*|__)([\s\S]+?)\1/
-const strongDelimiters = ["**", "__"]
 
 const katexExtension: MarkedExtension = {
   extensions: [
-    {
-      name: "adjacentStrong",
-      level: "inline",
-      start(src) {
-        const indexes = strongDelimiters.map((delimiter) => src.indexOf(delimiter)).filter((index) => index >= 0)
-        if (indexes.length === 0) return
-        return Math.min(...indexes)
-      },
-      tokenizer(src) {
-        const match = src.match(strongRegex)
-        if (!match) return
-        return {
-          type: "strong",
-          raw: match[0],
-          text: match[2],
-          tokens: this.lexer.inlineTokens(match[2]),
-        }
-      },
-    },
     {
       name: "inlineKatex",
       level: "inline",
@@ -83,7 +54,7 @@ const katexExtension: MarkedExtension = {
   ],
 }
 
-const syncParser = new Marked(markdownOptions, katexExtension)
+const syncParser = new Marked(markdownOptions, adjacentStrong, katexExtension)
 
 export function parseMarkdownSync(text: string) {
   return syncParser.parse(text, { async: false })

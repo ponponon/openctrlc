@@ -3009,3 +3009,11 @@ Electron 承载桌面 WebRTC peer 的专用隐藏窗口关闭后台定时器节�
 
 - `packages/desktop/src/main/remote-peer-host.ts`：仅为隐藏 peer BrowserWindow 设置 `backgroundThrottling: false`。
 - `packages/desktop`：`bun run typecheck` 通过；未运行测试，未做移动端真实网络验收。
+
+## 会话首屏延迟加载 KaTeX
+
+会话 Markdown 的正常解析运行在独立 Worker。首次渲染改用不含 KaTeX 的轻量同步解析器，避免把数学排版库同步塞进会话主路由；Worker 完成后仍使用完整解析和 KaTeX 样式。若 Worker 故障，需要数学排版时再动态加载兼容回退解析器。
+
+- 代码：`packages/ui/src/context/marked-parser-common.ts`、`marked-parser-sync.tsx`、`marked-parser.tsx`；`packages/session-ui/src/components/markdown.tsx`。
+- 构建对比：会话路由从 1,003,923 B / gzip 303,477 B 降到 735,910 B / gzip 225,978 B，压缩后减少约 77 KB（25.5%）。
+- 验证：UI Markdown 单测 7 项通过；UI 与 session-ui 类型检查通过；App 生产构建通过。数学回退模块和 Worker 各自保留 KaTeX，不进入会话首屏路由包。
