@@ -897,7 +897,8 @@ export const dict = {
   "session.error.notFound.description": "このタブが参照するセッションは、このサーバーには存在しません。",
   "session.error.notFound.closeTab": "タブを閉じる",
   "session.error.loadFailed": "このセッションを読み込めませんでした",
-  "session.error.loadFailed.description": "サーバーの応答がタイムアウトしたか、接続が中断されました。接続を確認して再試行してください",
+  "session.error.loadFailed.description":
+    "サーバーの応答がタイムアウトしたか、接続が中断されました。接続を確認して再試行してください",
   "session.error.loadFailed.retry": "再試行",
   "session.error.serverConnection": "このサーバーに接続できません",
   "session.review.filesChanged": "変更されたファイル: {{count}}件",

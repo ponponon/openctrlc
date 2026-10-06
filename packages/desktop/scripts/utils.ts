@@ -36,7 +36,10 @@ export async function newestModifiedAt(paths: string[]) {
           entries.map((entry) => {
             const child = join(path, entry.name)
             if (entry.isDirectory()) return latest(child)
-            if (entry.isFile()) return stat(child).then((value) => value.mtimeMs).catch(() => 0)
+            if (entry.isFile())
+              return stat(child)
+                .then((value) => value.mtimeMs)
+                .catch(() => 0)
             return 0
           }),
         )),

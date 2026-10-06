@@ -783,13 +783,10 @@ export class RemoteAccessService {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
     const delay = reconnectDelays[Math.min(this.#reconnectAttempt, reconnectDelays.length - 1)]
     this.#reconnectAttempt += 1
-    this.#reconnectTimer = setTimeout(
-      () => {
-        this.#reconnectTimer = undefined
-        void this.#resume(generation)
-      },
-      delay,
-    )
+    this.#reconnectTimer = setTimeout(() => {
+      this.#reconnectTimer = undefined
+      void this.#resume(generation)
+    }, delay)
   }
 
   async #resume(generation: number) {

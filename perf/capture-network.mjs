@@ -37,7 +37,13 @@ socket.addEventListener("message", (event) => {
   }
   if (message.method === "Network.requestWillBeSent") {
     const { requestId, request, timestamp } = message.params
-    requests.set(requestId, { url: request.url, method: request.method, started: timestamp, status: null, type: message.params.type })
+    requests.set(requestId, {
+      url: request.url,
+      method: request.method,
+      started: timestamp,
+      status: null,
+      type: message.params.type,
+    })
   }
   if (message.method === "Network.responseReceived") {
     const entry = requests.get(message.params.requestId)
@@ -94,7 +100,11 @@ for (const r of sessionRows.slice(0, 60)) console.log(fmt(r))
 console.log("\n-- pending/failed (all) --")
 for (const r of rows.filter((r) => r.failed || r.status === null).slice(0, 40)) console.log(fmt(r))
 console.log("\n-- slowest completed --")
-for (const r of rows.filter((r) => r.finished).sort((a, b) => b.finished - b.started - (a.finished - a.started)).slice(0, 15)) console.log(fmt(r))
+for (const r of rows
+  .filter((r) => r.finished)
+  .sort((a, b) => b.finished - b.started - (a.finished - a.started))
+  .slice(0, 15))
+  console.log(fmt(r))
 
 console.log("\n-- console/exceptions --")
 for (const e of events.slice(-40)) console.log(JSON.stringify(e))

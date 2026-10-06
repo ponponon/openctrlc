@@ -165,7 +165,8 @@ const main = async () => {
     console.log("session request count:", result.sessionRequestCount)
     for (const request of result.sessionRequests) console.log(`  +${Math.round(request.at)}ms ${safeUrl(request.url)}`)
     console.log("slowest resources:")
-    for (const resource of result.resources ?? []) console.log(`  ${String(resource.dur).padStart(6)}ms ${String(resource.size).padStart(8)}B ${resource.name}`)
+    for (const resource of result.resources ?? [])
+      console.log(`  ${String(resource.dur).padStart(6)}ms ${String(resource.size).padStart(8)}B ${resource.name}`)
     console.log("body length:", result.bodyLength)
   }
   client.close()

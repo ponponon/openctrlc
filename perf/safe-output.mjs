@@ -7,7 +7,9 @@ export function safeUrl(value) {
       .replace(/\/(?:v1\/)?sessions?\/[^/]+/gi, "/session/:redacted")
       .replace(/\/(Users|home)\/[^/]+/gi, "/$1/:user")
     const queryKeys = [...url.searchParams.keys()]
-    const query = queryKeys.length ? `?${[...new Set(queryKeys)].map((key) => `${encodeURIComponent(key)}=[redacted]`).join("&")}` : ""
+    const query = queryKeys.length
+      ? `?${[...new Set(queryKeys)].map((key) => `${encodeURIComponent(key)}=[redacted]`).join("&")}`
+      : ""
     return `${url.origin}${pathname}${query}`
   } catch {
     return "[unavailable]"

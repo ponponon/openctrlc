@@ -257,7 +257,9 @@ describe("server session", () => {
         },
       },
     } as unknown as OpencodeClient
-    const sessionApi = { get: async ({ sessionID }: { sessionID: string }) => session(sessionID) } as unknown as SessionApi
+    const sessionApi = {
+      get: async ({ sessionID }: { sessionID: string }) => session(sessionID),
+    } as unknown as SessionApi
     const messageApi = {} as MessageApi
     const store = createServerSession(client, sessionApi, messageApi, { protocol: Promise.resolve("v1") })
 
