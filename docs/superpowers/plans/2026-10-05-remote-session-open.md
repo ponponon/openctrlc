@@ -201,3 +201,11 @@
 - 这证明该时段确实有数 MB 的 HTTP 响应经过旧 Relay，且至少有一个快照时刻存在未完成 HTTP 请求；它不是只凭“理论消息小于 500 KB”推断实际流量。旧版指标按小时采样，没有逐请求耗时、路由、状态码或正文大小，不能将悬挂请求对应到指定会话，也不能据此判定 10 秒是否由网卡带宽、桌面上游、Relay 队列或某个大资源单独造成。
 - 下一次完整复测需要同一浏览器导航的逐请求 Resource Timing（含脱敏路径、状态、TTFB、传输大小）与同一时间窗口的 Relay/桌面请求观测。当前 Kimi Bridge daemon 无法从沙箱连通，不能把此前的浏览器页面当成当前页面继续采样；本轮不重载或操作用户浏览器。
 - 2026-10-06 11:11 UTC 通过 SSH 只读请求生产机 `127.0.0.1:4097/_remote/capabilities` 得到 HTTP 401，而不是当前代码约定的公开 `peerProtocol` 能力 JSON。这再次表明线上进程不是当前 P2P Relay 协议；该本机回环结果不代表大陆手机或美国网络连通性，也未触碰运行中的服务。
+
+## 2026-10-06 禁用 Worker 方案后的上线复核
+
+- 按用户明确要求，公网远程链路不采用 Cloudflare Workers、Durable Objects 或其他 Worker 转发；沿用自托管 Bun Relay、WebRTC 优先、HTTPS Relay 回退的设计。
+- 19:23（北京时间）通过 SSH 只读复核：Relay 健康，运行约 44 小时；保留 1 个会话、0 个在线桌面、4 个浏览器授权、0 个在线浏览器/待处理请求；健康响应没有持久化状态，数据目录仍不能恢复旧授权。`/_remote/capabilities` 返回 401，主机没有监听 UDP 3478，因此生产 P2P 与 STUN 目前都没有启用。没有重启或改动线上服务。
+- 本轮本地验证：`packages/app` 远程 peer/protocol 单测 17/17；`packages/remote-relay` peer/ICE 单测 12/12；MiMo 翻译脚本单测 18/18；App、Desktop、Relay、OpenCode 四个包的 `bun run typecheck` 均通过。这些结果不替代公网手机/美国网络验收。
+- MiMo 代码复核仅找到翻译脚本默认使用 `xiaomi-token-plan-cn/mimo-v2.6-flash`。它是本机 Token Plan provider 名称；脚本支持 `--model` 覆盖，应用运行时没有发现该模型的集成变更。单测证明参数与流程，不证明其他贡献者拥有这个 provider，因此这是开发脚本的可移植性风险，不是桌面运行时故障。
+- 下一步生产切换需要替换旧 Relay 并启用自托管 STUN。由于当前旧服务没有可恢复快照，替换会让 4 个浏览器重新配对；在用户明确接受这项影响前，继续只做本地代码审查和不触碰现网的准备工作。
