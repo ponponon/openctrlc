@@ -1478,6 +1478,18 @@ Relay 在桌面短暂掉线时会对健康探测返回 5xx。协议结果被 SDK
 
 量化工具放在 `perf/`（`measure-sidecar-ready.mjs`、`measure-cold-start.mjs`、`probe-session-list.mjs` 等），通过 CDP `127.0.0.1:9222` 给渲染层打点。诊断脚本不得按端口杀进程：同一个端口可能属于用户正在使用的 Chrome 或其他 Vite 服务。启动测量前发现端口被占用就退出；清理时只终止脚本自己创建的进程组。需要观察现有页面时默认只读，页面重载和截图必须显式选择。
 
+**上述「骨架常驻 / 363 秒」的判断后来被证明是错的，见下节。不要沿用本节的结论去优化模块图。**
+
+## 首屏「永远转圈」要先怀疑渲染层报错，不是模块图慢
+
+上一节把「重启后会话正文画不出来」归因成 dev 下模块图饥饿（765 个模块、HTTP/1.1 六连接）。继续排查后发现真实情况完全不同：应用渲染的是**错误页**（`出了点问题 / 加载应用程序时发生错误` + 重启按钮），只是错误页外观朴素、又叠加了 `.animate-pulse`，很容易被当成"还在加载的骨架"。只看 `skeletonCount` 和 `bodyLen` 会把错误页误判成加载中。
+
+抓日志才看到 `fatal renderer error: SessionReadTimeoutError: Session request timed out after 20000ms`，来源是 `sessionRead()`。于是整条因果链是：启动时某个会话读取挂住 → 20 秒超时 → 错误上抛 → 错误边界接管整页 → 会话正文永不出现 → 用户必须点「重启」。诊断"慢"之前应先读 `main.log`/`renderer.log` 有没有 fatal renderer error，并读一次 `document.body.innerText` 确认到底是骨架还是错误页。
+
+顺带确认了几件与直觉相反的事：sidecar 完全健康（`/path` 1ms、`/session/:id` 2ms、`/session/:id/message?limit=20` 5–14ms，即使 697KB 响应也只要 14ms），所以在渲染层里用带鉴权的裸 `fetch` 复现不出这个 20 秒；瓶颈在 SDK/兼容层而不是传输层。`sessionRead` 自身的两个缺陷已修：一是 `Promise.race` 只给最先 settled 的输入挂拒绝处理器，真实请求先失败后仍在计时的 `deadline` 就成了未处理拒绝，改成 `Promise.all` 并保留承重的 `deadline.catch`；二是 `server-compat.ts` 的 `session.get` 只透传 `value`、丢掉 `options.signal`，导致超时 abort 无法取消真实请求。
+
+**仍未解决**：超时错误在修复后依然会在启动约 43 秒时到达错误边界，说明还有第三条路径让某个会话读取真的挂满 20 秒。下一步应沿着 `createCompatibleApi` 的 `sessionProtocol`（`input.current.message.list({ sessionID, limit: 1 })`）与协议判定路径继续定位，而不是回到模块图优化。
+
 ## 测量 Electron 时 shell 不能带 ELECTRON_RUN_AS_NODE
 
 在沙箱/CI 一类 shell 里跑 `bun run dev:desktop`，如果环境里存在 `ELECTRON_RUN_AS_NODE=1`，Electron 二进制会退化成普通 Node 启动，于是 `import { BrowserWindow } from "electron"` 抛 `SyntaxError: The requested module 'electron' does not provide an export named 'BrowserWindow'`，而堆栈里显示的是 `Node.js v24.x` 而不是 Electron。这会把驱动环境的问题伪装成应用崩溃，极易被误判成代码坏了（本次就一度怀疑 `electron-dl` 和 `node_modules` 损坏）。以后启动 Electron 前先 `unset ELECTRON_RUN_AS_NODE`，并以堆栈里出现的是 Node.js 版本还是 Electron 来确认到底是谁在跑；不要在没确认这一点前动依赖树。
@@ -1547,3 +1559,6 @@ Linux CI 的 app 单测因 `identity-residuals.test.ts` 的 E2E fixture 基线�
 生产 Relay 的 HTTP 转发请求会等桌面端发出响应头；半断开的桌面 WebSocket 可能仍报告 OPEN，close 事件迟迟不来，导致浏览器请求直到外层代理超时才失败。即使发现约 120 秒的请求，也不能仅凭时长断言是 OpenResty 产生了 502；应检查同一时段网关日志与 Relay 代码。Relay 自身仍需给响应头等待设有限 deadline，并在超时后移除 pending、通知桌面取消、返回明确的 504；超时只限制响应头，不能中断已开始的 SSE/HTTP 响应体。
 
 Bun 的 HTTP `idleTimeout` 同样覆盖尚未写出响应头、处理函数仍在等待的请求；120 秒空闲超时会把未返回的代理响应变成上游连接中断。长响应头等待要由 Relay 自己的较短 deadline 结束；响应类型确认是 SSE 后，再用 `server.timeout(request, 0)` 取消该请求的全局空闲期限，避免安静事件流被截断。
+## 带宽上限不能代替月流量套餐核算
+
+按 Mbps 推算持续满载的月数据量，只代表网络线路的理论吞吐，不等于套餐内免费流量。评估自托管 Relay 成本时必须同时核对瞬时带宽上限、每月流量包、超额计费方式，以及服务器上其他服务共同消耗的流量；应以云控制台套餐和实际账单为准，并把理论线速与套餐额度分别写清楚。
