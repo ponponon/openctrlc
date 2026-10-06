@@ -935,16 +935,15 @@ export function createServerSession(
 
   const sync = (sessionID: string, options?: { force?: boolean; messageLimit?: number }) => {
     touch(sessionID)
-    return runInflight(inflight, sessionID, async () => {
-      const cached = data.message[sessionID] !== undefined && meta.limit[sessionID] !== undefined
-      if (cached && data.info[sessionID] && !options?.force) return
-      await Promise.all([
-        resolve(sessionID, options),
-        cached && !options?.force
-          ? Promise.resolve()
-          : loadMessages(sessionID, options?.messageLimit ?? meta.limit[sessionID] ?? initialMessagePageSize),
-      ])
-    })
+    const cached = data.message[sessionID] !== undefined && meta.limit[sessionID] !== undefined
+    if (cached && data.info[sessionID] && !options?.force) return Promise.resolve()
+    const session = resolve(sessionID, options)
+    const messages = cached && !options?.force
+      ? Promise.resolve()
+      : runInflight(inflight, sessionID, () =>
+          loadMessages(sessionID, options?.messageLimit ?? meta.limit[sessionID] ?? initialMessagePageSize),
+        )
+    return Promise.all([session, messages]).then(() => {})
   }
 
   const prefetch = async (sessionID: string, limit: number) => {

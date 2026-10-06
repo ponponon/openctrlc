@@ -2957,3 +2957,13 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 - perf/README.md：安全默认值、命令说明和 CDP 回环监听要求。
 - perf/safe-output.mjs：统一隐藏会话/配对路径标识、用户目录和 URL 查询值。
 - perf/*.mjs：参数化当前会话与目录，默认避免正文输出、自动重载和误杀无关开发进程。
+
+## 远程会话预取不跳过会话元数据同步
+
+远程会话路由可以用已恢复的标签信息提前挂载工作区并预取消息首屏。消息预取与会话元数据解析现在分别去重：预取正在进行时，`sync()` 仍会解析并缓存目标 Session；消息页请求继续复用同一个进行中任务，避免重复读取正文或多走一轮 Relay。
+
+### 代码位置与验证
+
+- `packages/app/src/context/server-session.ts`：`sync()` 并行解析 Session 元数据与共享消息页任务。
+- `packages/app/src/context/server-session.test.ts`：覆盖消息预取先于 `sync()` 启动的竞态。
+- `bun test --conditions=solid --preload ./happydom.ts src/context/server-session.test.ts`：94 项通过；`bun typecheck` 通过。
