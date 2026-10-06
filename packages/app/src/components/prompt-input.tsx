@@ -1004,6 +1004,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       const slashMatch = rawText.match(/^\/(\S*)$/)
 
       if (atMatch) {
+        void serverSync().loadReferences(sdk().directory)
         atOnInput(atMatch[1])
         setStore({ popover: "at", slashMenu: false, slashMenuQuery: "" })
       } else if (slashMatch) {

@@ -434,6 +434,11 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
   })
   Object.defineProperty(controller, "model", { get: () => props.controls.model })
 
+  createEffect(() => {
+    if (controller.state.popover.type !== "context") return
+    void serverSync().loadReferences(sdk().directory)
+  })
+
   command.register("prompt-input", () => [
     {
       id: "file.attach",

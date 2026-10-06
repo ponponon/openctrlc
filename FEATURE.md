@@ -3058,3 +3058,10 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - 重试中的每次新请求都会重建 SSE 事件基线；首次基线在同步调用栈内建立，避免协议选择所需的微任务让实时事件抢先进入缓存后又被覆盖。
 - 兼容 API 的递归 Proxy 始终用根 API 对象解析完整路径，避免进入第二层命名空间后把根路径重复应用到嵌套对象。
 - 在 `packages/app` 执行 `bun run typecheck` 通过；`bun test --conditions=solid --preload ./happydom.ts ./src/utils/server-compat.test.ts ./src/context/server-session.test.ts` 共 105 项通过。未进行桌面冷启动或真实 Relay 网络验收。
+
+## 工作区引用列表按需加载
+
+打开会话或初始化多个工作区时，不再为每个目录预取 `@引用` 补全列表。用户首次打开 `@` 补全时才读取当前目录引用；请求仍进入同一查询缓存，用户加载过的目录会在收到 `reference.updated` 后刷新。这样启动阶段不会为非首屏补全数据并发发起大量 Relay 请求。
+
+- 代码：`packages/app/src/context/global-sync/bootstrap.ts`、`child-store.ts`、`server-sync.tsx`、`packages/app/src/components/prompt-input.tsx`、`prompt-input-v2.tsx`。
+- 验证：`packages/app` 类型检查通过；未运行测试，未在生产 Relay 部署后做网络瀑布对比。

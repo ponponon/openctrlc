@@ -199,7 +199,7 @@ export function createChildStoreManager(input: {
           }))
           const referenceQuery = useQuery(() => ({
             ...input.queryOptions.references(key),
-            enabled: instanceQueriesEnabled(),
+            enabled: false,
           }))
 
           const child = createStore<State>({

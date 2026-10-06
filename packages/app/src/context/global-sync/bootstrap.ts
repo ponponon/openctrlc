@@ -394,7 +394,6 @@ export async function bootstrapDirectory(input: {
     readonly permission: PermissionApi
     readonly project: ProjectApi
     readonly question: QuestionApi
-    readonly reference: ReferenceListApi
     readonly session: SessionApi
     readonly vcs: VcsApi
   }
@@ -500,10 +499,6 @@ export async function bootstrapDirectory(input: {
                 input.setStore("command", commands),
               ),
           })),
-      () =>
-        input.queryClient.fetchQuery(
-          loadReferencesQuery(input.scope, input.directory, input.api.reference, input.sdk, input.protocol),
-        ),
       () =>
         retry(() =>
           (async () => {

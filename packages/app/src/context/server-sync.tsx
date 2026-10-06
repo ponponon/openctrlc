@@ -729,8 +729,9 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
         void queryClient.fetchQuery(queryOptionsApi.lsp(key))
       },
       loadReferences: () => {
-        if (!children.active(key)) return
-        void queryClient.fetchQuery(queryOptionsApi.references(key))
+        const query = queryOptionsApi.references(key)
+        if (!children.active(key) || queryClient.getQueryData(query.queryKey) === undefined) return
+        void queryClient.fetchQuery(query)
       },
     })
   })
@@ -796,6 +797,9 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     },
     child: children.child,
     peek: children.peek,
+    loadReferences(directory: string) {
+      return queryClient.ensureQueryData(queryOptionsApi.references(directoryKey(directory)))
+    },
     disableMcp: children.disableMcp,
     queryOptions: queryOptionsApi,
     refreshProviders,
