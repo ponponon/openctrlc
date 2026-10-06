@@ -1026,7 +1026,7 @@ export const dict = {
   "remoteAccess.starting": "接続中…",
   "remoteAccess.reconnecting": "接続が切れました。モバイルアクセスを復元しています…",
   "remoteAccess.reconnectingDescription":
-    "デスクトップが Relay に再接続しています。OpenCtrlC を起動したままにしてください。承認済みブラウザーの認証は維持されます。",
+    "OpenCtrlC は Relay への再接続を自動で続け、オフライン中は間隔を徐々に延ばします。デスクトップアプリを起動したままにしてください。Relay にこのセッションが残っていれば、既存の承認を引き継ぎます。",
   "remoteAccess.reconnectFailed":
     "以前の接続を復元できませんでした。モバイルアクセスを再度有効にして、新しい QR コードをスキャンしてください。",
   "remoteAccess.active": "スマートフォンからアクセスできます",

@@ -39,8 +39,7 @@ type PeerTransport = {
 
 const heartbeatInterval = 30_000
 const heartbeatTimeout = 90_000
-const reconnectGrace = 3 * 60_000
-const reconnectDelays = [1_000, 2_000, 4_000, 8_000, 10_000]
+const reconnectDelays = [1_000, 2_000, 4_000, 8_000, 15_000, 30_000, 60_000]
 const legacyViewerLimit = 3
 
 class RemoteSessionUnavailable extends Error {}
@@ -85,8 +84,8 @@ export class RemoteAccessService {
   #notifiedPairRequests = new Set<string>()
   #starting?: Promise<RemoteAccessState>
   #reconnectTimer?: ReturnType<typeof setTimeout>
-  #reconnectUntil?: number
   #reconnectAttempt = 0
+  #reconnectCreateSession = false
   #generation = 0
   #workspace?: RemoteWorkspaceSnapshot
   #workspaceJSON?: string
@@ -712,7 +711,12 @@ export class RemoteAccessService {
           return
         }
         this.#handleMessage(message)
-        if (!resume && message.type === "pair.error" && this.#state.status === "connecting") {
+        if (
+          !resume &&
+          !connected &&
+          message.type === "pair.error" &&
+          (this.#state.status === "connecting" || this.#state.status === "reconnecting")
+        ) {
           fail(new Error(typeof message.message === "string" ? message.message : "Relay rejected the connection"))
         }
       })
@@ -756,8 +760,8 @@ export class RemoteAccessService {
     for (const local of this.#localSockets.values()) local.close(1001, "Remote relay disconnected")
     this.#localSockets.clear()
     if (this.#sessionID && this.#hostToken && this.#server && this.#state.status === "active") {
-      this.#reconnectUntil = Date.now() + reconnectGrace
       this.#reconnectAttempt = 0
+      this.#reconnectCreateSession = false
       this.#notifiedPairRequests.clear()
       this.#setState({ ...this.#state, status: "reconnecting", pendingRequests: [], error: undefined })
       this.#scheduleReconnect(generation)
@@ -777,11 +781,6 @@ export class RemoteAccessService {
 
   #scheduleReconnect(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    const until = this.#reconnectUntil
-    if (!until || until <= Date.now()) {
-      this.#endReconnect(generation)
-      return
-    }
     const delay = reconnectDelays[Math.min(this.#reconnectAttempt, reconnectDelays.length - 1)]
     this.#reconnectAttempt += 1
     this.#reconnectTimer = setTimeout(
@@ -789,31 +788,28 @@ export class RemoteAccessService {
         this.#reconnectTimer = undefined
         void this.#resume(generation)
       },
-      Math.min(delay, until - Date.now()),
+      delay,
     )
   }
 
   async #resume(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    if (!this.#reconnectUntil || this.#reconnectUntil <= Date.now()) {
-      this.#endReconnect(generation)
-      return
-    }
     const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? "wss://openctrlc-remote.quniv.cn/v1/host"
     try {
-      await this.#connect(relay, generation, true)
+      await this.#connect(relay, generation, !this.#reconnectCreateSession)
     } catch (error) {
       if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-      if (error instanceof RemoteSessionUnavailable) {
+      if (error instanceof RemoteSessionUnavailable && !this.#reconnectCreateSession) {
         // Relay no longer has this session; create a replacement instead of parking on an error.
         this.#sessionID = undefined
         this.#hostToken = undefined
         persistSession(undefined)
+        this.#reconnectCreateSession = true
         try {
           await this.#connect(relay, generation, false)
           getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
         } catch {
-          this.#endReconnect(generation)
+          this.#scheduleReconnect(generation)
         }
         return
       }
@@ -821,33 +817,11 @@ export class RemoteAccessService {
     }
   }
 
-  #endReconnect(generation: number) {
-    if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    this.#clearReconnect()
-    this.#binaryChunks = false
-    this.#gzipResponseUpload = false
-    this.#sessionID = undefined
-    this.#hostToken = undefined
-    this.#server = undefined
-    this.#notifiedPairRequests.clear()
-    const error = "Could not restore the remote session"
-    this.#setState({
-      status: "error",
-      pendingRequests: [],
-      authorizedDevices: 0,
-      viewerLimit: this.#viewerLimit,
-      effectiveViewerLimit: legacyViewerLimit,
-      viewerLimitSupported: false,
-      error: "reconnect-failed",
-    })
-    this.onError(new Error(error))
-  }
-
   #clearReconnect() {
     if (this.#reconnectTimer) clearTimeout(this.#reconnectTimer)
     this.#reconnectTimer = undefined
-    this.#reconnectUntil = undefined
     this.#reconnectAttempt = 0
+    this.#reconnectCreateSession = false
   }
 
   #startHeartbeat(socket: WebSocket) {

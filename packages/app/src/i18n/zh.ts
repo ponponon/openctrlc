@@ -1068,7 +1068,7 @@ export const dict = {
   "remoteAccess.start": "开启手机访问",
   "remoteAccess.starting": "正在连接…",
   "remoteAccess.reconnecting": "连接中断，正在恢复手机访问…",
-  "remoteAccess.reconnectingDescription": "桌面端正在重新连接中继。请保持 OpenCtrlC 运行；已批准浏览器的授权会保留。",
+  "remoteAccess.reconnectingDescription": "OpenCtrlC 会自动持续重连中继，网络不可用时会逐步延长重试间隔。请保持桌面端运行；中继仍保留此会话时会沿用已有授权。",
   "remoteAccess.reconnectFailed": "无法恢复之前的连接。请重新开启手机访问，并扫描新二维码。",
   "remoteAccess.active": "手机访问已开启",
   "remoteAccess.scan": "用手机扫描此二维码",

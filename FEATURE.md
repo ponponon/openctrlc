@@ -2990,3 +2990,13 @@ perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时�
 - `packages/app/src/pages/session/timeline/model.ts`：重试强制同步会话。
 - `packages/app/src/pages/session.tsx`、`packages/app/src/i18n/{en,zh,ja,ko}.ts`：会话面板错误状态、可读错误详情和重试入口。
 - 在 `packages/app` 执行 `bun run typecheck`；未运行测试。生产 Relay 的实时会话状态未受影响，未重启或部署。
+
+## Relay 断线后持续自动恢复桌面会话
+
+桌面端与 Relay 断开后不再在 3 分钟后停止重试并要求用户手动开启。客户端按 1、2、4、8、15、30 秒逐步退避，之后最多每 60 秒尝试恢复原会话；保持手机访问开启时，桌面持续运行就会自动恢复。Relay 明确表示原会话不存在时才清除旧凭据并创建替代会话；替代会话创建失败会继续重试，不会停在错误状态。界面说明授权是否能沿用取决于 Relay 是否仍保留该会话。
+
+### 代码与验证
+
+- `packages/desktop/src/main/remote-access.ts`：移除客户端 3 分钟重连截止；增加新建替代会话的重试状态，并在 Relay 拒绝创建时及时进入退避重试。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`：说明持续自动重连、退避行为和授权保留条件。
+- 在 `packages/desktop` 执行 `bun run typecheck`；未运行测试。未连接真实桌面端或移动网络做端到端验收，未部署 Relay。
