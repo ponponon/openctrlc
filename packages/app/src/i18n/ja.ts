@@ -1071,9 +1071,13 @@ export const dict = {
   "remote.transport.unavailableHint":
     "このセッションでは直接接続を利用できません。アプリの通信は Relay 経由で続行します。",
   "remoteAccess.viewerExpiring": "しばらく未使用です。承認を維持するには早く再接続してください",
-  "remote.desktop.offlineTitle": "デスクトップがオフラインです",
+  "remote.desktop.offlineTitle": "デスクトップに接続できません",
   "remote.desktop.offlineDescription":
-    "モバイルアクセスは有効ですが、デスクトップアプリに到達できません。最後に同期したプロジェクトとセッションを表示しています。",
+    "デスクトップが切断されたか、ネットワークまたは Relay が利用できない可能性があります。デスクトップとネットワークを確認して再試行してください。",
+  "remote.route.loadFailedTitle": "リモートページを読み込めませんでした",
+  "remote.route.loadFailedDescription":
+    "セッションページにはデスクトップからのリソースとデータが必要です。OpenCtrlC の起動とモバイルアクセスを確認し、ネットワークを確認してから再試行してください。",
+  "remote.route.retry": "ページを再読み込み",
   "remoteAccess.authorizedTitle": "許可済みブラウザー",
   "remoteAccess.authorizedDescription":
     "ブラウザー情報は偽装できる参考情報であり、実際の端末を認証するものではありません。",

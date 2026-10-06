@@ -826,9 +826,13 @@ export const dict = {
   "remote.transport.unavailableHint":
     "이 세션에서는 직접 연결을 사용할 수 없습니다. 앱 요청은 릴레이를 통해 계속 전달됩니다.",
   "remoteAccess.viewerExpiring": "오랫동안 사용하지 않았습니다. 승인을 유지하려면 곧 다시 연결하세요",
-  "remote.desktop.offlineTitle": "데스크톱 연결 끊김",
+  "remote.desktop.offlineTitle": "데스크톱에 연결할 수 없음",
   "remote.desktop.offlineDescription":
-    "모바일 액세스는 켜져 있지만 데스크톱 앱에 연결할 수 없습니다. 마지막으로 동기화된 프로젝트와 세션을 표시합니다。",
+    "데스크톱 연결이 끊겼거나 네트워크 또는 릴레이를 사용할 수 없을 수 있습니다. 데스크톱과 네트워크를 확인한 후 다시 시도하세요.",
+  "remote.route.loadFailedTitle": "원격 페이지를 불러올 수 없습니다",
+  "remote.route.loadFailedDescription":
+    "세션 페이지에는 데스크톱의 리소스와 데이터가 필요합니다. OpenCtrlC가 실행 중이고 모바일 액세스가 켜져 있는지 확인하고 네트워크를 확인한 후 다시 시도하세요.",
+  "remote.route.retry": "페이지 다시 불러오기",
   "remoteAccess.authorizedTitle": "승인된 브라우저",
   "remoteAccess.authorizedDescription": "브라우저 정보는 위조할 수 있는 참고 정보이며 실제 기기를 인증하지 않습니다.",
   "remoteAccess.authorizedEmpty": "아직 승인된 브라우저가 없습니다.",

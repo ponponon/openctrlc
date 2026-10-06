@@ -1108,9 +1108,13 @@ export const dict = {
   "remote.transport.unavailableHint":
     "Direct connection is unavailable for this session. App requests continue through the relay.",
   "remoteAccess.viewerExpiring": "Unused for a while — reconnect soon to keep this approval",
-  "remote.desktop.offlineTitle": "Desktop is offline",
+  "remote.desktop.offlineTitle": "Desktop unreachable",
   "remote.desktop.offlineDescription":
-    "Mobile access is on, but the desktop app is unreachable. Showing the last synced projects and sessions.",
+    "The desktop may be disconnected, or the network or relay may be unavailable. Check the desktop and network, then retry.",
+  "remote.route.loadFailedTitle": "Remote page couldn't load",
+  "remote.route.loadFailedDescription":
+    "Session pages need assets and data from the desktop. Make sure OpenCtrlC is running with mobile access enabled, check the network, then retry.",
+  "remote.route.retry": "Reload page",
   "remoteAccess.authorizedTitle": "Approved browsers",
   "remoteAccess.authorizedDescription":
     "Browser details are only a hint and can be spoofed; they do not verify a physical device.",

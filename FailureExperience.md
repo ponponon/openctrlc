@@ -1530,6 +1530,10 @@ Relay 可以在桌面离线期间保留已批准浏览器的会话最长 30 天�
 
 Markdown 正常解析已经放进 Worker，但主线程为了 Worker 故障时即时降级，静态 import 了同一个 KaTeX parser。结果 KaTeX 的 609 KB 源码也进入 session route；即使普通会话没有公式，打开会话仍必须下载这部分代码。以后首屏 fallback 只保留基础 Markdown，Worker 故障且需要数学排版时再动态加载完整 parser；用生产构建的 gzip chunk 大小验证是否真正拆开，同时保留 KaTeX 正常/回退解析测试，不能只看源码里用了 Worker 就认定首屏很轻。
 
+## 远程缓存列表可见不代表桌面在线
+
+远程浏览器可以显示上次同步到本地的项目/会话列表；但打开会话还需要从桌面端经中继拉取懒加载页面资源和最新数据。桌面断线时，资源请求可能得到 Relay `503 Desktop is disconnected`，被 ErrorBoundary 当成普通应用错误并覆盖整页。以后必须分别表达“远程传输方式”和“桌面/网络是否可达”；健康检查失败只说明目标暂时不可达，不能据此断言一定是桌面进程停止。远程路由的模块或 CSS 加载失败必须显示可重试的本地化界面，不能让缓存列表造成会话数据仍在线的错觉。
+
 ## 新增使用持久化状态的 E2E fixture 要同步登记基线
 
 Linux CI 的 app 单测因 `identity-residuals.test.ts` 的 E2E fixture 基线未包含新加入的 `session-lineage-loading`、`titlebar-tab-scroll-anchor` 和 `remote-peer-channel` 文件而失败。以后新增或移动 E2E fixture 时，同一变更必须把有持久化键的文件登记到 `expectedPersistence`，无持久化键的文件登记到 `expectedNoPersistence`；本地运行完整 app unit tests 后再推送。

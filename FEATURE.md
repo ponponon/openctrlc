@@ -3017,3 +3017,10 @@ Electron 承载桌面 WebRTC peer 的专用隐藏窗口关闭后台定时器节�
 - 代码：`packages/ui/src/context/marked-parser-common.ts`、`marked-parser-sync.tsx`、`marked-parser.tsx`；`packages/session-ui/src/components/markdown.tsx`。
 - 构建对比：会话路由从 1,003,923 B / gzip 303,477 B 降到 735,910 B / gzip 225,978 B，压缩后减少约 77 KB（25.5%）。
 - 验证：UI Markdown 单测 7 项通过；UI 与 session-ui 类型检查通过；App 生产构建通过。数学回退模块和 Worker 各自保留 KaTeX，不进入会话首屏路由包。
+
+## 远程断线时显示可恢复错误页
+
+远程浏览器可能先从本地缓存显示项目和会话列表；如果桌面端或网络中继随后不可达，点击会话时懒加载资源也可能失败。远程模式下，应用级错误边界现在显示本地化的恢复说明和重新加载按钮，不再落入通用致命错误页；顶栏根据服务健康状态显示“桌面端不可达”，并说明断线和网络/中继故障都可能导致这一状态。本地桌面及非远程 Web 错误仍沿用原错误页。
+
+- 代码：`packages/app/src/app.tsx`、`packages/app/src/components/titlebar.tsx`、`packages/app/src/i18n/{en,zh,ja,ko}.ts`。
+- 验证：在 `packages/app` 执行 `bun typecheck` 通过；`src/i18n/parity.test.ts` 的 8 项测试通过；`bun run build` 成功。Vite 构建仍报告动态导入/大分块和重复 source map 警告；未进行手机浏览器断线现场验收。

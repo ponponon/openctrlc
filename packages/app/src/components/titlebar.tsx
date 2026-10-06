@@ -846,6 +846,8 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
 function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void } }) {
   const platform = usePlatform()
   const language = useLanguage()
+  const global = useGlobal()
+  const server = useServer()
   const channel = import.meta.env.VITE_OPENCTRLC_CHANNEL
   const [host, setHost] = createSignal(remoteHostName(platform.remoteSessionID))
   const [liteNet, setLiteNet] = createSignal(readNetworkQuality().lite)
@@ -867,6 +869,13 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
 
   const transportState = createMemo(() => {
     if (!platform.remoteSessionID) return
+    if (global.servers.health[server.key]?.healthy === false)
+      return {
+        label: language.t("remote.desktop.offlineTitle"),
+        hint: language.t("remote.desktop.offlineDescription"),
+        class: "bg-v2-state-bg-danger text-v2-state-fg-danger",
+        dot: "bg-v2-state-fg-danger",
+      }
     const status = transport()
     if (status === "direct")
       return {

@@ -6,6 +6,7 @@ import { FileComponentProvider } from "@openctrlc/ui/context/file"
 import { Font } from "@openctrlc/ui/font"
 import { Splash } from "@openctrlc/ui/logo"
 import { ThemeProvider } from "@openctrlc/ui/theme/context"
+import { ButtonV2 } from "@openctrlc/ui/v2/button-v2"
 import { MetaProvider } from "@solidjs/meta"
 import {
   type BaseRouterProps,
@@ -497,7 +498,7 @@ export function AppBaseProviders(
             <ErrorBoundary
               fallback={(error) => {
                 Sentry.captureException(error)
-                return <ErrorPage error={error} />
+                return <AppErrorFallback error={error} />
               }}
             >
               <QueryProvider>
@@ -512,6 +513,28 @@ export function AppBaseProviders(
         </LanguageProvider>
       </ThemeProvider>
     </MetaProvider>
+  )
+}
+
+function AppErrorFallback(props: { error: unknown }) {
+  const platform = usePlatform()
+  const language = useLanguage()
+  if (!platform.remoteSessionID) return <ErrorPage error={props.error} />
+
+  return (
+    <main class="flex min-h-screen w-full items-center justify-center bg-v2-background-bg-base p-6" role="alert">
+      <section class="flex w-full max-w-lg flex-col items-center gap-4 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-6 text-center shadow-[var(--v2-elevation-raised)]">
+        <div class="flex flex-col gap-2">
+          <h1 class="text-16-medium text-v2-text-text-strong">{language.t("remote.route.loadFailedTitle")}</h1>
+          <p class="text-13-regular leading-5 text-v2-text-text-muted">
+            {language.t("remote.route.loadFailedDescription")}
+          </p>
+        </div>
+        <ButtonV2 variant="neutral" onClick={() => window.location.reload()}>
+          {language.t("remote.route.retry")}
+        </ButtonV2>
+      </section>
+    </main>
   )
 }
 
