@@ -23,7 +23,11 @@ function headers(server: ServerConnection.HttpBase) {
   }
 }
 
-async function probe(server: ServerConnection.HttpBase, fetch: typeof globalThis.fetch, path: string): Promise<ProbeResult> {
+async function probe(
+  server: ServerConnection.HttpBase,
+  fetch: typeof globalThis.fetch,
+  path: string,
+): Promise<ProbeResult> {
   try {
     const response = await fetch(new URL(path, server.url), {
       headers: headers(server),

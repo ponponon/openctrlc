@@ -51,7 +51,8 @@ describe("detectServerProtocol", () => {
   test("does not mistake two malformed health responses for an empty V2 server", async () => {
     const fetcher = mockFetch(async (input) => {
       const path = new URL(input instanceof Request ? input.url : input).pathname
-      if (path === "/global/health") return new Response("not-json", { headers: { "content-type": "application/json" } })
+      if (path === "/global/health")
+        return new Response("not-json", { headers: { "content-type": "application/json" } })
       return new Response("<html>relay fallback</html>", { headers: { "content-type": "text/html" } })
     })
 

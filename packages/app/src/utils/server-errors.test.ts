@@ -76,10 +76,7 @@ describe("formatServerError", () => {
     const error = new ServerProtocolDetectionError("invalid-json-response", "non-json-response")
 
     expect(formatServerError(error, language.t)).toBe(
-      [
-        "Servidor indisponivel",
-        "Health checks — v1: invalid-json-response, v2: non-json-response",
-      ].join("\n"),
+      ["Servidor indisponivel", "Health checks — v1: invalid-json-response, v2: non-json-response"].join("\n"),
     )
     expect(formatServerError(error, language.t)).not.toContain("SERVER_PROTOCOL_DETECTION_FAILED")
   })

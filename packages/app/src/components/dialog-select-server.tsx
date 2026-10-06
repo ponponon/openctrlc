@@ -266,7 +266,9 @@ export function useServerManagementController(options: { onSelect?: () => void; 
         return
       }
       if (!settings.general.newLayoutDesigns()) {
-        const protocol = await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch).catch(() => undefined)
+        const protocol = await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch).catch(
+          () => undefined,
+        )
         if (protocol !== "v1") {
           setStore("addServer", { error: language.t("dialog.server.add.error") })
           return
@@ -317,7 +319,9 @@ export function useServerManagementController(options: { onSelect?: () => void; 
         return
       }
       if (!settings.general.newLayoutDesigns()) {
-        const protocol = await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch).catch(() => undefined)
+        const protocol = await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch).catch(
+          () => undefined,
+        )
         if (protocol !== "v1") {
           setStore("editServer", { error: language.t("dialog.server.add.error") })
           return
