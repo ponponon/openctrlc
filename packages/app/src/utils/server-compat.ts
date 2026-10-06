@@ -198,7 +198,7 @@ export function createCompatibleApi(input: CompatibleInput): CompatibleApi {
       },
     },
   }
-  return routeApi(current, v1, input.current, v1, getProtocol, legacyRoutes)
+  return routeApi(current, v1, input.current, v1, getProtocol, legacyRoutes, sessionProtocols)
 }
 
 function routeApi<T extends object>(
@@ -208,6 +208,7 @@ function routeApi<T extends object>(
   legacyShape: object,
   protocol: () => ServerProtocol | undefined,
   legacyRoutes: Set<string>,
+  sessionProtocols: Map<string, ServerProtocol>,
   path: PropertyKey[] = [],
 ): T {
   const cache = new Map<PropertyKey, unknown>()
@@ -219,23 +220,36 @@ function routeApi<T extends object>(
           Promise.resolve().then(() => {
             const selectedProtocol = protocol()
             const routeID = JSON.stringify([...path, String(property)])
-            const useLegacy = selectedProtocol === "v1" || legacyRoutes.has(routeID)
+            const input = args[0]
+            const sessionID =
+              input &&
+              typeof input === "object" &&
+              "sessionID" in input &&
+              typeof input.sessionID === "string"
+                ? input.sessionID
+                : undefined
+            const sessionProtocol = typeof sessionID === "string" ? sessionProtocols.get(sessionID) : undefined
+            const useLegacy =
+              selectedProtocol === "v1" ||
+              sessionProtocol === "v1" ||
+              (!sessionID && legacyRoutes.has(routeID))
             const selected = useLegacy ? legacy : current
             const selectedParent = path.reduce((value, key) => Reflect.get(value, key), selected)
             const method = Reflect.get(selectedParent, property)
             if (typeof method !== "function") throw new Error(`API method unavailable: ${String(property)}`)
             const result = Promise.resolve(Reflect.apply(method, selectedParent, args))
-            if (useLegacy || selectedProtocol !== undefined) return result
+            if (useLegacy || sessionProtocol === "v2" || (!sessionID && selectedProtocol !== undefined)) return result
 
             return result.catch((error) => {
               const detected = protocol()
-              if (detected === "v2" || (detected !== "v1" && !isNotFoundError(error))) throw error
+              if (sessionProtocol === "v2" || (detected !== "v1" && !isNotFoundError(error))) throw error
               const fallbackParent = path.reduce((value, key) => Reflect.get(value, key), legacy)
               const fallback = Reflect.get(fallbackParent, property)
               if (typeof fallback !== "function") throw error
               return Promise.resolve(Reflect.apply(fallback, fallbackParent, args)).then(
                 (value) => {
-                  legacyRoutes.add(routeID)
+                  if (typeof sessionID === "string") sessionProtocols.set(sessionID, "v1")
+                  else legacyRoutes.add(routeID)
                   return value
                 },
                 (fallbackError) => {
@@ -253,7 +267,16 @@ function routeApi<T extends object>(
       if (legacySample === null || typeof legacySample !== "object") {
         throw new Error(`API namespace unavailable: ${String(property)}`)
       }
-      const nested = routeApi(current, legacy, sample, legacyShape, protocol, legacyRoutes, [...path, property])
+      const nested = routeApi(
+        current,
+        legacy,
+        sample,
+        legacyShape,
+        protocol,
+        legacyRoutes,
+        sessionProtocols,
+        [...path, property],
+      )
       cache.set(property, nested)
       return nested
     },

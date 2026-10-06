@@ -2892,7 +2892,7 @@ Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并�
 
 - `packages/app/src/context/server-sdk.tsx`：在同一服务连接及其目录 API 间共享会话协议判定。
 - `packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`：V2 首屏为空时回退读取 V1，并让后续分页、父消息读取、断线补同步沿用该会话的存储代际。
-- `packages/app/src/utils/server-compat.ts`：按会话把有 V1 历史的写操作路由回 V1 API；网络错误不会伪装成空历史。
+- `packages/app/src/utils/server-compat.ts`：按会话把已知 V1 历史会话的兼容 API 路由回 V1；协议未知时，接口 404 的回退结果只记在当前会话，避免污染同一服务中的 V2 会话。
 - `packages/app/src/context/server-session.test.ts`、`packages/app/src/utils/server-compat.test.ts`：覆盖旧历史回退、空 V2 会话只探测一次、旧会话提示路由，以及重连时以 V1 快照补齐而非回放错误的 V2 日志。
 - `packages/app` 的 `bun test src/context/server-session.test.ts src/utils/server-compat.test.ts` 与 `bun run typecheck`。
 
