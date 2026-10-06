@@ -1490,6 +1490,14 @@ Relay 在桌面短暂掉线时会对健康探测返回 5xx。协议结果被 SDK
 
 **仍未解决**：超时错误在修复后依然会在启动约 43 秒时到达错误边界，说明还有第三条路径让某个会话读取真的挂满 20 秒。下一步应沿着 `createCompatibleApi` 的 `sessionProtocol`（`input.current.message.list({ sessionID, limit: 1 })`）与协议判定路径继续定位，而不是回到模块图优化。
 
+后续实测已经把范围压缩到很窄，避免下一轮重复走弯路：
+
+- **协议判定用的那个端点本身也是快的**。在渲染层用带鉴权的裸 `fetch` 打 `/session/:id/message?limit=1`（这正是 `sessionProtocol` 调用的形状）只要 **2–3ms**，`limit=20` 也只要 3–14ms。所以「协议判定打了慢接口」这个假设可以排除。
+- **因此超时不出现在传输层，也不在协议判定所用的接口上**，而在这两者之间的 SDK 客户端里：`serverSDK.api.session.get(...)` / `input.current.message.list(...)` 这条 Effect 客户端路径。下一轮应直接给这条客户端路径打点（或在 `sessionRead` 里记录 **sessionID + 调用来源**，先确定到底是哪一次读取超时——目前连"哪个 session、哪条读取"都还没确认，这是最该先补的一步）。
+- 已知的同类前科都在这一带：`1d1cef8a`、`bf65eb94`、`ccdc5eb2` 以及"探测 Promise 被 SDK 上下文缓存后长期污染"的旧教训。优先怀疑启动瞬间某个被缓存的探测/协议 Promise 把所有请求挡在后面。
+
+还要注意一个操作陷阱：早期启动的 Electron 进程可能在 `dev:desktop` 完全起来之前就占着 9222，导致 CDP 探针连到**上一次的旧实例**，量到的数字与本次启动无关。开始测量前先确认 9222/5173 无监听者，并且核对日志里的 `app starting` 时间戳与本次启动一致。
+
 ## 测量 Electron 时 shell 不能带 ELECTRON_RUN_AS_NODE
 
 在沙箱/CI 一类 shell 里跑 `bun run dev:desktop`，如果环境里存在 `ELECTRON_RUN_AS_NODE=1`，Electron 二进制会退化成普通 Node 启动，于是 `import { BrowserWindow } from "electron"` 抛 `SyntaxError: The requested module 'electron' does not provide an export named 'BrowserWindow'`，而堆栈里显示的是 `Node.js v24.x` 而不是 Electron。这会把驱动环境的问题伪装成应用崩溃，极易被误判成代码坏了（本次就一度怀疑 `electron-dl` 和 `node_modules` 损坏）。以后启动 Electron 前先 `unset ELECTRON_RUN_AS_NODE`，并以堆栈里出现的是 Node.js 版本还是 Electron 来确认到底是谁在跑；不要在没确认这一点前动依赖树。
