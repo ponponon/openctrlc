@@ -15,12 +15,16 @@ if [ ! -f "$root/infra/remote-relay/compose.yaml" ]; then
   echo "Repository root not found: $root" >&2
   exit 1
 fi
-if [ "$mode" != full ] && [ "$mode" != --config-only ]; then
-  echo "Usage: sh infra/remote-relay/deploy.sh [--config-only]" >&2
+if [ "$mode" != full ] && [ "$mode" != --config-only ] && [ "$mode" != --allow-session-reset ]; then
+  echo "Usage: sh infra/remote-relay/deploy.sh [--config-only|--allow-session-reset]" >&2
   exit 2
 fi
 if [ "$mode" = --config-only ] && [ "$#" -ne 1 ]; then
   echo "Usage: sh infra/remote-relay/deploy.sh [--config-only]" >&2
+  exit 2
+fi
+if [ "$mode" = --allow-session-reset ] && [ "$#" -ne 1 ]; then
+  echo "Usage: sh infra/remote-relay/deploy.sh [--allow-session-reset]" >&2
   exit 2
 fi
 if [ "$mode" = full ] && ! command -v jq >/dev/null 2>&1; then
@@ -32,12 +36,64 @@ if [ -e "$relay" ] && [ ! -f "$managed_marker" ]; then
   echo "Refusing to use an existing unmarked directory: $relay" >&2
   exit 1
 fi
+if [ -L "$relay/data" ]; then
+  echo "Refusing a symlinked Relay data directory: $relay/data" >&2
+  exit 1
+fi
+if [ -L "$relay/data/remote-sessions.json" ]; then
+  echo "Refusing a symlinked Relay session state file: $relay/data/remote-sessions.json" >&2
+  exit 1
+fi
 
 if docker inspect openctrlc-remote-relay >/dev/null 2>&1; then
   label=$(docker inspect openctrlc-remote-relay --format '{{ index .Config.Labels "com.docker.compose.project" }}')
   if [ "$label" != "openctrlc-remote" ]; then
     echo "Container name openctrlc-remote-relay is already owned by another deployment" >&2
     exit 1
+  fi
+  if [ "$mode" != --allow-session-reset ] && [ "$(docker inspect openctrlc-remote-relay --format '{{.State.Running}}')" = true ]; then
+    current_health=$(curl --fail --silent --max-time 5 http://127.0.0.1:4097/healthz || true)
+    if [ -z "$current_health" ]; then
+      echo "Refusing full Relay deployment: the running Relay's session state cannot be verified. Inspect it or explicitly use --allow-session-reset after confirming the disruption." >&2
+      exit 1
+    fi
+    if ! current_sessions=$(printf '%s' "$current_health" | jq -er 'select(.ok == true) | .sessions | select(type == "number")' 2>/dev/null); then
+      echo "Refusing full Relay deployment: the running Relay returned an unrecognized health snapshot. Inspect it or explicitly use --allow-session-reset after confirming the disruption." >&2
+      exit 1
+    fi
+    if [ "$current_sessions" -gt 0 ]; then
+      persistence_ready=false
+      if [ -f "$relay/data/remote-sessions.json" ] && [ -s "$relay/data/remote-sessions.json" ] && \
+        printf '%s' "$current_health" | jq -e '.persistence.enabled == true and .persistence.errors == 0 and .persistence.pending == false' >/dev/null 2>&1; then
+        last_saved_at=$(printf '%s' "$current_health" | jq -er '.persistence.lastSavedAt | select(type == "number" and . > 0)' 2>/dev/null || true)
+        current_viewers=$(printf '%s' "$current_health" | jq -er '.usage.authorizedBrowsers | select(type == "number")' 2>/dev/null || true)
+        if [ -n "$last_saved_at" ] && [ -n "$current_viewers" ] && \
+          jq -e --argjson expected_sessions "$current_sessions" --argjson expected_viewers "$current_viewers" --argjson last_saved_at "$last_saved_at" '
+            .version == 1 and
+            .savedAt == $last_saved_at and
+            (.sessions | type == "array" and length == $expected_sessions) and
+            ([.sessions[].id] | unique | length == $expected_sessions) and
+            ([.sessions[] | select(
+              (.id | type == "string" and length > 0) and
+              (.hostToken | type == "string" and length > 0) and
+              (.joinToken | type == "string" and length > 0) and
+              (.viewers | type == "array")
+            )] | length == $expected_sessions) and
+            ([.sessions[].viewers[]? | select(
+              (.token | type == "string" and length > 0) and
+              (.id | type == "string" and length > 0) and
+              (.expiresAt | type == "number" and . > 0)
+            )] | length == $expected_viewers)
+            and ([.sessions[].viewers[]?.token] | unique | length == $expected_viewers)
+          ' "$relay/data/remote-sessions.json" >/dev/null 2>&1; then
+          persistence_ready=true
+        fi
+      fi
+      if [ "$persistence_ready" != true ]; then
+        echo "Refusing full Relay deployment: $current_sessions active session(s) have no verified persistent snapshot; restarting would lose their browser grants. Wait for the sessions to end or explicitly use --allow-session-reset after informing affected users." >&2
+        exit 1
+      fi
+    fi
   fi
 fi
 

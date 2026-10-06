@@ -51,6 +51,7 @@ type CompatibleInput = {
   current: ServerApi
   legacy: LegacyFor
   directory?: string
+  sessionProtocols?: Map<string, ServerProtocol>
 }
 
 function mime(uri: string) {
@@ -85,8 +86,100 @@ function sessionInfo(session: Session): SessionInfo {
 
 export function createCompatibleApi(input: CompatibleInput): CompatibleApi {
   const v1 = createV1Api(input)
+  const sessionProtocols = input.sessionProtocols ?? new Map<string, ServerProtocol>()
+  const sessionChecks = new Map<string, Promise<ServerProtocol>>()
+  const sessionProtocol = async (sessionID: string) => {
+    const known = sessionProtocols.get(sessionID)
+    if (known) return known
+    const pending = sessionChecks.get(sessionID)
+    if (pending) return pending
+
+    const check = (async () => {
+      const current = await input.current.message.list({ sessionID, limit: 1 })
+      if (current.data.length > 0) {
+        sessionProtocols.set(sessionID, "v2")
+        return "v2" as const
+      }
+
+      try {
+        const legacy = await input.legacy().session.messages({ sessionID, limit: 1 })
+        const protocol = (legacy.data ?? []).some((item) => !!item?.info?.id) ? "v1" : "v2"
+        sessionProtocols.set(sessionID, protocol)
+        return protocol
+      } catch (error) {
+        const cause = error instanceof Error && typeof error.cause === "object" ? error.cause : undefined
+        if (cause && "status" in cause && cause.status === 404) {
+          sessionProtocols.set(sessionID, "v2")
+          return "v2" as const
+        }
+        throw error
+      }
+    })()
+    sessionChecks.set(sessionID, check)
+    try {
+      return await check
+    } finally {
+      if (sessionChecks.get(sessionID) === check) sessionChecks.delete(sessionID)
+    }
+  }
+  const current: CompatibleApi = {
+    ...input.current,
+    session: {
+      ...input.current.session,
+      async prompt(value: Parameters<CompatibleApi["session"]["prompt"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.prompt(value)
+        return input.current.session.prompt(value)
+      },
+      async command(value: Parameters<CompatibleApi["session"]["command"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.command(value)
+        return input.current.session.command(value)
+      },
+      async shell(value: Parameters<CompatibleApi["session"]["shell"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.shell(value)
+        return input.current.session.shell(value)
+      },
+      async compact(value: Parameters<CompatibleApi["session"]["compact"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.compact(value)
+        return input.current.session.compact(value)
+      },
+      async rename(value: Parameters<CompatibleApi["session"]["rename"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.rename(value)
+        return input.current.session.rename(value)
+      },
+      async remove(value: Parameters<CompatibleApi["session"]["remove"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.remove(value)
+        return input.current.session.remove(value)
+      },
+      async fork(value: Parameters<CompatibleApi["session"]["fork"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.fork(value)
+        return input.current.session.fork(value)
+      },
+      async interrupt(value: Parameters<CompatibleApi["session"]["interrupt"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.interrupt(value)
+        return input.current.session.interrupt(value)
+      },
+      revert: {
+        ...input.current.session.revert,
+        async stage(value: Parameters<CompatibleApi["session"]["revert"]["stage"]>[0]) {
+          if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.revert.stage(value)
+          return input.current.session.revert.stage(value)
+        },
+        async clear(value: Parameters<CompatibleApi["session"]["revert"]["clear"]>[0]) {
+          if ((await sessionProtocol(value.sessionID)) === "v1") return v1.session.revert.clear(value)
+          return input.current.session.revert.clear(value)
+        },
+      },
+    },
+    permission: {
+      ...input.current.permission,
+      async reply(value: Parameters<CompatibleApi["permission"]["reply"]>[0]) {
+        if ((await sessionProtocol(value.sessionID)) === "v1") return v1.permission.reply(value)
+        return input.current.permission.reply(value)
+      },
+    },
+  }
   return lazyApi(
-    input.protocol.then((protocol) => (protocol === "v1" ? v1 : input.current)),
+    input.protocol.then((protocol) => (protocol === "v1" ? v1 : current)),
     input.current,
   )
 }

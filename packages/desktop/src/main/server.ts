@@ -1,6 +1,7 @@
+import { readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { app, utilityProcess } from "electron"
+import { app, safeStorage, utilityProcess } from "electron"
 import type { Details } from "electron"
 import { getLogger } from "./logging"
 import { getUserShell, loadShellEnv } from "./shell-env"
@@ -42,9 +43,82 @@ export function setDefaultServerUrl(url: string | null) {
   getStore().delete(DEFAULT_SERVER_URL_KEY)
 }
 
+const SHELL_ENV_CACHE_FILE = "shell-env-cache.json"
+const SHELL_ENV_CACHE_MS = 24 * 60 * 60 * 1000
+
+function readShellEnvCache(userDataPath: string) {
+  const path = join(userDataPath, SHELL_ENV_CACHE_FILE)
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"))
+  } catch {}
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null
+  const cache = parsed as { at?: unknown; encryptedEnv?: unknown; env?: unknown }
+  if (Object.hasOwn(cache, "env")) {
+    // Remove the plaintext cache written by earlier builds; it could contain API keys.
+    try {
+      unlinkSync(path)
+    } catch {}
+    return null
+  }
+  if (
+    typeof cache.at !== "number" ||
+    Date.now() - cache.at < 0 ||
+    Date.now() - cache.at >= SHELL_ENV_CACHE_MS ||
+    typeof cache.encryptedEnv !== "string" ||
+    !secureShellEnvStorageAvailable()
+  )
+    return null
+  try {
+    const env: unknown = JSON.parse(safeStorage.decryptString(Buffer.from(cache.encryptedEnv, "base64")))
+    if (!env || typeof env !== "object" || Array.isArray(env)) return null
+    const entries = Object.entries(env)
+    if (
+      entries.some(
+        ([key, value]) =>
+          !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || key === "__proto__" || typeof value !== "string",
+      )
+    )
+      return null
+    return Object.fromEntries(entries) as Record<string, string>
+  } catch {
+    return null
+  }
+}
+
+function writeShellEnvCache(userDataPath: string, env: Record<string, string>) {
+  if (!secureShellEnvStorageAvailable()) return
+  const path = join(userDataPath, SHELL_ENV_CACHE_FILE)
+  const temporary = `${path}.${process.pid}.tmp`
+  try {
+    const encryptedEnv = safeStorage.encryptString(JSON.stringify(env)).toString("base64")
+    writeFileSync(temporary, JSON.stringify({ at: Date.now(), encryptedEnv }), { mode: 0o600 })
+    renameSync(temporary, path)
+  } catch {}
+}
+
+function secureShellEnvStorageAvailable() {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return false
+    if (process.platform === "linux") {
+      const backend = safeStorage.getSelectedStorageBackend()
+      if (backend === "basic_text" || backend === "unknown") return false
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function preferAppEnv(userDataPath: string) {
+  const logger = getLogger()
+  const cached = readShellEnvCache(userDataPath)
+  if (cached) {
+    logger.log(`[server] Reusing cached shell environment (${Object.keys(cached).length} vars)`)
+  }
   const shell = process.platform === "win32" ? null : getUserShell()
-  const shellEnv = shell ? loadShellEnv(shell, getLogger()) : null
+  const shellEnv = cached ?? (shell ? loadShellEnv(shell, logger) : null)
+  if (shellEnv && !cached) writeShellEnvCache(userDataPath, shellEnv)
   Object.assign(process.env, {
     ...shellEnv,
     OPENCTRLC_EXPERIMENTAL_ICON_DISCOVERY: "true",

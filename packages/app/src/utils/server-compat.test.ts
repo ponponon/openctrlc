@@ -147,6 +147,57 @@ describe("createCompatibleApi", () => {
     expect(detections).toBe(1)
   })
 
+  test("routes a V2 server's legacy session prompt through the V1 session API", async () => {
+    const requests: Request[] = []
+    const legacyMessage = {
+      info: {
+        id: "msg_legacy",
+        sessionID: "ses_legacy",
+        role: "user",
+        time: { created: 1 },
+        agent: "build",
+        model: { providerID: "provider", modelID: "model" },
+      },
+      parts: [],
+    }
+    const fetcher = Object.assign(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const request = new Request(input, init)
+        requests.push(request)
+        const pathname = new URL(request.url).pathname
+        if (pathname === "/api/session/ses_legacy/message")
+          return Response.json({ data: [], parents: [], cursor: { previous: null, next: null } })
+        if (pathname === "/session/ses_legacy/message") return Response.json([legacyMessage])
+        if (pathname === "/session/ses_legacy/prompt_async") return new Response(undefined, { status: 204 })
+        return Response.json([])
+      },
+      { preconnect: globalThis.fetch.preconnect },
+    )
+    const server = { url: "http://localhost:4096" }
+    const sessionProtocols = new Map<string, "v1" | "v2">()
+    const api = createCompatibleApi({
+      protocol: Promise.resolve("v2"),
+      current: createApiForServer({ server, fetch: fetcher }),
+      legacy: (directory) => createSdkForServer({ server, fetch: fetcher, directory, throwOnError: true }),
+      sessionProtocols,
+    })
+
+    await api.session.prompt({
+      sessionID: "ses_legacy",
+      id: "msg_new",
+      text: "continue",
+      agent: "build",
+      model: { providerID: "provider", modelID: "model" },
+    })
+
+    expect(sessionProtocols.get("ses_legacy")).toBe("v1")
+    expect(requests.map((request) => [request.method, new URL(request.url).pathname])).toEqual([
+      ["GET", "/api/session/ses_legacy/message"],
+      ["GET", "/session/ses_legacy/message"],
+      ["POST", "/session/ses_legacy/prompt_async"],
+    ])
+  })
+
   /*
   test("keeps V2 session actions on the current API", async () => {
     const { api, requests } = setup("v2")

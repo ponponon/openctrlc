@@ -115,6 +115,7 @@ const stateFile = dataDir ? `${dataDir}/remote-sessions.json` : ""
 let persistTimer: ReturnType<typeof setTimeout> | undefined
 let persistDueAt = 0
 let lastPersistAttemptAt = 0
+let lastPersistedAt = 0
 let persistenceErrors = 0
 
 function schedulePersist(delay = 250) {
@@ -136,9 +137,10 @@ function schedulePersist(delay = 250) {
 function persistState() {
   if (!stateFile) return
   lastPersistAttemptAt = Date.now()
+  const savedAt = Date.now()
   const payload = {
     version: 1,
-    savedAt: Date.now(),
+    savedAt,
     sessions: [...sessions.values()].map((session) => ({
       id: session.id,
       hostToken: session.hostToken,
@@ -162,6 +164,7 @@ function persistState() {
     writeFileSync(tmp, JSON.stringify(payload), { mode: 0o600 })
     chmodSync(tmp, 0o600)
     renameSync(tmp, stateFile)
+    lastPersistedAt = savedAt
   } catch (error) {
     persistenceErrors += 1
     console.error("failed to persist relay sessions", error)
@@ -182,6 +185,8 @@ function restoreState() {
   }
   try {
     const parsed = JSON.parse(raw) as {
+      version?: number
+      savedAt?: number
       sessions?: Array<{
         id?: string
         hostToken?: string
@@ -199,7 +204,11 @@ function restoreState() {
         }>
       }>
     }
+    if (parsed.version !== 1 || !Array.isArray(parsed.sessions)) {
+      throw new Error("unsupported relay session snapshot")
+    }
     lastPersistAttemptAt = Date.now()
+    lastPersistedAt = typeof parsed.savedAt === "number" && Number.isFinite(parsed.savedAt) ? parsed.savedAt : 0
     const now = Date.now()
     for (const item of parsed.sessions ?? []) {
       if (!item.id || !item.hostToken || !item.joinToken) continue
@@ -249,7 +258,7 @@ const server = Bun.serve<SocketData>({
   maxRequestBodySize: maxRequestBytes + 1024,
   // Proxied app responses and SSE streams can pause longer than Bun's 10s default.
   idleTimeout: 120,
-  fetch(request, server) {
+  async fetch(request, server) {
     const url = new URL(request.url)
     if (url.pathname === "/healthz") return Response.json(healthSnapshot())
     if (request.method === "GET" && url.pathname === "/_remote/capabilities") {
@@ -290,9 +299,13 @@ const server = Bun.serve<SocketData>({
     if (request.method === "GET" && url.pathname === "/") {
       const viewer = sessionFor(request)
       if (!viewer) return htmlResponse(pairPage("home"))
+      if (!viewer.session.host || viewer.session.host.readyState !== 1) return htmlResponse(pairPage("disconnected"))
       if (!hasWorkspaceBootstrapCookie(request, viewer.session.id))
         return workspaceBootstrapResponse(viewer.session.workspace, "/", viewer.session.id)
-      return proxyRequest(viewer.session, request, viewer.token)
+      const response = await proxyRequest(viewer.session, request, viewer.token)
+      if (response.status === 503 && /desktop(?: is)? disconnected/i.test(await response.clone().text()))
+        return htmlResponse(pairPage("disconnected"))
+      return response
     }
 
     const viewer = sessionFor(request)
@@ -1068,14 +1081,20 @@ function validateWorkspaceSnapshot(value: unknown): RelayWorkspaceSnapshot | und
   const sessionInfo = (input.sessionInfo as unknown[] | undefined)?.flatMap((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return []
     const info = item as Record<string, unknown>
-    if (
-      typeof info.sessionID !== "string" ||
-      !sessionIDSet.has(info.sessionID) ||
-      typeof info.title !== "string" ||
-      info.title.length > 200
-    )
+    if (typeof info.sessionID !== "string" || !sessionIDSet.has(info.sessionID))
       return []
-    return [{ sessionID: info.sessionID, title: info.title }]
+    if (info.title !== undefined && (typeof info.title !== "string" || info.title.length > 200)) return []
+    if (info.protocol !== undefined && info.protocol !== "v1" && info.protocol !== "v2") return []
+    if (info.title === undefined && info.protocol === undefined) return []
+    const protocol: "v1" | "v2" | undefined =
+      info.protocol === "v1" || info.protocol === "v2" ? info.protocol : undefined
+    return [
+      {
+        sessionID: info.sessionID,
+        ...(typeof info.title === "string" ? { title: info.title } : {}),
+        ...(protocol ? { protocol } : {}),
+      },
+    ]
   })
   if (sessionInfo && input.sessionInfo && sessionInfo.length !== input.sessionInfo.length) return
   if (input.lastProject !== undefined && (typeof input.lastProject !== "string" || input.lastProject.length > 4096))
@@ -1345,7 +1364,12 @@ function healthSnapshot() {
     sessions: sessions.size,
     usage,
     traffic: totals,
-    persistence: { enabled: !!stateFile, errors: persistenceErrors },
+    persistence: {
+      enabled: !!stateFile,
+      errors: persistenceErrors,
+      lastSavedAt: lastPersistedAt,
+      pending: !!persistTimer,
+    },
     active,
   }
 }
@@ -1466,7 +1490,7 @@ function htmlResponse(page: ReturnType<typeof pairPage>) {
   })
 }
 
-function pairPage(mode: "pair" | "expired" | "home" | "already") {
+function pairPage(mode: "pair" | "expired" | "home" | "already" | "disconnected") {
   const copy = {
     en: {
       title: "OpenCtrlC Remote",
@@ -1483,6 +1507,8 @@ function pairPage(mode: "pair" | "expired" | "home" | "already") {
       expired: "This link has expired. Create a new QR code on your desktop.",
       already: "This browser is already approved. Opening your workspace…",
       error: "Could not connect. Check the connection and scan again.",
+      disconnected: "Your desktop is not connected to OpenCtrlC Relay. Make sure OpenCtrlC is running with mobile access enabled. This page will retry automatically.",
+      retry: "Try again now",
     },
     zh: {
       title: "OpenCtrlC 远程访问",
@@ -1499,6 +1525,8 @@ function pairPage(mode: "pair" | "expired" | "home" | "already") {
       expired: "此链接已过期，请在桌面端重新生成二维码。",
       already: "这台浏览器已授权，正在打开工作区…",
       error: "连接失败，请检查网络后重新扫码。",
+      disconnected: "桌面端尚未连接到 OpenCtrlC 中继。请确认 OpenCtrlC 正在运行且手机访问已开启，页面会自动重试。",
+      retry: "立即重试",
     },
     ja: {
       title: "OpenCtrlC リモート",
@@ -1515,6 +1543,8 @@ function pairPage(mode: "pair" | "expired" | "home" | "already") {
       expired: "このリンクの有効期限が切れました。デスクトップで新しい QR コードを作成してください。",
       already: "このブラウザーは承認済みです。ワークスペースを開いています…",
       error: "接続できません。ネットワークを確認して再度スキャンしてください。",
+      disconnected: "デスクトップが OpenCtrlC Relay に接続されていません。OpenCtrlC が起動し、モバイルアクセスが有効であることを確認してください。このページは自動的に再試行します。",
+      retry: "今すぐ再試行",
     },
     ko: {
       title: "OpenCtrlC 원격 액세스",
@@ -1531,13 +1561,15 @@ function pairPage(mode: "pair" | "expired" | "home" | "already") {
       expired: "링크가 만료되었습니다. 데스크톱에서 새 QR 코드를 만드세요.",
       already: "이 브라우저는 이미 승인되어 있습니다. 작업 공간을 여는 중…",
       error: "연결할 수 없습니다. 네트워크를 확인하고 다시 스캔하세요.",
+      disconnected: "데스크톱이 OpenCtrlC Relay에 연결되어 있지 않습니다. OpenCtrlC가 실행 중이고 모바일 액세스가 켜져 있는지 확인하세요. 이 페이지는 자동으로 다시 시도합니다.",
+      retry: "지금 다시 시도",
     },
   }
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))))
   const socketOrigin = `${publicURL.protocol === "https:" ? "wss:" : "ws:"}//${publicURL.host}`
   return {
     policy: `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'self' ${socketOrigin}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
-    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status" role="status" aria-live="polite"></div></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="already"){show(t.already,true);setTimeout(()=>location.replace("/"),400)}else if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);let token=location.hash.slice(1);try{const k="openctrlc.join-token."+sessionID;if(token)sessionStorage.setItem(k,token);else token=sessionStorage.getItem(k)||""}catch{};history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.connecting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));let deliveryTimeout;const handshakeTimeout=setTimeout(()=>show(t.connectingSlow,true),8000);socket.onopen=()=>{show(t.requesting,true);socket.send(JSON.stringify({type:"pair",joinToken:token}))};socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting"){clearTimeout(handshakeTimeout);show(t.sent,true);deliveryTimeout=setTimeout(()=>show(t.deliverySlow,true),8000)}if(data.type==="pair.delivered"){clearTimeout(deliveryTimeout);show(t.waiting,true)}if(data.type==="pair.approved"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.denied)}if(data.type==="pair.error"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.error)}};socket.onclose=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);if(!completed)show(t.error)};socket.onerror=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);show(t.error)}}}</script></html>`,
+    body: `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>OpenCtrlC Remote</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f6f6f4;color:#222;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(92vw,420px);padding:32px 26px;border:1px solid #e6e5e1;border-radius:18px;background:white;text-align:center;box-shadow:0 8px 32px #0000000a}.mark{display:grid;place-items:center;margin:0 auto 18px;width:44px;height:44px;border-radius:13px;background:#f2f2ef;font-size:22px}.title{margin:0 0 10px;font-size:20px}.hint{margin:0;color:#666;line-height:1.55}.status{margin-top:24px;min-height:24px;color:#555;line-height:1.55}.status.disconnected{color:#8a4b08}.retry{display:inline-block;margin-top:20px;padding:10px 16px;border:1px solid #d9d8d4;border-radius:10px;color:#222;text-decoration:none;font-weight:600}.retry:hover{background:#f6f6f4}.retry:focus-visible{outline:2px solid #555;outline-offset:3px}[hidden]{display:none!important}.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;border:2px solid #ddd;border-top-color:#555;border-radius:50%;vertical-align:-3px;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style><main class="card"><div class="mark">↗</div><h1 class="title">OpenCtrlC Remote</h1><p class="hint"></p><div class="status" role="status" aria-live="polite"></div><a class="retry" href="/" hidden></a></main><script nonce="${nonce}">const copy=${JSON.stringify(copy)};const mode=${JSON.stringify(mode)};const lang=(navigator.language||"en").toLowerCase();const locale=lang.startsWith("zh")?"zh":lang.startsWith("ja")?"ja":lang.startsWith("ko")?"ko":"en";const t=copy[locale];document.documentElement.lang=locale;document.querySelector(".title").textContent=t.title;document.querySelector(".hint").textContent=mode==="home"?t.hint:"";const status=document.querySelector(".status");const show=(text,loading=false)=>{status.textContent="";if(loading){const s=document.createElement("span");s.className="spinner";status.append(s)}status.append(document.createTextNode(text))};let completed=false;if(mode==="disconnected"){status.classList.add("disconnected");show(t.disconnected);const retry=document.querySelector(".retry");retry.textContent=t.retry;retry.hidden=false;setTimeout(()=>location.reload(),5000)}else if(mode==="already"){show(t.already,true);setTimeout(()=>location.replace("/"),400)}else if(mode==="expired"){show(t.expired);history.replaceState(null,"","/")}else if(mode==="pair"){const sessionID=location.pathname.slice("/join/".length);let token=location.hash.slice(1);try{const k="openctrlc.join-token."+sessionID;if(token)sessionStorage.setItem(k,token);else token=sessionStorage.getItem(k)||""}catch{};history.replaceState(null,"",location.pathname);if(!/^[A-Za-z0-9_-]{16}$/.test(sessionID)||!/^[A-Za-z0-9_-]{43}$/.test(token)){completed=true;show(t.expired)}else{show(t.connecting,true);const socket=new WebSocket(${JSON.stringify(socketOrigin)}+"/v1/viewer?session="+encodeURIComponent(sessionID));let deliveryTimeout;const handshakeTimeout=setTimeout(()=>show(t.connectingSlow,true),8000);socket.onopen=()=>{show(t.requesting,true);socket.send(JSON.stringify({type:"pair",joinToken:token}))};socket.onmessage=async(event)=>{let data;try{data=JSON.parse(event.data)}catch{return}if(data.type==="pair.waiting"){clearTimeout(handshakeTimeout);show(t.sent,true);deliveryTimeout=setTimeout(()=>show(t.deliverySlow,true),8000)}if(data.type==="pair.delivered"){clearTimeout(deliveryTimeout);show(t.waiting,true)}if(data.type==="pair.approved"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.approved,true);try{if(!/^[A-Za-z0-9_-]{43}$/.test(data.viewerToken))throw new Error();const response=await fetch("/_remote/claim",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({viewerToken:data.viewerToken})});if(!response.ok)throw new Error();location.replace("/")}catch{show(t.error)}}if(data.type==="pair.denied"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.denied)}if(data.type==="pair.error"){clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);completed=true;show(t.error)}};socket.onclose=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);if(!completed)show(t.error)};socket.onerror=()=>{clearTimeout(handshakeTimeout);clearTimeout(deliveryTimeout);show(t.error)}}}</script></html>`,
   }
 }
 

@@ -32,7 +32,7 @@ export type RemoteWorkspaceSnapshot = {
   projects: Array<{ worktree: string; expanded: boolean }>
   lastProject?: string
   sessionIDs: string[]
-  sessionInfo?: Array<{ sessionID: string; title: string }>
+  sessionInfo?: Array<{ sessionID: string; title?: string; protocol?: "v1" | "v2" }>
   activeSessionID?: string
   hostName?: string
 }
@@ -151,6 +151,9 @@ type PlatformBase = {
 
   /** Pin each browser request to the remote desktop selected when this tab opened. */
   remoteSessionID?: string
+
+  /** Workspace metadata restored by a remote browser before server contexts are created. */
+  remoteWorkspace?: RemoteWorkspaceSnapshot
 
   /** Current browser-to-desktop transport used by a remote session. */
   remoteTransport?: RemoteTransportPlatform

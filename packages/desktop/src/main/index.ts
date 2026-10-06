@@ -218,8 +218,6 @@ const main = Effect.gen(function* () {
     return
   }
 
-  const shellEnv = preferAppEnv(app.getPath("userData"))
-
   app.on("second-instance", (_event: Event, argv: string[]) => {
     const urls = argv.filter((arg: string) => arg.startsWith(`${Brand.urlScheme}://`))
     if (urls.length) {
@@ -269,6 +267,8 @@ const main = Effect.gen(function* () {
   }
 
   yield* Effect.promise(() => app.whenReady())
+  logger.log("app ready")
+  const shellEnv = preferAppEnv(app.getPath("userData"))
 
   if (!TEST_ONBOARDING) migrate()
   yield* Effect.promise(() => cleanupStoreFiles(app.getPath("userData"))).pipe(
@@ -430,8 +430,9 @@ const main = Effect.gen(function* () {
     logger.log("loading task finished")
   }).pipe(forwardInitializationFailure(serverReady), Effect.forkChild)
 
-  yield* Fiber.await(loadingTask)
-
+  // Show the window before the sidecar finishes starting. The renderer already
+  // gates on awaitInitialization/server health; blocking window creation here
+  // made a cold start look like a hung blank desktop.
   app.on("window-all-closed", () => {
     if (process.platform === "darwin") return
     app.quit()
@@ -441,6 +442,7 @@ const main = Effect.gen(function* () {
     restoreMainWindows()
   })
 
+  logger.log("restoring windows")
   const windows = restoreMainWindows()
   if (windows.length) createMenu(menuDeps)
   createDesktopTray({
@@ -454,6 +456,9 @@ const main = Effect.gen(function* () {
     },
   })
   app.once("will-quit", destroyDesktopTray)
+
+  yield* Fiber.await(loadingTask)
+  logger.log("startup sequence complete")
 })
 
 Effect.runFork(main)

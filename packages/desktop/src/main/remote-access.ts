@@ -147,11 +147,16 @@ export class RemoteAccessService {
                   item &&
                   typeof item.sessionID === "string" &&
                   typeof item.title === "string" &&
-                  item.title.length <= 200,
+                  item.title.length <= 200 &&
+                  (item.protocol === undefined || item.protocol === "v1" || item.protocol === "v2"),
               )
               .filter((item) => snapshot.sessionIDs.includes(item.sessionID))
               .slice(0, 128)
-              .map((item) => ({ sessionID: item.sessionID, title: item.title })),
+              .map((item) => ({
+                sessionID: item.sessionID,
+                ...(typeof item.title === "string" ? { title: item.title } : {}),
+                ...(item.protocol === "v1" || item.protocol === "v2" ? { protocol: item.protocol } : {}),
+              })),
           }
         : {}),
       ...(typeof snapshot.activeSessionID === "string" && snapshot.activeSessionID.length <= 200

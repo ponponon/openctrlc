@@ -12,6 +12,7 @@ import { createRefCountMap } from "@/utils/refcount"
 import { useGlobal } from "./global"
 import { ServerScope } from "@/utils/server-scope"
 import { detectServerProtocol, type ServerProtocol } from "@/utils/server-protocol"
+import { remoteSessionProtocols } from "@/utils/remote-workspace"
 import { createCompatibleApi, type CompatibleApi } from "@/utils/server-compat"
 
 const isAbortError = (error: unknown) =>
@@ -175,6 +176,7 @@ type ServerSDKBase = {
   server: ServerConnection.Any
   scope: ServerScope
   protocol: Promise<ServerProtocol>
+  sessionProtocols: Map<string, ServerProtocol>
   protocolKind: Accessor<ServerProtocol | undefined>
   url: string
   client: ReturnType<typeof createSdkForServer>
@@ -222,6 +224,7 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
     server: server.http,
   })
   const protocol = detectServerProtocol(server.http, platform.fetch ?? globalThis.fetch)
+  const sessionProtocols = remoteSessionProtocols(platform.remoteWorkspace)
   const [protocolKind] = createResource(
     () => protocol,
     (value) => value,
@@ -419,12 +422,13 @@ function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerS
       throwOnError: true,
       directory,
     })
-  const api = createCompatibleApi({ protocol, current: currentApi, legacy })
+  const api = createCompatibleApi({ protocol, current: currentApi, legacy, sessionProtocols })
 
   return {
     server,
     scope,
     protocol,
+    sessionProtocols,
     protocolKind,
     url: server.http.url,
     client: sdk,
@@ -518,6 +522,7 @@ function createDirSdkContext(directory: string, serverSDK: ServerSDKBase) {
       current: serverSDK.currentApi,
       legacy: (next) => serverSDK.createClient({ directory: next ?? directory, throwOnError: true }),
       directory,
+      sessionProtocols: serverSDK.sessionProtocols,
     }),
     event: emitter,
     get url() {

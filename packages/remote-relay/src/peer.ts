@@ -44,6 +44,8 @@ export class PeerChannel {
   #closed = false
   #timer: ReturnType<typeof setTimeout>
   #routeTimer?: ReturnType<typeof setInterval>
+  #routeDiscovered = false
+  #routeReportInFlight = false
   #signals = Promise.resolve()
   #writes = Promise.resolve(true)
   #queuedBytes = 0
@@ -184,7 +186,7 @@ export class PeerChannel {
       clearTimeout(this.#timer)
       this.options.ready()
       this.#reportRoute()
-      this.#routeTimer = setInterval(() => this.#reportRoute(), 15_000)
+      this.#routeTimer = setInterval(() => this.#reportRoute(), 1_000)
     }
     channel.onclose = () => this.close()
     channel.onerror = () => this.close()
@@ -235,13 +237,19 @@ export class PeerChannel {
 
   #reportRoute() {
     const route = this.options.route
-    if (this.#closed || this.#channel?.readyState !== "open" || !route) return
+    if (this.#closed || this.#channel?.readyState !== "open" || !route || this.#routeReportInFlight) return
+    this.#routeReportInFlight = true
     void this.#connection
       .getStats()
       .then((stats) => {
         if (this.#closed || this.#channel?.readyState !== "open") return
         const selected = selectedPeerRouteReport(stats)
         if (!selected) return
+        if (!this.#routeDiscovered) {
+          this.#routeDiscovered = true
+          if (this.#routeTimer) clearInterval(this.#routeTimer)
+          this.#routeTimer = setInterval(() => this.#reportRoute(), 15_000)
+        }
         if (selected.bytesSent !== undefined && selected.bytesReceived !== undefined) {
           const previous = this.#pairCounters.get(selected.pairID) ?? { bytesSent: 0, bytesReceived: 0 }
           const bytesSent =
@@ -260,5 +268,8 @@ export class PeerChannel {
         route(selected.route, { ...this.#routeBytes })
       })
       .catch(() => undefined)
+      .finally(() => {
+        this.#routeReportInFlight = false
+      })
   }
 }

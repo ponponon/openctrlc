@@ -48,6 +48,37 @@ describe("detectServerProtocol", () => {
     expect(await detectServerProtocol(server, fetcher)).toBe("v1")
   })
 
+  test("retries transient Relay disconnects before resolving the protocol", async () => {
+    const calls = new Map<string, number>()
+    const fetcher = mockFetch(async (input) => {
+      const path = new URL(input instanceof Request ? input.url : input).pathname
+      const count = (calls.get(path) ?? 0) + 1
+      calls.set(path, count)
+      if (count === 1) return json({ error: "Desktop is disconnected" }, 503)
+      if (path === "/global/health") return json({}, 404)
+      return json({ healthy: true, version: "2.0.0", pid: 123 })
+    })
+
+    expect(await detectServerProtocol(server, fetcher)).toBe("v2")
+    expect(calls).toEqual(new Map([["/global/health", 2], ["/api/health", 2]]))
+  })
+
+  test("bounds repeated transient protocol failures to two retries", async () => {
+    const calls = new Map<string, number>()
+    const fetcher = mockFetch(async (input) => {
+      const path = new URL(input instanceof Request ? input.url : input).pathname
+      calls.set(path, (calls.get(path) ?? 0) + 1)
+      return json({ error: "Desktop is disconnected" }, 503)
+    })
+
+    await expect(detectServerProtocol(server, fetcher)).rejects.toMatchObject({
+      name: "ServerProtocolDetectionError",
+      v1Probe: "http-503",
+      v2Probe: "http-503",
+    })
+    expect(calls).toEqual(new Map([["/global/health", 3], ["/api/health", 3]]))
+  })
+
   test("does not mistake two malformed health responses for an empty V2 server", async () => {
     const fetcher = mockFetch(async (input) => {
       const path = new URL(input instanceof Request ? input.url : input).pathname

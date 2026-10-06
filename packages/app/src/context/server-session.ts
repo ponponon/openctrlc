@@ -192,7 +192,11 @@ function reconcileFetched<T extends { id: string }>(
   return options.compare ? items.sort(options.compare) : items
 }
 
-type ServerSessionOptions = { retry?: typeof retry; protocol?: Promise<"v1" | "v2"> }
+type ServerSessionOptions = {
+  retry?: typeof retry
+  protocol?: Promise<"v1" | "v2">
+  sessionProtocols?: Map<string, "v1" | "v2">
+}
 
 export function createServerSession(
   client: OpencodeClient,
@@ -579,7 +583,26 @@ export function createServerSession(
     )
 
   const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
-    if (messageApi && (await options?.protocol) !== "v1") {
+    const fetchLegacyPage = async () => {
+      const response = await (options?.retry ?? retry)(() => {
+        onAttempt?.()
+        return client.session.messages({ sessionID, limit, before })
+      })
+      const items = (response.data ?? []).filter((item) => !!item?.info?.id)
+      return {
+        session: items.map((item) => cleanMessage(item.info)).sort(compareMessages),
+        part: items.map((item) => ({
+          id: item.info.id,
+          part: item.parts.filter((part) => !!part?.id).sort((a, b) => cmp(a.id, b.id)),
+        })),
+        source: legacyMessageSource(items),
+        sourceMode: before ? ("older" as const) : ("latest" as const),
+        cursor: response.response.headers.get("x-next-cursor") ?? undefined,
+        complete: !response.response.headers.get("x-next-cursor"),
+      }
+    }
+
+    if (messageApi && (await options?.protocol) !== "v1" && options?.sessionProtocols?.get(sessionID) !== "v1") {
       const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
         (options?.retry ?? retry)(() => {
           onAttempt?.()
@@ -588,6 +611,24 @@ export function createServerSession(
             .then((response) => response as unknown as CurrentSessionMessagePage)
         })
       const first = await request(before)
+      if (first.data.length > 0) options?.sessionProtocols?.set(sessionID, "v2")
+      if (
+        first.data.length === 0 &&
+        !before &&
+        options?.sessionProtocols &&
+        options.sessionProtocols.get(sessionID) !== "v2"
+      ) {
+        const legacy = await fetchLegacyPage().catch((error) => {
+          const cause = error instanceof Error && typeof error.cause === "object" ? error.cause : undefined
+          if (cause && "status" in cause && cause.status === 404) return undefined
+          throw error
+        })
+        if (legacy?.session.length) {
+          options?.sessionProtocols?.set(sessionID, "v1")
+          return legacy
+        }
+        options?.sessionProtocols?.set(sessionID, "v2")
+      }
       const pages = [first]
       while (pages.at(-1)?.cursor.next && needsOlderTurnRoot(pages.flatMap((page) => page.data).toReversed())) {
         const response = await request(pages.at(-1)!.cursor.next ?? undefined)
@@ -613,26 +654,15 @@ export function createServerSession(
         complete: !response.cursor.next,
       }
     }
-    const response = await (options?.retry ?? retry)(() => {
-      onAttempt?.()
-      return client.session.messages({ sessionID, limit, before })
-    })
-    const items = (response.data ?? []).filter((item) => !!item?.info?.id)
-    return {
-      session: items.map((item) => cleanMessage(item.info)).sort(compareMessages),
-      part: items.map((item) => ({
-        id: item.info.id,
-        part: item.parts.filter((part) => !!part?.id).sort((a, b) => cmp(a.id, b.id)),
-      })),
-      source: legacyMessageSource(items),
-      sourceMode: before ? ("older" as const) : ("latest" as const),
-      cursor: response.response.headers.get("x-next-cursor") ?? undefined,
-      complete: !response.response.headers.get("x-next-cursor"),
-    }
+    return fetchLegacyPage()
   }
 
   const fetchMessage = async (sessionID: string, messageID: string, onAttempt?: () => void) => {
-    if (sessionApi && (await options?.protocol) !== "v1") {
+    if (
+      sessionApi &&
+      (await options?.protocol) !== "v1" &&
+      options?.sessionProtocols?.get(sessionID) !== "v1"
+    ) {
       const response = await (options?.retry ?? retry)(() => {
         onAttempt?.()
         return sessionApi.message({ sessionID, messageID })
@@ -936,6 +966,7 @@ export function createServerSession(
     if (start === undefined) return false
     if (!sessionApi?.log) return false
     if ((await options?.protocol) === "v1") return false
+    if (options?.sessionProtocols?.get(sessionID) === "v1") return false
     try {
       let after = start
       // Guard against a runaway more:true loop from a buggy server.

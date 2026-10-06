@@ -425,6 +425,68 @@ describe("server session", () => {
     expect(store.data.session_message.root.map((message) => message.id)).toEqual([user.id, assistant.id])
   })
 
+  test("falls back to V1 history when a V2 server has no projected messages", async () => {
+    const user = userMessage("legacy-user", { sessionID: "root", time: { created: 1 } })
+    const legacy = messageClient(response([{ info: user, parts: [textPart(user.id, { sessionID: "root" })] }]))
+    const sessionProtocols = new Map<string, "v1" | "v2">()
+    const messageApi = {
+      list: async () => ({ data: [], parents: [], cursor: { previous: null, next: null } }),
+    } as unknown as MessageApi
+    const store = createServerSession(legacy, {} as SessionApi, messageApi, {
+      protocol: Promise.resolve("v2"),
+      sessionProtocols,
+    })
+    store.remember(session("root"))
+
+    await store.sync("root")
+
+    expect(sessionProtocols.get("root")).toBe("v1")
+    expect(store.data.message.root.map((message) => message.id)).toEqual([user.id])
+    expect(store.data.session_message.root).toMatchObject([{ id: user.id, type: "user", text: "text" }])
+    expect(legacy.requests).toEqual([{ sessionID: "root", limit: 20, before: undefined }])
+  })
+
+  test("uses a restored V1 protocol hint without probing the V2 message endpoint", async () => {
+    const user = userMessage("legacy-user", { sessionID: "root", time: { created: 1 } })
+    const legacy = messageClient(response([{ info: user, parts: [textPart(user.id, { sessionID: "root" })] }]))
+    const messageApi = {
+      list: () => {
+        throw new Error("V2 message endpoint called for restored V1 history")
+      },
+    } as unknown as MessageApi
+    const sessionProtocols = new Map<string, "v1" | "v2">([["root", "v1"]])
+    const store = createServerSession(legacy, {} as SessionApi, messageApi, {
+      protocol: Promise.resolve("v2"),
+      sessionProtocols,
+    })
+    store.remember(session("root"))
+
+    await store.sync("root")
+
+    expect(legacy.requests).toEqual([{ sessionID: "root", limit: 20, before: undefined }])
+    expect(store.data.session_message.root).toMatchObject([{ id: user.id, type: "user", text: "text" }])
+  })
+
+  test("remembers an empty V2 session after checking its legacy history once", async () => {
+    const legacy = messageClient(response())
+    const sessionProtocols = new Map<string, "v1" | "v2">()
+    const messageApi = {
+      list: async () => ({ data: [], parents: [], cursor: { previous: null, next: null } }),
+    } as unknown as MessageApi
+    const sessionApi = { get: async () => session("root") } as unknown as SessionApi
+    const store = createServerSession(legacy, sessionApi, messageApi, {
+      protocol: Promise.resolve("v2"),
+      sessionProtocols,
+    })
+    store.remember(session("root"))
+
+    await store.sync("root")
+    await store.sync("root", { force: true })
+
+    expect(sessionProtocols.get("root")).toBe("v2")
+    expect(legacy.requests).toEqual([{ sessionID: "root", limit: 20, before: undefined }])
+  })
+
   test("backfills an assistant-only initial page through its user root", async () => {
     const user = userMessage("message-1")
     const assistants = [assistantMessage("message-2", user.id), assistantMessage("message-3", user.id)]
@@ -2028,5 +2090,50 @@ describe("server session", () => {
     expect(result).toEqual({ sessionID: "root", replayed: true })
     expect(logCalls).toHaveLength(1)
     expect(requests).toHaveLength(1)
+  })
+
+  test("snapshot-catches up V1 history instead of replaying the V2 message log", async () => {
+    const message = userMessage("message-1", { sessionID: "root" })
+    const client = messageClient(
+      response([{ info: message, parts: [textPart(message.id, { text: "before" })] }]),
+      response([{ info: message, parts: [textPart(message.id, { text: "after" })] }]),
+    )
+    const logCalls: unknown[] = []
+    const sessionApi = {
+      async get() {
+        return session("root")
+      },
+      log(input: unknown) {
+        logCalls.push(input)
+        return (async function* () {})()
+      },
+    } as unknown as SessionApi
+    const sessionProtocols = new Map<string, "v1" | "v2">([["root", "v1"]])
+    const messageApi = {
+      list: () => {
+        throw new Error("V2 message endpoint called for V1 history")
+      },
+    } as unknown as MessageApi
+    const store = createServerSession(client, sessionApi, messageApi, {
+      protocol: Promise.resolve("v2"),
+      sessionProtocols,
+    })
+    store.remember(session("root"))
+    await store.sync("root")
+    store.applyV2({
+      id: "evt-5",
+      type: "session.text.ended",
+      created: 10,
+      data: { sessionID: "root", assistantMessageID: "a", textID: "t", text: "x" },
+      durable: { aggregateID: "root", seq: 5, version: 1 },
+    } as never)
+    store.apply({ type: "session.status", properties: { sessionID: "root", status: { type: "busy" } } })
+
+    const result = await store.catchUpSession("root")
+
+    expect(result).toEqual({ sessionID: "root", replayed: false })
+    expect(logCalls).toEqual([])
+    expect(client.requests).toHaveLength(2)
+    expect(store.data.part[message.id]).toEqual([textPart(message.id, { text: "after" })])
   })
 })

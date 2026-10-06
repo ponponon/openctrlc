@@ -2618,7 +2618,7 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 - Relay 从 `OPENCTRLC_STUN_URLS` 读取最多 8 个 STUN 地址，从 `OPENCTRLC_TURN_URLS` 和 `OPENCTRLC_TURN_SHARED_SECRET` 读取 Coturn 配置；无默认第三方 ICE 地址，不请求外部凭据 API。
 - Coturn 凭据使用 `expiry:sessionID` 用户名和 HMAC-SHA1 密码，12 小时后过期；Relay `/healthz` 报告 STUN/TURN 配置状态及当前 P2P 路径连接数，不暴露共享密钥，也不代表 UDP 端口可达。
 - DataChannel 建立后读取选中的 ICE candidate pair，标题栏将 WebRTC 直连和 TURN 中继分开显示，帮助识别中继用量。
-- 已连接桌面每 15 秒向 Relay 上报其 WebRTC stats 选中的路径；`usage.activeP2PDirectPeers` 与 `usage.activeP2PTurnPeers` 汇总当前直连和 TURN peer 数，peer 关闭、桌面断开或会话删除时立即清理。`infra/remote-relay/monitor/relay-watch.sh` 同步输出这两个计数。
+- DataChannel 刚连接时每秒检查 WebRTC stats，首次识别到选中线路后切换为每 15 秒上报；因此桌面线路状态和 Relay 的直连/TURN peer 数不必等满一个采样周期。`usage.activeP2PDirectPeers` 与 `usage.activeP2PTurnPeers` 汇总当前直连和 TURN peer 数，peer 关闭、桌面断开或会话删除时立即清理。`infra/remote-relay/monitor/relay-watch.sh` 同步输出这两个计数。
 - `traffic.p2pDirectBytes` 与 `traffic.p2pTurnBytes` 累加桌面端选中 candidate pair 的 `bytesSent + bytesReceived`，监控日志记录小时增量并对异常 TURN 端点字节趋势告警。按 W3C 定义，它们只计 payload，不含包头、padding 或 ICE 检查；TURN 只计桌面端看到的一侧，不等于 TURN 服务端网卡总量，也不是账单或限流口径。实际出口要查服务器网卡与云厂商账单。
 - 路径计数不包含正在协商但尚未选出 candidate pair 的 peer，也不代表用户人数；旧的线上 Relay 不会自动出现这些字段，需部署新版本后才可观测。
 - `infra/remote-relay/README.md` 记录自建 Coturn 的服务端私密 `.env` 配置与端口验收边界。
@@ -2717,7 +2717,7 @@ V2 消息页最多返回 200 条记录；当页内引用了不在本页的父消
 
 ## 自托管 ICE 配置与 Coturn 短时凭据
 
-P2P 的 STUN/TURN 地址由 Relay 部署环境配置，不硬编码公共 STUN，也不调用外部 TURN 凭据 API。Relay 使用共享密钥按 Coturn REST 认证格式为每个会话生成 12 小时 HMAC-SHA1 凭据；浏览器和桌面只收到短时用户名/凭据，共享密钥留在 Relay。凭据按 Relay 会话缓存并合并并发请求，提前 5 分钟刷新；创建失败冷却 30 秒，Relay 删除会话时清理缓存。没有 ICE 服务时仍尝试本地候选，12 秒未建立后回退现有 HTTPS Relay。2026-10-06 线上 Relay 健康接口显示 STUN/TURN 均未配置，所以工作区实现尚未启用公网跨网直连；上线前必须配置自管 ICE 服务并做大陆手机与美国网络实测。
+P2P 的 STUN/TURN 地址由 Relay 部署环境配置，不硬编码公共 STUN，也不调用外部 TURN 凭据 API。Relay 使用共享密钥按 Coturn REST 认证格式为每个会话生成 12 小时 HMAC-SHA1 凭据；浏览器和桌面只收到短时用户名/凭据，共享密钥留在 Relay。凭据按 Relay 会话缓存并合并并发请求，提前 5 分钟刷新；创建失败冷却 30 秒，Relay 删除会话时清理缓存。没有 ICE 服务时跳过 P2P 协商并立即使用现有 HTTPS Relay；只有检测到可用 ICE 配置后，才等待最多 12 秒进行协商，超时后回退 HTTPS Relay。2026-10-06 线上 Relay 健康接口显示 STUN/TURN 均未配置，所以工作区实现尚未启用公网跨网直连；上线前必须配置自管 ICE 服务并做大陆手机与美国网络实测。
 
 ### 验证方式
 
@@ -2753,11 +2753,18 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 - 生产环境未开启此 profile；修改仓库配置不会自行变更服务器防火墙或重启 Relay。
 - STUN 不承载工作区数据；当直接连接失败且后续未配置 TURN 时，客户端仍使用现有 HTTPS Relay。
 
+## Relay 升级前保护内存中的会话
+
+- 完整 Relay 部署前读取现有私有健康快照；运行中的服务如果存在活跃会话，但健康状态没有持久化成功或 `remote-sessions.json` 不存在/无效，默认拒绝替换容器，避免静默撤销浏览器授权。
+- 只有明确传入 `--allow-session-reset` 才能继续有损升级；维护者应先通知受影响用户重新配对。`--config-only` 仅重载 OpenResty，不重启 Relay。
+- `infra/remote-relay/deploy.sh` 验证保护条件，`infra/remote-relay/README.md` 说明维护窗口与重配对影响。
+
 ## 远程协议探测失败时显示错误而不是空会话
 
 - V1 与 V2 健康接口并行探测，保留两代接口都存在时优先兼容 V1 的行为。
 - 任一响应可识别时按已验证的接口选择协议；两端都超时、返回非 JSON、JSON 无效、HTTP 错误或不含已知标识时，拒绝推断 V2。
 - 失败会携带不含请求 URL、Cookie 或正文的两个探测结果代码，错误页和请求错误提示显示服务不可用状态，避免旧会话因协议误判而被展示为空。
+- 探测只对超时、网络错误和 HTTP 5xx 最多重试两次；双端健康探测共享 8 秒总预算、单次请求最多 5 秒，避免弱网下多轮串行超时把首屏卡到近 30 秒。
 - 添加或编辑旧版服务器时，探测失败会显示表单错误，不会因为 Mutation 异常而留下无反馈状态。
 - 更新 `packages/app/src/utils/server-protocol.test.ts` 覆盖并行探测、V1/V2 判定与双探测失败。
 
@@ -2827,7 +2834,7 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 - 类型检查应覆盖 `packages/app`、`packages/desktop` 和 `packages/remote-relay` 相关入口。
 - 本地 sidecar 的会话元数据和首屏消息分页已分别测得毫秒级；这不等于新快照已在生产 Relay/手机端验证。
 - 真实公网手机验收需要发布桌面与 Relay 新版本；本次没有重启或部署任何运行中的服务。
-- 旧 Relay 快照没有 `sessionInfo` 时仍会恢复全部标签，但尚无本地标题的非当前标签显示通用占位，切换后再解析标题。
+- 具备 `sessionIDs` 字段但没有 `sessionInfo` 的过渡版 Relay 快照仍会恢复全部标签，非活动标签先显示通用标题，切换后再解析标题。2026-10-06 检查到的线上旧 Relay 早于该协议，只保留项目路径并丢弃会话 ID；完整桌面工作区同步需要 Relay 也升级到支持 `sessionIDs` 的版本。
 
 ## 远程模型目录按需加载状态
 
@@ -2851,6 +2858,20 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 - `packages/remote-relay/src/peer.test.ts`：覆盖错误协议版本、未配置 ICE 和有效能力响应。
 - 启用公网 P2P 仍需部署对应 Relay 与 STUN/TURN 设置，并在大陆移动网络和美国网络真实验收；代码合并本身不改变线上服务。
 
+## 远程工作区快照携带会话协议提示
+
+桌面端已加载且有标题的会话会把已确认的 V1/V2 存储代际随轻量工作区快照发给获批浏览器；标题仍必填，以兼容只认识标题字段的旧 Relay。浏览器在创建 Server SDK 前恢复该提示；已知 V1 的旧会话可直接读取 V1 消息，不再先等待一个空的 V2 消息页后再串行读取 V1。没有协议提示时继续走原有检测与回退逻辑，不能据此跳过实际消息加载。当前生产旧 Relay 会丢弃 `sessionIDs`，需升级 Relay 后这项提示与完整标签同步才会生效。
+
+### 代码位置与验证
+
+- `packages/app/src/context/platform.tsx`、`packages/app/src/entry.tsx`：在创建远程 Server SDK 前提供恢复的工作区快照。
+- `packages/app/src/utils/remote-workspace.ts`、`packages/desktop/src/main/remote-access.ts`、`packages/remote-relay/src/protocol.ts`、`packages/remote-relay/src/index.ts`：验证并传递可选会话协议提示。
+- `packages/app/src/context/server-sdk.tsx`、`packages/app/src/app.tsx`：初始化每会话协议缓存；桌面消息加载完成后刷新快照。快照依赖通过稳定的已加载协议摘要追踪，避免每个流式消息增量都重新发布。
+- `packages/app/src/context/server-session.test.ts`、`packages/app/src/utils/remote-workspace.test.ts`：覆盖恢复 V1 后跳过 V2 探测以及快照协议校验。
+- `packages/app`、`packages/remote-relay`、`packages/desktop` 类型检查均通过；App 两个聚焦测试文件 97 项通过。
+
+此优化只去掉已知 V1 会话的一次串行 Relay 往返，尚未测得公网端到端节省时长，不能据此宣称修复了全部 10 秒慢加载。旧版线上 Relay 只在内存中保存会话与授权状态，部署重启前必须先设计保留这些状态的迁移方案并在维护窗口验收。
+
 ## Relay 重复部署保留持久化目录属主
 
 Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并将其传给 Compose，因此经加固为 Relay 容器专用 UID 的 `0700` 数据目录，升级时仍由相同的非 root 服务用户访问。新安装则使用部署账户 UID/GID。镜像构建后由一次性 root helper 容器把数据目录及恢复文件分别设为 `0700`/`0600` 并修正属主；服务容器仍以非 root 运行。脚本拒绝数据目录或状态文件是符号链接的情况，避免权限修正跟随链接改动宿主机其他路径。
@@ -2861,3 +2882,78 @@ Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并�
 - `infra/remote-relay/README.md`：说明新安装和升级时容器 UID 的行为。
 - `sh -n infra/remote-relay/deploy.sh` 与 `git diff --check`。
 - 此变更未部署到线上；代理不可用，且不能在没有 Coturn 镜像与 UDP 网络验证时声称公网 P2P 已启用。
+
+## V2 服务端兼容 V1 历史会话
+
+桌面数据库升级到 V2 后，旧会话的消息仍可能只存在 V1 `MessageTable` 中，而 V2 时间线只读 `session_message` 投影。浏览器先尝试 V2 消息页；只有首屏 V2 为空时才检查 V1 历史。检测到旧记录后，整个会话继续通过 V1 消息读取、父消息读取、提示词、命令、Shell、压缩、重命名、删除、分叉、中断、撤销暂存/清除和权限回复接口工作，避免时间线显示了旧消息、却把新提示送进没有旧上下文的 V2 runner。旧会话重连后跳过 V2 日志回放并从 V1 消息表做快照补齐。纯 V2 会话记住判定后不再探测 V1；旧会话的判定保存在当前 App 服务连接生命周期中。
+
+### 代码与验证
+
+- `packages/app/src/context/server-sdk.tsx`：在同一服务连接及其目录 API 间共享会话协议判定。
+- `packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`：V2 首屏为空时回退读取 V1，并让后续分页、父消息读取、断线补同步沿用该会话的存储代际。
+- `packages/app/src/utils/server-compat.ts`：按会话把有 V1 历史的写操作路由回 V1 API；网络错误不会伪装成空历史。
+- `packages/app/src/context/server-session.test.ts`、`packages/app/src/utils/server-compat.test.ts`：覆盖旧历史回退、空 V2 会话只探测一次、旧会话提示路由，以及重连时以 V1 快照补齐而非回放错误的 V2 日志。
+- `packages/app` 的 `bun test src/context/server-session.test.ts src/utils/server-compat.test.ts` 与 `bun run typecheck`。
+
+### 性能和发布边界
+
+- 旧会话首次加载会先取 V2 空页，再取 V1 消息页；复用已有基线时，本机 V1 消息请求为 3.9–8.6 ms，既往公网 V1 请求为 0.18–0.22 s。这意味着公网旧会话首次打开会多一次串行往返；当前实现优先保证不丢上下文，生产端到端耗时尚未复测。
+- V2 首屏有数据的会话只走原有 V2 请求；判定为空的纯 V2 会话会缓存判定，强制刷新期间不再重复访问 V1。
+- 同一服务进程需运行包含此兼容逻辑的新桌面构建；本次只改代码并做单测/类型检查，未重启桌面或 Relay、未部署，也未发版。发布前还要用浏览器验收旧会话历史、发新提示、实时消息更新、重新加载及纯 V2 会话。
+
+## 桌面冷启动量化与 predev/窗口/shell 缓存
+
+### 实测数据（2026-10-06，本机 `bun run dev:desktop`）
+
+| 阶段 | 修复前 | 修复后 |
+| --- | --- | --- |
+| predev（plugin + 内嵌 UI 全量 vite build + CLI 下载） | 12–26s | 0.09s（产物新鲜时跳过） |
+| electron-vite 就绪 + app starting | ~13s | ~13s |
+| server ready | +3–5s | +3s |
+| 窗口创建 | 等 sidecar loading task 结束后才 restoreMainWindows | 与 sidecar 并行，先开窗口 |
+| shell env `zsh -il` | 每次启动探测（日志可见 20s 级间隔） | 24h 文件缓存 |
+| `GET /session/:id` | 4–20ms | 未变 |
+| 渲染层热加载到会话内容 | ~1s | 未变 |
+| **冷启动后会话正文可见** | **实测 120s+ 仍骨架** | **仍可复现卡在 SessionSkeleton** |
+
+### 已修复
+
+- `packages/desktop/scripts/predev.ts`：递归比较构建相关源码文件与配置文件的 mtime，只有产物确实新鲜时才跳过 plugin build、`build-node`（内嵌整站 UI）和 CLI 下载；缺少内嵌 `index.html` 或主 bundle 时会重建。`OPENCTRLC_PREDEV_FORCE=1` 强制重建。`build-node` 会 `bun run --cwd packages/app build` 打出 1MB `session-route-view`，是 predev 大头。
+- `packages/desktop/src/main/index.ts`：`restoreMainWindows()` 提前到 `Fiber.await(loadingTask)` 之前，避免 sidecar 启动期间桌面无窗口。
+- `packages/desktop/src/main/server.ts`：shell env 缓存仍为 24h，但只使用 Electron `safeStorage` 加密后写入 `userData/shell-env-cache.json`；Linux 没有可用系统密钥环时不落盘。启动后先等待 Electron ready，再读取系统加密服务。旧版本写出的明文缓存会被忽略并删除。
+
+### 验证方式
+
+- 冷启动计时脚本见会话记录（spawn → vite_ready → app_starting → server_ready → CDP eval 轮询 `main` 文本）。
+- `packages/desktop` `bun run typecheck` 通过。
+- 重启后 predev 日志应出现 `up to date, skipping`。
+
+### 本轮审查补强
+
+- 目录自身 mtime 不会随已有文件内容修改而更新；增量构建现递归检查相关源码文件，并纳入内嵌 UI、workspace 依赖和构建配置，避免桌面端继续复用旧网页 bundle。
+- 之前的 24h shell 环境缓存会把模型 API 凭据等完整环境变量明文写入文件。本轮改成系统密钥环加密；若系统加密不可用，回退为每次启动读取 shell，不缓存明文。
+
+### 未解决（需继续查）
+
+冷启动后 `TargetSessionRoute` 的 `lazy(() => import("@/pages/session-route-view"))` 可能长时间不完成：DOM 停在 `SessionSkeleton`（5 个 pulse、无正文），CDP 手动 `import()` 同文件只要 1–10ms 且模块已在缓存，但页面仍不挂载；整页 reload 后骨架计数会在 5→1→0→5 间跳动，30s 仍无会话正文。接口本身只要 4–20ms。怀疑 Solid `lazy`/路由匹配/Provider 抛错被 Suspense 吞掉，或 `Show keyed` 反复重挂。
+
+## Relay 桌面断连页提供自动恢复入口
+
+- 已授权浏览器打开工作区首页时，如果 Relay 没有连接中的桌面端，不再返回裸 `503 Desktop is disconnected` 文本；显示英文、简体中文、日文或韩文的原因说明与“立即重试”入口，并在 5 秒后自动重试。
+- 覆盖 Relay 已知桌面断连状态及代理请求期间发生的断连竞态；不展示 Session ID、授权 token 或工作区数据。
+- 线上当前仍有桌面离线的情况；这个界面改动需部署新 Relay 后才会生效，不能代替桌面重新连接。
+- Relay health now reports the last successful snapshot timestamp and whether a persistence write is pending, so deployment preflight can compare the saved session/grant data with live counts before replacing an active Relay.
+- Desktop dev startup reuses the bundled CLI only when its recorded release version, Rust target, size, and modification time match the requested build; missing, invalid, or mismatched metadata triggers a fresh download.
+- Desktop prebuild cache invalidation includes nested source directories, so deleting or renaming a file below a source root triggers the required bundle rebuild.
+
+## 本地性能诊断脚本默认保护会话隐私与开发进程
+
+perf/ 中的会话恢复与冷启动诊断现在默认只输出状态、耗时、请求体积和 DOM 计数。URL 查询值、会话标识、提示词/消息正文、localStorage 值及完整启动日志不进入终端输出或 /tmp 测量 JSON。抓取截图必须显式传 --screenshot，并提示截图可能包含当前可见会话内容。
+
+会触发页面重载的观察脚本需要显式传 --reload。冷启动脚本发现 CDP/Vite 端口已被占用时拒绝启动；清理时只向脚本自己启动的进程组发送退出信号，不按端口号杀进程。
+
+### 代码位置
+
+- perf/README.md：安全默认值、命令说明和 CDP 回环监听要求。
+- perf/safe-output.mjs：统一隐藏会话/配对路径标识、用户目录和 URL 查询值。
+- perf/*.mjs：参数化当前会话与目录，默认避免正文输出、自动重载和误杀无关开发进程。

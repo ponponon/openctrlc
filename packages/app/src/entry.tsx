@@ -121,6 +121,7 @@ const clearAuthToken = () => {
 }
 
 const remoteSessionID = currentRemoteSessionID()
+const remoteWorkspace = root instanceof HTMLElement ? takeRemoteWorkspaceSnapshot(remoteSessionID) : undefined
 const remotePeer = remoteSessionID ? new RemotePeerClient(remoteSessionID) : undefined
 const nativeFetch = globalThis.fetch
 
@@ -129,6 +130,7 @@ const platform: Platform = {
   draftStore: createBrowserDraftStore(),
   version: pkg.version,
   remoteSessionID,
+  remoteWorkspace,
   remoteTransport: remotePeer
     ? {
         getStatus: () => remotePeer.status,
@@ -176,7 +178,6 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 }
 
 if (root instanceof HTMLElement) {
-  const remoteWorkspace = takeRemoteWorkspaceSnapshot(remoteSessionID)
   if (remoteWorkspace?.activeSessionID && location.pathname === "/") {
     const server = ServerConnection.Key.make(getCurrentUrl())
     history.replaceState(null, "", sessionHref(server, remoteWorkspace.activeSessionID))

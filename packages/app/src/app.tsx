@@ -747,9 +747,27 @@ function RemoteTabsHydrator() {
   const tabs = useTabs()
   const location = useLocation()
 
+  const protocolSnapshot = createMemo(() => {
+    if (platform.platform !== "desktop" || !platform.remoteAccess || !server.ready() || !tabs.ready()) return ""
+    const connection = pickRemoteConnection(global)
+    if (!connection) return ""
+    const key = ServerConnection.key(connection)
+    const context = global.ensureServerCtx(connection)
+    return JSON.stringify(
+      tabs.store
+        .flatMap((tab) => {
+          if (tab.type !== "session" || tab.server !== key) return []
+          const protocol = context.sdk.sessionProtocols.get(tab.sessionId)
+          if (!protocol || context.sync.session.data.session_message[tab.sessionId] === undefined) return []
+          return [`${tab.sessionId}:${protocol}`]
+        }),
+    )
+  })
+
   createEffect(() => {
     if (platform.platform !== "desktop" || !platform.remoteAccess) return
     if (!server.ready() || !tabs.ready()) return
+    protocolSnapshot()
     const connection = pickRemoteConnection(global)
     if (!connection) return
     const key = ServerConnection.key(connection)
@@ -768,9 +786,19 @@ function RemoteTabsHydrator() {
     const lastProject = context.projects.last()
     const sessionInfo = sessionIDs.flatMap((sessionID) => {
       const tab = tabs.store.find((item) => item.type === "session" && item.sessionId === sessionID)
-      if (!tab || tab.type !== "session") return []
-      const title = tabs.info[tabKey(tab)]?.title ?? context.sync.session.peek(sessionID)?.title
-      return typeof title === "string" ? [{ sessionID, title: title.slice(0, 200) }] : []
+      const title =
+        (tab?.type === "session" ? tabs.info[tabKey(tab)]?.title : undefined) ??
+        context.sync.session.peek(sessionID)?.title
+      if (typeof title !== "string") return []
+      const messagesLoaded = context.sync.session.data.session_message[sessionID] !== undefined
+      const protocol = messagesLoaded ? context.sdk.sessionProtocols.get(sessionID) : undefined
+      return [
+        {
+          sessionID,
+          title: title.slice(0, 200),
+          ...(protocol ? { protocol } : {}),
+        },
+      ]
     })
     const snapshot: RemoteWorkspaceSnapshot = {
       projects,

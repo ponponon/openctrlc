@@ -1,5 +1,5 @@
 import { $ } from "bun"
-import { chmod, copyFile, mkdtemp, rm } from "node:fs/promises"
+import { chmod, copyFile, mkdtemp, readdir, rename, rm, stat } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -7,6 +7,45 @@ export type Channel = "dev" | "beta" | "prod"
 
 export function resolveCliVersion(env: Record<string, string | undefined>) {
   return env.OPENCTRLC_CLI_VERSION ?? "0.1.2"
+}
+
+export function isCliResourceCurrent(
+  metadata: unknown,
+  expected: { version: string; target: string; size: number; mtimeMs: number },
+) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return false
+  const value = metadata as Record<string, unknown>
+  return (
+    value.version === expected.version &&
+    value.target === expected.target &&
+    value.size === expected.size &&
+    value.mtimeMs === expected.mtimeMs
+  )
+}
+
+export async function newestModifiedAt(paths: string[]) {
+  const latest = async (path: string): Promise<number> => {
+    try {
+      const info = await stat(path)
+      if (info.isFile()) return info.mtimeMs
+      if (!info.isDirectory()) return 0
+      const entries = await readdir(path, { withFileTypes: true })
+      return Math.max(
+        info.mtimeMs,
+        ...(await Promise.all(
+          entries.map((entry) => {
+            const child = join(path, entry.name)
+            if (entry.isDirectory()) return latest(child)
+            if (entry.isFile()) return stat(child).then((value) => value.mtimeMs).catch(() => 0)
+            return 0
+          }),
+        )),
+      )
+    } catch {
+      return 0
+    }
+  }
+  return Math.max(0, ...(await Promise.all(paths.map(latest))))
 }
 
 export function resolveChannel(): Channel {
@@ -77,6 +116,8 @@ export async function downloadCliToResources() {
   const cliVersion = resolveCliVersion(Bun.env)
   const directory = await mkdtemp(join(tmpdir(), "openctrlc-cli-"))
   const dest = windowsify("resources/openctrlc")
+  const metadata = "resources/openctrlc.meta.json"
+  const temporaryMetadata = `${metadata}.${process.pid}.tmp`
   try {
     await $`bun install --no-save --cwd ${directory} ${`${cli.package}@${cliVersion}`} ${`--os=${cli.os}`} ${`--cpu=${cli.cpu}`}`
     await copyFile(
@@ -91,6 +132,12 @@ export async function downloadCliToResources() {
     await $`pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File ../../script/sign-windows.ps1 ${dest}`
   }
   if (process.platform === "darwin") await $`codesign --force --sign - ${dest}`
+  const info = await stat(dest)
+  await Bun.write(
+    temporaryMetadata,
+    JSON.stringify({ version: cliVersion, target: cli.rustTarget, size: info.size, mtimeMs: info.mtimeMs }),
+  )
+  await rename(temporaryMetadata, metadata)
 
   console.log(`Copied ${cli.package} to ${dest}`)
 }
