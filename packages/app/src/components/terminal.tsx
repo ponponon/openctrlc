@@ -211,6 +211,7 @@ export const Terminal = (props: TerminalProps) => {
   let ws: WebSocket | undefined
   let switchingTransport = false
   let pendingInput = ""
+  let inputOverflowNotified = false
   let peerAvailableDuringConnect = false
   let socketTransport: "connecting" | "peer" | "relay" = "relay"
   let term: Term | undefined
@@ -495,6 +496,13 @@ export const Terminal = (props: TerminalProps) => {
         if (!switchingTransport) return
         if (pendingInput.length + data.length > 256 * 1024) {
           debugTerminal("terminal input queue full during reconnect")
+          if (!inputOverflowNotified) {
+            inputOverflowNotified = true
+            showToast({
+              title: language.t("terminal.inputQueue.full.title"),
+              description: language.t("terminal.inputQueue.full.description"),
+            })
+          }
           return
         }
         pendingInput += data
@@ -548,6 +556,13 @@ export const Terminal = (props: TerminalProps) => {
         if (once.value) return
         once.value = true
         switchingTransport = false
+        if (pendingInput) {
+          showToast({
+            variant: "error",
+            title: language.t("terminal.inputQueue.discarded.title"),
+            description: language.t("terminal.inputQueue.discarded.description"),
+          })
+        }
         pendingInput = ""
         local.onConnectError?.(err)
       }
@@ -601,15 +616,15 @@ export const Terminal = (props: TerminalProps) => {
         //   .then((result) => result.data.ticket)
       }
 
-      const retry = (err: unknown) => {
+      const retry = (err: unknown, switched = false) => {
         if (disposed) return
         if (reconn !== undefined) return
 
-        const ms = Math.min(250 * 2 ** Math.min(tries, 4), 4_000)
+        const ms = switched ? 0 : Math.min(250 * 2 ** Math.min(tries, 4), 4_000)
         reconn = setTimeout(async () => {
           reconn = undefined
           if (disposed) return
-          if (await gone()) {
+          if (!switched && (await gone())) {
             if (disposed) return
             fail(err)
             return
@@ -663,6 +678,7 @@ export const Terminal = (props: TerminalProps) => {
           }
           peerAvailableDuringConnect = false
           switchingTransport = false
+          inputOverflowNotified = false
           if (pendingInput) {
             socket.send(pendingInput)
             pendingInput = ""
@@ -724,7 +740,7 @@ export const Terminal = (props: TerminalProps) => {
           if (disposed) return
           if (event.code === 1000 && !switched) return
           switchingTransport = true
-          retry(new Error(language.t("terminal.connectionLost.abnormalClose", { code: event.code })))
+          retry(new Error(language.t("terminal.connectionLost.abnormalClose", { code: event.code })), switched)
         }
 
         drop = stop

@@ -746,6 +746,12 @@ export const dict = {
   "terminal.connectionLost.title": "연결 끊김",
   "terminal.connectionLost.description":
     "터미널 연결이 중단되었습니다. 서버가 재시작하면 이런 일이 발생할 수 있습니다.",
+  "terminal.inputQueue.full.title": "일부 터미널 입력이 전송되지 않았습니다",
+  "terminal.inputQueue.full.description":
+    "연결을 전환 중이며 입력 버퍼가 가득 찼습니다. 다시 연결될 때까지 기다린 다음 전송되지 않은 내용을 다시 입력하세요.",
+  "terminal.inputQueue.discarded.title": "대기 중인 터미널 입력이 삭제되었습니다",
+  "terminal.inputQueue.discarded.description":
+    "터미널을 다시 연결하지 못해 버퍼에 있던 입력이 전송되지 않았습니다. 다시 연결한 후 입력하세요.",
   "common.closeTab": "탭 닫기",
   "common.dismiss": "닫기",
   "common.requestFailed": "요청 실패",

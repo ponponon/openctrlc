@@ -2772,6 +2772,7 @@ WebRTC DataChannel 已就绪时，浏览器同源 WebSocket 先尝试通过桌�
 
 - 远程终端不再根据全局 DataChannel 状态提前猜测它自己的 WebSocket 路径；自定义 WebSocket 在握手完成后暴露本连接是 P2P 还是 Relay 回退。
 - P2P 在终端连接过程中变为可用时，若这条 WebSocket 实际回退到 Relay，终端只触发一次迁移重连；已建立的 P2P WebSocket 不会被误关。
+- Relay 切换到 P2P 的主动迁移会跳过额外的 PTY 存活请求并立即重连；重连期间暂存用户输入，缓冲区满或最终连接失败时给出本地化提示。
 - `packages/app/e2e/regression/remote-peer-channel.spec.ts` 验证实际直连和同一会话中的 Relay 回退路径标记。
 
 ## Relay 监控日志脱敏与冒烟检查失败累计

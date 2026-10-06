@@ -1017,6 +1017,10 @@ export const dict = {
   "terminal.close": "关闭终端",
   "terminal.connectionLost.title": "连接已丢失",
   "terminal.connectionLost.description": "终端连接已中断。这可能发生在服务器重启时。",
+  "terminal.inputQueue.full.title": "部分终端输入未发送",
+  "terminal.inputQueue.full.description": "连接正在切换，输入缓冲已满。请等待重连后重新输入未发送的内容。",
+  "terminal.inputQueue.discarded.title": "待发送的终端输入已丢弃",
+  "terminal.inputQueue.discarded.description": "终端未能重新连接，缓冲中的输入没有发送。重新连接后请重新输入。",
   "terminal.connectTicket.csrfError": "PTY 连接票证因来源或 CSRF 检查被拒绝。请检查服务器 CORS 配置。",
   "terminal.connectTicket.statusError": "PTY 连接票证失败，状态为 {{status}}",
 

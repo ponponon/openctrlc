@@ -985,6 +985,12 @@ export const dict = {
   "terminal.connectionLost.abnormalClose": "WebSocket closed abnormally: {{code}}",
   "terminal.connectionLost.description":
     "The terminal connection was interrupted. This can happen when the server restarts.",
+  "terminal.inputQueue.full.title": "Some terminal input was not sent",
+  "terminal.inputQueue.full.description":
+    "The connection is switching and its input buffer is full. Wait for it to reconnect, then retype the missing input.",
+  "terminal.inputQueue.discarded.title": "Pending terminal input was discarded",
+  "terminal.inputQueue.discarded.description":
+    "The terminal could not reconnect, so buffered input was not sent. Reconnect and retype it.",
   "terminal.connectTicket.csrfError":
     "PTY connect ticket rejected by origin or CSRF checks. Check the server CORS config.",
   "terminal.connectTicket.statusError": "PTY connect ticket failed with {{status}}",

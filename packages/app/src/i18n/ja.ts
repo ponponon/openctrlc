@@ -988,6 +988,12 @@ export const dict = {
   "terminal.connectionLost.title": "接続が失われました",
   "terminal.connectionLost.description":
     "ターミナルの接続が中断されました。これはサーバーが再起動したときに発生することがあります。",
+  "terminal.inputQueue.full.title": "一部のターミナル入力を送信できませんでした",
+  "terminal.inputQueue.full.description":
+    "接続を切り替え中で、入力バッファがいっぱいです。再接続を待ってから、未送信の内容を入力し直してください。",
+  "terminal.inputQueue.discarded.title": "送信待ちのターミナル入力を破棄しました",
+  "terminal.inputQueue.discarded.description":
+    "ターミナルを再接続できなかったため、バッファ内の入力は送信されませんでした。再接続後に入力し直してください。",
   "common.closeTab": "タブを閉じる",
   "common.dismiss": "閉じる",
   "common.requestFailed": "リクエストに失敗しました",
