@@ -260,8 +260,11 @@ function createV1Api(input: CompatibleInput): CompatibleApi {
         if (!result.data) throw new Error("Failed to create session")
         return sessionInfo(result.data)
       },
-      async get(value: Parameters<ServerApi["session"]["get"]>[0]) {
-        const result = await legacy().session.get(value)
+      async get(value: Parameters<ServerApi["session"]["get"]>[0], options?: { signal?: AbortSignal }) {
+        // Forward the caller's abort signal: sessionRead aborts on timeout, and
+        // without it the underlying request is never cancelled, so it keeps a
+        // connection occupied after the read has already given up.
+        const result = await legacy().session.get(value, options)
         if (!result.data) throw new Error(`Session not found: ${value.sessionID}`)
         return sessionInfo(result.data)
       },
