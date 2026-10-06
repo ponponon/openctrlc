@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { detectServerProtocol } from "./server-protocol"
+import { detectServerProtocol, ServerProtocolDetectionError } from "./server-protocol"
 
 const server = { url: "http://localhost:4096" }
 const json = (value: unknown, status = 200) =>
@@ -8,14 +8,24 @@ const mockFetch = (run: (input: string | URL | Request) => Promise<Response>) =>
   Object.assign(run, { preconnect: globalThis.fetch.preconnect })
 
 describe("detectServerProtocol", () => {
-  test("prefers the legacy health endpoint when both API generations exist", async () => {
-    const fetcher = mockFetch((input) => {
+  test("runs health probes concurrently and prefers V1 when both API generations exist", async () => {
+    const calls: string[] = []
+    let active = 0
+    let maximumActive = 0
+    const fetcher = mockFetch(async (input) => {
       const path = new URL(input instanceof Request ? input.url : input).pathname
-      if (path === "/global/health") return Promise.resolve(json({ healthy: true, version: "1.18.4" }))
-      return Promise.resolve(json({ healthy: true, version: "2.0.0", pid: 123 }))
+      calls.push(path)
+      active += 1
+      maximumActive = Math.max(maximumActive, active)
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      active -= 1
+      if (path === "/global/health") return json({ healthy: true, version: "1.18.4" })
+      return json({ healthy: true, version: "2.0.0", pid: 123 })
     })
 
     expect(await detectServerProtocol(server, fetcher)).toBe("v1")
+    expect(calls.sort()).toEqual(["/api/health", "/global/health"])
+    expect(maximumActive).toBe(2)
   })
 
   test("recognizes V2 health by its process identifier", async () => {
@@ -36,5 +46,25 @@ describe("detectServerProtocol", () => {
     })
 
     expect(await detectServerProtocol(server, fetcher)).toBe("v1")
+  })
+
+  test("does not mistake two malformed health responses for an empty V2 server", async () => {
+    const fetcher = mockFetch(async (input) => {
+      const path = new URL(input instanceof Request ? input.url : input).pathname
+      if (path === "/global/health") return new Response("not-json", { headers: { "content-type": "application/json" } })
+      return new Response("<html>relay fallback</html>", { headers: { "content-type": "text/html" } })
+    })
+
+    await expect(detectServerProtocol(server, fetcher)).rejects.toMatchObject({
+      name: "ServerProtocolDetectionError",
+      v1Probe: "invalid-json-response",
+      v2Probe: "non-json-response",
+    })
+  })
+
+  test("does not infer a protocol when both supported health endpoints are unavailable", async () => {
+    const fetcher = mockFetch(async () => json({}, 404))
+
+    await expect(detectServerProtocol(server, fetcher)).rejects.toBeInstanceOf(ServerProtocolDetectionError)
   })
 })

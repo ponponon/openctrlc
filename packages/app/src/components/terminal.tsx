@@ -10,7 +10,7 @@ import { type ComponentProps, createEffect, createMemo, onCleanup, onMount, spli
 import { SerializeAddon } from "@/addons/serialize"
 import { matchKeybind, parseKeybind } from "@/context/command"
 import { useLanguage } from "@/context/language"
-import { usePlatform } from "@/context/platform"
+import { usePlatform, type RemoteWebSocket } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
 import { useServerSDK } from "@/context/server-sdk"
 import { terminalFontFamily, useSettings } from "@/context/settings"
@@ -211,6 +211,8 @@ export const Terminal = (props: TerminalProps) => {
   let ws: WebSocket | undefined
   let switchingTransport = false
   let pendingInput = ""
+  let peerAvailableDuringConnect = false
+  let socketTransport: "connecting" | "peer" | "relay" = "relay"
   let term: Term | undefined
   let _ghostty: Ghostty
   let serializeAddon: SerializeAddon
@@ -540,7 +542,6 @@ export const Terminal = (props: TerminalProps) => {
 
       const once = { value: false }
       const decoder = new TextDecoder()
-      let socketTransport: "peer" | "relay" = "relay"
 
       const fail = (err: unknown) => {
         if (disposed) return
@@ -622,6 +623,8 @@ export const Terminal = (props: TerminalProps) => {
       const open = async () => {
         if (disposed) return
         drop?.()
+        socketTransport = "connecting"
+        peerAvailableDuringConnect = false
 
         const ticket = await connectToken().catch((err) => {
           fail(err)
@@ -644,15 +647,21 @@ export const Terminal = (props: TerminalProps) => {
           password,
           authToken,
         })
-        const socket = platform.webSocket?.(socketURL) ?? new WebSocket(socketURL)
-        const transport = platform.remoteTransport?.getStatus()
-        socketTransport = transport === "checking" || transport === "direct" || transport === "turn" ? "peer" : "relay"
+        const socket: RemoteWebSocket = platform.webSocket?.(socketURL) ?? new WebSocket(socketURL)
         socket.binaryType = "arraybuffer"
         ws = socket
 
         const handleOpen = () => {
           if (disposed) return
           tries = 0
+          socketTransport = socket.remoteTransport ?? "relay"
+          if (socketTransport === "relay" && peerAvailableDuringConnect) {
+            peerAvailableDuringConnect = false
+            switchingTransport = true
+            socket.close(4001, "Switching to direct connection")
+            return
+          }
+          peerAvailableDuringConnect = false
           switchingTransport = false
           if (pendingInput) {
             socket.send(pendingInput)
@@ -735,6 +744,10 @@ export const Terminal = (props: TerminalProps) => {
             ws.readyState >= WebSocket.CLOSING
           )
             return
+          if (socketTransport === "connecting" || ws.readyState === WebSocket.CONNECTING) {
+            peerAvailableDuringConnect = true
+            return
+          }
           switchingTransport = true
           ws.close(4001, "Switching to direct connection")
         })

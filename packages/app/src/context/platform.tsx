@@ -53,6 +53,7 @@ export type RemoteTransportPlatform = {
   getStatus(): RemoteTransportStatus
   subscribe(callback: (status: RemoteTransportStatus) => void): () => void
 }
+export type RemoteWebSocket = WebSocket & { readonly remoteTransport?: "peer" | "relay" }
 export type RemoteAccessPlatform = {
   getState(): Promise<RemoteAccessState>
   subscribe(callback: (state: RemoteAccessState) => void): Promise<() => void>
@@ -155,7 +156,7 @@ type PlatformBase = {
   remoteTransport?: RemoteTransportPlatform
 
   /** Create a WebSocket using the remote direct channel when it is ready. */
-  webSocket?: (url: string | URL, protocols?: string | string[]) => WebSocket
+  webSocket?: (url: string | URL, protocols?: string | string[]) => RemoteWebSocket
 
   /** Get the configured default server URL (platform-specific) */
   getDefaultServer?(): Promise<ServerConnection.Key | null>

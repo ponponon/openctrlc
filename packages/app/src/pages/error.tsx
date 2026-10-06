@@ -8,6 +8,7 @@ import { usePlatform } from "@/context/platform"
 import { useLanguage } from "@/context/language"
 import { Icon } from "@openctrlc/ui/icon"
 import { errorDescriptionKey } from "./error-description"
+import { formatServerError } from "@/utils/server-errors"
 
 export type InitError = {
   name: string
@@ -148,6 +149,7 @@ function formatInitError(error: InitError, t: Translator): string {
 function formatErrorChain(error: unknown, t: Translator, depth = 0, parentMessage?: string): string {
   const json = (value: unknown) => safeJson(value, t("error.page.circular"))
   if (!error) return t("error.chain.unknown")
+  if (error instanceof Error && error.name === "ServerProtocolDetectionError") return formatServerError(error, t)
 
   if (isInitError(error)) {
     const message = formatInitError(error, t)

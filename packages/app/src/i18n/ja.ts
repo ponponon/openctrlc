@@ -1452,6 +1452,7 @@ export const dict = {
   "error.page.circular": "[循環]",
   "error.serverSDK.noServerAvailable": "利用可能なサーバーがありません",
   "error.serverSDK.serverNotAvailable": "サーバーが利用できません",
+  "error.serverSDK.protocolProbeDetails": "ヘルスチェック結果 — v1: {{v1}}、v2: {{v2}}",
   "error.childStore.persistedCacheCreateFailed": "永続キャッシュの作成に失敗しました",
   "error.childStore.persistedProjectMetadataCreateFailed": "永続プロジェクトメタデータの作成に失敗しました",
   "error.childStore.persistedProjectIconCreateFailed": "永続プロジェクトアイコンの作成に失敗しました",

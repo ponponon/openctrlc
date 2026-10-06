@@ -1171,6 +1171,7 @@ export const dict = {
   "error.page.circular": "[순환]",
   "error.serverSDK.noServerAvailable": "사용 가능한 서버 없음",
   "error.serverSDK.serverNotAvailable": "서버를 사용할 수 없음",
+  "error.serverSDK.protocolProbeDetails": "상태 확인 결과 — v1: {{v1}}, v2: {{v2}}",
   "error.childStore.persistedCacheCreateFailed": "영구 캐시 생성 실패",
   "error.childStore.persistedProjectMetadataCreateFailed": "영구 프로젝트 메타데이터 생성 실패",
   "error.childStore.persistedProjectIconCreateFailed": "영구 프로젝트 아이콘 생성 실패",

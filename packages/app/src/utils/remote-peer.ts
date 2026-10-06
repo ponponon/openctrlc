@@ -451,7 +451,7 @@ export class RemotePeerClient {
     }
     const socket = new RemotePeerWebSocket(this, () => new WebSocket(relayTarget, protocols))
     socket.connect(target.pathname + target.search, typeof protocols === "string" ? [protocols] : (protocols ?? []))
-    return socket as unknown as WebSocket
+    return socket as unknown as WebSocket & { readonly remoteTransport?: "peer" | "relay" }
   }
 
   async socketSend(id: string, data: string | ArrayBuffer | Uint8Array) {
@@ -682,6 +682,9 @@ class RemotePeerWebSocket extends EventTarget {
   }
   get bufferedAmount() {
     return this.#bufferedAmount
+  }
+  get remoteTransport(): "peer" | "relay" {
+    return this.#fallback ? "relay" : "peer"
   }
   set binaryType(value: BinaryType) {
     if (value !== "blob" && value !== "arraybuffer") return

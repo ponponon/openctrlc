@@ -265,12 +265,12 @@ export function useServerManagementController(options: { onSelect?: () => void; 
         setStore("addServer", { error: language.t("dialog.server.add.error") })
         return
       }
-      if (
-        !settings.general.newLayoutDesigns() &&
-        (await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch)) === "v2"
-      ) {
-        setStore("addServer", { error: language.t("dialog.server.add.error") })
-        return
+      if (!settings.general.newLayoutDesigns()) {
+        const protocol = await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch).catch(() => undefined)
+        if (protocol !== "v1") {
+          setStore("addServer", { error: language.t("dialog.server.add.error") })
+          return
+        }
       }
 
       resetAdd()
@@ -316,12 +316,12 @@ export function useServerManagementController(options: { onSelect?: () => void; 
         setStore("editServer", { error: language.t("dialog.server.add.error") })
         return
       }
-      if (
-        !settings.general.newLayoutDesigns() &&
-        (await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch)) === "v2"
-      ) {
-        setStore("editServer", { error: language.t("dialog.server.add.error") })
-        return
+      if (!settings.general.newLayoutDesigns()) {
+        const protocol = await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch).catch(() => undefined)
+        if (protocol !== "v1") {
+          setStore("editServer", { error: language.t("dialog.server.add.error") })
+          return
+        }
       }
       if (normalized === input.original.http.url) {
         server.add(conn)

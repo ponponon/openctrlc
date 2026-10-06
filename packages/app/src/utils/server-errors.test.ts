@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import type { SessionNotFoundError } from "@openctrlc/sdk/v2/client"
 import { wrapClientError } from "@openctrlc/sdk/error-interceptor"
+import { ServerProtocolDetectionError } from "./server-protocol"
 import type { ConfigInvalidError, ProviderModelNotFoundError } from "./server-errors"
 import { formatServerError, isSessionNotFoundError, parseReadableConfigInvalidError } from "./server-errors"
 
@@ -16,6 +17,8 @@ function fill(text: string, vars?: Record<string, string | number>) {
 function useLanguageMock() {
   const dict: Record<string, string> = {
     "error.chain.unknown": "Erro desconhecido",
+    "error.serverSDK.serverNotAvailable": "Servidor indisponivel",
+    "error.serverSDK.protocolProbeDetails": "Health checks — v1: {{v1}}, v2: {{v2}}",
     "error.chain.configInvalid": "Arquivo de config em {{path}} invalido",
     "error.chain.configInvalidWithMessage": "Arquivo de config em {{path}} invalido: {{message}}",
     "error.chain.modelNotFound": "Modelo nao encontrado: {{provider}}/{{model}}",
@@ -69,6 +72,18 @@ describe("parseReadableConfigInvalidError", () => {
 })
 
 describe("formatServerError", () => {
+  test("formats protocol detection failures with safe probe details", () => {
+    const error = new ServerProtocolDetectionError("invalid-json-response", "non-json-response")
+
+    expect(formatServerError(error, language.t)).toBe(
+      [
+        "Servidor indisponivel",
+        "Health checks — v1: invalid-json-response, v2: non-json-response",
+      ].join("\n"),
+    )
+    expect(formatServerError(error, language.t)).not.toContain("SERVER_PROTOCOL_DETECTION_FAILED")
+  })
+
   test("formats config invalid errors", () => {
     const error = {
       name: "ConfigInvalidError",

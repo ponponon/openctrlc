@@ -790,6 +790,7 @@ export const dict = {
   "error.serverSync.connectFailed": "Could not connect to server. Is there a server running at `{{url}}`?",
   "error.serverSDK.noServerAvailable": "No server available",
   "error.serverSDK.serverNotAvailable": "Server not available",
+  "error.serverSDK.protocolProbeDetails": "Health checks — v1: {{v1}}, v2: {{v2}}",
   "error.childStore.persistedCacheCreateFailed": "Failed to create persisted cache",
   "error.childStore.persistedProjectMetadataCreateFailed": "Failed to create persisted project metadata",
   "error.childStore.persistedProjectIconCreateFailed": "Failed to create persisted project icon",

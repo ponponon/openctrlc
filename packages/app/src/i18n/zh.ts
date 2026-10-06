@@ -1522,6 +1522,7 @@ export const dict = {
   "error.page.circular": "[循环]",
   "error.serverSDK.noServerAvailable": "无可用服务器",
   "error.serverSDK.serverNotAvailable": "服务器不可用",
+  "error.serverSDK.protocolProbeDetails": "健康检查结果 — v1：{{v1}}，v2：{{v2}}",
   "error.childStore.persistedCacheCreateFailed": "创建持久化缓存失败",
   "error.childStore.persistedProjectMetadataCreateFailed": "创建持久化项目元数据失败",
   "error.childStore.persistedProjectIconCreateFailed": "创建持久化项目图标失败",

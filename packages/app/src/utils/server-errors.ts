@@ -29,6 +29,14 @@ function tr(translator: Translator | undefined, key: string, text: string, vars?
 
 export function formatServerError(error: unknown, translate?: Translator, fallback?: string) {
   if (isClientAbortError(error)) return tr(translate, "error.chain.requestCancelled", "Request was cancelled")
+  if (isServerProtocolDetectionError(error))
+    return [
+      tr(translate, "error.serverSDK.serverNotAvailable", "Server not available"),
+      tr(translate, "error.serverSDK.protocolProbeDetails", "Health checks — v1: {{v1}}, v2: {{v2}}", {
+        v1: error.v1Probe,
+        v2: error.v2Probe,
+      }),
+    ].join("\n")
   const unwrapped = unwrapNamedError(error)
   if (isConfigInvalidErrorLike(unwrapped)) return parseReadableConfigInvalidError(unwrapped, translate)
   if (isProviderModelNotFoundErrorLike(unwrapped)) return parseReadableProviderModelNotFoundError(unwrapped, translate)
@@ -36,6 +44,17 @@ export function formatServerError(error: unknown, translate?: Translator, fallba
   if (typeof error === "string" && error) return error
   if (fallback) return fallback
   return tr(translate, "error.chain.unknown", "Unknown error")
+}
+
+function isServerProtocolDetectionError(error: unknown): error is Error & { v1Probe: string; v2Probe: string } {
+  return (
+    error instanceof Error &&
+    error.name === "ServerProtocolDetectionError" &&
+    "v1Probe" in error &&
+    typeof error.v1Probe === "string" &&
+    "v2Probe" in error &&
+    typeof error.v2Probe === "string"
+  )
 }
 
 function unwrapNamedError(error: unknown): unknown {

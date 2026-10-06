@@ -198,7 +198,7 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
       type RemotePeerClientInstance = {
         status: string
         subscribe(callback: (status: string) => void): () => void
-        webSocket(url: string | URL, protocols?: string | string[]): WebSocket
+        webSocket(url: string | URL, protocols?: string | string[]): WebSocket & { remoteTransport?: "peer" | "relay" }
         close(): void
       }
       type RemotePeerClientConstructor = new (sessionID: string) => RemotePeerClientInstance
@@ -212,6 +212,14 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
       const NativeWebSocket = window.WebSocket
       let host: PeerChannelInstance | undefined
       let signaling: SignalingSocket | undefined
+      const pendingHostSignals: PeerSignal[] = []
+      const sendHostSignal = (signal: PeerSignal) => {
+        if (!signaling) {
+          pendingHostSignals.push(signal)
+          return
+        }
+        signaling.receive({ type: "peer.signal", signal })
+      }
       let hostClosed = false
       const hostMessages: string[] = []
       const socketMessages: string[] = []
@@ -231,6 +239,7 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
             this.readyState = SignalingSocket.OPEN
             this.dispatchEvent(new Event("open"))
             this.receive({ type: "peer.ready", peerID: "abcdefghijklmnop" })
+            for (const signal of pendingHostSignals.splice(0)) this.receive({ type: "peer.signal", signal })
           })
         }
 
@@ -261,7 +270,7 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
       try {
         host = new PeerChannel({
           offer: true,
-          signal: (signal) => signaling?.receive({ type: "peer.signal", signal }),
+          signal: sendHostSignal,
           message: (data) => {
             if (typeof data === "string") {
               const message = JSON.parse(data) as Record<string, unknown>
@@ -351,6 +360,7 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
           direct,
           closeCode,
           readyState: socket.readyState,
+          remoteTransport: socket.remoteTransport,
           socketMessages,
           bufferedAfterBlob,
           bufferedAfterBoth,
@@ -371,6 +381,7 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
   expect(result.direct).toBe("direct")
   expect(result.closeCode).toBe(1012)
   expect(result.readyState).toBe(WebSocket.CLOSED)
+  expect(result.remoteTransport).toBe("peer")
   expect(result.socketMessages).toEqual(["blob-first", "text-second"])
   expect(result.bufferedAfterBlob).toBeGreaterThanOrEqual("blob-first".length)
   expect(result.bufferedAfterBoth).toBeGreaterThanOrEqual("blob-first".length + "text-second".length)
@@ -415,13 +426,21 @@ test("a rejected direct WebSocket falls back to Relay with the session query", a
       type PeerChannelConstructor = new (options: PeerChannelOptions) => PeerChannelInstance
       type RemotePeerClientInstance = {
         subscribe(callback: (status: string) => void): () => void
-        webSocket(url: string | URL, protocols?: string | string[]): WebSocket
+        webSocket(url: string | URL, protocols?: string | string[]): WebSocket & { remoteTransport?: "peer" | "relay" }
         close(): void
       }
       type RemotePeerClientConstructor = new (sessionID: string) => RemotePeerClientInstance
       const NativeWebSocket = window.WebSocket
       let host: PeerChannelInstance | undefined
       let signaling: SignalingSocket | undefined
+      const pendingHostSignals: PeerSignal[] = []
+      const sendHostSignal = (signal: PeerSignal) => {
+        if (!signaling) {
+          pendingHostSignals.push(signal)
+          return
+        }
+        signaling.receive({ type: "peer.signal", signal })
+      }
       let relay: RelaySocket | undefined
       let requestedDirectSocket = false
       let directPath = ""
@@ -440,6 +459,7 @@ test("a rejected direct WebSocket falls back to Relay with the session query", a
             this.readyState = SignalingSocket.OPEN
             this.dispatchEvent(new Event("open"))
             this.receive({ type: "peer.ready", peerID: "abcdefghijklmnop" })
+            for (const signal of pendingHostSignals.splice(0)) this.receive({ type: "peer.signal", signal })
           })
         }
 
@@ -509,13 +529,16 @@ test("a rejected direct WebSocket falls back to Relay with the session query", a
       try {
         host = new PeerChannel({
           offer: true,
-          signal: (signal) => signaling?.receive({ type: "peer.signal", signal }),
+          signal: sendHostSignal,
           message: (data) => {
             if (typeof data !== "string") return
             const message = JSON.parse(data) as Record<string, unknown>
             if (message.type !== "socket.open" || typeof message.id !== "string") return
-            requestedDirectSocket = true
-            directPath = typeof message.path === "string" ? message.path : ""
+            const path = typeof message.path === "string" ? message.path : ""
+            if (path === "/pty") {
+              requestedDirectSocket = true
+              directPath = path
+            }
             void (async () => {
               const close = JSON.stringify({
                 type: "socket.close",
@@ -561,6 +584,7 @@ test("a rejected direct WebSocket falls back to Relay with the session query", a
           relaySession: target.searchParams.get("_oc_remote_session"),
           binaryTypeApplied: relay?.binaryType,
           relaySocketRemainsOpen: socket.readyState === WebSocket.OPEN,
+          relayTransport: socket.remoteTransport,
         }
         socket.close()
         client.close()
@@ -584,6 +608,7 @@ test("a rejected direct WebSocket falls back to Relay with the session query", a
     relaySession: "abcdefghijklmnop",
     binaryTypeApplied: "arraybuffer",
     relaySocketRemainsOpen: true,
+    relayTransport: "relay",
   })
 })
 
@@ -633,6 +658,14 @@ test("a rejected direct upload stops reading and sending its request body", asyn
       const NativeWebSocket = window.WebSocket
       let host: PeerChannelInstance | undefined
       let signaling: SignalingSocket | undefined
+      const pendingHostSignals: PeerSignal[] = []
+      const sendHostSignal = (signal: PeerSignal) => {
+        if (!signaling) {
+          pendingHostSignals.push(signal)
+          return
+        }
+        signaling.receive({ type: "peer.signal", signal })
+      }
       let uploadID: string | undefined
       let uploadedBytes = 0
       let resolveCancelled!: () => void
@@ -654,6 +687,7 @@ test("a rejected direct upload stops reading and sending its request body", asyn
             this.readyState = SignalingSocket.OPEN
             this.dispatchEvent(new Event("open"))
             this.receive({ type: "peer.ready", peerID: "abcdefghijklmnop" })
+            for (const signal of pendingHostSignals.splice(0)) this.receive({ type: "peer.signal", signal })
           })
         }
 
@@ -683,7 +717,7 @@ test("a rejected direct upload stops reading and sending its request body", asyn
       try {
         host = new PeerChannel({
           offer: true,
-          signal: (signal) => signaling?.receive({ type: "peer.signal", signal }),
+          signal: sendHostSignal,
           message: (data) => {
             if (data instanceof Uint8Array) {
               if (data[0] !== 0xc1 || data[1] !== 1) return

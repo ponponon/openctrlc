@@ -81,3 +81,17 @@
 - `packages/app/src/utils/server-protocol.ts` 的探测会调用 `response.json()`；双层 gzip 导致 JSON 解析异常后被吞掉，两个健康端点都失败时默认 `v2`。旧会话在 V1 有数据、V2 没有投影数据，所以 UI 显示空白/空会话。该链路比先前“根路径导航一定双层 gzip”的说法证据更强，也把认证 API 与首页文档区分开。
 - 根因来自桌面端与旧 Relay 对响应体编码约定不一致。提交 `192d2af4` 已在 `dev` 加入 `gzipResponseUpload` 能力协商：旧 Relay 未声明能力时桌面保持未压缩，让 Relay 只压缩一次；新 Relay 才接受桌面压缩上传。Desktop 与 Relay 对应压缩用例及类型检查已通过，Relay `bun typecheck` 也通过。
 - 修复还没有进入用户当前长运行的桌面进程或公网旧 Relay 容器；当前部署不能据此判定已修复。它只解释这次认证 API 旧会话读空路径，不能单独解释匿名首页导航白屏。后续应在加载新桌面构建后复测健康 JSON、同一会话 V1/V2 对照、消息首屏和浏览器导航；若任一健康端点解析失败，UI 应明确显示连接/协议错误，而不是把未知状态降级成 V2 空列表。
+
+## 2026-10-06 协议探测失败处理
+
+- V1 与 V2 健康检查并行运行；任何已知健康签名可确定协议，两个响应都无效时抛出专用协议探测错误，不再默认为 V2。
+- 错误提示提供四语本地化，并仅展示 HTTP 状态或超时、JSON 类型等探测类别，不包含请求 URL、认证信息或响应体。
+- `packages/app` 中 `server-protocol.test.ts` 与 `server-errors.test.ts` 共 19 项通过；`bun typecheck` 与 `git diff --check` 通过。
+- 此改动让失败状态可见，避免协议误判产生“空会话”；它不会修复部署/服务端双层 gzip，也没有更新桌面构建或公网 Relay。用户需在下一次安装包含修复的桌面版本后重新连接，才能验证实际恢复情况。
+
+## 2026-10-06 P2P WebSocket 路径标记复核
+
+- 复审近期终端的 Relay→P2P 迁移逻辑时发现，它在 WebSocket 握手前根据全局 DataChannel 状态预先标记为 P2P。该 WebSocket 后续可能自身超时回退 Relay，导致后续状态更新不再迁移终端，且可能展示错误路径。
+- 现在 wrapper 在握手完成后暴露该连接实际走 P2P 或 Relay；若 P2P 在建立过程变可用且这条 WebSocket 落到 Relay，只补一次切换重连，以免不支持的端点反复循环。
+- 首次 Playwright 运行中两条路径用例失败。追查发现测试假信令端可能在伪 WebSocket 创建前丢掉 offer/candidate，并非浏览器无法建立 WebRTC；增加按序缓存后，独立 Chromium 的完整 `remote-peer-channel.spec.ts` 5/5 通过，`typecheck:e2e` 通过。
+- 本次仅证明本机 Chromium + 假 Relay 信令的 DataChannel、终端直连、Relay 回退和上传取消；真实桌面 hidden renderer 到手机、TURN/UDP 阻断、跨大陆网络和公网生产部署仍未验收。未重启桌面 App 或线上 Relay。
