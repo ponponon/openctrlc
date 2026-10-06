@@ -3,7 +3,9 @@ import { keepEventStreamAlive, ResponseHeadersTimeoutError, withResponseHeadersT
 
 test("disables the request idle timeout for event streams", () => {
   const values: number[] = []
-  keepEventStreamAlive(new Headers({ "content-type": "text/event-stream; charset=utf-8" }), (seconds) => values.push(seconds))
+  keepEventStreamAlive(new Headers({ "content-type": "text/event-stream; charset=utf-8" }), (seconds) =>
+    values.push(seconds),
+  )
   expect(values).toEqual([0])
 })
 
