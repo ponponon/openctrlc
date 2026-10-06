@@ -17,6 +17,7 @@ import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "n
 import { sanitizeResponseHeaders, shouldGzipToViewer } from "./response-encoding"
 import { peerRouteCounts, recordPeerRoute, type PeerRouteState } from "./peer-usage"
 import { createPeerIceServers, removeTurnIceServers, stunServersConfigured, turnCredentialsConfigured } from "./turn"
+import { ResponseHeadersTimeoutError, withResponseHeadersTimeout } from "./request-timeout"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -95,6 +96,7 @@ const maxRequestBytes = 16 * 1024 * 1024
 const maxPendingRequests = 256
 const maxSockets = 32
 const maxSocketQueueBytes = 512 * 1024
+const responseHeadersTimeoutMs = 15_000
 const maxSessionCreationsPerIPPerHour = 60
 const maxSessions = 10_000
 const sessionCreationWindow = 60 * 60 * 1000
@@ -821,7 +823,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
   if (value.type === "response.start") {
     const response = session.responses.get(value.id)
-    if (!response || typeof value.status !== "number" || typeof value.headers !== "object" || !value.headers) return
+    if (!response || response.closed || typeof value.status !== "number" || typeof value.headers !== "object" || !value.headers) return
     response.resolveHeaders({ status: value.status, headers: value.headers as Record<string, string> })
     return
   }
@@ -895,6 +897,7 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     cancel() {
       pending.closed = true
       session.responses.delete(id)
+      pending.rejectHeaders(new Error("Viewer request was canceled"))
       sendHost(session, { type: "request.cancel", id })
     },
   })
@@ -925,12 +928,13 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
     () => {
       pending.closed = true
       session.responses.delete(id)
+      pending.rejectHeaders(new Error("Viewer request was canceled"))
       sendHost(session, { type: "request.cancel", id })
     },
     { once: true },
   )
   try {
-    const result = await headersPromise
+    const result = await withResponseHeadersTimeout(headersPromise, responseHeadersTimeoutMs)
     const responseHeaders = sanitizeResponseHeaders(result.headers)
     applyAssetCachePolicy(path, request.method, result.status, responseHeaders)
     if (!responseHeaders.get("cache-control")?.startsWith("public,")) {
@@ -955,7 +959,17 @@ async function proxyRequest(session: RelaySession, request: Request, viewerToken
       status: result.status,
       headers: responseHeaders,
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof ResponseHeadersTimeoutError) {
+      pending.closed = true
+      session.responses.delete(id)
+      pending.rejectHeaders(error)
+      try {
+        pending.controller?.error(error)
+      } catch {}
+      sendHost(session, { type: "request.cancel", id })
+      return new Response("Desktop response timed out", { status: 504, headers: noStore })
+    }
     return new Response("Desktop request failed", { status: 502 })
   }
 }

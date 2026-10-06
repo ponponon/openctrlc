@@ -3024,3 +3024,10 @@ Electron 承载桌面 WebRTC peer 的专用隐藏窗口关闭后台定时器节�
 
 - 代码：`packages/app/src/app.tsx`、`packages/app/src/components/titlebar.tsx`、`packages/app/src/i18n/{en,zh,ja,ko}.ts`。
 - 验证：在 `packages/app` 执行 `bun typecheck` 通过；`src/i18n/parity.test.ts` 的 8 项测试通过；`bun run build` 成功。Vite 构建仍报告动态导入/大分块和重复 source map 警告；未进行手机浏览器断线现场验收。
+
+## Relay 桌面响应头超时
+
+Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSocket 半断开、表面仍处于打开状态但已不再响应时，Relay 会取消该请求并返回 HTTP 504，而不是让浏览器一直等待外层代理超时。收到桌面响应头后，正常响应体和 SSE 流仍按原有方式持续传输；桌面完全离线时继续立即返回 503。
+
+- 代码：`packages/remote-relay/src/request-timeout.ts`、`packages/remote-relay/src/index.ts`。
+- 验证：`packages/remote-relay` 全部 20 项单测通过，`bun run typecheck` 与 Bun bundle 构建通过；未部署生产 Relay。

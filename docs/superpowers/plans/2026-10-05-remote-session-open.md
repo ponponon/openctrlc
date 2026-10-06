@@ -211,3 +211,9 @@
 - Kimi Bridge 只读借用当前远程会话标签页，未读取正文或请求体：浏览器导航 DCL 2.512 秒、load 2.548 秒、FCP 2.672 秒；Performance Resource Timing 显示 8 个脱敏后的 `/session/:id` 请求分别等待 119.444–119.519 秒后返回 HTTP 502，响应传输仅 856 字节。DOM 时间线消息节点数为 0。结合同一时段 Relay 无在线桌面，确认当前空白页不是几十 KB 会话正文受 5 Mbps 带宽限制；但旧 Relay 没有逐请求日志，无法仅凭这些记录断定 502 的精确上游断点。
 - 代码复核另发现一个待实测的加载等待：`server-session.ts` 的 `fetchMessages` 与 `fetchMessage` 在检查已恢复的单会话 V1 提示前，先等待全局 `options.protocol`。若全局健康探测耗时，已知 V1 会话仍被这段 Promise 挡住。App 指令要求修改会话加载前记录并比较生产基线；当前线上请求以 502 结束，没有成功首屏，不能拿来作为有效前后对比基线，所以暂不改该路径。
 - 下一步生产切换需要替换旧 Relay 并启用自托管 STUN。由于当前旧服务没有可恢复快照，替换会让 4 个浏览器重新配对；在用户明确接受这项影响前，继续只做本地代码审查和不触碰现网的准备工作。
+
+## 2026-10-06 Relay 响应头挂起保护
+
+- 只读检查生产容器源码确认，`proxyRequest` 在转发请求后直接等待桌面端 `response.start`，没有自己的响应头 deadline。当前代码只有收到桌面 WebSocket close 或协议错误时才释放等待；半断开的 WebSocket 若仍报告 OPEN，代理请求可能长时间 pending。此缺口与浏览器观察到的约 119.5 秒 TTFB 相符，但 OpenResty 最近 3 小时容器日志没有匹配到 `upstream timed out`/502，且不是用户截图时段日志，因此尚未证明 502 的具体生成层。
+- Relay 本地变更为等待桌面响应头最多 15 秒；超时后从 pending map 删除请求、向桌面发送 `request.cancel`，并返回 504。桌面正常开始 SSE/HTTP 响应后不受该计时器限制；已完全断开的桌面仍立即返回 503。浏览器主动取消也会尽早释放头部等待。
+- 新增 timeout helper 单测；`packages/remote-relay` 全部 20 项单测通过，`bun run typecheck` 和 `bun build src/index.ts --target=bun` 通过。尚未更新或重启生产容器；当前生产 Relay 无法从挂载目录恢复 4 个旧版浏览器授权，替换前仍须确认是否接受重新配对。

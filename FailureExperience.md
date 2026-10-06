@@ -1541,3 +1541,7 @@ Linux CI 的 app 单测因 `identity-residuals.test.ts` 的 E2E fixture 基线�
 ## 中国大陆用户的关键远程链路不能依赖 Cloudflare Workers
 
 用户在中国大陆的实测是 Cloudflare Workers 相关入口容易被防火墙屏蔽。设计 OpenCtrlC 面向大陆与海外共同使用的信令、会话代理或兜底中继时，不得把 Workers、Durable Objects 或其他 Worker 托管转发放进关键路径，也不能只凭供应商全球可用性宣称大陆可达。默认沿用自有域名和自托管 Relay；新增区域或服务先实测大陆移动网络与美国网络，并保留可迁移回退。
+
+## Relay 等待响应头不能只依赖 WebSocket close
+
+生产 Relay 的 HTTP 转发请求会等桌面端发出响应头；半断开的桌面 WebSocket 可能仍报告 OPEN，close 事件迟迟不来，导致浏览器请求直到外层代理超时才失败。即使发现约 120 秒的请求，也不能仅凭时长断言是 OpenResty 产生了 502；应检查同一时段网关日志与 Relay 代码。Relay 自身仍需给响应头等待设有限 deadline，并在超时后移除 pending、通知桌面取消、返回明确的 504；超时只限制响应头，不能中断已开始的 SSE/HTTP 响应体。
