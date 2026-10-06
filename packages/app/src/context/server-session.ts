@@ -234,6 +234,7 @@ type ServerSessionOptions = {
   retry?: typeof retry
   protocol?: Promise<"v1" | "v2">
   sessionProtocols?: Map<string, "v1" | "v2">
+  initialMessagePageSize?: number
 }
 
 export function createServerSession(
@@ -244,6 +245,7 @@ export function createServerSession(
 ) {
   const sessionApi = messageApi ? (sessionApiOrOptions as SessionApi) : undefined
   const options = messageApi ? currentOptions : (sessionApiOrOptions as ServerSessionOptions | undefined)
+  const defaultMessagePageSize = options?.initialMessagePageSize ?? initialMessagePageSize
   let detectedProtocol: "v1" | "v2" | undefined
   let observingProtocol = false
   const protocolFor = (sessionID: string) => {
@@ -1051,7 +1053,7 @@ export function createServerSession(
       cached && !options?.force
         ? Promise.resolve()
         : runInflight(inflight, sessionID, () =>
-            loadMessages(sessionID, options?.messageLimit ?? meta.limit[sessionID] ?? initialMessagePageSize),
+            loadMessages(sessionID, options?.messageLimit ?? meta.limit[sessionID] ?? defaultMessagePageSize),
           )
     return Promise.all([session, messages]).then(() => {})
   }

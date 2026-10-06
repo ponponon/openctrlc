@@ -3044,6 +3044,13 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - `packages/app/src/utils/server-protocol.ts`：探测 fetch 与响应解析共用独立硬 deadline，到期主动 abort。
 - 原提交仅执行 `packages/app` 类型检查，未运行测试；后续回归验证见下一节。未进行桌面冷启动或真实 Relay 环境验收。
 
+## 远程会话使用较小的首屏消息页
+
+远程浏览器首开会话时只请求最近 10 条消息，桌面本地仍保留 20 条。消息详情可能包含较大的工具输出，远程传输还会占用桌面上行；缩小远程首屏响应后，更早的历史继续由时间线按需加载，不改变服务端数据或本地桌面行为。
+
+- 代码：`packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`。
+- 验证：`packages/app` 类型检查通过；未运行测试，未做公网 Relay 下的实测首屏计时。
+
 ## 协议探测 pending 时会话仍立即加载
 
 - `server-compat` 的 API 方法在下一微任务读取已 settle 的协议结果；若探测仍 pending，立即使用当前 V2 方法，不等待探测 Promise。

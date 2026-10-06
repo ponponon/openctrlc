@@ -236,6 +236,9 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
   const session = createServerSession(serverSDK.client, serverSDK.api.session, serverSDK.api.message, {
     protocol: serverSDK.protocol,
     sessionProtocols: serverSDK.sessionProtocols,
+    // Remote session responses share the desktop's uplink with the Relay. Keep
+    // the first transcript page small and let timeline history load on demand.
+    initialMessagePageSize: platform.remoteSessionID ? 10 : undefined,
   })
   const queryOptionsApi = makeQueryOptionsApi(
     serverSDK.scope,
