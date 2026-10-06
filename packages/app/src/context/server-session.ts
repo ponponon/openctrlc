@@ -36,6 +36,12 @@ const sessionReadTimeoutMs = 20_000
 const emptyIDs: ReadonlySet<string> = new Set()
 type SessionMessageWithParent = SessionMessageInfo & { parentID?: string }
 
+function isNotFoundError(error: unknown) {
+  if (!error || typeof error !== "object" || !("cause" in error)) return false
+  const cause = error.cause
+  return !!cause && typeof cause === "object" && "status" in cause && cause.status === 404
+}
+
 function sessionRead<T>(label: string, request: (signal: AbortSignal) => Promise<T>) {
   const controller = new AbortController()
   const startedAt = Date.now()
@@ -54,19 +60,15 @@ function sessionRead<T>(label: string, request: (signal: AbortSignal) => Promise
       reject(error)
     }, sessionReadTimeoutMs)
   })
-  // The deadline promise needs its own handler. Promise.race attaches its
-  // rejection handler to whichever input settles first, so once the real request
-  // fails, a still-pending deadline has no handler left; when the timer later
-  // fires, that rejection is unhandled and the desktop renderer treats it as
-  // fatal, blanking the window. Promise.all subscribes to both inputs up front.
-  deadline.catch(() => undefined)
   let pending: Promise<T>
   try {
     pending = request(controller.signal)
   } catch (error) {
     pending = Promise.reject(error)
   }
-  return Promise.all([pending, deadline]).then(([result]) => result).finally(() => {
+  // Promise.all would wait for the timeout rejection even after a fast request
+  // succeeds. The race observes both outcomes and returns as soon as either wins.
+  return Promise.race([pending, deadline]).finally(() => {
     if (timeout !== undefined) clearTimeout(timeout)
   })
 }
@@ -621,10 +623,16 @@ export function createServerSession(
     )
 
   const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
+    let started = false
+    const beginRead = () => {
+      if (started) return
+      started = true
+      onAttempt?.()
+    }
     const fetchLegacyPage = async () => {
       const response = await sessionRead("legacy-page", (signal) =>
         (options?.retry ?? retry)(() => {
-          onAttempt?.()
+          beginRead()
           return client.session.messages({ sessionID, limit, before }, { signal })
         }),
       )
@@ -642,17 +650,30 @@ export function createServerSession(
       }
     }
 
-    if (messageApi && options?.sessionProtocols?.get(sessionID) !== "v1" && (await options?.protocol) !== "v1") {
+    if (messageApi && options?.sessionProtocols?.get(sessionID) !== "v1") {
       const request = (cursor?: string): Promise<CurrentSessionMessagePage> =>
         sessionRead("message-page", (signal) =>
           (options?.retry ?? retry)(() => {
-            onAttempt?.()
+            beginRead()
             return messageApi
               .list(cursor ? { sessionID, limit, cursor } : { sessionID, limit, order: "desc" }, { signal })
               .then((response) => response as unknown as CurrentSessionMessagePage)
           }),
         )
-      const first = await request(before)
+      let first: CurrentSessionMessagePage
+      try {
+        first = await request(before)
+      } catch (error) {
+        if (!isNotFoundError(error)) throw error
+        try {
+          const legacy = await fetchLegacyPage()
+          options?.sessionProtocols?.set(sessionID, "v1")
+          return legacy
+        } catch (legacyError) {
+          if (isNotFoundError(legacyError)) throw error
+          throw legacyError
+        }
+      }
       if (first.data.length > 0) options?.sessionProtocols?.set(sessionID, "v2")
       if (
         first.data.length === 0 &&
@@ -700,29 +721,52 @@ export function createServerSession(
   }
 
   const fetchMessage = async (sessionID: string, messageID: string, onAttempt?: () => void) => {
-    if (sessionApi && options?.sessionProtocols?.get(sessionID) !== "v1" && (await options?.protocol) !== "v1") {
-      const response = await sessionRead("message-v2", (signal) =>
+    let started = false
+    const beginRead = () => {
+      if (started) return
+      started = true
+      onAttempt?.()
+    }
+    const fetchLegacyMessage = async () => {
+      const response = await sessionRead("message-v1", (signal) =>
         (options?.retry ?? retry)(() => {
-          onAttempt?.()
-          return sessionApi.message({ sessionID, messageID }, { signal })
+          beginRead()
+          return client.session.message({ sessionID, messageID }, { signal })
         }),
       )
-      const normalized = normalizeSessionMessages(sessionID, [response])
-      const message = normalized.messages[0]
-      if (!message) throw new Error(`Message not found: ${messageID}`)
-      return { message, parts: normalized.parts.get(messageID) ?? [] }
+      if (!response.data?.info?.id) throw new Error(`Message not found: ${messageID}`)
+      return {
+        message: cleanMessage(response.data.info),
+        parts: response.data.parts.filter((part) => !!part?.id).sort((a, b) => cmp(a.id, b.id)),
+      }
     }
-    const response = await sessionRead("message-v1", (signal) =>
-      (options?.retry ?? retry)(() => {
-        onAttempt?.()
-        return client.session.message({ sessionID, messageID }, { signal })
-      }),
-    )
-    if (!response.data?.info?.id) throw new Error(`Message not found: ${messageID}`)
-    return {
-      message: cleanMessage(response.data.info),
-      parts: response.data.parts.filter((part) => !!part?.id).sort((a, b) => cmp(a.id, b.id)),
+
+    if (sessionApi && options?.sessionProtocols?.get(sessionID) !== "v1") {
+      try {
+        const response = await sessionRead("message-v2", (signal) =>
+          (options?.retry ?? retry)(() => {
+            beginRead()
+            return sessionApi.message({ sessionID, messageID }, { signal })
+          }),
+        )
+        const normalized = normalizeSessionMessages(sessionID, [response])
+        const message = normalized.messages[0]
+        if (!message) throw new Error(`Message not found: ${messageID}`)
+        options?.sessionProtocols?.set(sessionID, "v2")
+        return { message, parts: normalized.parts.get(messageID) ?? [] }
+      } catch (error) {
+        if (!isNotFoundError(error)) throw error
+        try {
+          const legacy = await fetchLegacyMessage()
+          options?.sessionProtocols?.set(sessionID, "v1")
+          return legacy
+        } catch (legacyError) {
+          if (isNotFoundError(legacyError)) throw error
+          throw legacyError
+        }
+      }
     }
+    return fetchLegacyMessage()
   }
 
   const replaceMessages = (sessionID: string, messages: Message[]) => {
@@ -1008,7 +1052,6 @@ export function createServerSession(
     if (start === undefined) return false
     if (!sessionApi?.log) return false
     if (options?.sessionProtocols?.get(sessionID) === "v1") return false
-    if ((await options?.protocol) === "v1") return false
     try {
       let after = start
       // Guard against a runaway more:true loop from a buggy server.
@@ -1637,16 +1680,21 @@ export function createServerSession(
     async todo(sessionID: string, request?: { force?: boolean }) {
       touch(sessionID)
       if (data.todo[sessionID] !== undefined && !request?.force) return
-      if ((await options?.protocol) === "v2") {
+      if (options?.sessionProtocols?.get(sessionID) === "v2") {
         setData("todo", sessionID, [])
         return
       }
       return runInflight(inflightTodo, sessionID, () => {
         const active = generation(sessionID)
-        return (options?.retry ?? retry)(() => client.session.todo({ sessionID })).then((result) => {
-          if (generations.get(sessionID) !== active) return
-          setData("todo", sessionID, reconcile(result.data ?? [], { key: "id" }))
-        })
+        return (options?.retry ?? retry)(() => client.session.todo({ sessionID }))
+          .then((result) => {
+            if (generations.get(sessionID) !== active) return
+            setData("todo", sessionID, reconcile(result.data ?? [], { key: "id" }))
+          })
+          .catch((error) => {
+            if (!isNotFoundError(error)) throw error
+            setData("todo", sessionID, [])
+          })
       })
     },
     history: {

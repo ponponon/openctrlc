@@ -32,23 +32,35 @@ async function probe(
   path: string,
   timeoutMs: number,
 ): Promise<ProbeResult> {
-  try {
-    const response = await fetch(new URL(path, server.url), {
-      headers: headers(server),
-      signal: AbortSignal.timeout(timeoutMs),
-    })
-    if (!response.ok) return { failure: `http-${response.status}` } satisfies ProbeResult
-    const contentType = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase() ?? ""
-    if (!contentType.endsWith("/json") && !contentType.endsWith("+json"))
-      return { failure: "non-json-response" } satisfies ProbeResult
-    const value: unknown = await response.json().catch(() => undefined)
-    if (!value || typeof value !== "object" || Array.isArray(value))
-      return { failure: "invalid-json-response" } satisfies ProbeResult
-    return { value: value as Record<string, unknown> } satisfies ProbeResult
-  } catch (error) {
-    const timedOut = error !== null && typeof error === "object" && "name" in error && error.name === "TimeoutError"
-    return { failure: timedOut ? "timeout" : "request-error" } satisfies ProbeResult
-  }
+  const controller = new AbortController()
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  const request = (async (): Promise<ProbeResult> => {
+    try {
+      const response = await fetch(new URL(path, server.url), {
+        headers: headers(server),
+        signal: controller.signal,
+      })
+      if (!response.ok) return { failure: `http-${response.status}` } satisfies ProbeResult
+      const contentType = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase() ?? ""
+      if (!contentType.endsWith("/json") && !contentType.endsWith("+json"))
+        return { failure: "non-json-response" } satisfies ProbeResult
+      const value: unknown = await response.json().catch(() => undefined)
+      if (!value || typeof value !== "object" || Array.isArray(value))
+        return { failure: "invalid-json-response" } satisfies ProbeResult
+      return { value: value as Record<string, unknown> } satisfies ProbeResult
+    } catch {
+      return { failure: controller.signal.aborted ? "timeout" : "request-error" } satisfies ProbeResult
+    }
+  })()
+  const deadline = new Promise<ProbeResult>((resolve) => {
+    timeout = setTimeout(() => {
+      controller.abort()
+      resolve({ failure: "timeout" })
+    }, timeoutMs)
+  })
+  const result = await Promise.race([request, deadline])
+  if (timeout !== undefined) clearTimeout(timeout)
+  return result
 }
 
 function isTransientProbeFailure(result: ProbeResult) {
