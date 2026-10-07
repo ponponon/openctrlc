@@ -34,14 +34,20 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
     const info = item as Record<string, unknown>
     if (typeof info.sessionID !== "string" || !sessionIDSet.has(info.sessionID)) return []
     if (info.title !== undefined && (typeof info.title !== "string" || info.title.length > 200)) return []
+    if (
+      info.directory !== undefined &&
+      (typeof info.directory !== "string" || info.directory.length === 0 || info.directory.length > maxPathLength)
+    )
+      return []
     if (info.protocol !== undefined && info.protocol !== "v1" && info.protocol !== "v2") return []
-    if (info.title === undefined && info.protocol === undefined) return []
+    if (info.title === undefined && info.directory === undefined && info.protocol === undefined) return []
     const protocol: "v1" | "v2" | undefined =
       info.protocol === "v1" || info.protocol === "v2" ? info.protocol : undefined
     return [
       {
         sessionID: info.sessionID,
         ...(typeof info.title === "string" ? { title: info.title } : {}),
+        ...(typeof info.directory === "string" ? { directory: info.directory } : {}),
         ...(protocol ? { protocol } : {}),
       },
     ]

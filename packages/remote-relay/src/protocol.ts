@@ -2,7 +2,7 @@ export type RelayWorkspaceSnapshot = {
   projects: Array<{ worktree: string; expanded: boolean }>
   lastProject?: string
   sessionIDs: string[]
-  sessionInfo?: Array<{ sessionID: string; title?: string; protocol?: "v1" | "v2" }>
+  sessionInfo?: Array<{ sessionID: string; title?: string; directory?: string; protocol?: "v1" | "v2" }>
   activeSessionID?: string
   hostName?: string
 }

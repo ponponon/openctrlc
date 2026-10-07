@@ -77,7 +77,9 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
       setInfo({})
       for (const item of props.remoteWorkspace.sessionInfo ?? []) {
         const tab = sessions.find((session) => session.sessionId === item.sessionID)
-        if (tab && typeof item.title === "string") setInfo(tabKey(tab), "title", item.title)
+        if (!tab) continue
+        if (typeof item.title === "string") setInfo(tabKey(tab), "title", item.title)
+        if (typeof item.directory === "string") setInfo(tabKey(tab), "directory", item.directory)
       }
       const activeTab = sessions.find((session) => session.sessionId === active)
       if (activeTab) setRecent("key", tabKey(activeTab))

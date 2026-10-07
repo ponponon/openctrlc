@@ -808,16 +808,20 @@ function RemoteTabsHydrator() {
     const lastProject = context.projects.last()
     const sessionInfo = sessionIDs.flatMap((sessionID) => {
       const tab = tabs.store.find((item) => item.type === "session" && item.sessionId === sessionID)
-      const title =
-        (tab?.type === "session" ? tabs.info[tabKey(tab)]?.title : undefined) ??
-        context.sync.session.peek(sessionID)?.title
-      if (typeof title !== "string") return []
+      const tabInfo = tab?.type === "session" ? tabs.info[tabKey(tab)] : undefined
+      const session = context.sync.session.peek(sessionID)
+      const title = tabInfo?.title ?? session?.title
+      const directory = session?.directory || tabInfo?.directory
+      if (typeof title !== "string" && typeof directory !== "string") return []
       const messagesLoaded = context.sync.session.data.session_message[sessionID] !== undefined
       const protocol = messagesLoaded ? context.sdk.sessionProtocols.get(sessionID) : undefined
       return [
         {
           sessionID,
-          title: title.slice(0, 200),
+          ...(typeof title === "string" ? { title: title.slice(0, 200) } : {}),
+          ...(typeof directory === "string" && directory.length > 0 && directory.length <= 4096
+            ? { directory }
+            : {}),
           ...(protocol ? { protocol } : {}),
         },
       ]

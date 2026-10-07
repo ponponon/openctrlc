@@ -152,8 +152,10 @@ export class RemoteAccessService {
                 (item) =>
                   item &&
                   typeof item.sessionID === "string" &&
-                  typeof item.title === "string" &&
-                  item.title.length <= 200 &&
+                  (item.title === undefined || (typeof item.title === "string" && item.title.length <= 200)) &&
+                  (item.directory === undefined ||
+                    (typeof item.directory === "string" && item.directory.length > 0 && item.directory.length <= 4096)) &&
+                  (item.title !== undefined || item.directory !== undefined || item.protocol !== undefined) &&
                   (item.protocol === undefined || item.protocol === "v1" || item.protocol === "v2"),
               )
               .filter((item) => snapshot.sessionIDs.includes(item.sessionID))
@@ -161,6 +163,7 @@ export class RemoteAccessService {
               .map((item) => ({
                 sessionID: item.sessionID,
                 ...(typeof item.title === "string" ? { title: item.title } : {}),
+                ...(typeof item.directory === "string" ? { directory: item.directory } : {}),
                 ...(item.protocol === "v1" || item.protocol === "v2" ? { protocol: item.protocol } : {}),
               })),
           }

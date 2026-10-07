@@ -3130,3 +3130,7 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 
 - 代码：`perf/capture-network.mjs`、`perf/README.md`。
 - 验证：`node --check perf/capture-network.mjs`、`git diff --check` 通过；未刷新或操作当前 renderer。
+
+## 远程工作区快速恢复
+
+- 远程工作区快照为已打开会话同步标题和目录；浏览器恢复标签时可直接挂载项目上下文并并行加载消息，避免先等待一次会话详情请求才显示会话页面。
