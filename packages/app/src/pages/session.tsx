@@ -271,9 +271,6 @@ function SessionErrorFallback(props: {
         <div class="min-h-full px-6 py-8 flex flex-col items-center justify-center text-center gap-4">
           <div class="flex flex-col items-center gap-2">
             <div class="text-16-medium text-text max-w-md">{language.t("session.error.loadFailed")}</div>
-            <div class="text-13-regular text-text-weak max-w-md">
-              {language.t("session.error.loadFailed.description")}
-            </div>
           </div>
           <pre class="max-w-full max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-[4px] bg-v2-background-bg-layer-01 px-3 py-2 text-left text-12-regular text-text-faint">
             {formatServerError(props.error, language.t).slice(0, 2000)}

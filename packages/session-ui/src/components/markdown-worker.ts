@@ -199,6 +199,7 @@ function getWorker() {
   }
   const fail = (message: string) => {
     const error = new Error(message)
+    console.error("Markdown worker failed", error)
     disabled = error
     transport.reset()
     projectTransport.reset()
