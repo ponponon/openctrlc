@@ -16,9 +16,11 @@ The full deployment requires Docker Compose, `curl`, and `jq`. The script checks
 
 For a managed virtual-host change that must preserve active in-memory sessions, run `sh infra/remote-relay/deploy.sh --config-only`. This validates the existing managed configuration and certificate, installs only `openresty.conf`, runs `nginx -t`, and gracefully reloads OpenResty with rollback on failure. It does not rebuild or restart the Relay container.
 
-## Parallel P2P Relay
+## Optional independent P2P Relay endpoint
 
-To add the self-hosted ICE/STUN path without restarting the existing public Relay, create an `A` record for `openctrlc-p2p.quniv.cn` pointing to this host, then allow inbound UDP 3478 in the cloud security group and host firewall. Deploy the independent P2P instance with:
+This target creates a second Relay endpoint at `openctrlc-p2p.quniv.cn`. It does **not** change the desktop client's default, which remains `openctrlc-remote.quniv.cn`; existing sessions always resume through their saved Relay URL. To send only newly created sessions to the independent endpoint, launch the desktop process with `OPENCTRLC_REMOTE_RELAY_URL=wss://openctrlc-p2p.quniv.cn/v1/host`. The pairing link then points browsers at the same P2P Relay origin. This environment variable is a deployment/operator setting, not a user-facing preference in the desktop app.
+
+If the goal is to add ICE discovery to the existing default endpoint, keep its HTTPS/WSS origin unchanged and configure the **primary Relay** with `OPENCTRLC_STUN_URLS=stun:openctrlc-p2p.quniv.cn:3478`. The primary Relay will advertise that ICE server while browser signaling and HTTPS fallback continue through `openctrlc-remote.quniv.cn`. Deploying the primary Relay this way restarts its process and disconnects active transports; use the full deploy's state checks and coordinate the reconnect window. In both designs, first create an `A` record for `openctrlc-p2p.quniv.cn` pointing to this host, then allow inbound UDP 3478 in the cloud security group and host firewall. Deploy the independent P2P instance with:
 
 ```bash
 OPENCTRLC_RELAY_INSTANCE=p2p sh infra/remote-relay/deploy.sh
@@ -26,7 +28,7 @@ OPENCTRLC_RELAY_INSTANCE=p2p sh infra/remote-relay/deploy.sh
 
 This target uses `/home/pon/openctrlc-remote-p2p`, a separate persistent session store, loopback TCP port 4098, and the `openctrlc-p2p.quniv.cn` HTTPS virtual host. Its Coturn container provides STUN on UDP 3478; STUN only helps peers discover candidate addresses and does not carry workspace traffic. Coturn drops all capabilities except `NET_BIND_SERVICE`, which its upstream binary requires to start. Compose invokes the binary directly (the image entrypoint expands `-n` incorrectly) and binds it to `0.0.0.0` to avoid scanning every Docker bridge interface. The deploy script waits up to 15 seconds for the UDP socket before reloading OpenResty. It does not verify that the cloud firewall permits UDP; verify from an external Mainland China and US network before relying on direct P2P. HTTP/WebSocket Relay remains the fallback.
 
-The P2P instance is upgraded independently with the same command. It has its own retained sessions and browser grants; the deploy script refuses to restart it when active state cannot be verified from a persistent snapshot. `OPENCTRLC_RELAY_INSTANCE=p2p sh infra/remote-relay/deploy.sh --config-only` updates only the P2P virtual host and leaves both Relay processes running. The default deployment target remains the original `openctrlc-remote.quniv.cn` instance.
+The P2P instance is upgraded independently with the same command. It has its own retained sessions and browser grants; the deploy script refuses to restart it when active state cannot be verified from a persistent snapshot. `OPENCTRLC_RELAY_INSTANCE=p2p sh infra/remote-relay/deploy.sh --config-only` updates only the P2P virtual host and leaves both Relay processes running. Updating this secondary endpoint does not switch the default; the default deployment target remains the original `openctrlc-remote.quniv.cn` instance.
 
 For another host, edit `compose.yaml` (`OPENCTRLC_REMOTE_PUBLIC_URL`), `openresty.conf` (`server_name` and certificate paths), and `deploy.sh` (host-specific paths and OpenResty container name) before deployment. Provide a valid public TLS certificate and preserve the loopback-only relay port binding.
 
