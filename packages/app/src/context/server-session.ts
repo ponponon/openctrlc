@@ -646,7 +646,13 @@ export function createServerSession(
       pickSessionCacheEvictions({ seen, keep: sessionID, limit: SESSION_CACHE_LIMIT, preserve: protectedSessions() }),
     )
 
-  const fetchMessages = async (sessionID: string, limit: number, before?: string, onAttempt?: () => void) => {
+  const fetchMessages = async (
+    sessionID: string,
+    limit: number,
+    before?: string,
+    onAttempt?: () => void,
+    onInitialPage?: (page: MessagePage) => void,
+  ) => {
     onAttempt?.()
     let attempts = 0
     const beginRead = () => {
@@ -718,29 +724,42 @@ export function createServerSession(
         options?.sessionProtocols?.set(sessionID, "v2")
       }
       const pages = [first]
+      let initialPagePublished = false
+      const currentPage = () => {
+        const response = pages.at(-1)!
+        const source = [
+          ...new Map(
+            pages.flatMap((page) => [...page.data, ...(page.parents ?? [])]).map((message) => [message.id, message]),
+          ).values(),
+        ].sort(compareMessages)
+        const normalized = normalizeSessionMessages(sessionID, source)
+        return {
+          session: normalized.messages.sort(compareMessages),
+          part: [...normalized.parts.entries()]
+            .map(([id, part]) => ({ id, part: part.sort((a, b) => cmp(a.id, b.id)) }))
+            .sort((a, b) => cmp(a.id, b.id)),
+          source,
+          sourceMode: before ? ("older" as const) : ("latest" as const),
+          projectSource: true,
+          cursor: response.cursor.next ?? undefined,
+          complete: !response.cursor.next,
+        }
+      }
+      const publishInitialPage = () => {
+        if (initialPagePublished || before || !options?.progressiveInitialMessageHydration) return
+        const page = currentPage()
+        if (!page.session.some((message) => message.role === "user")) return
+        initialPagePublished = true
+        onInitialPage?.(page)
+      }
+      publishInitialPage()
       while (pages.at(-1)?.cursor.next && needsOlderTurnRoot(pages.flatMap((page) => page.data).toReversed())) {
         const response = await request(pages.at(-1)!.cursor.next ?? undefined)
         pages.push(response)
         if (!response.data.length) break
+        publishInitialPage()
       }
-      const response = pages.at(-1)!
-      const source = [
-        ...new Map(
-          pages.flatMap((page) => [...page.data, ...(page.parents ?? [])]).map((message) => [message.id, message]),
-        ).values(),
-      ].sort(compareMessages)
-      const normalized = normalizeSessionMessages(sessionID, source)
-      return {
-        session: normalized.messages.sort(compareMessages),
-        part: [...normalized.parts.entries()]
-          .map(([id, part]) => ({ id, part: part.sort((a, b) => cmp(a.id, b.id)) }))
-          .sort((a, b) => cmp(a.id, b.id)),
-        source,
-        sourceMode: before ? ("older" as const) : ("latest" as const),
-        projectSource: true,
-        cursor: response.cursor.next ?? undefined,
-        complete: !response.cursor.next,
-      }
+      return currentPage()
     }
     return fetchLegacyPage()
   }
@@ -959,7 +978,28 @@ export function createServerSession(
     setMeta("loading", sessionID, true)
     let applied = false
     try {
-      const page = await fetchMessages(sessionID, limit, before, () => resetMessageLoad(sessionID, load))
+      const page = await fetchMessages(
+        sessionID,
+        limit,
+        before,
+        () => resetMessageLoad(sessionID, load),
+        (progress) => {
+          if (
+            mode === "prepend" ||
+            generations.get(sessionID) !== active ||
+            messageLoads.get(sessionID) !== load
+          )
+            return
+          const first = progress.session.reduce<Message | undefined>(
+            (oldest, message) => (!oldest || compareMessages(message, oldest) < 0 ? message : oldest),
+            undefined,
+          )
+          const preserveUnfetched =
+            !progress.complete && (!first || ((message: Message) => compareMessages(message, first) < 0))
+          applyMessagePage(sessionID, progress, load, preserveUnfetched, true)
+          applied = true
+        },
+      )
       const first = page.session.reduce<Message | undefined>(
         (oldest, message) => (!oldest || compareMessages(message, oldest) < 0 ? message : oldest),
         undefined,
@@ -970,6 +1010,7 @@ export function createServerSession(
         mode === "prepend" ||
         (!page.complete && (!first || ((message: Message) => compareMessages(message, first) < 0)))
       const showInitialPage =
+        !applied &&
         options?.progressiveInitialMessageHydration === true &&
         !before &&
         mode !== "prepend" &&
