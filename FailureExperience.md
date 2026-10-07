@@ -1714,3 +1714,7 @@ DNS CLI 的账号有 `quniv.cn` zone，但 zone 标记 `IsNSCorrect=false`，公
 ## Markdown Worker 不得加载依赖 DOM 的 CSS
 
 2026-10-07 桌面渲染日志确认，反复出现的 `document is not defined` 来自 `markdown.worker.ts` 导入 `marked-parser.tsx`，而解析器同时静态导入 KaTeX CSS。Vite 将 CSS 注入代码放进 Worker 后访问不存在的 `document`，Worker 崩溃又被全局错误处理误报为会话加载/网络失败。Worker 共用模块必须保持无 DOM 副作用；样式应由主线程按需加载。Worker 的 `error` 事件还要阻止继续冒泡，并把投影失败转为主线程 Markdown 降级，避免单个高亮 Worker 故障击穿整页。
+
+## Relay 保存了新工作区快照，不代表已打开的浏览器会收到它
+
+Relay 的 bootstrap 只在浏览器首次进入工作区时注入一份快照；桌面随后更新 Relay 内的项目/会话索引，并不会推送到已经打开的平板页。因此同一获批设备可能长期保留配对时只有一个项目的旧客户端状态，而其他设备在最近一次打开时已经拿到较新的快照。页面仍能访问同一个桌面服务，不代表客户端侧栏列表也会自动一致。持续同步需要获批浏览器定期通过 Relay 鉴权读取最新版本，并在变化时更新项目与会话索引；用 ETag 避免没有变化时重复传输。上线前必须同时更新 Relay 与嵌入式 Web UI，并在已有页面不手动刷新的情况下观察新开项目能否在数秒内出现。

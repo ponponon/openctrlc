@@ -218,6 +218,44 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
           }),
         )
       },
+      syncRemoteWorkspace(snapshot: RemoteWorkspaceSnapshot) {
+        if (platform.platform !== "web") return
+        const previousTabs = store.map((tab) => tab)
+        const sessions = [...new Set(snapshot.sessionIDs)].map((sessionId) => ({
+          type: "session" as const,
+          server: fallback,
+          sessionId,
+        }))
+        if (snapshot.activeSessionID && !sessions.some((tab) => tab.sessionId === snapshot.activeSessionID)) {
+          sessions.push({ type: "session", server: fallback, sessionId: snapshot.activeSessionID })
+        }
+        const current = store.find(
+          (tab): tab is SessionTab =>
+            tab.type === "session" && tab.server === fallback && location.pathname.includes(tab.sessionId),
+        )
+        if (current && !sessions.some((tab) => tab.sessionId === current.sessionId)) sessions.push(current)
+        const next = [...sessions, ...store.filter((tab): tab is DraftTab => tab.type === "draft")]
+        const same = next.length === store.length && next.every((tab, index) => tabKey(tab) === tabKey(store[index]!))
+        const keys = new Set(next.map(tabKey))
+        for (const tab of previousTabs) {
+          if (tab.type !== "session" || keys.has(tabKey(tab))) continue
+          removeInfo(tabKey(tab))
+        }
+        if (!same) setStore(() => next)
+        for (const item of snapshot.sessionInfo ?? []) {
+          const tab = sessions.find((session) => session.sessionId === item.sessionID)
+          if (!tab) continue
+          const key = tabKey(tab)
+          const previous = info[key]
+          const title = item.title ?? previous?.title
+          const directory = item.directory ?? previous?.directory
+          if (previous?.title === title && previous.directory === directory) continue
+          setInfo(key, {
+            ...(typeof title === "string" ? { title } : {}),
+            ...(typeof directory === "string" ? { directory } : {}),
+          })
+        }
+      },
       draft(draftID: string) {
         const tab = store.find((item) => item.type === "draft" && item.draftID === draftID)
         if (!tab || tab.type !== "draft") throw new Error(`Draft not found: ${draftID}`)

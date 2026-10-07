@@ -77,6 +77,7 @@ type RelaySession = {
   resumeUntil?: number
   resumeTimer?: ReturnType<typeof setTimeout>
   workspace?: RelayWorkspaceSnapshot
+  workspaceRevision: number
 }
 
 type ViewerGrant = {
@@ -111,6 +112,7 @@ const hostReconnectGrace = 60 * 60 * 1000
 const hostReconnectGraceWithViewers = viewerLifetime
 const sessions = new Map<string, RelaySession>()
 const viewerTokens = new Map<string, ViewerGrant>()
+const relayInstanceID = randomToken(8)
 const createRates = new Map<string, number[]>()
 const dataDir = process.env.OPENCTRLC_REMOTE_DATA_DIR?.trim() || ""
 const stateFile = dataDir ? `${dataDir}/remote-sessions.json` : ""
@@ -229,6 +231,7 @@ function restoreState() {
         peers: new Map(),
         peerRoutes: new Map(),
         workspace: item.workspace,
+        workspaceRevision: item.workspace ? 1 : 0,
       }
       for (const viewer of item.viewers ?? []) {
         if (!viewer.token || !viewer.id || !viewer.expiresAt || viewer.expiresAt <= now) continue
@@ -315,6 +318,14 @@ const server = Bun.serve<SocketData>({
     const viewer = sessionFor(request)
     if (!viewer) return new Response("Remote session required", { status: 401, headers: noStore })
     const session = viewer.session
+    if (request.method === "GET" && url.pathname === "/_remote/workspace") {
+      const etag = `W/\"${relayInstanceID}-${session.id}-${session.workspaceRevision}\"`
+      if (request.headers.get("if-none-match") === etag)
+        return new Response(null, { status: 304, headers: { ...noStore, etag } })
+      return new Response(JSON.stringify({ workspace: session.workspace ?? null }), {
+        headers: { ...noStore, etag, "content-type": "application/json; charset=utf-8" },
+      })
+    }
     if (url.pathname === "/_remote/peer") {
       if (!sameOrigin(request)) return new Response("Origin rejected", { status: 403, headers: noStore })
       if (session.host?.readyState !== 1) return new Response("Desktop disconnected", { status: 503, headers: noStore })
@@ -636,6 +647,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
       sockets: new Map(),
       peers: new Map(),
       peerRoutes: new Map(),
+      workspaceRevision: 0,
     }
     socket.data.sessionID = session.id
     sessions.set(session.id, session)
@@ -784,6 +796,7 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   if (value.type === "workspace.update") {
     const workspace = validateWorkspaceSnapshot(value.workspace)
     if (workspace) {
+      if (JSON.stringify(session.workspace) !== JSON.stringify(workspace)) session.workspaceRevision += 1
       session.workspace = workspace
       schedulePersist()
       console.log(

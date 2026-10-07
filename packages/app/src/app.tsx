@@ -22,6 +22,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query"
 import { Effect } from "effect"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import {
+  batch,
   type Component,
   createEffect,
   createMemo,
@@ -33,6 +34,7 @@ import {
   type JSX,
   lazy,
   onCleanup,
+  onMount,
   type ParentProps,
   Show,
   startTransition,
@@ -72,6 +74,7 @@ import { decode64 } from "@/utils/base64"
 import { NewHome } from "@/pages/home"
 import { LegacyHome } from "@/pages/home/legacy-home"
 import { SessionSkeleton } from "@/pages/session-skeleton"
+import { parseRemoteWorkspaceSnapshot } from "@/utils/remote-workspace"
 
 // Session chrome (timeline, diffs, composer, terminal) is the bulk of the bundle.
 // Keep it out of the remote first paint; only load when a session route mounts.
@@ -698,12 +701,12 @@ export function AppInterface(props: {
       <GlobalProvider>
         <SettingsProvider>
           <ConnectionGate disableHealthCheck={props.disableHealthCheck} startup={props.startup}>
-            <RemoteWorkspaceHydrator remoteWorkspace={props.remoteWorkspace} />
             <Show when={useSettings().general.newLayoutDesigns().toString()} keyed>
               <Dynamic
                 component={props.router ?? Router}
                 root={(routerProps) => (
                   <TabsProvider remoteWorkspace={props.remoteWorkspace}>
+                    <RemoteWorkspaceHydrator remoteWorkspace={props.remoteWorkspace} />
                     <RemoteTabsHydrator />
                     <PermissionProvider>
                       <NotificationProvider>
@@ -739,12 +742,80 @@ function RemoteWorkspaceHydrator(props: { remoteWorkspace?: RemoteWorkspaceSnaps
   const platform = usePlatform()
   const server = useServer()
   const global = useGlobal()
+  const tabs = useTabs()
+  const [hasRemoteWorkspace, setHasRemoteWorkspace] = createSignal(Boolean(props.remoteWorkspace))
+
+  onMount(() => {
+    const sessionID = platform.remoteSessionID
+    if (platform.platform !== "web" || !sessionID) return
+    const connection = pickRemoteConnection(global)
+    if (!connection) return
+    const context = global.ensureServerCtx(connection)
+    let active = true
+    let inFlight = false
+    let etag: string | undefined
+    const refresh = async () => {
+      if (!active || inFlight || !tabs.ready() || document.visibilityState === "hidden") return
+      inFlight = true
+      try {
+        const response = await fetch(new URL("/_remote/workspace", location.origin), {
+          cache: "no-store",
+          credentials: "same-origin",
+          headers: {
+            "x-openctrlc-remote-session": sessionID,
+            ...(etag ? { "if-none-match": etag } : {}),
+          },
+        })
+        if (!active || response.status === 304 || !response.ok) return
+        const payload: unknown = await response.json()
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) return
+        const workspace = (payload as Record<string, unknown>).workspace
+        if (workspace === null) {
+          etag = response.headers.get("etag") ?? etag
+          return
+        }
+        const snapshot = parseRemoteWorkspaceSnapshot(workspace)
+        if (!snapshot || !active) return
+        setHasRemoteWorkspace(true)
+        etag = response.headers.get("etag") ?? etag
+        const projects = new Map(snapshot.projects.map((project) => [project.worktree, project]))
+        batch(() => {
+          for (const project of context.projects.list()) {
+            if (!projects.has(project.worktree)) context.projects.remove(project.worktree)
+          }
+          snapshot.projects.forEach((project, index) => {
+            context.projects.open(project.worktree)
+            if (project.expanded) context.projects.expand(project.worktree)
+            else context.projects.collapse(project.worktree)
+            context.projects.move(project.worktree, index)
+          })
+          if (snapshot.lastProject && projects.has(snapshot.lastProject)) context.projects.touch(snapshot.lastProject)
+          tabs.syncRemoteWorkspace(snapshot)
+        })
+      } catch {
+        // Keep the last known project list while the Relay is temporarily unavailable.
+      } finally {
+        inFlight = false
+      }
+    }
+    const interval = window.setInterval(() => void refresh(), 5_000)
+    const refreshOnReturn = () => void refresh()
+    document.addEventListener("visibilitychange", refreshOnReturn)
+    window.addEventListener("focus", refreshOnReturn)
+    void refresh()
+    onCleanup(() => {
+      active = false
+      window.clearInterval(interval)
+      document.removeEventListener("visibilitychange", refreshOnReturn)
+      window.removeEventListener("focus", refreshOnReturn)
+    })
+  })
 
   // A workspace snapshot is authoritative, including an intentionally empty project list.
   // Only direct web connections without a snapshot need one local project as a fallback.
   createEffect(() => {
     if (platform.platform !== "web") return
-    if (props.remoteWorkspace) return
+    if (hasRemoteWorkspace()) return
     if (!server.ready()) return
     const connection = pickRemoteConnection(global)
     if (!connection) return
