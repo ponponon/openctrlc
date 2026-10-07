@@ -29,14 +29,14 @@ socket.addEventListener("message", (event) => {
 })
 const send = (method, params = {}) =>
   new Promise((resolve, reject) => {
-  const next = ++id
-  const timer = setTimeout(() => {
-    if (!pending.delete(next)) return
-    reject(new Error("CDP command timed out"))
-  }, 30000)
-  pending.set(next, { resolve, reject, timer })
-  socket.send(JSON.stringify({ id: next, method, params }))
-})
+    const next = ++id
+    const timer = setTimeout(() => {
+      if (!pending.delete(next)) return
+      reject(new Error("CDP command timed out"))
+    }, 30000)
+    pending.set(next, { resolve, reject, timer })
+    socket.send(JSON.stringify({ id: next, method, params }))
+  })
 const evaluate = async (expression) => {
   const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.text ?? "evaluate failed")
@@ -73,7 +73,11 @@ while (Date.now() - started < seconds * 1000) {
   ).catch(() => null)
   if (!now) continue
   const at = Math.round((Date.now() - started) / 1000)
-  if (now.composer) { done = at; console.log(`  t+${at}s composer mounted, bodyLen=${now.bodyLen}`); break }
+  if (now.composer) {
+    done = at
+    console.log(`  t+${at}s composer mounted, bodyLen=${now.bodyLen}`)
+    break
+  }
   if (at % 5 === 0) console.log(`  t+${at}s skeleton=${now.skeleton} bodyLen=${now.bodyLen}`)
 }
 console.log(done === null ? "\nRESULT: composer never mounted in window" : `\nRESULT: composer mounted at t+${done}s`)

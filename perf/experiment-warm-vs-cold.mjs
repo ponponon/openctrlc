@@ -151,7 +151,9 @@ const main = async () => {
   let page
   for (let i = 0; i < 900; i++) {
     await new Promise((resolve) => setTimeout(resolve, 100))
-    const targets = await fetch(`${CDP}/json/list`).then((response) => response.json()).catch(() => [])
+    const targets = await fetch(`${CDP}/json/list`)
+      .then((response) => response.json())
+      .catch(() => [])
     page = targets.find((target) => {
       if (target.type !== "page") return false
       try {
@@ -189,15 +191,20 @@ const main = async () => {
       break
     }
   }
-  console.log(paintedAt === undefined ? "RESULT: session UI not ready within 90s" : `RESULT: session UI ready in ${paintedAt} ms`)
-  console.log("renderer summary:", JSON.stringify({
-    isSessionRoute: last?.isSessionRoute ?? false,
-    skeleton: last?.skeleton ?? null,
-    composer: last?.composer ?? false,
-    timeline: last?.timeline ?? false,
-    bodyLength: last?.bodyLength ?? null,
-    warm: last?.warm ?? null,
-  }))
+  console.log(
+    paintedAt === undefined ? "RESULT: session UI not ready within 90s" : `RESULT: session UI ready in ${paintedAt} ms`,
+  )
+  console.log(
+    "renderer summary:",
+    JSON.stringify({
+      isSessionRoute: last?.isSessionRoute ?? false,
+      skeleton: last?.skeleton ?? null,
+      composer: last?.composer ?? false,
+      timeline: last?.timeline ?? false,
+      bodyLength: last?.bodyLength ?? null,
+      warm: last?.warm ?? null,
+    }),
+  )
   client.close()
   client = undefined
   if (keep) {

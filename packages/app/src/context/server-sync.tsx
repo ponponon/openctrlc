@@ -495,31 +495,32 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
       .fetchQuery({
         ...queryOptionsApi.sessions(key),
         queryFn: () =>
-          loadRootSessions({ api: serverSDK.api.session, directory, limit }).then((x) => {
-            const nonArchived = (x.data ?? [])
-              .filter((s) => !!s?.id)
-              .filter((s) => !s.time?.archived)
-              .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-            const limit = Math.max(store.limit, options?.limit ?? 0, sessionMeta.get(key)?.limit ?? 0)
-            const childSessions = store.session.filter((s) => !!s.parentID)
-            const next = trimSessions([...nonArchived, ...childSessions], {
-              limit,
-              permission: session.data.permission,
+          loadRootSessions({ api: serverSDK.api.session, directory, limit })
+            .then((x) => {
+              const nonArchived = (x.data ?? [])
+                .filter((s) => !!s?.id)
+                .filter((s) => !s.time?.archived)
+                .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+              const limit = Math.max(store.limit, options?.limit ?? 0, sessionMeta.get(key)?.limit ?? 0)
+              const childSessions = store.session.filter((s) => !!s.parentID)
+              const next = trimSessions([...nonArchived, ...childSessions], {
+                limit,
+                permission: session.data.permission,
+              })
+              batch(() => {
+                next.forEach(session.remember)
+                setStore(
+                  "sessionTotal",
+                  estimateRootSessionTotal({
+                    count: nonArchived.length,
+                    limit: x.limit,
+                    limited: x.limited,
+                  }),
+                )
+                setStore("session", reconcile(next, { key: "id" }))
+              })
+              sessionMeta.set(key, { limit })
             })
-            batch(() => {
-              next.forEach(session.remember)
-              setStore(
-                "sessionTotal",
-                estimateRootSessionTotal({
-                  count: nonArchived.length,
-                  limit: x.limit,
-                  limited: x.limited,
-                }),
-              )
-              setStore("session", reconcile(next, { key: "id" }))
-            })
-            sessionMeta.set(key, { limit })
-          })
             .catch((err) => {
               console.error("Failed to load sessions", err)
               const project = getFilename(directory)

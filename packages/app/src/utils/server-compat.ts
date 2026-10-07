@@ -226,17 +226,12 @@ function routeApi<T extends object>(
             const sessionCreate = path.length === 1 && path[0] === "session" && property === "create"
             const input = args[0]
             const sessionID =
-              input &&
-              typeof input === "object" &&
-              "sessionID" in input &&
-              typeof input.sessionID === "string"
+              input && typeof input === "object" && "sessionID" in input && typeof input.sessionID === "string"
                 ? input.sessionID
                 : undefined
             const sessionProtocol = typeof sessionID === "string" ? sessionProtocols.get(sessionID) : undefined
             const useLegacy =
-              selectedProtocol === "v1" ||
-              sessionProtocol === "v1" ||
-              (!sessionID && legacyRoutes.has(routeID))
+              selectedProtocol === "v1" || sessionProtocol === "v1" || (!sessionID && legacyRoutes.has(routeID))
             const selected = useLegacy ? legacy : current
             const selectedParent = path.reduce((value, key) => Reflect.get(value, key), selected)
             const method = Reflect.get(selectedParent, property)
@@ -262,7 +257,8 @@ function routeApi<T extends object>(
               const fallback = Reflect.get(fallbackParent, property)
               // Untouched namespaces in the V1 facade inherit the V2 method;
               // retrying that same method on 404 only adds another remote round trip.
-              if (typeof fallback !== "function" || fallbackParent === selectedParent || fallback === method) throw error
+              if (typeof fallback !== "function" || fallbackParent === selectedParent || fallback === method)
+                throw error
               return Promise.resolve(Reflect.apply(fallback, fallbackParent, args)).then(
                 (value) => {
                   if (typeof sessionID === "string") sessionProtocols.set(sessionID, "v1")
@@ -293,16 +289,10 @@ function routeApi<T extends object>(
       if (legacySample === null || typeof legacySample !== "object") {
         throw new Error(`API namespace unavailable: ${String(property)}`)
       }
-      const nested = routeApi(
-        current,
-        legacy,
-        sample,
-        legacyShape,
-        protocol,
-        legacyRoutes,
-        sessionProtocols,
-        [...path, property],
-      )
+      const nested = routeApi(current, legacy, sample, legacyShape, protocol, legacyRoutes, sessionProtocols, [
+        ...path,
+        property,
+      ])
       cache.set(property, nested)
       return nested
     },

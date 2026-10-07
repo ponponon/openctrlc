@@ -87,7 +87,9 @@ try {
   return { selected: true, rows };
 })()`)
 
-  console.log(output.selected ? "selected session: yes (identifier hidden)" : "selected session: no; open a session first")
+  console.log(
+    output.selected ? "selected session: yes (identifier hidden)" : "selected session: no; open a session first",
+  )
   if (output.rows.length) {
     console.log("\nstatus       ms     bytes  probe")
     for (const row of output.rows) {
