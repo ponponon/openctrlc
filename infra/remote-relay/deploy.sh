@@ -82,7 +82,7 @@ if docker inspect "$container" >/dev/null 2>&1; then
     echo "Container name $container is already owned by another deployment" >&2
     exit 1
   fi
-  if [ "$mode" != --allow-session-reset ] && [ "$(docker inspect "$container" --format '{{.State.Running}}')" = true ]; then
+  if [ "$mode" != --config-only ] && [ "$mode" != --allow-session-reset ] && [ "$(docker inspect "$container" --format '{{.State.Running}}')" = true ]; then
     current_health=$(curl --fail --silent --max-time 5 "http://127.0.0.1:$host_port/healthz" || true)
     if [ -z "$current_health" ]; then
       echo "Refusing full Relay deployment: the running Relay's session state cannot be verified. Inspect it or explicitly use --allow-session-reset after confirming the disruption." >&2

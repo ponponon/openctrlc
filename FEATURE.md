@@ -3168,3 +3168,11 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - 同步只包含已打开项目路径、会话 ID 和轻量标签元数据，不包含提示词、草稿正文或消息内容；端点要求当前获批浏览器凭证。
 - 需要同时更新 Relay 和桌面 Web UI 后才会在公网生效；本地源码变更不表示 `openctrlc-remote.quniv.cn` 已部署。
 - 验证：`packages/app` 与 `packages/remote-relay` 的 `bun typecheck`、`git diff --check` 通过；未部署 Relay，也未做平板端到端验收。
+
+## 手动刷新远程工作区快照
+
+`https://openctrlc-remote.quniv.cn/_remote/refresh-workspace` 会只清除当前浏览器的一次性工作区引导 Cookie，然后跳回首页，由 Relay 把最新桌面快照重新写入浏览器存储。该操作保留设备授权，不重启 Relay；用于持续同步功能尚未部署时，修复已打开浏览器卡在旧项目列表的问题。
+
+- 代码：`infra/remote-relay/openresty.conf`。
+- 配套修复：`infra/remote-relay/deploy.sh` 的 `--config-only` 路径跳过仅适用于 Relay 重启的持久化快照门禁；仍验证受管虚拟主机、TLS 证书、Nginx 语法，并在 reload 失败时回滚。
+- 验证：生产 OpenResty `nginx -t` 和公开虚拟主机的 302/清除 Cookie 响应通过；Relay 容器 ID、启动时间及 1 个会话/5 个授权浏览器计数保持不变。
