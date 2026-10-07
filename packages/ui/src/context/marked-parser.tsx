@@ -1,6 +1,4 @@
 import katex from "katex"
-// Math fonts/styles ship with the parser so they leave the remote first-paint CSS.
-import "katex/dist/katex.min.css"
 import { Marked, type MarkedExtension, type Tokens } from "marked"
 import markedShiki from "marked-shiki"
 import { adjacentStrong, markdownOptions } from "./marked-parser-common"

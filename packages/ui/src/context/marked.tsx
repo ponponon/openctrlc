@@ -1,5 +1,6 @@
 import { getSharedHighlighter } from "@pierre/diffs"
 import { bundledLanguages, type BundledLanguage } from "shiki"
+import "./marked-parser.css"
 import { createSimpleContext } from "./helper"
 import { createMarkdownParser } from "./marked-parser"
 import { registerOpenCodeTheme } from "./marked-theme-register"

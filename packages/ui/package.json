@@ -40,6 +40,7 @@
     "./hooks": "./src/hooks/index.ts",
     "./context": "./src/context/index.ts",
     "./context/*": "./src/context/*.tsx",
+    "./context/marked-parser.css": "./src/context/marked-parser.css",
     "./storybook/scaffold": "./src/storybook/scaffold.tsx",
     "./storybook/fixtures": "./src/storybook/fixtures.ts",
     "./styles": "./src/styles/index.css",

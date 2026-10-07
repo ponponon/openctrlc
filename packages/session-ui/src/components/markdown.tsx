@@ -1,4 +1,5 @@
 import { useI18n } from "@openctrlc/ui/context/i18n"
+import "@openctrlc/ui/context/marked-parser.css"
 import morphdom from "morphdom"
 import { checksum } from "@openctrlc/core/util/encode"
 import {
@@ -396,7 +397,16 @@ export function Markdown(
       if (!live && !streamed) return
       return { key: owner, text: local.text, live }
     },
-    (src) => projectMarkdown(src.key, src.text, src.live),
+    (src) =>
+      projectMarkdown(src.key, src.text, src.live).catch((error) => {
+        if (
+          !(error instanceof MarkdownWorkerDisposedError) &&
+          !(error instanceof MarkdownWorkerSupersededError) &&
+          !(error instanceof MarkdownWorkerUnavailableError)
+        )
+          console.error("Markdown projection worker failed", error)
+        return pendingProjection(src.text)
+      }),
     { initialValue: pendingProjection("") },
   )
   const currentProjection = () => {

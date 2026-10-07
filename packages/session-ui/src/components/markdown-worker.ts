@@ -64,7 +64,7 @@ export function parseMarkdown(text: string) {
   })
 }
 
-export function projectMarkdown(key: string, text: string, live: boolean) {
+export async function projectMarkdown(key: string, text: string, live: boolean) {
   getWorker()
   const id = ++nextID
   return new Promise<Projection>((resolve, reject) => {
@@ -214,7 +214,10 @@ function getWorker() {
     worker?.terminate()
     worker = undefined
   }
-  worker.onerror = (event) => fail(event.message || "Markdown highlighting worker failed")
+  worker.onerror = (event) => {
+    event.preventDefault()
+    fail(event.message || "Markdown highlighting worker failed")
+  }
   worker.onmessageerror = () => fail("Markdown worker response failed")
   return worker
 }
