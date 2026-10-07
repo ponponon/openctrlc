@@ -807,7 +807,9 @@ export class RemoteAccessService {
 
   async #resume(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    const relay = this.#relayURL ?? legacyRelayURL
+    const relay = this.#reconnectCreateSession
+      ? (process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL)
+      : (this.#relayURL ?? legacyRelayURL)
     try {
       await this.#connect(relay, generation, !this.#reconnectCreateSession)
     } catch (error) {
@@ -816,10 +818,11 @@ export class RemoteAccessService {
         // Relay no longer has this session; create a replacement instead of parking on an error.
         this.#sessionID = undefined
         this.#hostToken = undefined
+        this.#relayURL = undefined
         persistSession(undefined)
         this.#reconnectCreateSession = true
         try {
-          await this.#connect(relay, generation, false)
+          await this.#connect(process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL, generation, false)
           getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
         } catch {
           this.#scheduleReconnect(generation)
