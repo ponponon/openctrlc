@@ -304,7 +304,9 @@ const server = Bun.serve<SocketData>({
       if (!viewer.session.host || viewer.session.host.readyState !== 1) return htmlResponse(pairPage("disconnected"))
       if (!hasWorkspaceBootstrapCookie(request, viewer.session.id))
         return workspaceBootstrapResponse(viewer.session.workspace, "/", viewer.session.id)
-      const response = await proxyRequest(viewer.session, request, viewer.token, (seconds) => server.timeout(request, seconds))
+      const response = await proxyRequest(viewer.session, request, viewer.token, (seconds) =>
+        server.timeout(request, seconds),
+      )
       if (response.status === 503 && /desktop(?: is)? disconnected/i.test(await response.clone().text()))
         return htmlResponse(pairPage("disconnected"))
       return response
@@ -823,7 +825,14 @@ async function handleHostMessage(socket: Bun.ServerWebSocket<SocketData>, value:
   }
   if (value.type === "response.start") {
     const response = session.responses.get(value.id)
-    if (!response || response.closed || typeof value.status !== "number" || typeof value.headers !== "object" || !value.headers) return
+    if (
+      !response ||
+      response.closed ||
+      typeof value.status !== "number" ||
+      typeof value.headers !== "object" ||
+      !value.headers
+    )
+      return
     response.resolveHeaders({ status: value.status, headers: value.headers as Record<string, string> })
     return
   }

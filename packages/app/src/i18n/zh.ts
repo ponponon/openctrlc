@@ -1109,7 +1109,8 @@ export const dict = {
   "remote.desktop.offlineTitle": "桌面端不可达",
   "remote.desktop.offlineDescription": "可能是桌面端断线，或网络/中继暂不可用。检查桌面端和网络后重试。",
   "remote.route.loadFailedTitle": "远程页面暂时无法加载",
-  "remote.route.loadFailedDescription": "会话页面需要桌面端提供资源和数据。请确认 OpenCtrlC 正在运行、手机访问已开启，并检查网络后重试。",
+  "remote.route.loadFailedDescription":
+    "会话页面需要桌面端提供资源和数据。请确认 OpenCtrlC 正在运行、手机访问已开启，并检查网络后重试。",
   "remote.route.retry": "重新加载页面",
   "remoteAccess.authorizedTitle": "已授权浏览器",
   "remoteAccess.authorizedDescription": "浏览器标识来自浏览器自身，可能伪造，不能验证真实设备身份。",
