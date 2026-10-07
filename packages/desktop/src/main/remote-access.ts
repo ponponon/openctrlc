@@ -362,7 +362,7 @@ export class RemoteAccessService {
     const socket = this.#socket
     const sessionID = this.#sessionID
     const hostToken = this.#hostToken
-    const relayURL = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#relayURL ?? legacyRelayURL
+    const relayURL = this.#relayURL ?? legacyRelayURL
     let stopRequest: Promise<void> | undefined
     ++this.#generation
     this.#clearReconnect()
@@ -543,8 +543,6 @@ export class RemoteAccessService {
     try {
       this.#server = await withTimeout(this.getServer(), 45_000, "Local server startup timed out")
       if (generation !== this.#generation || this.#state.status === "stopped") return this.#state
-      const defaultRelay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL
-      const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#relayURL ?? legacyRelayURL
       if (!this.#sessionID || !this.#hostToken) {
         const saved = readPersistedSession()
         if (saved) {
@@ -554,6 +552,7 @@ export class RemoteAccessService {
         }
       }
       if (this.#sessionID && this.#hostToken) {
+        const relay = this.#relayURL ?? legacyRelayURL
         try {
           await this.#connect(relay, generation, true)
           persistSession({ sessionID: this.#sessionID, hostToken: this.#hostToken, relayURL: relay })
@@ -574,7 +573,8 @@ export class RemoteAccessService {
           if (generation !== this.#generation) return this.#state
         }
       }
-      await this.#connect(this.#relayURL ?? defaultRelay, generation, false)
+      const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL
+      await this.#connect(this.#relayURL ?? relay, generation, false)
       getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
       return this.#state
     } catch (error) {
@@ -807,7 +807,7 @@ export class RemoteAccessService {
 
   async #resume(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#relayURL ?? legacyRelayURL
+    const relay = this.#relayURL ?? legacyRelayURL
     try {
       await this.#connect(relay, generation, !this.#reconnectCreateSession)
     } catch (error) {
@@ -1140,7 +1140,9 @@ export class RemoteAccessService {
           try {
             const target = new URL(location, server.url)
             if (target.origin === new URL(server.url).origin) {
-              const origin = this.#state.url ? new URL(this.#state.url).origin : "https://openctrlc-remote.quniv.cn"
+              const origin = this.#state.url
+                ? new URL(this.#state.url).origin
+                : new URL(this.#relayURL ?? legacyRelayURL).origin
               responseHeaders.location = origin + target.pathname + target.search + target.hash
             }
           } catch {

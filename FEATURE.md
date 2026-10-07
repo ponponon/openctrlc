@@ -3080,6 +3080,7 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 桌面端在本地持久化远程会话时，同时保存创建该会话的 WebSocket Relay 地址。恢复、断线重连和停止会话都复用这个地址；旧版本创建、尚未保存 Relay 地址的会话明确回到原有 `openctrlc-remote.quniv.cn`。新会话默认目标单独配置，为后续蓝绿切换 Relay 做准备，切换新会话入口时不会把仍依赖旧实例授权的会话送到新实例。
 
 - 代码：`packages/desktop/src/main/remote-access.ts`。
+- `OPENCTRLC_REMOTE_RELAY_URL` 只选择新建会话的 Relay；已有会话的恢复、断线重连、停止和同源重定向继续使用持久化的所属 Relay，避免切换新入口时把旧会话凭据发给另一台实例。
 - 验证：`packages/desktop` 的 `bun typecheck` 通过；未运行测试，也未切换生产 Relay。
 
 ## P2P Relay 蓝绿部署
