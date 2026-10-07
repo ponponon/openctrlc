@@ -85,19 +85,24 @@ export function remoteSessionProtocols(snapshot?: RemoteWorkspaceSnapshot) {
 }
 
 export function takeRemoteWorkspaceSnapshot(sessionID?: string) {
-  if (typeof sessionStorage === "undefined" && typeof localStorage === "undefined") return
-  const key = remoteWorkspaceStorageKey(sessionID)
   let value: string | null = null
-  try {
-    value = sessionStorage.getItem(key)
-    sessionStorage.removeItem(key)
-  } catch {}
-  // New tabs share the boot cookie with the first tab but not sessionStorage;
-  // keep a localStorage fallback so they still restore the desktop workspace.
-  if (!value) {
+  const legacyBootstrap = sessionID && readCookie("__Host-oc_remote_boot") === "1"
+  const keys = sessionID
+    ? legacyBootstrap
+      ? [remoteWorkspaceStorageKey(), remoteWorkspaceStorageKey(sessionID)]
+      : [remoteWorkspaceStorageKey(sessionID), remoteWorkspaceStorageKey()]
+    : [remoteWorkspaceStorageKey()]
+  for (const key of keys) {
+    try {
+      value = sessionStorage.getItem(key)
+      sessionStorage.removeItem(key)
+    } catch {}
+    // New tabs share the boot cookie but not sessionStorage, so retain the localStorage copy.
+    if (value) break
     try {
       value = localStorage.getItem(key)
     } catch {}
+    if (value) break
   }
   if (!value || value.length > 64 * 1024) return
   try {

@@ -1,3 +1,20 @@
+## 兼容旧版 Relay 的工作区快照键
+
+### 功能目标
+
+平板浏览器通过旧版公共 Relay 打开时，也能恢复桌面同步的全部项目和会话，不再退回到浏览器自己的空列表或旧缓存。
+
+### 实现范围
+
+- 客户端同时识别旧版 Relay 的通用快照键 `openctrlc.remote-workspace` 与新版按 Relay 会话隔离的 `openctrlc.remote-workspace:<sessionID>`。
+- 根据启动时的 `__Host-oc_remote_boot` Cookie 选择快照来源：旧 Relay 的值为 `1`，新版 Relay 使用 Relay 会话 ID。这样新版 Relay 优先读取隔离快照，旧版 Relay 则优先读取刚注入的通用快照，避免 Chrome 的旧隔离缓存遮住最新工作区。
+- `sessionStorage` 读取失败或没有当前快照时，继续尝试 `localStorage`；后者保留给同一浏览器打开的新标签页使用。
+
+### 验证方式
+
+- 对照旧版 Relay 的 bootstrap 实现确认它写入通用键并将 boot Cookie 设为 `1`；新版实现使用会话隔离键并将 Cookie 设为 Relay 会话 ID。
+- 确认客户端在 Cookie 值为 `1` 时优先消费通用键，在新版 Cookie 或无 boot Cookie 时优先消费会话隔离键，并保留另一格式作为回退。
+
 ## 首页会话列表显示会话磁盘占用
 
 ### 功能目标

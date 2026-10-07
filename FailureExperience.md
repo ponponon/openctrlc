@@ -1722,3 +1722,6 @@ Relay 的 bootstrap 只在浏览器首次进入工作区时注入一份快照；
 线上排查时应先查看 Relay 中保存的工作区项目/会话数量，再判断是桌面没有同步还是浏览器持有旧 bootstrap 快照。当前版本可用 `/_remote/refresh-workspace` 仅清除一次性 bootstrap Cookie，保留设备授权并重新灌入最新快照；普通刷新不会触发 bootstrap，因为该 Cookie 尚未过期。长期修复仍需部署受鉴权的 ETag 工作区读取端点与浏览器轮询。
 
 另需确认 `--config-only` 真正绕过 Relay 持久化状态门禁：该模式只校验并优雅 reload OpenResty 配置，不触碰 Relay 进程或会话快照。不能因为健康检查暴露的字段较旧，就阻止一个明确不操作 Relay 的虚拟主机变更；也不能因此放宽 full deployment 的会话恢复校验。
+## Relay 与客户端工作区快照键升级不同步会造成设备间项目列表各异
+
+线上 Relay 仍把 bootstrap 快照写入 `openctrlc.remote-workspace`，而新客户端只读取 `openctrlc.remote-workspace:<sessionID>`。于是旧版 Relay 下，已有该隔离键的浏览器会显示本机缓存（例如只剩一个项目），没有该键的浏览器则显示空列表；Relay 实际保存的完整工作区并未丢失。排查项目列表不一致时，必须同时核对线上 Relay 的实际 bootstrap 源码、boot Cookie 值和客户端读取的 storage key，不能只看 Relay 内的项目数量或新分支代码。Relay 与客户端不能同步升级时，客户端必须根据 boot Cookie 版本兼容读取两种键，并确保旧版快照优先于陈旧的新格式缓存。
