@@ -3097,3 +3097,17 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 
 - 代码：`packages/app/src/context/global-sync/bootstrap.ts`、`packages/app/src/context/server-sync.tsx`。
 - 验证：`packages/app` 的 `bun typecheck` 通过；未做生产冷启动计时。
+
+## 桌面会话读取诊断不再漏报或制造额外流量
+
+会话读取探针识别桌面 `MemoryRouter` 当前窗口保存的会话路由，只测会话详情和一条最新消息；V2 仅在 404 时才补测 V1，消息响应最多读取 512 KiB。会话标识和凭据只在 renderer 内用于请求，不会输出。该探针用于拆分本机服务端耗时和响应体积，不代表手机到 Relay 的端到端耗时。
+
+- 代码：`perf/probe-session-reads.mjs`、`perf/README.md`。
+- 验证：`node --check perf/probe-session-reads.mjs`、`git diff --check` 通过；只读 CDP 探针测得当前选中会话的本机 V2 详情 6 ms/540 B、单条消息 3 ms/63 B。它未能证明这是用户报告的那条旧会话，也未测手机到 Relay 的端到端耗时。
+
+## 网络瀑布同时记录响应头与完整响应耗时
+
+开发诊断脚本现在只附加到本地 Vite 桌面 renderer，分别记录请求到响应头和请求到响应体传输完成的时间，并读取 CDP 上报的编码后传输字节数；它不读取响应内容，默认不刷新页面，CDP 命令完成后立即清理超时计时器。可据此区分服务端迟迟不回响应头与响应体经 Relay 慢速传输。
+
+- 代码：`perf/capture-network.mjs`、`perf/README.md`。
+- 验证：`node --check perf/capture-network.mjs`、`git diff --check` 通过；未刷新或操作当前 renderer。

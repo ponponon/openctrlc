@@ -1,5 +1,6 @@
 // Capture live network + console activity from the running renderer to find
-// what stalls the restored session transcript.
+// what stalls the restored session transcript. Records both response-header
+// time and full response-body completion; request and response bodies are never read.
 //
 // Usage: node perf/capture-network.mjs [seconds] [--reload]
 // Reload is opt-in; console and exception bodies are intentionally omitted.
@@ -12,8 +13,20 @@ const reload = args.includes("--reload")
 const seconds = Number(args.find((arg) => !arg.startsWith("--")) ?? 12)
 
 const list = await fetch(`${CDP}/json/list`).then((r) => r.json())
-const page = list.find((item) => item.type === "page")
-if (!page) throw new Error("no page target")
+const page = list.find((item) => {
+  if (item.type !== "page") return false
+  try {
+    const url = new URL(item.url)
+    return (
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      url.port === "5173" &&
+      (url.pathname === "/" || url.pathname.endsWith("/index.html"))
+    )
+  } catch {
+    return false
+  }
+})
+if (!page) throw new Error("no dev desktop renderer target on localhost:5173")
 
 const socket = new WebSocket(page.webSocketDebuggerUrl)
 await new Promise((resolve, reject) => {
@@ -41,6 +54,8 @@ socket.addEventListener("message", (event) => {
       url: request.url,
       method: request.method,
       started: timestamp,
+      headersAt: null,
+      finishedAt: null,
       status: null,
       type: message.params.type,
     })
@@ -50,7 +65,14 @@ socket.addEventListener("message", (event) => {
     if (entry) {
       entry.status = message.params.response.status
       entry.mime = message.params.response.mimeType
-      entry.finished = message.params.timestamp
+      entry.headersAt = message.params.timestamp
+    }
+  }
+  if (message.method === "Network.loadingFinished") {
+    const entry = requests.get(message.params.requestId)
+    if (entry) {
+      entry.finishedAt = message.params.timestamp
+      entry.encodedBytes = message.params.encodedDataLength
     }
   }
   if (message.method === "Network.loadingFailed") {
@@ -71,9 +93,21 @@ socket.addEventListener("message", (event) => {
 const send = (method, params = {}) =>
   new Promise((resolve, reject) => {
     const next = ++id
-    pending.set(next, { resolve, reject })
+    const timer = setTimeout(() => {
+      if (!pending.delete(next)) return
+      reject(new Error(`timeout ${method}`))
+    }, 30000)
+    pending.set(next, {
+      resolve: (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      reject: (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    })
     socket.send(JSON.stringify({ id: next, method, params }))
-    setTimeout(() => pending.delete(next) && reject(new Error(`timeout ${method}`)), 30000)
   })
 
 await send("Network.enable")
@@ -91,18 +125,20 @@ const rows = [...requests.values()].map((row) => ({ ...row, url: safeUrl(row.url
 const sessionRows = rows.filter((r) => /\/session/.test(r.url))
 console.log(`=== ${rows.length} requests, ${sessionRows.length} session-related ===`)
 const fmt = (r) => {
-  const dur = r.finished ? Math.round((r.finished - r.started) * 1000) : null
+  const headersMs = r.headersAt ? `${Math.round((r.headersAt - r.started) * 1000)}ms` : "?"
+  const totalMs = r.finishedAt ? `${Math.round((r.finishedAt - r.started) * 1000)}ms` : "pending"
   const state = r.failed ? `FAILED ${r.failed}` : r.status === null ? "PENDING" : r.status
-  return `${String(state).padEnd(18)} ${dur === null ? "   ?" : String(dur).padStart(6)}ms  ${r.url.replace(/^http:\/\/127\.0\.0\.1:\d+/, "").slice(0, 110)}`
+  const bytes = r.encodedBytes === undefined ? "? B" : `${r.encodedBytes} B`
+  return `${String(state).padEnd(18)} headers ${headersMs.padStart(7)} total ${totalMs.padStart(8)} ${bytes.padStart(10)}  ${r.url.replace(/^http:\/\/127\.0\.0\.1:\d+/, "").slice(0, 110)}`
 }
 console.log("\n-- session requests --")
 for (const r of sessionRows.slice(0, 60)) console.log(fmt(r))
 console.log("\n-- pending/failed (all) --")
-for (const r of rows.filter((r) => r.failed || r.status === null).slice(0, 40)) console.log(fmt(r))
+for (const r of rows.filter((r) => r.failed || r.finishedAt === null).slice(0, 40)) console.log(fmt(r))
 console.log("\n-- slowest completed --")
 for (const r of rows
-  .filter((r) => r.finished)
-  .sort((a, b) => b.finished - b.started - (a.finished - a.started))
+  .filter((r) => r.finishedAt)
+  .sort((a, b) => b.finishedAt - b.started - (a.finishedAt - a.started))
   .slice(0, 15))
   console.log(fmt(r))
 

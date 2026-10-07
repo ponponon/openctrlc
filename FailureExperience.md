@@ -1490,15 +1490,14 @@ Relay 在桌面短暂掉线时会对健康探测返回 5xx。协议结果被 SDK
 
 抓日志才看到 `fatal renderer error: SessionReadTimeoutError: Session request timed out after 20000ms`，来源是 `sessionRead()`。于是整条因果链是：启动时某个会话读取挂住 → 20 秒超时 → 错误上抛 → 错误边界接管整页 → 会话正文永不出现 → 用户必须点「重启」。诊断"慢"之前应先读 `main.log`/`renderer.log` 有没有 fatal renderer error，并读一次 `document.body.innerText` 确认到底是骨架还是错误页。
 
-顺带确认了几件与直觉相反的事：sidecar 完全健康（`/path` 1ms、`/session/:id` 2ms、`/session/:id/message?limit=20` 5–14ms，即使 697KB 响应也只要 14ms），所以在渲染层里用带鉴权的裸 `fetch` 复现不出这个 20 秒；瓶颈在 SDK/兼容层而不是传输层。`sessionRead` 自身的两个缺陷已修：一是 `Promise.race` 只给最先 settled 的输入挂拒绝处理器，真实请求先失败后仍在计时的 `deadline` 就成了未处理拒绝，改成 `Promise.all` 并保留承重的 `deadline.catch`；二是 `server-compat.ts` 的 `session.get` 只透传 `value`、丢掉 `options.signal`，导致超时 abort 无法取消真实请求。
+早期记录中有两项判断后来被证明不准确，必须更正，避免下一轮照着错误结论排查：
 
-**仍未解决**：超时错误在修复后依然会在启动约 43 秒时到达错误边界，说明还有第三条路径让某个会话读取真的挂满 20 秒。下一步应沿着 `createCompatibleApi` 的 `sessionProtocol`（`input.current.message.list({ sessionID, limit: 1 })`）与协议判定路径继续定位，而不是回到模块图优化。
+- `Promise.race` 会给所有输入 Promise 安装 resolve/reject 处理器；真实请求先失败后，后续 `deadline` reject 仍会被 race 的处理器观察，并不会因为它不是赢家就变成未处理拒绝。提交 `167b593d` 把它换成 `Promise.all` 才引入了真正的回归：快速请求成功后仍要等 20 秒 deadline，最终被错误报告为超时。提交 `d4c20625` 已恢复 `Promise.race` 并清理计时器。
+- sidecar 裸 `fetch` 的几毫秒只证明那个本机端点很快，不能据此排除手机/Relay 的响应体传输慢，也不能代表 SDK 整条链路。旧会话经 Relay 的端到端耗时仍需对准具体会话采集网络瀑布。
 
-后续实测已经把范围压缩到很窄，避免下一轮重复走弯路：
+另一个真实问题是兼容层 `session.get` 没有透传 `options.signal`，超时后底层请求不会取消；该问题由 `a3ff6bef` 修复。此前记录的“仍未解决第三条路径”是当时的排查状态，不是当前结论：全局协议 Promise 闸门已由 `b0048076`、`d4c20625` 拆除，根会话列表和首页就绪路径也分别由后续提交修复。当前源码已没有 `lazyApi(input.protocol.then(...))` 结构；用户报告的旧会话仍约 10 秒时，不能把历史根因当作这次延迟已解决的证明。
 
-- **协议判定用的那个端点本身也是快的**。在渲染层用带鉴权的裸 `fetch` 打 `/session/:id/message?limit=1`（这正是 `sessionProtocol` 调用的形状）只要 **2–3ms**，`limit=20` 也只要 3–14ms。所以「协议判定打了慢接口」这个假设可以排除。
-- **因此超时不出现在传输层，也不在协议判定所用的接口上**，而在这两者之间的 SDK 客户端里：`serverSDK.api.session.get(...)` / `input.current.message.list(...)` 这条 Effect 客户端路径。下一轮应直接给这条客户端路径打点（或在 `sessionRead` 里记录 **sessionID + 调用来源**，先确定到底是哪一次读取超时——目前连"哪个 session、哪条读取"都还没确认，这是最该先补的一步）。
-- 已知的同类前科都在这一带：`1d1cef8a`、`bf65eb94`、`ccdc5eb2` 以及"探测 Promise 被 SDK 上下文缓存后长期污染"的旧教训。优先怀疑启动瞬间某个被缓存的探测/协议 Promise 把所有请求挡在后面。
+复核小米 MiMo 署名提交 `c5734cb9`：它用已持久化的 tab 信息提前挂载工作区、并行预取选中会话首屏、预热桌面恢复路由 chunk，并改进可见骨架；未发现它把协议探测重新接回全局 API 闸门。后续提交把远程默认首屏页大小降为 10，当前会话路由调用 `prefetch(sessionID)` 使用该默认值，没有继续显式请求 20 条。该提交的本机 sidecar 基线不能用来证明手机/Relay 全链路快；这项性能仍应以端到端瀑布验证。
 
 ## 把「整个 API」挂在协议探测 Promise 上会让首屏集体挂死
 
@@ -1661,3 +1660,13 @@ V1 facade 会先继承当前 API，再只覆盖有旧版适配逻辑的命名空
 ## 新 Relay 配置不能覆盖已有会话的归属
 
 `OPENCTRLC_REMOTE_RELAY_URL` 是新建会话的目标地址，不是迁移旧会话的指令。若它优先于已持久化的 `relayURL`，桌面重启或断线后会把旧 Session ID 和 host token 发给新 Relay；停止操作也可能发到错误实例，导致原会话仍存活而客户端误以为已停止。恢复、重连和停止必须优先使用该会话保存的 Relay 地址；旧存档没有地址时回退原 Relay。只有旧会话明确不存在、需要创建替代会话时，才使用当前配置的新建目标，包括后台自动重连检测到旧会话失效后的替代流程；不能在保留失效 Relay 地址时悄悄重建到旧实例。相同归属原则也适用于生成同源重定向地址。
+
+## 桌面诊断必须解析 MemoryRouter，且不能重复下载大消息页
+
+Electron 桌面页面的 `location.pathname` 通常是 `index.html`，应用路由保存在每个窗口的 `openctrlc.desktop.window.<id>.last-active-url`。只读 URL pathname 的探针会误报“没有打开会话”。另一个探针曾对同一会话读取 V1/V2 的详情和各 20 条消息页，可能额外拉取大量工具输出，扰动用户报告的上行流量和慢加载现场。桌面诊断应在 renderer 内解析窗口路由、不输出会话标识或凭据，只读取一条消息，并对响应大小设置硬上限；端点探针也要明确它测的是本机服务而非端到端 Relay 链路。
+
+## 响应头返回快不代表响应体传输快
+
+只在 CDP `Network.responseReceived` 时记完成时间，会把 TTFB 当成整个请求耗时。会话详情接口即使很快返回 headers，数百 KB 的消息体仍可能经桌面上行和 Relay 传输很久；排查慢首屏要同时记录 response headers 与 `Network.loadingFinished`，并比较编码后字节数，且不要读取或记录响应正文。
+
+CDP `/json/list` 可能同时包含多个窗口或 renderer；直接取第一个 `page` 可能连到无关窗口并得出假结论。性能探针应根据本任务的桌面开发 renderer origin 选择目标，找不到目标时明确退出；CDP 命令完成时也要清除 watchdog timer，避免短探针采样结束后 Node 进程仍被计时器挂住。
