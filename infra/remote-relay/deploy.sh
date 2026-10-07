@@ -264,7 +264,15 @@ if [ "$instance" = p2p ]; then
     run_compose logs --tail=50 stun >&2
     exit 1
   fi
-  if ! ss -H -lun 'sport = :3478' | grep -q .; then
+  stun_ready=false
+  for attempt in $(seq 1 15); do
+    if ss -H -lun 'sport = :3478' | grep -q .; then
+      stun_ready=true
+      break
+    fi
+    sleep 1
+  done
+  if [ "$stun_ready" != true ]; then
     echo "Self-hosted STUN service is not listening on UDP 3478; OpenResty was not reloaded" >&2
     run_compose logs --tail=50 stun >&2
     exit 1

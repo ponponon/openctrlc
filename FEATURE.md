@@ -3085,7 +3085,7 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 
 ## P2P Relay 蓝绿部署
 
-新增独立的 P2P Relay 部署目标：它使用单独的工作目录、Docker Compose 项目、会话授权持久化目录、loopback TCP 4098 和 `openctrlc-p2p.quniv.cn` 虚拟主机；旧 `openctrlc-remote.quniv.cn` 实例不会因部署 P2P 服务而重启。P2P 实例附带独立 Coturn STUN-only 服务，使用 UDP 3478 为 WebRTC 探测候选地址；STUN 本身不转发工作区流量，无法直连时继续由 Relay 经 HTTPS/WSS 兜底。
+新增独立的 P2P Relay 部署目标：它使用单独的工作目录、Docker Compose 项目、会话授权持久化目录、loopback TCP 4098 和 `openctrlc-p2p.quniv.cn` 虚拟主机；旧 `openctrlc-remote.quniv.cn` 实例不会因部署 P2P 服务而重启。P2P 实例附带独立 Coturn STUN-only 服务，使用 UDP 3478 为 WebRTC 探测候选地址；STUN 本身不转发工作区流量，无法直连时继续由 Relay 经 HTTPS/WSS 兜底。Coturn 仅保留其启动所需的 `NET_BIND_SERVICE` 能力，直接执行服务二进制并绑定 `0.0.0.0`，避免镜像入口误处理 `-n` 和扫描全部 Docker 网桥。
 
 - 代码：`infra/remote-relay/compose-p2p.yaml`、`openresty-p2p.conf`、`deploy.sh`；用 `OPENCTRLC_RELAY_INSTANCE=p2p` 选择实例。
 - 部署脚本会分别检查新实例的本地端口占用、TLS 主机名、Relay 持久化状态、P2P 能力和 Coturn 进程；OpenResty 配置测试失败时回滚对应实例的虚拟主机。
