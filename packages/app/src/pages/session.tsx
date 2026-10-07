@@ -308,11 +308,10 @@ function ResolvedTargetSessionRoute() {
   createEffect(
     on([serverKey, () => params.id] as const, ([, sessionID]) => {
       const server = sync()
-      if (!server.session.shouldPrefetch(sessionID)) return
-      // Start the transcript request as soon as the target is selected. The
-      // root-session lookup can take one network round trip per parent, so it
-      // must not hold the first message page behind the lineage walk.
-      void server.session.prefetch(sessionID).catch(() => {})
+      if (server.session.peek(sessionID) && !server.session.shouldPrefetch(sessionID)) return
+      // Resolve the directory and load the first message page together. The
+      // route cannot mount its workspace providers until it knows the directory.
+      void server.session.sync(sessionID).catch(() => {})
     }),
   )
 

@@ -3059,6 +3059,8 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - 代码：`packages/app/src/pages/home/home-sessions-controller.tsx`、`packages/app/src/components/command-palette.ts`、`packages/app/src/context/tabs.tsx`。
 - 首屏消息预取复用 Server Session 的同一 inflight 请求和默认页大小，路由组件挂载后会加入该请求，不重复下载。
 - 命令面板打开会话时，也会保存会话目录和标题到标签恢复信息；远程命令面板点击后会同步预取首屏消息，避免路由缺少目录而停留在骨架屏。
+- 会话路由在目录尚未缓存时，会并行解析会话元数据与首屏消息；元数据到达后即可挂载工作区，不再因没有目录而无限停留在骨架屏。
+- 代码：`packages/app/src/pages/session.tsx`。
 - 验证：`packages/app` 的 `bun typecheck` 通过；未运行测试，尚未做公网 Relay 手机端首屏计时。
 
 ## 新建会话首次操作复用创建时的协议判断
