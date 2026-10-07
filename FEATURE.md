@@ -3053,6 +3053,13 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - 代码：`packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`。
 - 验证：`packages/app` 的 `bun typecheck` 通过；未运行测试，未做公网 Relay 下的实测首屏计时。
 
+## 远程恢复时重新确认 V2 会话提示
+
+远程工作区快照只恢复逐会话确认过的 V1 提示；不恢复 V2 提示，因为旧版客户端曾把服务端整体的 V2 协议错误地写成所有会话的 V2 提示。远程端会通过当前消息页重新确认 V2，空页仍会检查 V1 历史，避免旧会话被显示为空。
+
+- 代码：`packages/app/src/utils/remote-workspace.ts`。
+- 验证：`packages/app` 的 `bun typecheck` 通过；未运行测试；尚未从手机经公网 Relay 实测旧会话端到端加载。
+
 ## 远程打开会话时并行预热页面与首屏数据
 
 在远程首页明确打开会话时，立即并行加载会话路由代码和首屏消息；不再等懒加载的会话页面挂载后才开始消息请求。桌面本地会话仍使用原来的 hover/空闲预取策略，远程后台打开标签不额外占用带宽。

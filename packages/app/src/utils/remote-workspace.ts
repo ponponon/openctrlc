@@ -72,7 +72,9 @@ export function parseRemoteWorkspaceSnapshot(value: unknown): RemoteWorkspaceSna
 
 export function remoteSessionProtocols(snapshot?: RemoteWorkspaceSnapshot) {
   return new Map(
-    snapshot?.sessionInfo?.flatMap((item) => (item.protocol ? [[item.sessionID, item.protocol] as const] : [])) ?? [],
+    // Older clients copied the server-wide V2 result into per-session hints.
+    // A restored V2 hint can hide legacy history when the current V2 page is empty.
+    snapshot?.sessionInfo?.flatMap((item) => (item.protocol === "v1" ? [[item.sessionID, "v1"] as const] : [])) ?? [],
   )
 }
 

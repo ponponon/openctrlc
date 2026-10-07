@@ -13,7 +13,7 @@ describe("remoteWorkspaceStorageKey", () => {
 })
 
 describe("remote workspace session protocol hints", () => {
-  test("keeps validated protocol hints while allowing title-less session metadata", () => {
+  test("restores only V1 hints while allowing title-less session metadata", () => {
     const snapshot = parseRemoteWorkspaceSnapshot({
       projects: [],
       sessionIDs: ["legacy-session", "current-session"],
@@ -30,7 +30,6 @@ describe("remote workspace session protocol hints", () => {
     expect(remoteSessionProtocols(snapshot)).toEqual(
       new Map([
         ["legacy-session", "v1"],
-        ["current-session", "v2"],
       ]),
     )
   })
