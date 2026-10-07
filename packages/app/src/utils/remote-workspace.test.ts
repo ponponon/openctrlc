@@ -27,11 +27,7 @@ describe("remote workspace session protocol hints", () => {
       { sessionID: "legacy-session", protocol: "v1" },
       { sessionID: "current-session", title: "Current", protocol: "v2" },
     ])
-    expect(remoteSessionProtocols(snapshot)).toEqual(
-      new Map([
-        ["legacy-session", "v1"],
-      ]),
-    )
+    expect(remoteSessionProtocols(snapshot)).toEqual(new Map([["legacy-session", "v1"]]))
   })
 
   test("rejects unknown protocols rather than seeding an unsafe route", () => {

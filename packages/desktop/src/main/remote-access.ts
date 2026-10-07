@@ -154,7 +154,9 @@ export class RemoteAccessService {
                   typeof item.sessionID === "string" &&
                   (item.title === undefined || (typeof item.title === "string" && item.title.length <= 200)) &&
                   (item.directory === undefined ||
-                    (typeof item.directory === "string" && item.directory.length > 0 && item.directory.length <= 4096)) &&
+                    (typeof item.directory === "string" &&
+                      item.directory.length > 0 &&
+                      item.directory.length <= 4096)) &&
                   (item.title !== undefined || item.directory !== undefined || item.protocol !== undefined) &&
                   (item.protocol === undefined || item.protocol === "v1" || item.protocol === "v2"),
               )

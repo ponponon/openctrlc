@@ -819,9 +819,7 @@ function RemoteTabsHydrator() {
         {
           sessionID,
           ...(typeof title === "string" ? { title: title.slice(0, 200) } : {}),
-          ...(typeof directory === "string" && directory.length > 0 && directory.length <= 4096
-            ? { directory }
-            : {}),
+          ...(typeof directory === "string" && directory.length > 0 && directory.length <= 4096 ? { directory } : {}),
           ...(protocol ? { protocol } : {}),
         },
       ]

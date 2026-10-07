@@ -985,11 +985,7 @@ export function createServerSession(
         before,
         () => resetMessageLoad(sessionID, load),
         (progress) => {
-          if (
-            mode === "prepend" ||
-            generations.get(sessionID) !== active ||
-            messageLoads.get(sessionID) !== load
-          )
+          if (mode === "prepend" || generations.get(sessionID) !== active || messageLoads.get(sessionID) !== load)
             return
           const first = progress.session.reduce<Message | undefined>(
             (oldest, message) => (!oldest || compareMessages(message, oldest) < 0 ? message : oldest),
@@ -1082,10 +1078,9 @@ export function createServerSession(
                 ? {
                     source: [
                       ...new Map(
-                        [
-                          ...(page.source ?? []),
-                          ...parents.flatMap((parent) => parent.source ?? []),
-                        ].map((message) => [message.id, message] as const),
+                        [...(page.source ?? []), ...parents.flatMap((parent) => parent.source ?? [])].map(
+                          (message) => [message.id, message] as const,
+                        ),
                       ).values(),
                     ].sort(compareMessages),
                   }
