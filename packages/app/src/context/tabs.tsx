@@ -360,7 +360,7 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
         for (const key of removed) memory.remove(key)
         for (const key of removed) removeInfo(key)
       },
-      rememberSessionInfo(tab: SessionTab, session: Session) {
+      rememberSessionInfo(tab: SessionTab, session: Pick<Session, "title" | "directory">) {
         const key = tabKey(tab)
         const next = { title: session.title, directory: session.directory }
         const current = info[key]

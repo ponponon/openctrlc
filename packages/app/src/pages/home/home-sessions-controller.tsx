@@ -204,6 +204,8 @@ export function createHomeSessionsController(home: HomeController) {
               ctx.projects.open(directory)
               ctx.projects.touch(directory)
               const tab = tabs.addSessionTab({ server, sessionId: sessionID })
+              if (tab.type === "session" && entry.directory)
+                tabs.rememberSessionInfo(tab, { title: entry.title, directory: entry.directory })
               tabs.select(tab)
             }}
           />

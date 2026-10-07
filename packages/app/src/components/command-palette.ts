@@ -8,6 +8,7 @@ import { useFile } from "@/context/file"
 import { useGlobal } from "@/context/global"
 import { useLanguage } from "@/context/language"
 import { useLayout, type LocalProject } from "@/context/layout"
+import { usePlatform } from "@/context/platform"
 import { ServerConnection } from "@/context/server"
 import { useServerSDK } from "@/context/server-sdk"
 import { useTabs } from "@/context/tabs"
@@ -82,6 +83,7 @@ export function createCommandPaletteModel(props: { filesOnly?: () => boolean; on
   const command = useCommand()
   const global = useGlobal()
   const language = useLanguage()
+  const platform = usePlatform()
   const file = useFile()
   const dialog = useDialog()
   const serverSDK = useServerSDK()()
@@ -174,10 +176,15 @@ export function createCommandPaletteModel(props: { filesOnly?: () => boolean; on
         serverCtx.projects.open(directory)
         serverCtx.projects.touch(directory)
       }
+      if (platform.remoteSessionID && serverCtx.sync.session.shouldPrefetch(item.sessionID)) {
+        void serverCtx.sync.session.prefetch(item.sessionID).catch(() => undefined)
+      }
       const tab = appTabs.addSessionTab({
         server: item.server,
         sessionId: item.sessionID,
       })
+      if (tab.type === "session" && item.directory)
+        appTabs.rememberSessionInfo(tab, { title: item.title, directory: item.directory })
       appTabs.select(tab)
       return
     }
