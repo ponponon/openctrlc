@@ -2592,7 +2592,7 @@ R2 只承担最新稳定版下载加速，历史版本和安装包由 GitHub Rel
 - 经 DataChannel 转发的本机 WebSocket 握手 15 秒没有结果时会失败关闭；直连通道中止时也会结束等待中的 socket，避免连接永久停留在 `CONNECTING` 或 `CLOSING`。
 - 远程 WebSocket wrapper 的 `send()` 按调用顺序串行发送；Blob 转换不能越过后续文本帧。`bufferedAmount` 反映尚未提交到传输层的 payload 字节，发送失败会发出 error 并关闭该 socket。
 - 响应流使用端到端字节额度：浏览器按 256 KiB 的 ReadableStream 缓冲窗口授予额度，一次 pull 会连续发足当前可用额度，避免跨网时每 24 KiB 等一次往返；桌面每次最多发送 24 KiB，并在额度耗尽时暂停读取本地响应。桌面 IPC/DataChannel 发送队列仍保留 512 KiB 发送阈值和 10 秒拥塞超时。peer 关闭或额度等待超时会唤醒等待者并终止关联流。
-- 未就绪时 HTTP 和 WebSocket 仍走现有 Relay。ICE 地址只从 Relay 环境读取：`OPENCTRLC_STUN_URLS` 可配置自有 STUN，`OPENCTRLC_TURN_URLS` 与 `OPENCTRLC_TURN_SHARED_SECRET` 可配置 Coturn。Relay 生成 12 小时 HMAC-SHA1 凭据；未配置 ICE 时不启动 P2P 协商，立即使用 HTTPS Relay；配置 ICE 后若直连协商 12 秒仍未就绪，再回退 HTTPS Relay。不请求公共 STUN 或外部 TURN API。生产部署和跨网端到端验证仍未完成。
+- 未就绪时 HTTP 和 WebSocket 仍走现有 Relay。ICE 地址只从 Relay 环境读取：`OPENCTRLC_STUN_URLS` 可配置自有 STUN，`OPENCTRLC_TURN_URLS` 与 `OPENCTRLC_TURN_SHARED_SECRET` 可配置 Coturn。Relay 生成 12 小时 HMAC-SHA1 凭据；未配置 ICE 时不启动 P2P 协商，立即使用 HTTPS Relay；配置 ICE 后若直连协商 12 秒仍未就绪，再回退 HTTPS Relay。不请求公共 STUN 或外部 TURN API。2026-10-07 核对到独立 P2P Relay 与 STUN 已部署，但 P2P 子域尚未进入权威 DNS，桌面默认仍指向主 Relay；主 Relay 公开能力接口仍返回 401，因此发布包尚未切换默认，跨网端到端路径也未验收。
 - 远程浏览器标题栏显示当前传输状态：协商期间明确提示请求仍经 Relay；DataChannel ready 后先显示线路识别中，再根据已选 ICE candidate pair 区分直连与 TURN，避免把尚未识别的线路误报为免费直连。TURN 状态提示流量可能产生中继费用。DataChannel 中断时显示回到 Relay 并继续重试；服务端实时事件流和已打开的终端 WebSocket 会在 DataChannel ready 后重连切换通道（包括 TURN 路径），重连期间暂存至多 256 KiB 的键盘输入并在恢复后发送。
 - ICE 候选可能让已授权浏览器看到桌面端或浏览器的网络地址；加密保护传输内容但不隐藏 IP。公开发布前需要隐私说明及 Relay-only/候选地址策略评估。
 - 手机访问弹窗区分 WebRTC 直连与 HTTPS Relay 的数据路径：直连时说明工作区传输已加密、对端可能看到公网 IP；回退 Relay 时说明 TLS 保护传输但 Relay 可查看转发内容。该文案随应用支持的四种语言同步。

@@ -1694,3 +1694,9 @@ Coturn 4.18 官方镜像中的 `turnserver` 在容器 `cap_drop: ALL` 时无法 
 ## 远程会话首屏不能依赖详情往返
 
 - 远程浏览器即使已经拿到桌面同步的打开会话 ID，若工作区快照不带会话目录，路由仍会停在骨架屏，直到 Relay 往返完成 `session.get`。桌面快照已有项目路径和会话元数据，恢复时应传递并校验目录，让首屏消息读取与路由挂载尽早并行；协议提示仍需按实际消息数据谨慎恢复。
+
+## P2P 服务已部署不等于默认远程链路已启用
+
+2026-10-07 线上核对发现：独立 P2P Relay 和 Coturn STUN 容器已经运行，服务器本机 P2P 能力返回 `iceConfigured: true`，从外部对主机 UDP 3478 的 STUN Binding 请求也成功；但 `openctrlc-p2p.quniv.cn` 没有公网 A 记录，桌面新会话默认仍连接 `openctrlc-remote.quniv.cn`，而主 Relay 的公开能力路径返回 401，故现有默认链路仍走 HTTPS Relay。不能把“容器 healthy”“端口监听”或“STUN 有响应”说成浏览器已 P2P 直连。
+
+DNS CLI 的账号有 `quniv.cn` zone，但 zone 标记 `IsNSCorrect=false`，公网权威 NS 实际是 Cloudflare；Wrangler OAuth 只有 `zone:read`，不能写记录。不要写入不会生效的火山引擎 zone，也不要在主 Relay 有活动会话且无可验证持久化快照时重启。应由当前权威 DNS 平台添加指向服务器的 DNS-only A 记录，验证 P2P HTTPS 虚拟主机和公网 UDP 后，只把新建远程会话切到独立 Relay；旧会话继续使用已保存的主 Relay URL。
