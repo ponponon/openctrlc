@@ -1671,6 +1671,10 @@ Electron 桌面页面的 `location.pathname` 通常是 `index.html`，应用路�
 
 CDP `/json/list` 可能同时包含多个窗口或 renderer；直接取第一个 `page` 可能连到无关窗口并得出假结论。性能探针应根据本任务的桌面开发 renderer origin 选择目标，找不到目标时明确退出；CDP 命令完成时也要清除 watchdog timer，避免短探针采样结束后 Node 进程仍被计时器挂住。
 
+## 远程打开会话不要把路由下载和消息请求串行化
+
+远程首页为了节省上行流量，不应在空闲时预取大块会话路由或消息；但用户已经明确点击打开会话后，若等 lazy route 下载并挂载后才启动首屏消息请求，两段网络等待会串行叠加。应在点击事件里并行预热路由代码和该会话的首屏数据，复用同一个 Session store/inflight 请求；后台打开标签不预取，桌面本地仍沿用原有体验。端点本机耗时只能说明本机服务快，不能替代 Relay 端到端计时。
+
 ## Coturn 镜像需要保留 NET_BIND_SERVICE 才能执行
 
 Coturn 4.18 官方镜像中的 `turnserver` 在容器 `cap_drop: ALL` 时无法 exec，shell 报 `Operation not permitted`；逐个添加能力验证后，只有 `NET_BIND_SERVICE` 能恢复启动。镜像入口脚本还会把 `-n` 当 `echo` 选项吞掉，留下空参数并让 Coturn 扫描十几个 Docker 网桥，启动拖到几十秒。以后收紧 Coturn 容器权限时，应保留 `cap_drop: ALL` 并只加回 `NET_BIND_SERVICE`，Compose 直接执行 `/usr/bin/turnserver`、显式绑定 `0.0.0.0`，同时等待 UDP socket 实际监听后再切公网配置；不能只凭容器状态为 running 就认定 STUN 可用。

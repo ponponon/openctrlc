@@ -164,6 +164,16 @@ export function createHomeSessionsController(home: HomeController) {
     })
   }
 
+  const preloadRemoteSession = (sessionID: string) => {
+    if (!platform.remoteSessionID) return
+    // Start route code and transcript I/O together on explicit user intent;
+    // waiting for the lazy route to mount would serialize both network costs.
+    void import("@/pages/session-route-view").catch(() => undefined)
+    const ctx = home.server.focusedContext()
+    if (!ctx || !ctx.sync.session.shouldPrefetch(sessionID)) return
+    void ctx.sync.session.prefetch(sessionID).catch(() => undefined)
+  }
+
   createEffect(() => {
     if (platform.remoteSessionID || readNetworkQuality().lite) return
     records()
@@ -190,6 +200,7 @@ export function createHomeSessionsController(home: HomeController) {
               const sessionID = entry.sessionID
               const server = entry.server
               const directory = entry.project?.worktree ?? entry.directory
+              preloadRemoteSession(sessionID)
               ctx.projects.open(directory)
               ctx.projects.touch(directory)
               const tab = tabs.addSessionTab({ server, sessionId: sessionID })
@@ -238,6 +249,7 @@ export function createHomeSessionsController(home: HomeController) {
         const ctx = home.server.focusedContext()
         if (!ctx) return
         if (!ctx.sync.session.peek(session.id)) ctx.sync.session.remember(session)
+        if (!options?.background) preloadRemoteSession(session.id)
         ctx.projects.open(directory)
         if (options?.background) {
           tabs.addSessionTab({ server: ServerConnection.key(conn), sessionId: session.id })
