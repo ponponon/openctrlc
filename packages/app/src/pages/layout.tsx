@@ -48,6 +48,7 @@ import { Worktree as WorktreeState } from "@/utils/worktree"
 import { setSessionHandoff } from "@/pages/session/handoff"
 import { SessionRouteKey, SessionStateKey } from "@/utils/server-scope"
 import { listAllSessions } from "@/utils/session"
+import { remoteInitialMessagePageSize } from "@/context/server-session"
 
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { useTheme, type ColorScheme } from "@openctrlc/ui/theme/context"
@@ -655,7 +656,7 @@ export default function LegacyLayout(props: ParentProps) {
   // Remote sessions share the desktop's upload link. Fetch the active session;
   // only explicit navigation or hover may warm another session.
   const remoteSession = !!platform.remoteSessionID
-  const prefetchChunk = remoteSession ? 20 : 200
+  const prefetchChunk = remoteSession ? remoteInitialMessagePageSize : 200
   const prefetchConcurrency = remoteSession ? 1 : 2
   const prefetchPendingLimit = 10
   const span = remoteSession ? 0 : 4

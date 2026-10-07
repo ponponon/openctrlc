@@ -34,6 +34,23 @@
 - 协议变更后重新生成 SDK：`packages/client` 执行 `bun run generate`，仓库根执行 `./packages/sdk/js/script/build.ts`。
 - 桌面端界面走 Vite 热更新，但内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`）；改服务端代码后必须 `cd packages/opencode && bun script/build-node.ts`（或完整 `bun run dev`，它会跑 `predev`）再完整重启桌面 App，仅重启渲染层不会更新内嵌 server。
 
+## 远程会话首屏与预取统一为 10 条
+
+### 功能目标
+
+远程打开或切换会话时只先经 Relay 传输 10 条消息，尽快展示可读首屏；桌面端继续使用原有 20 条默认首屏和后台预取策略。
+
+### 实现范围
+
+- `packages/app/src/context/server-session.ts` 导出统一的远程首屏页大小；远程 `session.sync()`、`prefetch()` 与 `shouldPrefetch()` 共用该值。
+- `packages/app/src/pages/layout.tsx` 的远程导航预取复用同一页大小，不再提前请求 20 条后让路由首屏被更大的响应占用。
+- `packages/app/src/context/server-sync.tsx` 使用同一常量配置远程 session store；桌面仍使用默认 20 条。
+
+### 验证方式
+
+- 在 `packages/app` 执行 `bun run typecheck`。
+- 检查远程导航预取和 session store 首屏参数都引用同一常量，桌面页大小未变。
+
 ## 首页会话列表显示上下文窗口占用
 
 ### 功能目标

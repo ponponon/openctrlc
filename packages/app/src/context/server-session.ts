@@ -28,6 +28,7 @@ type MessageApi = ServerApi["message"]
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 const SKIP_PARTS = new Set(["patch", "step-start", "step-finish"])
 const initialMessagePageSize = 20
+export const remoteInitialMessagePageSize = 10
 const parentMessageBatchSize = initialMessagePageSize
 const historyMessagePageSize = 200
 const sessionInfoLimit = 2_048

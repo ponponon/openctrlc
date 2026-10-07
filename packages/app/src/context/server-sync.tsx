@@ -63,7 +63,7 @@ import type {
 } from "@opencode-ai/client/promise"
 import type { Session } from "@openctrlc/sdk/v2/client"
 import { toggleMcp } from "./global-sync/mcp"
-import { createServerSession, type ServerSession } from "./server-session"
+import { createServerSession, remoteInitialMessagePageSize, type ServerSession } from "./server-session"
 import { diagnoseSessionStall, SESSION_STALL_CHECK_INTERVAL_MS } from "./session-stall"
 
 type GlobalStore = {
@@ -238,7 +238,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     sessionProtocols: serverSDK.sessionProtocols,
     // Remote session responses share the desktop's uplink with the Relay. Keep
     // the first transcript page small and let timeline history load on demand.
-    initialMessagePageSize: platform.remoteSessionID ? 10 : undefined,
+    initialMessagePageSize: platform.remoteSessionID ? remoteInitialMessagePageSize : undefined,
     progressiveInitialMessageHydration: !!platform.remoteSessionID,
   })
   const queryOptionsApi = makeQueryOptionsApi(
