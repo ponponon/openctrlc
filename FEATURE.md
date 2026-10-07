@@ -3049,8 +3049,9 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 远程浏览器首开会话时只请求最近 10 条消息，桌面本地仍保留 20 条。消息详情可能包含较大的工具输出，远程传输还会占用桌面上行；缩小远程首屏响应后，更早的历史继续由时间线按需加载，不改变服务端数据或本地桌面行为。
 
 - 路由预取与常规同步共用会话存储的默认首屏页大小，避免路由入口硬编码 20 条而绕过远程 10 条配置。
-- 代码：`packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`、`packages/app/src/pages/session.tsx`。
-- 验证：`packages/app` 类型检查通过；未运行测试，未做公网 Relay 下的实测首屏计时。
+- 远程首屏已经包含可见用户消息时，先应用并显示该页，再补齐缺失的父消息；父消息接口变慢时不再挡住首屏时间线。本地桌面保持原有完整水合后一次应用的行为。
+- 代码：`packages/app/src/context/server-session.ts`、`packages/app/src/context/server-sync.tsx`。
+- 验证：`packages/app` 的 `bun typecheck` 通过；未运行测试，未做公网 Relay 下的实测首屏计时。
 
 ## 远程打开会话时并行预热页面与首屏数据
 

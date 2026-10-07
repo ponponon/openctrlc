@@ -1682,3 +1682,5 @@ CDP `/json/list` 可能同时包含多个窗口或 renderer；直接取第一个
 ## Coturn 镜像需要保留 NET_BIND_SERVICE 才能执行
 
 Coturn 4.18 官方镜像中的 `turnserver` 在容器 `cap_drop: ALL` 时无法 exec，shell 报 `Operation not permitted`；逐个添加能力验证后，只有 `NET_BIND_SERVICE` 能恢复启动。镜像入口脚本还会把 `-n` 当 `echo` 选项吞掉，留下空参数并让 Coturn 扫描十几个 Docker 网桥，启动拖到几十秒。以后收紧 Coturn 容器权限时，应保留 `cap_drop: ALL` 并只加回 `NET_BIND_SERVICE`，Compose 直接执行 `/usr/bin/turnserver`、显式绑定 `0.0.0.0`，同时等待 UDP socket 实际监听后再切公网配置；不能只凭容器状态为 running 就认定 STUN 可用。
+
+远程会话首屏即使已经收到可渲染的 user turn，若加载函数仍等待额外的 parent-message 请求后才提交整页，慢父消息读取会把骨架屏维持到所有请求结束。应在远程首屏含 user turn 时先提交已有页，再把父消息作为增量补齐；若首屏只有孤立 assistant，继续保留加载态，直到可见 user turn 到达或当前读取结束。V2 消息会从原始 `SessionMessageInfo` 源重新规范化，因此增量父消息必须同时合并到该源；只改普通 `Message[]` 会在规范化时丢失。此渐进策略仅用于远程初始页，本地桌面继续沿用原有水合顺序，并以真实 Relay 端到端响应体验确认收益。

@@ -235,6 +235,7 @@ type ServerSessionOptions = {
   protocol?: Promise<"v1" | "v2">
   sessionProtocols?: Map<string, "v1" | "v2">
   initialMessagePageSize?: number
+  progressiveInitialMessageHydration?: boolean
 }
 
 export function createServerSession(
@@ -760,9 +761,11 @@ export function createServerSession(
         }),
       )
       if (!response.data?.info?.id) throw new Error(`Message not found: ${messageID}`)
+      const parts = response.data.parts.filter((part) => !!part?.id).sort((a, b) => cmp(a.id, b.id))
       return {
         message: cleanMessage(response.data.info),
-        parts: response.data.parts.filter((part) => !!part?.id).sort((a, b) => cmp(a.id, b.id)),
+        parts,
+        source: legacyMessageSource([{ info: response.data.info, parts }]),
       }
     }
 
@@ -778,7 +781,7 @@ export function createServerSession(
         const message = normalized.messages[0]
         if (!message) throw new Error(`Message not found: ${messageID}`)
         options?.sessionProtocols?.set(sessionID, "v2")
-        return { message, parts: normalized.parts.get(messageID) ?? [] }
+        return { message, parts: normalized.parts.get(messageID) ?? [], source: [response] }
       } catch (error) {
         if (!isNotFoundError(error)) throw error
         try {
@@ -963,6 +966,21 @@ export function createServerSession(
       )
       if (generations.get(sessionID) !== active) return
 
+      const preserveUnfetched =
+        mode === "prepend" ||
+        (!page.complete && (!first || ((message: Message) => compareMessages(message, first) < 0)))
+      const showInitialPage =
+        options?.progressiveInitialMessageHydration === true &&
+        !before &&
+        mode !== "prepend" &&
+        page.session.some((message) => message.role === "user")
+      if (showInitialPage) {
+        // Render the useful first page as soon as it arrives. Parent hydration
+        // can add older user turns afterward without holding the remote skeleton.
+        applyMessagePage(sessionID, page, load, preserveUnfetched, true)
+        applied = true
+      }
+
       const parents = [] as Awaited<ReturnType<typeof fetchMessage>>[]
       if (mode !== "prepend") {
         const users = new Set([
@@ -1018,10 +1036,19 @@ export function createServerSession(
                 page.part,
                 parents.map((parent) => ({ id: parent.message.id, part: parent.parts })),
               ),
+              ...(page.source || parents.some((parent) => parent.source)
+                ? {
+                    source: [
+                      ...new Map(
+                        [
+                          ...(page.source ?? []),
+                          ...parents.flatMap((parent) => parent.source ?? []),
+                        ].map((message) => [message.id, message] as const),
+                      ).values(),
+                    ].sort(compareMessages),
+                  }
+                : {}),
             }
-      const preserveUnfetched =
-        mode === "prepend" ||
-        (!result.complete && (!first || ((message: Message) => compareMessages(message, first) < 0)))
       applyMessagePage(
         sessionID,
         result,

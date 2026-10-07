@@ -239,6 +239,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     // Remote session responses share the desktop's uplink with the Relay. Keep
     // the first transcript page small and let timeline history load on demand.
     initialMessagePageSize: platform.remoteSessionID ? 10 : undefined,
+    progressiveInitialMessageHydration: !!platform.remoteSessionID,
   })
   const queryOptionsApi = makeQueryOptionsApi(
     serverSDK.scope,
