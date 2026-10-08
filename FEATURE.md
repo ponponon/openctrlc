@@ -3193,3 +3193,10 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - 代码：`infra/remote-relay/openresty.conf`。
 - 配套修复：`infra/remote-relay/deploy.sh` 的 `--config-only` 路径跳过仅适用于 Relay 重启的持久化快照门禁；仍验证受管虚拟主机、TLS 证书、Nginx 语法，并在 reload 失败时回滚。
 - 验证：生产 OpenResty `nginx -t` 和公开虚拟主机的 302/清除 Cookie 响应通过；Relay 容器 ID、启动时间及 1 个会话/5 个授权浏览器计数保持不变。
+
+## 手机配对等待页指引桌面批准位置
+
+新浏览器扫描配对二维码后，Relay 等待页会明确引导用户回到 OpenCtrlC 桌面端，打开“手机访问”窗口，并在对应的新设备请求旁点击“允许”；请求尚未送达时，也提示检查桌面端是否运行并保持手机页面打开。英文、简体中文、日文和韩文文案保持一致。
+
+- 代码：`packages/remote-relay/src/index.ts` 的配对等待页文案。
+- 验证：核对四种语言都指出桌面端入口和“允许”按钮；`git diff --check`。
