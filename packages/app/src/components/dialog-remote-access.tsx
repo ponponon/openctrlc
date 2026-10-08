@@ -361,7 +361,13 @@ export function DialogRemoteAccess() {
                     }
                   >
                     <div class="mt-2 flex flex-col gap-2">
-                      <For each={state.authorizedViewers}>
+                      <For
+                        each={state.authorizedViewers?.toSorted(
+                          (a, b) =>
+                            (b.lastSeenAt ?? b.createdAt ?? 0) - (a.lastSeenAt ?? a.createdAt ?? 0) ||
+                            (b.createdAt ?? 0) - (a.createdAt ?? 0),
+                        )}
+                      >
                         {(viewer) => (
                           <div class="flex min-w-0 items-start justify-between gap-2 rounded-lg bg-v2-background-bg-base p-3">
                             <div class="min-w-0 flex-1">
