@@ -22,9 +22,7 @@ test("keeps the virtual timeline stable while scrolling and removing a message b
   }
 
   await timeline.transport.burst(
-    messages.slice(0, -2).map((message) =>
-      event("message.removed", { sessionID, messageID: message.info.id }),
-    ),
+    messages.slice(0, -2).map((message) => event("message.removed", { sessionID, messageID: message.info.id })),
   )
 
   await scroller.evaluate((element) => (element.scrollTop = 0))

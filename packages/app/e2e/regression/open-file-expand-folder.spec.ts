@@ -148,9 +148,12 @@ test("expands Windows-separator folders and survives virtual file-tree churn", a
   const viewport = sidebar.locator('[data-slot="session-review-v2-sidebar-tree"] .scroll-view__viewport')
   const lastRootFile = panel.locator('[data-slot="file-tree-v2-row"][data-path="file-239.ts"]')
   for (let index = 0; index < 6; index += 1) {
-    await viewport.evaluate((element, toBottom) => {
-      element.scrollTop = toBottom ? element.scrollHeight : 0
-    }, index % 2 === 0)
+    await viewport.evaluate(
+      (element, toBottom) => {
+        element.scrollTop = toBottom ? element.scrollHeight : 0
+      },
+      index % 2 === 0,
+    )
     await expect(index % 2 === 0 ? lastRootFile : frontendRow).toBeVisible()
   }
 

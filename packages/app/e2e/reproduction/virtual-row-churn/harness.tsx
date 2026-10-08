@@ -27,7 +27,4 @@ const replaceRows = () => {
 window.__virtualRowChurn = { replaceRows }
 document.querySelector('[data-testid="replace-rows"]')?.addEventListener("click", replaceRows)
 
-render(
-  () => <SessionFileListV2 files={files()} onFileClick={() => undefined} />,
-  document.getElementById("root")!,
-)
+render(() => <SessionFileListV2 files={files()} onFileClick={() => undefined} />, document.getElementById("root")!)
