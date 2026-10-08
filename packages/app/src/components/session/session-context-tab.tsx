@@ -512,7 +512,12 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
   const virtualItemByKey = createMemo(
     () => new Map(messageVirtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
   )
-  const virtualRowKeys = createMemo(() => messageVirtualizer.getVirtualItems().map((item) => item.key))
+  const virtualRowKeys = createMemo(() =>
+    messageVirtualizer
+      .getVirtualItems()
+      .filter((item) => messageByID().has(String(item.key)))
+      .map((item) => item.key),
+  )
   const virtualRowsHeight = createMemo(() => Math.max(0, messageVirtualizer.getTotalSize() - scrollMargin()))
 
   const restoreScroll = () => {
@@ -827,39 +832,39 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
                   const item = createMemo(() => virtualItemByKey().get(key))
                   const message = createMemo(() => messageByID().get(String(key)))
                   return (
-                    <Show when={item()}>
-                      {(current) => (
-                        <Show when={message()}>
-                          {(currentMessage) => (
-                            <div
-                              data-index={current().index}
-                              ref={(el) => {
-                                el.dataset.index = String(current().index)
-                                messageVirtualizer.measureElement(el)
-                              }}
-                              style={{
-                                position: "absolute",
-                                top: "0",
-                                left: "0",
-                                width: "100%",
-                                transform: "translateY(" + (current().start - scrollMargin()) + "px)",
-                              }}
-                            >
-                              <RawMessage
-                                message={currentMessage()}
-                                getParts={getParts}
-                                onRendered={restoreScroll}
-                                time={formatter().time}
-                                activity={getMessageActivity(currentMessage(), getParts(currentMessage().id))}
-                                duration={messageDuration(currentMessage())}
-                                tokenDelta={messageTokenDelta(current().index)}
-                                extraColumns={rawMessageExtraColumns()}
-                                extraColumnValue={extraColumnValue}
-                                gridStyle={rawMessageGridStyle()}
-                              />
-                            </div>
-                          )}
-                        </Show>
+                    // Keyed Show passes the stable ID value, not a branch-scoped accessor that becomes stale on scroll.
+                    <Show when={item() && message() ? String(key) : undefined} keyed>
+                      {(messageID) => (
+                        <div
+                          data-index={item()?.index ?? -1}
+                          ref={(el) => {
+                            const index = item()?.index
+                            if (index === undefined) return
+                            el.dataset.index = String(index)
+                            messageVirtualizer.measureElement(el)
+                          }}
+                          data-message-id={messageID}
+                          style={{
+                            position: "absolute",
+                            top: "0",
+                            left: "0",
+                            width: "100%",
+                            transform: "translateY(" + ((item()?.start ?? 0) - scrollMargin()) + "px)",
+                          }}
+                        >
+                          <RawMessage
+                            message={message()!}
+                            getParts={getParts}
+                            onRendered={restoreScroll}
+                            time={formatter().time}
+                            activity={getMessageActivity(message()!, getParts(message()!.id))}
+                            duration={messageDuration(message()!)}
+                            tokenDelta={messageTokenDelta(item()?.index ?? -1)}
+                            extraColumns={rawMessageExtraColumns()}
+                            extraColumnValue={extraColumnValue}
+                            gridStyle={rawMessageGridStyle()}
+                          />
+                        </div>
                       )}
                     </Show>
                   )
