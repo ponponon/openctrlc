@@ -144,22 +144,20 @@ export function ReviewPanelV2(props: ReviewPanelV2Props) {
         <Show when={activeDiff()} keyed>
           {(file) => (
             <Show when={activeItem()}>
-              {(diff) => (
-                <SessionReviewFilePreviewV2
-                  file={file}
-                  diff={diff()}
-                  diffStyle={props.diffStyle}
-                  expandMode={props.state.expandMode()}
-                  readFile={readFile}
-                  onLineComment={props.onLineComment}
-                  onLineCommentUpdate={props.onLineCommentUpdate}
-                  onLineCommentDelete={props.onLineCommentDelete}
-                  lineCommentActions={props.lineCommentActions}
-                  comments={props.comments}
-                  focusedComment={props.focusedComment}
-                  onFocusedCommentChange={props.onFocusedCommentChange}
-                />
-              )}
+              <SessionReviewFilePreviewV2
+                file={file}
+                diff={activeItem()!}
+                diffStyle={props.diffStyle}
+                expandMode={props.state.expandMode()}
+                readFile={readFile}
+                onLineComment={props.onLineComment}
+                onLineCommentUpdate={props.onLineCommentUpdate}
+                onLineCommentDelete={props.onLineCommentDelete}
+                lineCommentActions={props.lineCommentActions}
+                comments={props.comments}
+                focusedComment={props.focusedComment}
+                onFocusedCommentChange={props.onFocusedCommentChange}
+              />
             </Show>
           )}
         </Show>

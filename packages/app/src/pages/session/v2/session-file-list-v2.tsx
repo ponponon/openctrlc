@@ -86,9 +86,20 @@ export function SessionFileListV2(props: {
     })
   })
   const virtualItemByKey = createMemo(
-    () => new Map(virtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
+    () =>
+      new Map(
+        virtualizer
+          .getVirtualItems()
+          .map((item) => [String(item.key), { index: item.index, start: item.start, size: item.size }] as const),
+      ),
   )
-  const virtualRowKeys = createMemo(() => virtualizer.getVirtualItems().map((item) => item.key))
+  const virtualRowKeys = createMemo(() => {
+    const files = new Set(props.files)
+    return virtualizer
+      .getVirtualItems()
+      .map((item) => String(item.key))
+      .filter((key) => files.has(key))
+  })
 
   return (
     <div
@@ -109,55 +120,54 @@ export function SessionFileListV2(props: {
           const directory = () => (value.includes("/") ? getDirectory(value) : undefined)
           const filename = () => getFilename(value)
           return (
-            <Show when={virtualItemByKey().get(key)}>
-              {(item) => (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "0",
-                    left: "0",
-                    width: "100%",
-                    height: `${item().size}px`,
-                    transform: `translateY(${item().start}px)`,
-                  }}
-                >
-                  <button
-                    type="button"
-                    id={props.optionID?.(path)}
-                    role={props.role ? "option" : undefined}
-                    aria-selected={props.role ? selected() : undefined}
-                    data-slot="file-tree-v2-row"
-                    data-path={path}
-                    data-selected={selected() ? "" : undefined}
-                    data-highlighted={highlightedRow() ? "" : undefined}
-                    style="padding-left: 8px"
-                    onFocus={() => setFocused(path)}
-                    onBlur={() => setFocused(undefined)}
-                    onClick={() => props.onFileClick(path)}
-                    onDblClick={() => props.onFileDoubleClick?.(path)}
+            <Show when={virtualItemByKey().has(path) ? path : undefined} keyed>
+              {(rowPath) => {
+                const item = () => virtualItemByKey().get(rowPath)
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "0",
+                      left: "0",
+                      width: "100%",
+                      height: `${item()!.size}px`,
+                      transform: `translateY(${item()!.start}px)`,
+                    }}
                   >
-                    <span class="filetree-iconpair size-4">
-                      <FileIcon node={{ path, type: "file" }} class="size-4 filetree-icon filetree-icon--color" />
-                      <FileIcon node={{ path, type: "file" }} class="size-4 filetree-icon filetree-icon--mono" mono />
-                    </span>
-                    <span class="flex min-w-0 flex-1 items-center overflow-hidden whitespace-nowrap">
-                      <Show when={directory()}>
-                        {(value) => (
-                          <span class="text-12-medium text-text-muted truncate min-w-0 shrink">{value()}</span>
-                        )}
-                      </Show>
-                      <span class="text-12-medium text-text-base truncate min-w-0 shrink-0">{filename()}</span>
-                    </span>
-                    <Show when={kind()}>
-                      {(value) => (
-                        <span data-slot="file-tree-v2-change" data-change={kindChange(value())}>
-                          {kindLabel(value())}
+                    <button
+                      type="button"
+                      id={props.optionID?.(path)}
+                      role={props.role ? "option" : undefined}
+                      aria-selected={props.role ? selected() : undefined}
+                      data-slot="file-tree-v2-row"
+                      data-path={path}
+                      data-selected={selected() ? "" : undefined}
+                      data-highlighted={highlightedRow() ? "" : undefined}
+                      style="padding-left: 8px"
+                      onFocus={() => setFocused(path)}
+                      onBlur={() => setFocused(undefined)}
+                      onClick={() => props.onFileClick(path)}
+                      onDblClick={() => props.onFileDoubleClick?.(path)}
+                    >
+                      <span class="filetree-iconpair size-4">
+                        <FileIcon node={{ path, type: "file" }} class="size-4 filetree-icon filetree-icon--color" />
+                        <FileIcon node={{ path, type: "file" }} class="size-4 filetree-icon filetree-icon--mono" mono />
+                      </span>
+                      <span class="flex min-w-0 flex-1 items-center overflow-hidden whitespace-nowrap">
+                        <Show when={directory()}>
+                          <span class="text-12-medium text-text-muted truncate min-w-0 shrink">{directory()}</span>
+                        </Show>
+                        <span class="text-12-medium text-text-base truncate min-w-0 shrink-0">{filename()}</span>
+                      </span>
+                      <Show when={kind()}>
+                        <span data-slot="file-tree-v2-change" data-change={kindChange(kind()!)}>
+                          {kindLabel(kind()!)}
                         </span>
-                      )}
-                    </Show>
-                  </button>
-                </div>
-              )}
+                      </Show>
+                    </button>
+                  </div>
+                )
+              }}
             </Show>
           )
         }}

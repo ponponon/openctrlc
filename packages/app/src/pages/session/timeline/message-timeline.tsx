@@ -657,9 +657,20 @@ export function MessageTimeline(props: {
     return first !== undefined && item.index < first
   }
   const virtualItemByKey = createMemo(
-    () => new Map(virtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
+    () =>
+      new Map(
+        virtualizer
+          .getVirtualItems()
+          .map((item) => [String(item.key), { index: item.index, start: item.start, size: item.size }] as const),
+      ),
   )
-  const virtualRowKeys = createMemo(() => virtualizer.getVirtualItems().map((item) => item.key as string))
+  const virtualRowKeys = createMemo(() => {
+    const rows = timelineRowByKey()
+    return virtualizer
+      .getVirtualItems()
+      .map((item) => String(item.key))
+      .filter((key) => rows.has(key))
+  })
   const navigatorEntries = createMemo(() =>
     createSessionTimelineNavigatorEntries({
       messages: props.userMessages,
@@ -1427,34 +1438,30 @@ export function MessageTimeline(props: {
     })
 
     return (
-      <Show when={message()}>
-        {(message) => (
-          <Show when={part()}>
-            {(part) => (
-              <MessagePart
-                part={part()}
-                message={message()}
-                actions={props.actions}
-                showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
-                turnDurationMs={turnDurationMs(row().userMessageID)}
-                useV2Actions={settings.general.newLayoutDesigns()}
-                defaultOpen={defaultOpen()}
-                toolOpen={toolOpen[part().id] ?? defaultOpen()}
-                onToolOpenChange={(open) => setToolOpen(part().id, open)}
-                deferToolContent
-                virtualizeDiff={false}
-                onContentRendered={onSizeChange}
-                highlightQuery={highlightQuery()}
-                highlightActiveIndex={highlightActiveIndex()}
-                highlightInputActiveIndex={highlightInputActiveIndex()}
-                onSearchActiveRange={(range) => {
-                  // 只有当前活动 part 才允许写入，避免同消息其他 part 的空扫描清掉 Range。
-                  if (highlightActiveIndex() === undefined && highlightInputActiveIndex() === undefined) return
-                  activeSearchRange = range ? { messageID: message().id, range } : undefined
-                }}
-              />
-            )}
-          </Show>
+      <Show when={message() && part() ? part()!.id : undefined} keyed>
+        {(partID) => (
+          <MessagePart
+            part={part()!}
+            message={message()!}
+            actions={props.actions}
+            showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
+            turnDurationMs={turnDurationMs(row().userMessageID)}
+            useV2Actions={settings.general.newLayoutDesigns()}
+            defaultOpen={defaultOpen()}
+            toolOpen={toolOpen[partID] ?? defaultOpen()}
+            onToolOpenChange={(open) => setToolOpen(partID, open)}
+            deferToolContent
+            virtualizeDiff={false}
+            onContentRendered={onSizeChange}
+            highlightQuery={highlightQuery()}
+            highlightActiveIndex={highlightActiveIndex()}
+            highlightInputActiveIndex={highlightInputActiveIndex()}
+            onSearchActiveRange={(range) => {
+              // 只有当前活动 part 才允许写入，避免同消息其他 part 的空扫描清掉 Range。
+              if (highlightActiveIndex() === undefined && highlightInputActiveIndex() === undefined) return
+              activeSearchRange = range ? { messageID: message()!.id, range } : undefined
+            }}
+          />
         )}
       </Show>
     )
@@ -1551,7 +1558,9 @@ export function MessageTimeline(props: {
       <Collapsible open={open()} onOpenChange={onOpenChange} variant="ghost" data-slot="session-turn-steps">
         <Collapsible.Trigger>
           <div data-slot="session-turn-steps-trigger">
-            <Show when={duration()}>{(value) => <span data-slot="session-turn-steps-duration">{value()}</span>}</Show>
+            <Show when={duration()}>
+              <span data-slot="session-turn-steps-duration">{duration()}</span>
+            </Show>
             <Show when={duration()}>·</Show>
             <span data-slot="session-turn-steps-label">
               {open() ? language.t("ui.sessionTurn.steps.hide") : language.t("ui.sessionTurn.steps.show")}
@@ -1631,13 +1640,11 @@ export function MessageTimeline(props: {
                           <FileIcon node={{ path: comment().path, type: "file" }} class="size-3.5 shrink-0" />
                           <span class="truncate">{getFilename(comment().path)}</span>
                           <Show when={comment().selection}>
-                            {(selection) => (
-                              <span class="shrink-0 text-text-weak">
-                                {selection().startLine === selection().endLine
-                                  ? `:${selection().startLine}`
-                                  : `:${selection().startLine}-${selection().endLine}`}
-                              </span>
-                            )}
+                            <span class="shrink-0 text-text-weak">
+                              {comment().selection!.startLine === comment().selection!.endLine
+                                ? `:${comment().selection!.startLine}`
+                                : `:${comment().selection!.startLine}-${comment().selection!.endLine}`}
+                            </span>
                           </Show>
                         </div>
                         <div class="pt-1 text-12-regular text-text-strong whitespace-pre-wrap break-words">
@@ -1682,21 +1689,19 @@ export function MessageTimeline(props: {
         })
         return (
           <TimelineRowFrame row={userMessageRow}>
-            <Show when={message()}>
-              {(message) => (
-                <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
-                  <div data-slot="session-turn-message-content" aria-live="off">
-                    <Message
-                      message={message()}
-                      parts={getMsgParts(userMessageRow().userMessageID)}
-                      actions={props.actions}
-                      useV2Actions={settings.general.newLayoutDesigns()}
-                      comments={messageComments()}
-                      searchHits={searchHits()}
-                    />
-                  </div>
+            <Show when={message()?.id} keyed>
+              <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
+                <div data-slot="session-turn-message-content" aria-live="off">
+                  <Message
+                    message={message()!}
+                    parts={getMsgParts(userMessageRow().userMessageID)}
+                    actions={props.actions}
+                    useV2Actions={settings.general.newLayoutDesigns()}
+                    comments={messageComments()}
+                    searchHits={searchHits()}
+                  />
                 </div>
-              )}
+              </div>
             </Show>
           </TimelineRowFrame>
         )

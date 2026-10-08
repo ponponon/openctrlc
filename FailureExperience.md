@@ -1756,3 +1756,7 @@ Relay 的 bootstrap 只在浏览器首次进入工作区时注入一份快照；
 ## 虚拟行尺寸测量不能在 `ref` 回调里同步触发
 
 上下文消息虚拟列表曾在 DOM `ref` 回调中立即调用 TanStack `measureElement()`。该调用会同步更新虚拟器的 Solid Store，并改变正在由 `<For>` / `<Show>` 创建的行集合；在挂载中的组件属性代理尚未稳定时触发这类重入，开发运行时可能只显示 `mergeProps` / `splitProps` 的 `Object.get` 递归栈，最终报 `Maximum call stack size exceeded`。虚拟行应在首次渲染完成后的 `onMount` 测量，索引变化再由延后的响应式 effect 处理；虚拟器 Store 的行数据进入本地映射前只复制需要的普通字段，避免把代理对象继续传递到渲染链。
+
+## 虚拟列表不能把 `<Show>` 子节点访问器传进动态属性
+
+Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载或分支切换时，传给子组件 props、style 或事件回调的这个访问器仍可能在分支销毁后被读取，触发 `Attempting to access a stale value from <Show>`。检查同类报错时不能只修当前可见的时间线：文件树、会话文件列表、用户消息、assistant part，以及 review/拖拽预览都要检查。虚拟位置映射只保存 `{ index, start, size }` 这样的普通字段；行 key 列表先过滤掉已从数据投影移除的 key；需要用 `<Show>` 控制生命周期时按稳定标识使用 keyed 分支，并在分支内部从组件作用域 memo 读取数据，不把 `<Show>` 回调访问器继续传给子组件。

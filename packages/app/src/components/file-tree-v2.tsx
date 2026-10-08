@@ -210,9 +210,20 @@ export default function FileTreeV2(props: {
 
   const rowByKey = createMemo(() => new Map(rows().map((row) => [row.node.path, row] as const)))
   const virtualItemByKey = createMemo(
-    () => new Map(virtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
+    () =>
+      new Map(
+        virtualizer
+          .getVirtualItems()
+          .map((item) => [String(item.key), { index: item.index, start: item.start, size: item.size }] as const),
+      ),
   )
-  const virtualRowKeys = createMemo(() => virtualizer.getVirtualItems().map((item) => item.key))
+  const virtualRowKeys = createMemo(() => {
+    const rowByKeyValue = rowByKey()
+    return virtualizer
+      .getVirtualItems()
+      .map((item) => String(item.key))
+      .filter((key) => rowByKeyValue.has(key))
+  })
 
   return (
     <div
@@ -223,79 +234,81 @@ export default function FileTreeV2(props: {
       style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}
     >
       <For each={virtualRowKeys()}>
-        {(key) => (
-          <Show when={virtualItemByKey().get(key)}>
-            {(item) => (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "0",
-                  "inset-inline-start": "0",
-                  width: "100%",
-                  height: `${item().size}px`,
-                  transform: `translateY(${item().start}px)`,
-                }}
-              >
-                <Show when={rowByKey().get(key as string)}>
-                  {(row) => (
+        {(key) => {
+          return (
+            <Show when={virtualItemByKey().has(key) && rowByKey().has(key) ? key : undefined} keyed>
+              {(path) => {
+                const item = () => virtualItemByKey().get(path)
+                const row = () => rowByKey().get(path)
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "0",
+                      "inset-inline-start": "0",
+                      width: "100%",
+                      height: `${item()!.size}px`,
+                      transform: `translateY(${item()!.start}px)`,
+                    }}
+                  >
                     <Show
-                      when={row().node.type === "directory"}
+                      when={row()!.node.type === "directory"}
                       fallback={
                         <FileTreeNodeV2
-                          node={row().node}
-                          level={row().level}
+                          node={row()!.node}
+                          level={row()!.level}
                           active={active()}
                           draggable={draggable()}
                           kinds={props.kinds}
                           as="button"
                           type="button"
                           class="relative"
-                          onFocus={() => setFocused(row().node.path)}
+                          onFocus={() => setFocused(row()!.node.path)}
                           onBlur={() => setFocused(undefined)}
-                          onClick={() => selectFile(row().node, props.onFileClick)}
-                          onDblClick={() => selectFile(row().node, props.onFileDoubleClick)}
+                          onClick={() => selectFile(row()!.node, props.onFileClick)}
+                          onDblClick={() => selectFile(row()!.node, props.onFileDoubleClick)}
                         >
-                          <GuideLines level={row().level} />
-                          <Show when={row().level > 0}>
+                          <GuideLines level={row()!.level} />
+                          <Show when={row()!.level > 0}>
                             <div class="w-4 shrink-0" />
                           </Show>
                           <span class="filetree-iconpair size-4">
-                            <FileIcon node={row().node} class="size-4 filetree-icon filetree-icon--color" />
-                            <FileIcon node={row().node} class="size-4 filetree-icon filetree-icon--mono" mono />
+                            <FileIcon node={row()!.node} class="size-4 filetree-icon filetree-icon--color" />
+                            <FileIcon node={row()!.node} class="size-4 filetree-icon filetree-icon--mono" mono />
                           </span>
                         </FileTreeNodeV2>
                       }
                     >
                       <FileTreeNodeV2
-                        node={row().node}
-                        level={row().level}
+                        node={row()!.node}
+                        level={row()!.level}
                         active={active()}
                         draggable={draggable()}
                         kinds={props.kinds}
                         as="button"
                         type="button"
                         class="relative"
-                        onFocus={() => setFocused(row().node.path)}
+                        onFocus={() => setFocused(row()!.node.path)}
                         onBlur={() => setFocused(undefined)}
-                        aria-expanded={expanded(row().node.path)}
-                        onClick={() => toggleDirectory(row().node.path, row().node.originalPath)}
+                        aria-expanded={expanded(row()!.node.path)}
+                        onClick={() => toggleDirectory(row()!.node.path, row()!.node.originalPath)}
                       >
-                        <GuideLines level={row().level} />
+                        <GuideLines level={row()!.level} />
                         <div
                           data-slot="file-tree-v2-chevron"
-                          data-expanded={expanded(row().node.path) ? "" : undefined}
+                          data-expanded={expanded(row()!.node.path) ? "" : undefined}
                           class="size-4 flex items-center justify-center"
                         >
                           <Icon name="chevron-down" />
                         </div>
                       </FileTreeNodeV2>
                     </Show>
-                  )}
-                </Show>
-              </div>
-            )}
-          </Show>
-        )}
+                  </div>
+                )
+              }}
+            </Show>
+          )
+        }}
       </For>
     </div>
   )
