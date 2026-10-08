@@ -3199,4 +3199,5 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 新浏览器扫描配对二维码后，Relay 等待页会明确引导用户回到 OpenCtrlC 桌面端，打开“手机访问”窗口，并在对应的新设备请求旁点击“允许”；请求尚未送达时，也提示检查桌面端是否运行并保持手机页面打开。英文、简体中文、日文和韩文文案保持一致。
 
 - 代码：`packages/remote-relay/src/index.ts` 的配对等待页文案。
-- 验证：核对四种语言都指出桌面端入口和“允许”按钮；`git diff --check`。
+- 生产热更新：旧 Relay 当时仍有内存会话且没有持久化快照，不能安全重启。通过 `infra/remote-relay/openresty.conf` 的 `sub_filter` 配置热替换旧 HTML 中的四语提示，再使用 `deploy.sh --config-only` 重载 OpenResty；Relay 容器和现有授权保持运行。已打开的配对页需要刷新一次才能读取新文案。后续 Relay 完整部署后，这些旧文案替换不再命中，可移除。
+- 验证：公网虚拟主机返回的 HTML 已包含四种新提示且不再包含旧中文提示；生产 OpenResty `nginx -t` 通过；Relay 容器启动时间未变，会话数仍为 1、授权浏览器数仍为 6。
