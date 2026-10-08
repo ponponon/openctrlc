@@ -1086,7 +1086,8 @@ export const dict = {
     "This relay does not support custom browser limits yet. The saved limit will apply after the relay is updated.",
   "remoteAccess.viewerLimitOverCapacity":
     "Existing approvals are kept when you lower the limit. Revoke a browser or raise the limit before approving another.",
-  "remoteAccess.viewerMeta": "Approved {{created}} · Last used {{seen}}",
+  "remoteAccess.viewerApproved": "Approved {{time}}",
+  "remoteAccess.viewerLastSeen": "Last used {{time}}",
   "remote.liteNetwork": "Lite",
   "remote.liteNetworkHint": "Slow or metered network — heavy previews and prefetch are limited",
   "remote.transport.connecting": "Relay · P2P…",

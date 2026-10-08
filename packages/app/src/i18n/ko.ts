@@ -805,7 +805,8 @@ export const dict = {
     "현재 Relay는 브라우저 수 사용자 지정 제한을 지원하지 않습니다. Relay를 업데이트하면 저장한 제한이 적용됩니다.",
   "remoteAccess.viewerLimitOverCapacity":
     "제한을 낮춰도 기존 승인은 유지됩니다. 새 브라우저를 승인하려면 기존 승인을 취소하거나 제한을 높이세요.",
-  "remoteAccess.viewerMeta": "승인 {{created}} · 최근 사용 {{seen}}",
+  "remoteAccess.viewerApproved": "승인 {{time}}",
+  "remoteAccess.viewerLastSeen": "최근 사용 {{time}}",
   "remote.liteNetwork": "절약",
   "remote.liteNetworkHint": "네트워크가 느리거나 데이터 요금이 적용되어 미리 가져오기와 무거운 미리보기를 제한합니다",
   "remote.transport.connecting": "릴레이 · P2P 중",

@@ -43,10 +43,16 @@ function isViewerLimit(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 100
 }
 
-function formatViewerTime(value?: number) {
+function formatViewerTime(value: number | undefined, locale: string) {
   if (!value || !Number.isFinite(value)) return "—"
   try {
-    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+    return new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value))
   } catch {
     return "—"
   }
@@ -357,7 +363,7 @@ export function DialogRemoteAccess() {
                     <div class="mt-2 flex flex-col gap-2">
                       <For each={state.authorizedViewers}>
                         {(viewer) => (
-                          <div class="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-v2-background-bg-base p-3">
+                          <div class="flex min-w-0 items-start justify-between gap-2 rounded-lg bg-v2-background-bg-base p-3">
                             <div class="min-w-0 flex-1">
                               <div
                                 class="truncate text-14-medium text-v2-text-text-strong"
@@ -366,19 +372,25 @@ export function DialogRemoteAccess() {
                                 {viewer.device} · #{viewer.id.slice(0, 6)}
                               </div>
                               <Show when={viewer.createdAt || viewer.lastSeenAt}>
-                                <div
-                                  class="mt-0.5 truncate text-12-regular"
-                                  classList={{
-                                    "text-v2-state-fg-warning": viewerExpiringSoon(viewer),
-                                    "text-v2-text-text-muted": !viewerExpiringSoon(viewer),
-                                  }}
-                                >
-                                  {language.t("remoteAccess.viewerMeta", {
-                                    created: formatViewerTime(viewer.createdAt),
-                                    seen: formatViewerTime(viewer.lastSeenAt),
-                                  })}
+                                <div class="mt-1 flex min-w-0 flex-col gap-0.5 text-12-regular leading-4">
+                                  <Show when={viewer.createdAt}>
+                                    <div class="break-words text-v2-text-text-muted">
+                                      {language.t("remoteAccess.viewerApproved", {
+                                        time: formatViewerTime(viewer.createdAt, language.locale()),
+                                      })}
+                                    </div>
+                                  </Show>
+                                  <Show when={viewer.lastSeenAt}>
+                                    <div class="break-words text-v2-text-text-muted">
+                                      {language.t("remoteAccess.viewerLastSeen", {
+                                        time: formatViewerTime(viewer.lastSeenAt, language.locale()),
+                                      })}
+                                    </div>
+                                  </Show>
                                   <Show when={viewerExpiringSoon(viewer)}>
-                                    <span class="ml-1">· {language.t("remoteAccess.viewerExpiring")}</span>
+                                    <div class="break-words text-v2-state-fg-warning">
+                                      {language.t("remoteAccess.viewerExpiring")}
+                                    </div>
                                   </Show>
                                 </div>
                               </Show>
@@ -386,7 +398,7 @@ export function DialogRemoteAccess() {
                             <ButtonV2
                               size="small"
                               variant="danger"
-                              class="shrink-0 whitespace-nowrap"
+                              class="mt-0.5 shrink-0 whitespace-nowrap"
                               aria-label={`${language.t(
                                 revokingViewer() === viewer.id ? "remoteAccess.revoking" : "remoteAccess.revoke",
                               )} ${viewer.device} #${viewer.id.slice(0, 6)}`}

@@ -1052,7 +1052,8 @@ export const dict = {
     "現在の Relay はブラウザー数のカスタム上限に対応していません。Relay を更新すると保存した上限が適用されます。",
   "remoteAccess.viewerLimitOverCapacity":
     "上限を下げても既存の許可は維持されます。新しいブラウザーを許可するには、既存の許可を取り消すか上限を上げてください。",
-  "remoteAccess.viewerMeta": "承認 {{created}} · 最終使用 {{seen}}",
+  "remoteAccess.viewerApproved": "承認 {{time}}",
+  "remoteAccess.viewerLastSeen": "最終使用 {{time}}",
   "remote.liteNetwork": "省流量",
   "remote.liteNetworkHint": "低速または従量制のため、事前取得と重いプレビューを抑えています",
   "remote.transport.connecting": "Relay · 直結中",
