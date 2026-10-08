@@ -1752,3 +1752,7 @@ Relay 的 bootstrap 只在浏览器首次进入工作区时注入一份快照；
 ## 虚拟列表行不要持有 `<Show>` 分支访问器
 
 上下文原始消息虚拟列表曾在每行嵌套使用 `<Show>` 的子节点访问器读取虚拟位置和消息对象。滚动或切换会话会快速移除行；分支已经卸载后，尚未完成的响应式渲染仍可能读取该访问器并触发 SolidJS 的 `Attempting to access a stale value from <Show>`。虚拟行应直接由当前虚拟 key 列表驱动，并按 key 读取对应位置和消息，避免把 `<Show>` 子节点访问器放进虚拟行的响应式属性中。
+
+## 虚拟行尺寸测量不能在 `ref` 回调里同步触发
+
+上下文消息虚拟列表曾在 DOM `ref` 回调中立即调用 TanStack `measureElement()`。该调用会同步更新虚拟器的 Solid Store，并改变正在由 `<For>` / `<Show>` 创建的行集合；在挂载中的组件属性代理尚未稳定时触发这类重入，开发运行时可能只显示 `mergeProps` / `splitProps` 的 `Object.get` 递归栈，最终报 `Maximum call stack size exceeded`。虚拟行应在首次渲染完成后的 `onMount` 测量，索引变化再由延后的响应式 effect 处理；虚拟器 Store 的行数据进入本地映射前只复制需要的普通字段，避免把代理对象继续传递到渲染链。

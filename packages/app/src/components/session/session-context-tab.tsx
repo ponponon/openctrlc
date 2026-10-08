@@ -1,4 +1,15 @@
-import { createMemo, createEffect, createResource, createSignal, on, onCleanup, For, Show, type Accessor } from "solid-js"
+import {
+  createMemo,
+  createEffect,
+  createResource,
+  createSignal,
+  on,
+  onCleanup,
+  onMount,
+  For,
+  Show,
+  type Accessor,
+} from "solid-js"
 import { createStore } from "solid-js/store"
 import type { JSX } from "solid-js"
 import { createVirtualizer } from "@tanstack/solid-virtual"
@@ -510,7 +521,12 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
   })
   const messageByID = createMemo(() => new Map(messages().map((message) => [message.id, message] as const)))
   const virtualItemByKey = createMemo(
-    () => new Map(messageVirtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
+    () =>
+      new Map(
+        messageVirtualizer
+          .getVirtualItems()
+          .map((item) => [item.key, { index: item.index, start: item.start }] as const),
+      ),
   )
   const virtualRowKeys = createMemo(() =>
     messageVirtualizer
@@ -831,18 +847,30 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
                 {(key) => {
                   const item = createMemo(() => virtualItemByKey().get(key))
                   const message = createMemo(() => messageByID().get(String(key)))
+                  let element: HTMLDivElement | undefined
+
+                  onMount(() => {
+                    if (element) messageVirtualizer.measureElement(element)
+                  })
+                  createEffect(
+                    on(
+                      () => item()?.index,
+                      (index) => {
+                        if (index === undefined || !element) return
+                        element.dataset.index = String(index)
+                        messageVirtualizer.measureElement(element)
+                      },
+                      { defer: true },
+                    ),
+                  )
+
                   return (
                     // Keyed Show passes the stable ID value, not a branch-scoped accessor that becomes stale on scroll.
                     <Show when={item() && message() ? String(key) : undefined} keyed>
                       {(messageID) => (
                         <div
                           data-index={item()?.index ?? -1}
-                          ref={(el) => {
-                            const index = item()?.index
-                            if (index === undefined) return
-                            el.dataset.index = String(index)
-                            messageVirtualizer.measureElement(el)
-                          }}
+                          ref={(el) => (element = el)}
                           data-message-id={messageID}
                           style={{
                             position: "absolute",
