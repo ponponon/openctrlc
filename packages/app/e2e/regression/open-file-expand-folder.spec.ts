@@ -8,10 +8,20 @@ const projectID = "proj_open_file_expand"
 const sessionID = "ses_open_file_expand"
 const title = "Open file expand"
 const server = `http://${process.env.PLAYWRIGHT_SERVER_HOST ?? "127.0.0.1"}:${process.env.PLAYWRIGHT_SERVER_PORT ?? "4096"}`
+const rootFiles = Array.from({ length: 240 }, (_, index) => ({
+  name: `file-${String(index).padStart(3, "0")}.ts`,
+  path: `file-${String(index).padStart(3, "0")}.ts`,
+  absolute: `${directory}/file-${String(index).padStart(3, "0")}.ts`,
+  type: "file" as const,
+  ignored: false,
+}))
 
 test.use({ viewport: { width: 1440, height: 900 } })
 
-test("expands a folder whose path has a trailing Windows separator", async ({ page }) => {
+test("expands Windows-separator folders and survives virtual file-tree churn", async ({ page }) => {
+  const pageErrors: string[] = []
+  page.on("pageerror", (error) => pageErrors.push(error.message))
+
   await mockOpenCodeServer(page, {
     directory,
     project: {
@@ -73,6 +83,7 @@ test("expands a folder whose path has a trailing Windows separator", async ({ pa
           type: "file" as const,
           ignored: false,
         },
+        ...rootFiles,
       ]
     },
     fileContent: (path) => ({ type: "text", content: `contents:${path}` }),
@@ -131,4 +142,24 @@ test("expands a folder whose path has a trailing Windows separator", async ({ pa
   await appRow.click()
   await expect(panel.getByRole("tab", { name: "app.ts" })).toHaveAttribute("data-selected", "")
   await expect(panel.getByText("contents:frontend/app.ts", { exact: true })).toBeVisible()
+
+  const tree = sidebar.locator('[data-component="file-tree-v2"]')
+  await expect(tree).toHaveAttribute("data-total-rows", "243")
+  const viewport = sidebar.locator('[data-slot="session-review-v2-sidebar-tree"] .scroll-view__viewport')
+  const lastRootFile = panel.locator('[data-slot="file-tree-v2-row"][data-path="file-239.ts"]')
+  for (let index = 0; index < 6; index += 1) {
+    await viewport.evaluate((element, toBottom) => {
+      element.scrollTop = toBottom ? element.scrollHeight : 0
+    }, index % 2 === 0)
+    await expect(index % 2 === 0 ? lastRootFile : frontendRow).toBeVisible()
+  }
+
+  await viewport.evaluate((element) => (element.scrollTop = 0))
+  for (let index = 0; index < 12; index += 1) {
+    const expanded = index % 2 === 1
+    await frontendRow.click()
+    await expect(frontendRow).toHaveAttribute("aria-expanded", expanded ? "true" : "false")
+    await expect(appRow).toHaveCount(expanded ? 1 : 0)
+  }
+  expect(pageErrors).toEqual([])
 })

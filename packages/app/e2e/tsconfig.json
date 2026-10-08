@@ -21,6 +21,8 @@
     "../package.json",
     "../src/pages/session/timeline/observe-element-offset.ts",
     "./regression/new-session-panel-corner.spec.ts",
+    "./regression/open-file-expand-folder.spec.ts",
+    "./regression/session-timeline-virtual-churn.spec.ts",
     "./regression/session-timeline-context-resize.spec.ts",
     "./regression/session-timeline-follow-pause.spec.ts",
     "./regression/session-search-tool-hit.spec.ts",
