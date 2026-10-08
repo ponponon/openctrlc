@@ -122,7 +122,9 @@ export function SessionFileListV2(props: {
           return (
             <Show when={virtualItemByKey().has(path) ? path : undefined} keyed>
               {(rowPath) => {
-                const item = () => virtualItemByKey().get(rowPath)
+                const initialItem = virtualItemByKey().get(rowPath)
+                if (!initialItem) return null
+                const item = () => virtualItemByKey().get(rowPath) ?? initialItem
                 return (
                   <div
                     style={{
@@ -130,8 +132,8 @@ export function SessionFileListV2(props: {
                       top: "0",
                       left: "0",
                       width: "100%",
-                      height: `${item()!.size}px`,
-                      transform: `translateY(${item()!.start}px)`,
+                      height: `${item().size}px`,
+                      transform: `translateY(${item().start}px)`,
                     }}
                   >
                     <button

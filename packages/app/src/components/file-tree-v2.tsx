@@ -238,8 +238,11 @@ export default function FileTreeV2(props: {
           return (
             <Show when={virtualItemByKey().has(key) && rowByKey().has(key) ? key : undefined} keyed>
               {(path) => {
-                const item = () => virtualItemByKey().get(path)
-                const row = () => rowByKey().get(path)
+                const initialItem = virtualItemByKey().get(path)
+                const initialRow = rowByKey().get(path)
+                if (!initialItem || !initialRow) return null
+                const item = () => virtualItemByKey().get(path) ?? initialItem
+                const row = () => rowByKey().get(path) ?? initialRow
                 return (
                   <div
                     style={{
@@ -247,56 +250,56 @@ export default function FileTreeV2(props: {
                       top: "0",
                       "inset-inline-start": "0",
                       width: "100%",
-                      height: `${item()!.size}px`,
-                      transform: `translateY(${item()!.start}px)`,
+                      height: `${item().size}px`,
+                      transform: `translateY(${item().start}px)`,
                     }}
                   >
                     <Show
-                      when={row()!.node.type === "directory"}
+                      when={row().node.type === "directory"}
                       fallback={
                         <FileTreeNodeV2
-                          node={row()!.node}
-                          level={row()!.level}
+                          node={row().node}
+                          level={row().level}
                           active={active()}
                           draggable={draggable()}
                           kinds={props.kinds}
                           as="button"
                           type="button"
                           class="relative"
-                          onFocus={() => setFocused(row()!.node.path)}
+                          onFocus={() => setFocused(row().node.path)}
                           onBlur={() => setFocused(undefined)}
-                          onClick={() => selectFile(row()!.node, props.onFileClick)}
-                          onDblClick={() => selectFile(row()!.node, props.onFileDoubleClick)}
+                          onClick={() => selectFile(row().node, props.onFileClick)}
+                          onDblClick={() => selectFile(row().node, props.onFileDoubleClick)}
                         >
-                          <GuideLines level={row()!.level} />
-                          <Show when={row()!.level > 0}>
+                          <GuideLines level={row().level} />
+                          <Show when={row().level > 0}>
                             <div class="w-4 shrink-0" />
                           </Show>
                           <span class="filetree-iconpair size-4">
-                            <FileIcon node={row()!.node} class="size-4 filetree-icon filetree-icon--color" />
-                            <FileIcon node={row()!.node} class="size-4 filetree-icon filetree-icon--mono" mono />
+                            <FileIcon node={row().node} class="size-4 filetree-icon filetree-icon--color" />
+                            <FileIcon node={row().node} class="size-4 filetree-icon filetree-icon--mono" mono />
                           </span>
                         </FileTreeNodeV2>
                       }
                     >
                       <FileTreeNodeV2
-                        node={row()!.node}
-                        level={row()!.level}
+                        node={row().node}
+                        level={row().level}
                         active={active()}
                         draggable={draggable()}
                         kinds={props.kinds}
                         as="button"
                         type="button"
                         class="relative"
-                        onFocus={() => setFocused(row()!.node.path)}
+                        onFocus={() => setFocused(row().node.path)}
                         onBlur={() => setFocused(undefined)}
-                        aria-expanded={expanded(row()!.node.path)}
-                        onClick={() => toggleDirectory(row()!.node.path, row()!.node.originalPath)}
+                        aria-expanded={expanded(row().node.path)}
+                        onClick={() => toggleDirectory(row().node.path, row().node.originalPath)}
                       >
-                        <GuideLines level={row()!.level} />
+                        <GuideLines level={row().level} />
                         <div
                           data-slot="file-tree-v2-chevron"
-                          data-expanded={expanded(row()!.node.path) ? "" : undefined}
+                          data-expanded={expanded(row().node.path) ? "" : undefined}
                           class="size-4 flex items-center justify-center"
                         >
                           <Icon name="chevron-down" />

@@ -1809,8 +1809,9 @@ export function MessageTimeline(props: {
 
   function VirtualTimelineRow(props: { rowKey: string }) {
     let element: HTMLDivElement
-    const initialItem = virtualItemByKey().get(props.rowKey)!
-    const initialRow = timelineRowByKey().get(props.rowKey)!
+    const initialItem = virtualItemByKey().get(props.rowKey)
+    const initialRow = timelineRowByKey().get(props.rowKey)
+    if (!initialItem || !initialRow) return null
     const item = createMemo(() => virtualItemByKey().get(props.rowKey) ?? initialItem)
     const row = createMemo(() => timelineRowByKey().get(props.rowKey) ?? initialRow)
     const asyncFile = () => {

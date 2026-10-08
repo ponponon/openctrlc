@@ -14,6 +14,8 @@
     "./reproduction/timeline-suspense/**/*.tsx",
     "./reproduction/session-search-bar/**/*.ts",
     "./reproduction/session-search-bar/**/*.tsx",
+    "./reproduction/virtual-row-churn/**/*.ts",
+    "./reproduction/virtual-row-churn/**/*.tsx",
     "../src/**/*.ts",
     "../src/**/*.tsx",
     "../package.json",
