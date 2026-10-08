@@ -3201,3 +3201,12 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - 代码：`packages/remote-relay/src/index.ts` 的配对等待页文案。
 - 生产热更新：旧 Relay 当时仍有内存会话且没有持久化快照，不能安全重启。通过 `infra/remote-relay/openresty.conf` 的 `sub_filter` 配置热替换旧 HTML 中的四语提示，再使用 `deploy.sh --config-only` 重载 OpenResty；Relay 容器和现有授权保持运行。已打开的配对页需要刷新一次才能读取新文案。后续 Relay 完整部署后，这些旧文案替换不再命中，可移除。
 - 验证：公网虚拟主机返回的 HTML 已包含四种新提示且不再包含旧中文提示；生产 OpenResty `nginx -t` 通过；Relay 容器启动时间未变，会话数仍为 1、授权浏览器数仍为 6。
+
+## 会话 Tab 切换复用面板并快速显示上下文
+
+同一工作区内切换会话 Tab 时，主面板继续使用路由响应式状态更新，不因会话 ID 变化销毁整棵面板。上下文标签首次打开后保持挂载；切到其它标签时保留上次显示的会话，重新选中后再切换到当前会话，避免重复挂载、快照重取和隐藏状态下的大批量重算。上下文快照按会话在内存缓存最多 16 项；原始消息表只渲染滚动区域附近的虚拟行，token 增量一次线性计算。
+
+- `packages/app/src/pages/session.tsx`：移除新版布局中按会话 ID 重建主面板的 key。
+- `packages/app/src/pages/session/session-side-panel.tsx`：上下文标签首次打开后保留，并在未选中时固定其数据会话。
+- `packages/app/src/components/session/session-context-tab.tsx`：按会话缓存快照、以虚拟列表显示原始消息，并将 token 增量从逐行前缀扫描改为线性计算。
+- 验证：在 `packages/app` 执行 `bun typecheck`、`git diff --check`；Playwright 的 `e2e/regression/review-tab-switch.spec.ts` 确认切换会话时 Review 面板实例不变，`e2e/smoke/session-context-chart.spec.ts` 确认上下文图表与消息分布正常渲染。上下文标签保留挂载由组件生命周期代码实现。

@@ -475,7 +475,6 @@ export default function Page() {
   })
 
   const workspaceTabs = createMemo(() => layout.tabs(workspaceKey))
-  const sessionPanelKey = createMemo(() => (params.id ? `${serverSDK().scope}\0${params.id}` : undefined))
 
   createEffect(
     on(
@@ -2649,13 +2648,9 @@ export default function Page() {
           }}
         >
           {settings.general.newLayoutDesigns() ? (
-            <Show when={sessionPanelKey()} keyed>
-              {(_) => (
-                <SessionPanelFrame newLayout raised={!!params.id}>
-                  <ErrorBoundary fallback={sessionErrorFallback}>{sessionPanelContent()}</ErrorBoundary>
-                </SessionPanelFrame>
-              )}
-            </Show>
+            <SessionPanelFrame newLayout raised={!!params.id}>
+              <ErrorBoundary fallback={sessionErrorFallback}>{sessionPanelContent()}</ErrorBoundary>
+            </SessionPanelFrame>
           ) : (
             <SessionPanelFrame newLayout={false} raised={!!params.id}>
               {sessionPanelContent()}

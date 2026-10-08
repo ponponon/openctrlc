@@ -1,4 +1,4 @@
-import { For, Match, Show, Switch, createEffect, createMemo, onCleanup, type JSX } from "solid-js"
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
 import { createMediaQuery } from "@solid-primitives/media"
 import { DragDropProvider as DndKitProvider, PointerSensor } from "@dnd-kit/solid"
@@ -193,6 +193,14 @@ export function SessionSidePanel(props: {
   const openedTabs = tabState.openedTabs
   const activeTab = tabState.activeTab
   const activeFileTab = tabState.activeFileTab
+  const contextPanelActive = createMemo(() => activeTab() === "context")
+  const [lastContextSessionID, setLastContextSessionID] = createSignal<string | undefined>(params.id)
+  const contextSessionID = createMemo(() => (contextPanelActive() ? params.id : lastContextSessionID()))
+  createEffect(() => {
+    if (!contextPanelActive() || !params.id) return
+    setLastContextSessionID(params.id)
+  })
+  const contextPanelMounted = createMemo((prev) => prev || activeTab() === "context", false)
   // Keep the v2 review subtree alive when per-session tab state temporarily selects Context.
   const reviewPanelV2Mounted = createMemo(
     (prev) => prev || (!!props.fileBrowserState && reviewTab() && props.canReview() && activeTab() === "review"),
@@ -531,10 +539,15 @@ export function SessionSidePanel(props: {
                             </Tabs.Content>
                           </Show>
 
-                          <Show when={activeTab() === "context"}>
-                            <Tabs.Content value="context" class="flex flex-col h-full overflow-hidden contain-strict">
+                          <Show when={contextPanelMounted()}>
+                            <Tabs.Content
+                              value="context"
+                              forceMount
+                              hidden={activeTab() !== "context"}
+                              class="flex flex-col h-full overflow-hidden contain-strict"
+                            >
                               <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
-                                <SessionContextTab />
+                                <SessionContextTab sessionID={contextSessionID} active={contextPanelActive} />
                               </div>
                             </Tabs.Content>
                           </Show>
@@ -808,10 +821,15 @@ export function SessionSidePanel(props: {
                           </Tabs.Content>
                         </Show>
 
-                        <Show when={activeTab() === "context"}>
-                          <Tabs.Content value="context" class="flex flex-col h-full overflow-hidden contain-strict">
+                        <Show when={contextPanelMounted()}>
+                          <Tabs.Content
+                            value="context"
+                            forceMount
+                            hidden={activeTab() !== "context"}
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
                             <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
-                              <SessionContextTab />
+                              <SessionContextTab sessionID={contextSessionID} active={contextPanelActive} />
                             </div>
                           </Tabs.Content>
                         </Show>

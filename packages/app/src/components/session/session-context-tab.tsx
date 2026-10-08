@@ -1,6 +1,7 @@
-import { createMemo, createEffect, createResource, on, onCleanup, For, Show } from "solid-js"
+import { createMemo, createEffect, createResource, createSignal, on, onCleanup, For, Show, type Accessor } from "solid-js"
 import { createStore } from "solid-js/store"
 import type { JSX } from "solid-js"
+import { createVirtualizer } from "@tanstack/solid-virtual"
 import { useSync } from "@/context/sync"
 import { checksum } from "@openctrlc/core/util/encode"
 import { same } from "@/utils/same"
@@ -13,6 +14,7 @@ import { useDialog } from "@openctrlc/ui/context/dialog"
 import { File } from "@openctrlc/session-ui/file"
 import { Markdown } from "@openctrlc/session-ui/markdown"
 import { ScrollView } from "@openctrlc/ui/scroll-view"
+import { observeVirtualScrollRect } from "@/components/virtual-scroll-element"
 import type { AssistantMessage, Message, Part, UserMessage } from "@openctrlc/sdk/v2/client"
 import { showToast } from "@/utils/toast"
 import {
@@ -32,7 +34,7 @@ import {
   IN_PROGRESS_DISPLAY,
   getMessageActivity,
   getMessageDurationDisplay,
-  getMessageTokenDeltaDisplay,
+  getMessageTokenTotal,
   getSessionContext,
   isMessageInFlight,
 } from "./session-context-metrics"
@@ -148,38 +150,61 @@ function RawMessage(props: {
 const emptyMessages: Message[] = []
 const emptyUserMessages: UserMessage[] = []
 
-export function SessionContextTab() {
+export function SessionContextTab(props: { sessionID: Accessor<string | undefined>; active: Accessor<boolean> }) {
   const sync = useSync()
   const language = useLanguage()
   const platform = usePlatform()
   const sdk = useSDK()
   const dialog = useDialog()
   const providers = useProviders(() => sdk().directory)
-  const { params, view } = useSessionLayout()
-  const info = createMemo(() => (params.id ? sync().session.get(params.id) : undefined))
+  const { view } = useSessionLayout()
+  const info = createMemo(() => {
+    const id = props.sessionID()
+    return id ? sync().session.get(id) : undefined
+  })
 
   // Snapshot is write-once on the session; do not key off time.updated or any
   // message-driven revision — that refetches under Suspense and flashes the panel.
+  const systemPromptSnapshotCache = new Map<string, Promise<{ sessionID: string; snapshot?: string }>>()
   const [systemPromptSnapshot] = createResource(
-    () => params.id,
-    (sessionID) =>
-      sdk()
+    () => props.sessionID(),
+    (sessionID) => {
+      if (!sessionID) return undefined
+      const cached = systemPromptSnapshotCache.get(sessionID)
+      if (cached) return cached
+      const request = sdk()
         .client.v2.session.systemPromptSnapshot({ sessionID })
         .then(
-          (result) => result.data?.data?.snapshot,
-          () => undefined,
-        ),
+          (result) => ({ sessionID, snapshot: result.data?.data?.snapshot }),
+          () => {
+            systemPromptSnapshotCache.delete(sessionID)
+            return { sessionID, snapshot: undefined }
+          },
+        )
+      systemPromptSnapshotCache.set(sessionID, request)
+      if (systemPromptSnapshotCache.size > 16) {
+        const oldest = systemPromptSnapshotCache.keys().next().value
+        if (oldest) systemPromptSnapshotCache.delete(oldest)
+      }
+      return request
+    },
   )
 
+  const [lastMessages, setLastMessages] = createSignal(emptyMessages, { equals: same })
   const messages = createMemo(
     () => {
-      const id = params.id
+      const id = props.sessionID()
       if (!id) return emptyMessages
+      if (!props.active()) return lastMessages()
       return (sync().data.message[id] ?? []) as Message[]
     },
     emptyMessages,
     { equals: same },
   )
+  createEffect(() => {
+    if (!props.active()) return
+    setLastMessages(messages())
+  })
 
   const userMessages = createMemo(
     () => messages().filter((m) => m.role === "user") as UserMessage[],
@@ -238,10 +263,22 @@ export function SessionContextTab() {
     ].join(" "),
   }))
 
-  const messageTokenDelta = (messages: Message[], index: number) => {
-    const delta = getMessageTokenDeltaDisplay(messages, index)
+  const messageTokenDeltas = createMemo(() => {
+    let previousTotal: number | undefined
+    return messages().map((message) => {
+      const total = getMessageTokenTotal(message)
+      if (total === undefined) return undefined
+      const delta = previousTotal === undefined ? total : Math.max(0, total - previousTotal)
+      previousTotal = total
+      if (isMessageInFlight(message) && delta === 0) return undefined
+      return delta
+    })
+  })
+
+  const messageTokenDelta = (index: number) => {
+    const delta = messageTokenDeltas()[index]
     if (delta !== undefined) return formatter().number(delta)
-    const message = messages[index]
+    const message = messages()[index]
     if (message && isMessageInFlight(message)) return IN_PROGRESS_DISPLAY
     return EMPTY_DISPLAY
   }
@@ -281,7 +318,13 @@ export function SessionContextTab() {
   })
 
   // Prefer .latest so an in-flight refetch never re-enters Suspense while resolved.
-  const systemPrompt = createMemo(() => getSessionSystemPrompt(visibleUserMessages(), systemPromptSnapshot.latest))
+  const systemPrompt = createMemo(() => {
+    const snapshot = systemPromptSnapshot.latest
+    return getSessionSystemPrompt(
+      visibleUserMessages(),
+      snapshot && snapshot.sessionID === props.sessionID() ? snapshot.snapshot : undefined,
+    )
+  })
   const [systemPromptState, setSystemPromptState] = createStore({ expanded: false })
 
   const systemPromptNeedsExpansion = createMemo(() => (systemPrompt()?.length ?? 0) > 800)
@@ -290,7 +333,7 @@ export function SessionContextTab() {
 
   createEffect(
     on(
-      () => [params.id, systemPrompt()],
+      () => [props.sessionID(), systemPrompt()],
       () => setSystemPromptState("expanded", false),
       { defer: true },
     ),
@@ -333,7 +376,7 @@ export function SessionContextTab() {
   }
 
   const stats = [
-    { label: "context.stats.session", value: () => info()?.title ?? params.id ?? "—" },
+    { label: "context.stats.session", value: () => info()?.title ?? props.sessionID() ?? "—" },
     { label: "context.stats.messages", value: () => counts().all.toLocaleString(language.intl()) },
     { label: "context.stats.provider", value: providerLabel },
     { label: "context.stats.model", value: modelLabel },
@@ -356,7 +399,7 @@ export function SessionContextTab() {
   ] satisfies { label: string; value: () => JSX.Element }[]
 
   const exportSession = async (format: SessionExportFormat = "json") => {
-    const sessionID = params.id
+    const sessionID = props.sessionID()
     if (!sessionID) return
     try {
       const data = await fetchSessionExport({
@@ -382,7 +425,7 @@ export function SessionContextTab() {
   }
 
   const copySessionIDToClipboard = async () => {
-    const sessionID = params.id
+    const sessionID = props.sessionID()
     if (!sessionID) return
 
     try {
@@ -437,13 +480,43 @@ export function SessionContextTab() {
     }
   }
 
-  let scroll: HTMLDivElement | undefined
+  const [scroll, setScroll] = createSignal<HTMLDivElement>()
+  const [messageListRoot, setMessageListRoot] = createSignal<HTMLDivElement>()
   let frame: number | undefined
   let pending: { x: number; y: number } | undefined
   const getParts = (id: string) => (sync().data.part[id] ?? []) as Part[]
+  const scrollMargin = () => {
+    const viewport = scroll()
+    const list = messageListRoot()
+    if (!viewport || !list) return 0
+    return list.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop
+  }
+  const messageVirtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
+    get count() {
+      return messages().length
+    },
+    getScrollElement: () => scroll() ?? null,
+    observeElementRect: observeVirtualScrollRect,
+    initialRect: { width: 0, height: 600 },
+    estimateSize: () => 32,
+    overscan: 10,
+    get scrollMargin() {
+      return scrollMargin()
+    },
+    get getItemKey() {
+      const all = messages()
+      return (index: number) => all[index]?.id ?? index
+    },
+  })
+  const messageByID = createMemo(() => new Map(messages().map((message) => [message.id, message] as const)))
+  const virtualItemByKey = createMemo(
+    () => new Map(messageVirtualizer.getVirtualItems().map((item) => [item.key, item] as const)),
+  )
+  const virtualRowKeys = createMemo(() => messageVirtualizer.getVirtualItems().map((item) => item.key))
+  const virtualRowsHeight = createMemo(() => Math.max(0, messageVirtualizer.getTotalSize() - scrollMargin()))
 
   const restoreScroll = () => {
-    const el = scroll
+    const el = scroll()
     if (!el) return
 
     const s = view().scroll("context")
@@ -455,11 +528,14 @@ export function SessionContextTab() {
 
   const selectRawMessage = (messageID: string) => {
     setRawMessageAccordionState("value", (value) => (value.includes(messageID) ? value : [...value, messageID]))
-    requestAnimationFrame(() => {
-      document
-        .getElementById(`session-context-message-${messageID}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" })
-    })
+    const index = messages().findIndex((message) => message.id === messageID)
+    if (index < 0) return
+    messageVirtualizer.scrollToIndex(index, { align: "center", behavior: "smooth" })
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.getElementById("session-context-message-" + messageID)?.scrollIntoView({ block: "center" }),
+      ),
+    )
   }
 
   const messageModelLabel = (message: AssistantMessage) => {
@@ -495,7 +571,7 @@ export function SessionContextTab() {
 
   createEffect(
     on(
-      () => messages().length,
+      () => [props.sessionID(), messages().length],
       () => {
         requestAnimationFrame(restoreScroll)
       },
@@ -512,18 +588,18 @@ export function SessionContextTab() {
     <ScrollView
       class="@container h-full"
       viewportRef={(el) => {
-        scroll = el
+        setScroll(el)
         restoreScroll()
       }}
       onScroll={handleScroll}
     >
       <div class="px-6 pt-4 pb-10 flex flex-col gap-10">
-        <Show when={params.id}>
+        <Show when={props.sessionID()}>
           <div class="flex items-center justify-between gap-3 rounded-md border border-border-weak-base bg-surface-panel px-3 py-2">
             <div class="min-w-0 flex flex-col gap-1">
               <div class="text-12-regular text-text-weak">{language.t("context.stats.sessionID")}</div>
-              <div class="truncate text-12-medium text-text-strong" title={params.id}>
-                {params.id}
+              <div class="truncate text-12-medium text-text-strong" title={props.sessionID()}>
+                {props.sessionID()}
               </div>
             </div>
             <Button
@@ -723,7 +799,7 @@ export function SessionContextTab() {
               />
             </div>
           </Show>
-          <div classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
+          <div ref={setMessageListRoot} classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}>
             <div
               class={`${RAW_MESSAGE_GRID} px-3 text-11-regular text-text-weak`}
               classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
@@ -744,22 +820,50 @@ export function SessionContextTab() {
               onChange={(value) => setRawMessageAccordionState("value", value)}
               class="w-full"
               classList={{ "min-w-max": rawMessageExtraColumns().length > 0 }}
+              style={{ position: "relative", height: virtualRowsHeight() + "px" }}
             >
-              <For each={messages()}>
-                {(message, index) => (
-                  <RawMessage
-                    message={message}
-                    getParts={getParts}
-                    onRendered={restoreScroll}
-                    time={formatter().time}
-                    activity={getMessageActivity(message, getParts(message.id))}
-                    duration={messageDuration(message)}
-                    tokenDelta={messageTokenDelta(messages(), index())}
-                    extraColumns={rawMessageExtraColumns()}
-                    extraColumnValue={extraColumnValue}
-                    gridStyle={rawMessageGridStyle()}
-                  />
-                )}
+              <For each={virtualRowKeys()}>
+                {(key) => {
+                  const item = createMemo(() => virtualItemByKey().get(key))
+                  const message = createMemo(() => messageByID().get(String(key)))
+                  return (
+                    <Show when={item()}>
+                      {(current) => (
+                        <Show when={message()}>
+                          {(currentMessage) => (
+                            <div
+                              data-index={current().index}
+                              ref={(el) => {
+                                el.dataset.index = String(current().index)
+                                messageVirtualizer.measureElement(el)
+                              }}
+                              style={{
+                                position: "absolute",
+                                top: "0",
+                                left: "0",
+                                width: "100%",
+                                transform: "translateY(" + (current().start - scrollMargin()) + "px)",
+                              }}
+                            >
+                              <RawMessage
+                                message={currentMessage()}
+                                getParts={getParts}
+                                onRendered={restoreScroll}
+                                time={formatter().time}
+                                activity={getMessageActivity(currentMessage(), getParts(currentMessage().id))}
+                                duration={messageDuration(currentMessage())}
+                                tokenDelta={messageTokenDelta(current().index)}
+                                extraColumns={rawMessageExtraColumns()}
+                                extraColumnValue={extraColumnValue}
+                                gridStyle={rawMessageGridStyle()}
+                              />
+                            </div>
+                          )}
+                        </Show>
+                      )}
+                    </Show>
+                  )
+                }}
               </For>
             </Accordion>
           </div>
