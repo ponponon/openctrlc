@@ -391,6 +391,7 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
 
             return (
               <div
+                data-slot="titlebar-v2-strip"
                 class="h-full flex-1 overflow-hidden flex flex-row items-center gap-1.5 px-2 md:pr-3"
                 classList={{
                   "pt-2": !bottom(),
@@ -418,6 +419,7 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                     variant="ghost-muted"
                     size="large"
                     class="!w-9 shrink-0"
+                    data-slot="titlebar-v2-home"
                     icon={<IconV2 name="grid-plus" />}
                     state={layout.route().type === "home" ? "pressed" : undefined}
                     onClick={toggleHome}
@@ -457,12 +459,13 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                     variant="ghost-muted"
                     size="large"
                     class="shrink-0"
+                    data-slot="titlebar-v2-new-tab"
                     icon={<IconV2 name="plus" />}
                     onClick={openNewTab}
                     aria-label={language.t("command.session.new")}
                   />
                 </TooltipV2>
-                <div class="flex-1" />
+                <div data-slot="titlebar-v2-spacer" class="flex-1" />
                 <TitlebarV2Right state={v2RightState()} />
               </div>
             )
@@ -924,6 +927,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
     <Show when={transportState()}>
       {(state) => (
         <div
+          data-slot="titlebar-remote-transport"
           class={`flex max-w-[150px] min-w-0 items-center gap-1.5 truncate rounded-sm px-2 text-12-regular ${state().class}`}
           title={state().hint}
           aria-label={state().hint}
@@ -931,7 +935,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           aria-live="polite"
         >
           <span class={`size-1.5 shrink-0 rounded-full ${state().dot}`} aria-hidden="true" />
-          <span class="truncate">{state().label}</span>
+          <span data-slot="titlebar-remote-transport-label" class="truncate">{state().label}</span>
         </div>
       )}
     </Show>
@@ -957,6 +961,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
     if (list.length > 1) {
       return (
         <select
+          data-slot="titlebar-remote-host"
           class="max-w-[180px] truncate rounded-sm border-0 bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
           title={name}
           value={activeId() ?? ""}
@@ -976,6 +981,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
     if (!name) return null
     return (
       <div
+        data-slot="titlebar-remote-host"
         class="max-w-[160px] truncate rounded-sm bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
         title={name}
       >
@@ -988,6 +994,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
       <>
         <button
           type="button"
+          data-slot="titlebar-channel-badge"
           class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono cursor-pointer"
           onClick={props.debugTools.toggle}
           aria-label="Toggle debug tools"
@@ -997,8 +1004,11 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
         </button>
         <Show when={liteNet()}>
           <div
+            data-slot="titlebar-lite-network"
             class="rounded-sm bg-v2-state-bg-warning px-2 text-12-regular text-v2-state-fg-warning"
             title={language.t("remote.liteNetworkHint")}
+            aria-label={language.t("remote.liteNetworkHint")}
+            role="status"
           >
             {language.t("remote.liteNetwork")}
           </div>
@@ -1012,14 +1022,20 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
   return (
     <>
       {["beta", "dev"].includes(channel) && (
-        <div class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono">
+        <div
+          data-slot="titlebar-channel-badge"
+          class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono"
+        >
           {channel.toUpperCase()}
         </div>
       )}
       <Show when={liteNet()}>
         <div
+          data-slot="titlebar-lite-network"
           class="rounded-sm bg-v2-state-bg-warning px-2 text-12-regular text-v2-state-fg-warning"
           title={language.t("remote.liteNetworkHint")}
+          aria-label={language.t("remote.liteNetworkHint")}
+          role="status"
         >
           {language.t("remote.liteNetwork")}
         </div>

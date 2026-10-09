@@ -22,6 +22,7 @@ import type {
   PromptInputV2Suggestion,
 } from "./types"
 import type { PromptInputV2Interaction, PromptInputV2SelectControl } from "./interaction"
+import "./prompt-input.css"
 import "./attachments.css"
 
 export type {
@@ -195,9 +196,10 @@ export function PromptInputV2(props: PromptInputV2Props) {
           </Show>
         </div>
 
-        <div class="flex h-11 items-center px-2">
+        <div data-slot="prompt-input-controls-row" class="flex min-h-11 items-center gap-1 px-2 sm:h-11 sm:min-h-0">
           <div
-            class="flex min-w-0 flex-1 items-center gap-1"
+            data-slot="prompt-input-controls"
+            class="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:flex-nowrap"
             aria-hidden={state.mode === "shell"}
             inert={state.mode === "shell" ? true : undefined}
             style={buttons()}
@@ -259,15 +261,17 @@ export function PromptInputV2(props: PromptInputV2Props) {
               )}
             </Show>
           </div>
-          <PromptInputV2SubmitButton
-            mode={state.mode}
-            stopping={view.submit.stopping()}
-            disabled={!props.controller.canSubmit()}
-            sendLabel={i18n.t("ui.promptInput.send")}
-            stopLabel={i18n.t("ui.promptInput.stop")}
-            onSubmit={props.controller.submit}
-            onStop={props.controller.stop}
-          />
+          <div data-slot="prompt-input-submit" class="shrink-0">
+            <PromptInputV2SubmitButton
+              mode={state.mode}
+              stopping={view.submit.stopping()}
+              disabled={!props.controller.canSubmit()}
+              sendLabel={i18n.t("ui.promptInput.send")}
+              stopLabel={i18n.t("ui.promptInput.stop")}
+              onSubmit={props.controller.submit}
+              onStop={props.controller.stop}
+            />
+          </div>
         </div>
       </form>
     </div>

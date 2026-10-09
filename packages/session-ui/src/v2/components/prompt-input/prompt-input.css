@@ -1,0 +1,22 @@
+@media (max-width: 639px) {
+  [data-component="prompt-input-v2"] [data-slot="prompt-input-controls-row"] {
+    align-items: flex-end;
+    padding-block: 4px 8px;
+  }
+
+  [data-component="prompt-input-v2"] [data-slot="prompt-input-controls"] {
+    align-content: flex-end;
+    column-gap: 4px;
+    row-gap: 4px;
+  }
+
+  [data-component="prompt-input-v2"] [data-slot="prompt-input-controls"] > * {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  [data-component="prompt-input-v2"] [data-slot="prompt-input-submit"] {
+    align-self: flex-end;
+    margin-inline-start: auto;
+  }
+}

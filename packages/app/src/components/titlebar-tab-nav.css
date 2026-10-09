@@ -148,3 +148,17 @@
     transform: translateX(-50%);
   }
 }
+
+@media (max-width: 767px) {
+  [data-titlebar-tab-list] {
+    width: max-content;
+    min-width: max-content;
+  }
+
+  [data-titlebar-tab-slot] {
+    flex: 0 0 136px;
+    width: 136px;
+    min-width: 136px;
+    max-width: 136px;
+  }
+}

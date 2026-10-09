@@ -64,6 +64,73 @@
   }
 }
 
+@media (max-width: 767px) {
+  [data-slot="titlebar-v2-strip"] {
+    gap: 4px;
+    padding-inline: 4px;
+  }
+
+  [data-slot="titlebar-v2-home"],
+  [data-slot="titlebar-v2-new-tab"] {
+    width: 36px !important;
+    min-width: 36px;
+  }
+
+  [data-slot="titlebar-v2-spacer"] {
+    display: none;
+  }
+
+  [data-slot="titlebar-tabs"] {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 40px;
+  }
+
+  [data-slot="titlebar-tabs-scroll"] {
+    overscroll-behavior-inline: contain;
+    touch-action: pan-x;
+  }
+
+  [data-slot="titlebar-channel-badge"] {
+    flex: 0 0 auto;
+    padding-inline: 6px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  [data-slot="titlebar-lite-network"] {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    padding: 0 !important;
+    border-radius: 9999px;
+    overflow: hidden;
+    font-size: 0 !important;
+    line-height: 0 !important;
+  }
+
+  [data-slot="titlebar-remote-transport"] {
+    flex: 0 0 22px;
+    width: 22px;
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  [data-slot="titlebar-remote-transport-label"] {
+    display: none;
+  }
+
+  [data-slot="titlebar-remote-host"] {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: min(64px, 20vw) !important;
+    overflow: hidden;
+    padding-inline: 4px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 /* The narrow ranges preserve the binary thresholds of scrollLeft > 0 and
    remaining scroll distance > 1px. Hidden defaults make an inactive timeline
    (no overflow) a no-op. Unsupported browsers also degrade to no fades. */
