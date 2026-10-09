@@ -9,6 +9,17 @@
 [data-slot="titlebar-v2-strip"] {
   overflow-x: clip;
   overflow-y: visible;
+  min-width: 0;
+}
+
+[data-slot="titlebar-v2-actions"] {
+  flex: 0 0 auto;
+}
+
+[data-slot="titlebar-v2-actions"] > *,
+[data-slot="titlebar-v2-actions"] #opencode-titlebar-right > *,
+[data-slot="titlebar-v2-actions"] #opencode-titlebar-right button {
+  flex-shrink: 0;
 }
 
 [data-slot="titlebar-v2"]
@@ -88,7 +99,7 @@
   [data-slot="titlebar-tabs"] {
     flex: 1 1 0;
     width: 0;
-    min-width: 40px;
+    min-width: 0;
   }
 
   [data-slot="titlebar-tabs-scroll"] {

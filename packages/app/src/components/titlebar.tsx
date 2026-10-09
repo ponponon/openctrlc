@@ -654,15 +654,18 @@ type TitlebarV2RightState = {
 
 function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
   return (
-    <div class="relative z-20 flex shrink-0 items-center justify-end gap-0 overflow-visible">
+    <div
+      data-slot="titlebar-v2-actions"
+      class="relative z-20 flex shrink-0 items-center justify-end gap-0 overflow-visible"
+    >
       <Show when={props.state.remoteAccess}>
         {(remoteAccess) => (
-          <TooltipV2 placement="bottom" value={remoteAccess().label}>
+          <TooltipV2 placement="bottom" value={remoteAccess().label} class="shrink-0">
             <IconButtonV2
               type="button"
               variant="ghost-muted"
               size="large"
-              class="titlebar-mobile-access"
+              class="titlebar-mobile-access shrink-0"
               icon={<IconV2 name="smartphone" />}
               onClick={remoteAccess().open}
               aria-label={remoteAccess().label}
