@@ -1496,6 +1496,10 @@ export default function Page() {
     return <SessionReviewEmptyChangesV2 />
   }
 
+  // Defer the initial review render, then keep it mounted while deferRender
+  // briefly changes during later session-tab switches.
+  const reviewPanelRendered = createMemo<boolean>((prev) => prev || !store.deferRender, false)
+
   const reviewContent = (input: {
     diffStyle: DiffStyle
     onDiffStyleChange?: (style: DiffStyle) => void
@@ -1503,7 +1507,7 @@ export default function Page() {
     loadingClass: string
     emptyClass: string
   }) => (
-    <Show when={!store.deferRender}>
+    <Show when={reviewPanelRendered()}>
       <SessionReviewTab
         title={changesTitle()}
         empty={reviewEmpty(input)}
@@ -1580,14 +1584,9 @@ export default function Page() {
     },
   })
 
-  // Latch: defer only the first diff render off the mount critical path. This Page
-  // stays mounted across same-workspace session tab switches, so gating on every
-  // deferRender flip tore down and remounted the whole review pane on tab switch.
-  const reviewPanelV2Rendered = createMemo<boolean>((prev) => prev || !store.deferRender, false)
-
   const reviewPanelV2 = () => (
     <div class="flex flex-col h-full overflow-hidden bg-v2-background-bg-base contain-strict">
-      <Show when={reviewPanelV2Rendered()}>
+      <Show when={reviewPanelRendered()}>
         <ReviewPanelV2 {...reviewPanelV2Props()} />
       </Show>
     </div>

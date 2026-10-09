@@ -3277,6 +3277,13 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - `packages/app/src/components/session/session-context-tab.tsx`：按会话缓存快照、以虚拟列表显示原始消息，并将 token 增量从逐行前缀扫描改为线性计算。
 - 验证：在 `packages/app` 执行 `bun typecheck`、`git diff --check`；Playwright 的 `e2e/regression/review-tab-switch.spec.ts` 确认切换会话时 Review 面板实例不变，`e2e/smoke/session-context-chart.spec.ts` 确认上下文图表与消息分布正常渲染。上下文标签保留挂载由组件生命周期代码实现。
 
+## 会话 Tab 切换时保持 Review 面板
+
+会话页面切换到另一个会话时会短暂启用 `deferRender`，将它只用于首次 Review 内容渲染；Review 内容已挂载后继续保留组件实例，避免右侧 Review/文件面板短暂卸载再重新打开。旧版和新版布局共用同一个挂载状态。
+
+- 代码：`packages/app/src/pages/session.tsx` 的 `reviewPanelRendered` 同时控制旧版 `SessionReviewTab` 与新版 `ReviewPanelV2`。
+- 验证方式：在旧版布局与新版布局分别切换同一工作区的会话 tab，确认右侧面板 DOM 实例和文件树滚动位置保持稳定；检查首次打开仍会等 `deferRender` 完成后再创建 Review 内容。
+
 ## 桌面打包内联 remote-relay 修复 Linux 启动崩溃
 
 Linux 安装 deb 后点击图标无反应：主进程启动即抛 `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`。根因是 `@openctrlc/remote-relay` 的 `exports` 直接指向 `src/*.ts` 源码，`externalizeDeps` 把它留成运行时 import，electron-builder 又把它打进 asar，而 Node 拒绝对 `node_modules` 下的 `.ts` 做类型剥离。修复方式：`electron.vite.config.ts` 的 main/preload 都配置 `externalizeDeps.exclude: ["@openctrlc/remote-relay"]` 让其被 rollup 转译内联，同时把该包从 desktop 的 `dependencies` 移到 `devDependencies`，使其不再进入 asar。
