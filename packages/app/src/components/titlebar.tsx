@@ -1010,7 +1010,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
             aria-label={language.t("remote.liteNetworkHint")}
             role="status"
           >
-            {language.t("remote.liteNetwork")}
+            <span data-slot="titlebar-lite-network-label">{language.t("remote.liteNetwork")}</span>
           </div>
         </Show>
         {transportChip()}
@@ -1037,7 +1037,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           aria-label={language.t("remote.liteNetworkHint")}
           role="status"
         >
-          {language.t("remote.liteNetwork")}
+          <span data-slot="titlebar-lite-network-label">{language.t("remote.liteNetwork")}</span>
         </div>
       </Show>
       {transportChip()}

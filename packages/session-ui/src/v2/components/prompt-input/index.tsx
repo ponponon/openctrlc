@@ -196,7 +196,10 @@ export function PromptInputV2(props: PromptInputV2Props) {
           </Show>
         </div>
 
-        <div data-slot="prompt-input-controls-row" class="flex min-h-11 items-center gap-1 px-2 sm:h-11 sm:min-h-0">
+        <div
+          data-slot="prompt-input-controls-row"
+          class="grid min-h-11 grid-cols-1 gap-1 px-2 sm:flex sm:items-center sm:h-11 sm:min-h-0"
+        >
           <div
             data-slot="prompt-input-controls"
             class="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:flex-nowrap"

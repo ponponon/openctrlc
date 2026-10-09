@@ -105,8 +105,10 @@
     padding: 0 !important;
     border-radius: 9999px;
     overflow: hidden;
-    font-size: 0 !important;
-    line-height: 0 !important;
+  }
+
+  [data-slot="titlebar-lite-network-label"] {
+    display: none;
   }
 
   [data-slot="titlebar-remote-transport"] {
