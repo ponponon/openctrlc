@@ -410,7 +410,7 @@ export async function bootstrapDirectory(input: {
   queryClient: QueryClient
   session?: ServerSession
   protocol?: Promise<ServerProtocol>
-  platform?: Pick<Platform, "openDebugLogs" | "exportDebugLogs">
+  platform?: Pick<Platform, "openDebugLogs" | "exportDebugLogs" | "remoteSessionID">
   onRetry?: () => void
 }) {
   const loading = input.store.status !== "complete"

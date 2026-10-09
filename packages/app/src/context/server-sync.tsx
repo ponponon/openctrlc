@@ -34,7 +34,7 @@ import { estimateRootSessionTotal, loadRootSessions } from "./global-sync/sessio
 import { trimSessions } from "./global-sync/session-trim"
 import type { ProjectMeta } from "./global-sync/types"
 import { SESSION_RECENT_LIMIT } from "./global-sync/types"
-import { formatServerError } from "@/utils/server-errors"
+import { formatServerError, isTransientConnectionError } from "@/utils/server-errors"
 import { showProjectReloadError } from "@/utils/project-reload-error"
 import { queryOptions, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/solid-query"
 import type { SolidQueryOptions } from "@tanstack/solid-query"
@@ -524,6 +524,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
             })
             .catch((err) => {
               console.error("Failed to load sessions", err)
+              if (platform.remoteSessionID && isTransientConnectionError(err)) return
               const project = getFilename(directory)
               showToast({
                 variant: "error",

@@ -20,6 +20,37 @@ export type ProviderModelNotFoundError = {
 
 type Translator = (key: string, vars?: Record<string, string | number>) => string
 
+const transientConnectionFailure =
+  /desktop is disconnected|failed to fetch|fetch failed|load failed|network(?: error| request(?: failed| error)?| failure| changed| unavailable| connection(?: reset| refused| lost)?)|err_network_changed|econn(?:reset|refused)|ehostunreach|enotfound|timed? ?out|socket hang up|connection (?:reset|refused|lost)/i
+
+export function isTransientConnectionError(error: unknown) {
+  const pending = [error]
+  const seen = new Set<object>()
+
+  while (pending.length > 0) {
+    const current = pending.pop()
+    if (typeof current === "string") {
+      if (transientConnectionFailure.test(current)) return true
+      continue
+    }
+    if (!current || typeof current !== "object" || seen.has(current)) continue
+    seen.add(current)
+
+    if (current instanceof Error) {
+      if (transientConnectionFailure.test(current.message)) return true
+      pending.push(current.cause)
+      continue
+    }
+
+    const details = current as Record<string, unknown>
+    if (details.kind === "network" || details.reason === "Transport") return true
+    if (details.status === 502 || details.status === 503 || details.status === 504) return true
+    pending.push(details.cause, details.body)
+  }
+
+  return false
+}
+
 function tr(translator: Translator | undefined, key: string, text: string, vars?: Record<string, string | number>) {
   if (!translator) return text
   const out = translator(key, vars)

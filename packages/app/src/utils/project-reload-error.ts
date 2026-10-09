@@ -1,10 +1,10 @@
 import type { Platform } from "@/context/platform"
-import { formatServerError } from "./server-errors"
+import { formatServerError, isTransientConnectionError } from "./server-errors"
 import { showToast } from "./toast"
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
-type DiagnosticPlatform = Pick<Platform, "openDebugLogs" | "exportDebugLogs">
+type DiagnosticPlatform = Pick<Platform, "openDebugLogs" | "exportDebugLogs" | "remoteSessionID">
 
 export function showProjectReloadError(input: {
   project: string
@@ -13,6 +13,8 @@ export function showProjectReloadError(input: {
   platform: DiagnosticPlatform
   retry?: () => void
 }) {
+  if (input.platform.remoteSessionID && isTransientConnectionError(input.error)) return
+
   const actions = [
     input.platform.openDebugLogs
       ? {
