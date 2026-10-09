@@ -6,6 +6,11 @@
   outline: none;
 }
 
+[data-slot="titlebar-v2-strip"] {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
 [data-slot="titlebar-v2"]
   [data-component="icon-button-v2"][data-variant="ghost-muted"]:is(:focus-visible, [data-state="focus"]):not(
     :disabled
