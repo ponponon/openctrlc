@@ -1382,17 +1382,28 @@ export const dict = {
   "dialog.releaseNotes.action.next": "次へ",
   "dialog.releaseNotes.action.hideFuture": "今後表示しない",
   "dialog.releaseNotes.media.alt": "リリースのプレビュー",
-  "dialog.releaseNotes.v1_1_4.contextPanel": "セッションタブの切り替え時にコンテキストパネルの応答性を改善しました。スナップショットのキャッシュと生メッセージの仮想リストを導入し、トークン使用量の計算も高速化しました。",
-  "dialog.releaseNotes.v1_1_4.remoteAuthorization": "最近の利用状況による並べ替え、ローカル時刻の完全表示、有効期限のわかりやすい通知により、リモート端末の承認状況を確認しやすくしました。",
-  "dialog.releaseNotes.v1_1_4.mobilePairing": "モバイルのペアリング画面の案内を改善し、デスクトップアプリで新しい端末からの接続要求を見つけて承認しやすくしました。",
-  "dialog.releaseNotes.v1_1_4.virtualRows": "セッションやファイルの仮想リストが、急な更新や古い状態の読み取り、再帰的なサイズ測定で失敗する問題を修正しました。",
-  "dialog.releaseNotes.v1_1_4.sessionTabs": "タブ切り替え時に現在のセッションパネルを維持し、不要な再読み込みと再計算を防ぐようにしました。",
-  "dialog.releaseNotes.v1_1_5.remoteDesktopStatus": "リモートデスクトップ、接続経路、省データ状態をタイトルバーにまとめました。コントロールを開くと経路を確認し、保存済みデスクトップを切り替えられます。",
-  "dialog.releaseNotes.v1_1_5.mobileNavigation": "スマートフォン縦向きでのナビゲーションとセッション操作を改善し、タブ切り替え時に Review とコンテキストパネルが安定するようにしました。",
-  "dialog.releaseNotes.v1_1_5.remoteRecovery": "リモートアクセスの復旧状態をわかりやすくし、リモートワークスペースの読み込みを改善しました。",
-  "dialog.releaseNotes.v1_1_5.sessionLoading": "急な更新、スクロール、タブ切り替え時に仮想リストの行やセッションの読み込みが失敗する問題を修正しました。",
-  "dialog.releaseNotes.v1_1_5.linuxStartup": "TypeScript ソースを外部依存として読み込むことで Linux のパッケージ版デスクトップが起動しない問題を修正しました。",
-  "dialog.releaseNotes.v1_1_5.mobileToolbar": "モバイルツールバーがコンテンツに重なる問題と、スクロール時に内容が隠れたり最下部へ意図せず移動したりする問題を修正しました。",
+  "dialog.releaseNotes.v1_1_4.contextPanel":
+    "セッションタブの切り替え時にコンテキストパネルの応答性を改善しました。スナップショットのキャッシュと生メッセージの仮想リストを導入し、トークン使用量の計算も高速化しました。",
+  "dialog.releaseNotes.v1_1_4.remoteAuthorization":
+    "最近の利用状況による並べ替え、ローカル時刻の完全表示、有効期限のわかりやすい通知により、リモート端末の承認状況を確認しやすくしました。",
+  "dialog.releaseNotes.v1_1_4.mobilePairing":
+    "モバイルのペアリング画面の案内を改善し、デスクトップアプリで新しい端末からの接続要求を見つけて承認しやすくしました。",
+  "dialog.releaseNotes.v1_1_4.virtualRows":
+    "セッションやファイルの仮想リストが、急な更新や古い状態の読み取り、再帰的なサイズ測定で失敗する問題を修正しました。",
+  "dialog.releaseNotes.v1_1_4.sessionTabs":
+    "タブ切り替え時に現在のセッションパネルを維持し、不要な再読み込みと再計算を防ぐようにしました。",
+  "dialog.releaseNotes.v1_1_5.remoteDesktopStatus":
+    "リモートデスクトップ、接続経路、省データ状態をタイトルバーにまとめました。コントロールを開くと経路を確認し、保存済みデスクトップを切り替えられます。",
+  "dialog.releaseNotes.v1_1_5.mobileNavigation":
+    "スマートフォン縦向きでのナビゲーションとセッション操作を改善し、タブ切り替え時に Review とコンテキストパネルが安定するようにしました。",
+  "dialog.releaseNotes.v1_1_5.remoteRecovery":
+    "リモートアクセスの復旧状態をわかりやすくし、リモートワークスペースの読み込みを改善しました。",
+  "dialog.releaseNotes.v1_1_5.sessionLoading":
+    "急な更新、スクロール、タブ切り替え時に仮想リストの行やセッションの読み込みが失敗する問題を修正しました。",
+  "dialog.releaseNotes.v1_1_5.linuxStartup":
+    "TypeScript ソースを外部依存として読み込むことで Linux のパッケージ版デスクトップが起動しない問題を修正しました。",
+  "dialog.releaseNotes.v1_1_5.mobileToolbar":
+    "モバイルツールバーがコンテンツに重なる問題と、スクロール時に内容が隠れたり最下部へ意図せず移動したりする問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
