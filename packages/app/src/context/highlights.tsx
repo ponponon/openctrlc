@@ -7,6 +7,7 @@ import { useSettings } from "@/context/settings"
 import { persisted } from "@/utils/persist"
 import { DialogReleaseNotes, type Highlight } from "@/components/dialog-release-notes"
 import { CHANGELOG_URL, normalizeReleaseVersion, releaseNoteSections } from "@/utils/changelog"
+import type { dict } from "@/i18n/en"
 
 type Store = {
   version?: string
@@ -111,11 +112,46 @@ function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; p
     return index === -1 ? releases.length : index
   })()
 
+  const releaseDescriptionKeys: Record<string, Record<string, keyof typeof dict>> = {
+    "1.1.4": {
+      "Kept the session context panel responsive when switching between session tabs, with cached snapshots, virtualized raw messages, and faster token usage calculations.":
+        "dialog.releaseNotes.v1_1_4.contextPanel",
+      "Made remote device authorization easier to review with recent activity ordering, full local timestamps, and clearer expiration reminders.":
+        "dialog.releaseNotes.v1_1_4.remoteAuthorization",
+      "Added clearer guidance on the mobile pairing page for finding and approving a new device request in the desktop app.":
+        "dialog.releaseNotes.v1_1_4.mobilePairing",
+      "Fixed virtualized session and file rows failing during rapid updates, stale reads, or recursive size measurement.":
+        "dialog.releaseNotes.v1_1_4.virtualRows",
+      "Preserved the active session panel while switching tabs to avoid unnecessary reloads and recomputation.":
+        "dialog.releaseNotes.v1_1_4.sessionTabs",
+    },
+    "1.1.5": {
+      "Combined remote desktop, connection route, and lite-network status in the title bar; open the control to inspect the route and switch between saved desktops.":
+        "dialog.releaseNotes.v1_1_5.remoteDesktopStatus",
+      "Improved portrait phone navigation and session interactions, and kept Review and context panels stable when switching session tabs.":
+        "dialog.releaseNotes.v1_1_5.mobileNavigation",
+      "Made remote access recovery clearer and improved loading of the remote workspace.":
+        "dialog.releaseNotes.v1_1_5.remoteRecovery",
+      "Fixed virtualized rows and session loading failures during rapid updates, scrolling, and tab changes.":
+        "dialog.releaseNotes.v1_1_5.sessionLoading",
+      "Fixed packaged desktop startup failures on Linux caused by loading TypeScript source files as external dependencies.":
+        "dialog.releaseNotes.v1_1_5.linuxStartup",
+      "Fixed mobile toolbar overlap and scroll behavior that could hide content or unexpectedly jump to the bottom.":
+        "dialog.releaseNotes.v1_1_5.mobileToolbar",
+    },
+  }
   const highlights = releases.slice(start, end).flatMap((release) => {
-    if (release.highlights.length > 0) return release.highlights
-    return releaseNoteSections(release.content).flatMap((section) =>
-      section.items.map((description) => ({ title: section.title, description })),
-    )
+    const version = normalizeReleaseVersion(release.tag)
+    const items =
+      release.highlights.length > 0
+        ? release.highlights
+        : releaseNoteSections(release.content).flatMap((section) =>
+            section.items.map((description) => ({ title: section.title, description })),
+          )
+    return items.map((item) => ({
+      ...item,
+      translationKey: version ? releaseDescriptionKeys[version]?.[item.description] : undefined,
+    }))
   })
   const seen = new Set<string>()
   const unique = highlights.filter((highlight) => {

@@ -4,10 +4,12 @@ import { Button } from "@openctrlc/ui/button"
 import { useDialog } from "@openctrlc/ui/context/dialog"
 import { useLanguage } from "@/context/language"
 import { useSettings } from "@/context/settings"
+import type { dict } from "@/i18n/en"
 
 export type Highlight = {
   title: string
   description: string
+  translationKey?: keyof typeof dict
   media?: {
     type: "image" | "video"
     src: string
@@ -27,6 +29,20 @@ export function DialogReleaseNotes(props: { highlights: Highlight[] }) {
   const isFirst = () => index() === 0
   const isLast = () => index() >= last()
   const paged = () => total() > 1
+  const title = () => {
+    const value = feature()?.title ?? ""
+    const key = value.trim().toLowerCase()
+    if (key === "features" || key === "new features") return language.t("titlebar.updateFeatures")
+    if (key === "bug fixes" || key === "fixes") return language.t("titlebar.updateFixes")
+    if (key === "performance and reliability") return language.t("titlebar.updatePerformance")
+    if (key === "ui improvements") return language.t("titlebar.updateUI")
+    return value
+  }
+  const description = () => {
+    const item = feature()
+    if (!item) return ""
+    return item.translationKey ? language.t(item.translationKey) : item.description
+  }
 
   function handleNext() {
     if (isLast()) return
@@ -72,9 +88,9 @@ export function DialogReleaseNotes(props: { highlights: Highlight[] }) {
           {/* Top section - feature content (fixed position from top) */}
           <div class="flex flex-col gap-2 pt-22">
             <div class="flex items-center gap-2">
-              <h1 class="text-16-medium text-text-strong">{feature()?.title ?? ""}</h1>
+              <h1 class="text-16-medium text-text-strong">{title()}</h1>
             </div>
-            <p class="text-14-regular text-text-base">{feature()?.description ?? ""}</p>
+            <p class="text-14-regular text-text-base">{description()}</p>
           </div>
 
           {/* Spacer to push buttons to bottom */}

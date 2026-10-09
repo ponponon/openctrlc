@@ -13,6 +13,11 @@
 `bun.lock` 同步到该 Release 版本后提交到 `dev`。官网的稳定版下载入口优先使用 R2，
 R2 不可用时自动回退到 GitHub Release。
 
+Desktop 的首次更新引导会直接展示 GitHub Release 中的更新条目。新增版本时，必须同时在
+`packages/app/src/context/highlights.tsx` 为需要展示的条目关联翻译键，并在
+`packages/app/src/i18n/en.ts`、`zh.ts`、`ja.ts`、`ko.ts` 中补齐四种语言；否则引导弹窗会把
+英文发布说明原样显示在其他语言界面中。
+
 ## 本地标签同步
 
 GitHub Release 创建的 tag 是远程仓库的独立 ref。若对应提交已经存在于本地，
