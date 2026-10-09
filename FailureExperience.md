@@ -1066,6 +1066,8 @@ Relay 代理到的是同一个桌面本地服务器，会话记录和消息并�
 
 用户使用 `bun run dev:desktop` 时，桌面 Electron 界面虽然来自本地 Vite 源码，但远程手机页实际请求的是本地 OpenCode HTTP 服务。`predev` 原先只调用 `build-node.ts`，并给动态嵌入的 Web UI 写入空模块；服务端因此透明回退到 `https://app.opencode.ai`，使线上 UI 外壳正常加载却没有本地工作区恢复功能。以后排查远程 UI 空状态，必须检查 `/global/health`、本地快照是否到达、实际前端资源来源和构建清单；不能仅凭桌面使用 dev 命令就断言手机也在运行本地前端，也不要先让用户切换正式版掩盖开发构建缺口。
 
+远程首页显示 `{"error":"Not Found"}` 时，先区分 Relay 与桌面服务：无授权访问 Relay 根路径应返回配对页；已授权浏览器的根请求会被转发到桌面 OpenCode 服务。该 JSON 与服务端 UI fallback 的响应一致，说明问题发生在桌面内嵌首页映射缺失或首页文件无法读取，不是 DNS/TLS 或 Relay 根路由。增量启动检查不能只比较源码 mtime、确认 `app/dist/index.html` 存在；还要比较整个 `app/dist` 与内嵌 server bundle 的时间，并确认 server bundle 带有对应的内嵌首页资产。嵌入构建遇到缺少首页应立即失败；运行时则应返回明确 503 诊断，不能把缺资源伪装成普通 JSON 404。
+
 ## 新增 Electron IPC 状态字段必须兼容旧桌面主进程
 
 Renderer 热更新后可能先运行新界面，而 Electron 主进程仍是旧代码。即使 TypeScript 把 IPC 状态字段声明为必填，旧主进程仍会发出缺少新字段的运行时对象；直接用 `reconcile(next)` 会删除界面已有默认值，导致数字输入变空、容量显示 `undefined`。以后消费可跨版本的 IPC 状态时，必须在 Renderer 边界先归一化并验证新增字段，再写入响应式状态；对授权上限这类数值同时提供产品默认值和旧服务端生效值回退。

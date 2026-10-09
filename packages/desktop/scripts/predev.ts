@@ -35,8 +35,13 @@ async function mtime(path: string) {
  */
 async function shouldBuildNode() {
   if (force) return true
-  const out = await mtime(join(repoRoot, "opencode/dist/node/node.js"))
-  if (!out || !(await mtime(join(repoRoot, "app/dist/index.html")))) return true
+  const serverDist = join(repoRoot, "opencode/dist/node")
+  const out = await mtime(join(serverDist, "node.js"))
+  const appDist = join(repoRoot, "app/dist")
+  if (!out || !(await mtime(join(appDist, "index.html")))) return true
+  if ((await newestModifiedAt([appDist])) > out) return true
+  const hasEmbeddedIndex = (await Array.fromAsync(new Bun.Glob("index-*.html").scan({ cwd: serverDist }))).length > 0
+  if (!hasEmbeddedIndex) return true
   const sources = await newestModifiedAt([
     join(repoRoot, "opencode/src"),
     join(repoRoot, "opencode/script"),

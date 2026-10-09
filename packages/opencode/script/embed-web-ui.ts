@@ -11,6 +11,8 @@ export async function createEmbeddedWebUIBundle(channel: string) {
     .map((file) => file.replaceAll("\\", "/"))
     .filter((file) => !file.endsWith(".map"))
     .sort()
+  if (!files.includes("index.html"))
+    throw new Error(`OpenCtrlC Web UI build did not produce ${path.join(dist, "index.html")}`)
   const imports = files.map((file, i) => {
     const spec = path.relative(root, path.join(dist, file)).replaceAll("\\", "/")
     return `import file_${i} from ${JSON.stringify(spec.startsWith(".") ? spec : `./${spec}`)} with { type: "file" };`

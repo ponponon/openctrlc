@@ -2645,6 +2645,8 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - `packages/opencode/script/build-node.ts` 在构建开发用 Node 服务前，先构建 `packages/app` 并把生成的 Web 资源映射嵌入本地服务。
 - 发布构建和开发 Node 服务共用 Web UI 资源映射生成逻辑，保持资源清单与路径处理一致。
 - 本地服务存在嵌入式 UI 时直接提供本地资源，不再回退到 `app.opencode.ai`。
+- `packages/desktop/scripts/predev.ts` 同时比较 `app/dist` 与内嵌 server bundle 的产物时间，并检查内嵌首页文件；`embed-web-ui.ts` 在构建没有 `index.html` 时立即失败，防止启动复用不完整的 Web UI。
+- 首页资源缺失时，桌面服务返回明确的 503 诊断页，不再返回看似 API 错误的 JSON 404。
 
 ### 验证方式
 

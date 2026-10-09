@@ -65,6 +65,20 @@ function notFound() {
   return HttpServerResponse.jsonUnsafe({ error: "Not Found" }, { status: 404 })
 }
 
+function missingEmbeddedIndex() {
+  return HttpServerResponse.text(
+    `<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenCtrlC Web UI 不可用</title><body style="font:16px system-ui;padding:40px;max-width:40rem;margin:10vh auto"><h1>OpenCtrlC Web UI 资源不完整</h1><p>桌面端没有正确嵌入首页资源。请完全退出并重新启动 OpenCtrlC；开发版请从仓库运行 <code>bun run dev:desktop</code>。如果问题仍然存在，请检查桌面端构建日志。</p></body></html>`,
+    {
+      status: 503,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "x-openctrlc-ui": "missing-index",
+        "cache-control": "no-store",
+      },
+    },
+  )
+}
+
 function embeddedUIResponse(file: string, body: Uint8Array) {
   const mime = FSUtil.mimeType(file)
   const headers = new Headers({ "content-type": mime, "x-openctrlc-ui": "embedded" })
@@ -79,11 +93,15 @@ export function serveEmbeddedUIEffect(
   fs: FSUtil.Interface,
   embeddedWebUI: Record<string, string>,
 ) {
-  const mapped = embeddedWebUI[requestPath.replace(/^\//, "")] ?? embeddedWebUI["index.html"] ?? null
-  if (!mapped) return Effect.succeed(notFound())
+  const pathname = requestPath.replace(/^\//, "")
+  const asset = embeddedWebUI[pathname] ? pathname : "index.html"
+  const mapped = embeddedWebUI[asset] ?? null
+  if (!mapped) return Effect.succeed(asset === "index.html" ? missingEmbeddedIndex() : notFound())
   const candidates = resolveEmbeddedFileCandidates(mapped)
   return readFirstEmbedded(fs, candidates).pipe(
-    Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : notFound())),
+    Effect.map((hit) =>
+      hit ? embeddedUIResponse(hit.file, hit.body) : asset === "index.html" ? missingEmbeddedIndex() : notFound(),
+    ),
   )
 }
 
