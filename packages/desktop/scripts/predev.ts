@@ -18,6 +18,46 @@ const force = process.env.OPENCTRLC_PREDEV_FORCE === "1"
 const desktopDir = import.meta.dir + "/.."
 const repoRoot = join(desktopDir, "..")
 
+/**
+ * The documented local backend port (4096) must not already be held: a stale
+ * `serve` process from an earlier session keeps answering with an outdated
+ * embedded UI (or the upstream OpenCode shell fallback), so remote pages load
+ * a half-broken bundle while the new run silently loses the port. Fail fast
+ * with the owner instead. Set OPENCTRLC_SKIP_PORT_CHECK=1 for intentional
+ * listeners (e.g. the app dev backend running next to dev:desktop).
+ */
+async function assertDevPortFree() {
+  if (process.env.OPENCTRLC_SKIP_PORT_CHECK === "1") return
+  const port = Number(process.env.OPENCTRLC_DEV_PORT ?? 4096)
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) return
+  try {
+    const probe = Bun.listen({ hostname: "127.0.0.1", port, socket: { data() {} } })
+    probe.stop(true)
+    return
+  } catch {
+    // Port already in use — report the owner below.
+  }
+  let owner = ""
+  if (process.platform !== "win32") {
+    try {
+      const result = await $`lsof -nP -iTCP:${String(port)} -sTCP:LISTEN`.quiet()
+      owner = result.stdout.toString().trim()
+    } catch {
+      // lsof may be missing or exit non-zero when the owner vanished; keep going.
+    }
+  }
+  throw new Error(
+    [
+      `predev: port ${port} is already in use, likely by a stale sidecar from an earlier session.`,
+      "A stale serve process keeps answering with outdated or upstream-fallback UI and breaks remote pages.",
+      owner ? `Current listener:\n${owner}` : "",
+      `Stop that process (kill <pid>) or rerun with OPENCTRLC_SKIP_PORT_CHECK=1 if the listener is intentional.`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  )
+}
+
 async function mtime(path: string) {
   try {
     const info = await stat(path)
@@ -111,6 +151,8 @@ async function shouldDownloadCli() {
     return true
   }
 }
+
+await assertDevPortFree()
 
 await $`bun run install-electron`
 
