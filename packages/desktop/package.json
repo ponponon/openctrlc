@@ -1,7 +1,7 @@
 {
   "name": "@openctrlc/desktop",
   "private": true,
-  "version": "1.18.18",
+  "version": "1.1.4",
   "type": "module",
   "license": "MIT",
   "homepage": "https://openctrlc.pages.dev",
