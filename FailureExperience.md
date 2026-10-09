@@ -1766,3 +1766,9 @@ Relay 的 bootstrap 只在浏览器首次进入工作区时注入一份快照；
 ## 虚拟列表不能把 `<Show>` 子节点访问器传进动态属性
 
 Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载或分支切换时，传给子组件 props、style 或事件回调的这个访问器仍可能在分支销毁后被读取，触发 `Attempting to access a stale value from <Show>`。检查同类报错时不能只修当前可见的时间线：文件树、会话文件列表、用户消息、assistant part，以及 review/拖拽预览都要检查。虚拟位置映射只保存 `{ index, start, size }` 这样的普通字段；行 key 列表先过滤掉已从数据投影移除的 key；需要用 `<Show>` 控制生命周期时按稳定标识使用 keyed 分支，并在分支内部从组件作用域 memo 读取数据，不把 `<Show>` 回调访问器继续传给子组件。
+
+## exports 指向 .ts 源码的 workspace 包不能作为 Electron 主进程的 external 依赖
+
+安装 deb 后点击图标毫无反应，命令行直接运行才暴露 `A JavaScript error occurred in the main process` 与 `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`。`@openctrlc/remote-relay` 为 Bun 设计，`exports` 直接指向 `src/*.ts`；electron-vite 默认把 `dependencies` 全部 external，electron-builder 又把 workspace 包连同源码打进 asar，Node 22+ 明确拒绝为 `node_modules` 下的 `.ts` 做类型剥离，主进程在任何窗口创建前就崩。开发期 `bun run` 一切正常，只有打包产物会踩中，因此不能用 dev 环境通过来推断发布可用。
+
+以后凡是有 `exports` 指向 `.ts` 的包进入 desktop 依赖，必须二选一：提供 JS 构建产物，或在 `externalizeDeps.exclude` 里强制内联（并放到 `devDependencies` 防止进 asar），两者同时做最稳。举一反三的检查点：`asar list` 出来的 `.ts` 只有在“被 external import 加载”时才致命（effect/ajv 等包的 src 只是随包附带，运行时走 dist，无害）；main 和 preload 的 external 策略要同步，renderer 由 vite 转译不受影响。验证不能只靠点桌面图标——无反应时先在命令行跑打包产物看 stderr，并对 `out/main/*.js` 断言不存在对目标包的外部 import，比肉眼看窗口可靠得多。
