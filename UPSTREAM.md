@@ -202,8 +202,9 @@ OpenCtrlC-specific adaptation:
   continues to use its own release cadence.
 - `2fa3363c92`, `c42ae0d56b`, `907b3bc518`: hosted GPT-6.1 Sol pricing and
   Zen Ling/Fledge model product copy; not OpenCtrlC provider/config changes.
-- `82ea3a3a63`: upstream `1.18.34` release/version synchronization; local
-  package versions remain `1.18.18` until an OpenCtrlC release is requested.
+- `82ea3a3a63`: upstream `1.18.34` release/version synchronization; OpenCtrlC
+  keeps its own release cadence. At this review, workspace packages were still
+  `1.18.18`; the post-release workflow now syncs them to OpenCtrlC's release.
 - `28e13d9fd0`, `62ac31eb7a`, `0112a92c41`: upstream contributor compliance
   grace periods and triage-owner assignments, not this fork's maintenance policy.
 - `63cf236140`, `cff9078bb3`: generated upstream Nix dependency hashes; they

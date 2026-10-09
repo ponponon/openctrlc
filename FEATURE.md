@@ -3290,3 +3290,12 @@ Linux 安装 deb 后点击图标无反应：主进程启动即抛 `ERR_UNSUPPORT
 
 - 代码：`packages/desktop/electron.vite.config.ts`、`packages/desktop/package.json`、`packages/desktop/electron.vite.config.test.ts`。
 - 验证：`bun test` 新增 3 条配置契约用例通过；`bun typecheck` 通过；`electron-vite build` 后 `out/main/index.js`、`out/preload/*.js` 中 `remote-relay` 外部引用为 0 且协议符号已内联；`electron-builder --linux deb` 产物 asar 中无 remote-relay，`dist/linux-unpacked/cn.quniv.openctrlc` 启动后主进程与 renderer 持续存活、stderr 无 JS 错误。
+
+## 正式发布后同步工作区版本
+
+GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Release 发布成功后，工作流在 `dev` 上把与主程序当前版本一致的 workspace `package.json` 和 `bun.lock` 更新到该 Release 版本并提交；版本不同的独立包保持原值。同步步骤会跳过已经被更新 Release 取代的旧工作流，避免版本回退。CLI/Desktop 构建仍通过 `OPENCTRLC_VERSION` 注入 Release 版本。
+
+- `script/publish.ts`：复用发行清单更新逻辑，增加只同步版本的模式；只修改与主程序清单当前版本相同的包版本。
+- `.github/workflows/publish.yml`：Release 发布成功后，在 `dev` 执行版本同步并提交；确认该版本仍是最新 Release 后才写入。
+- `docs/release.md`、`UPSTREAM.md`：记录发布后清单同步策略及版本独立于 OpenCode 上游的规则。
+- 当前清单已从 `1.18.18` 同步到 `1.1.4`；锁文件中的第三方 `@opencode-ai/plugin` / `@opencode-ai/sdk` 依赖仍保留其各自的 `1.18.18` 版本。

@@ -9,8 +9,9 @@
 `dev`，然后在 GitHub Actions 中运行 `publish`，填写完整版本号，例如
 `0.2.5`。工作流会创建 draft Release、创建并校验版本 tag、构建所有平台
 资产，最后上传资产并将 Release 发布。Release 发布成功后，工作流会自动把公开
-资产同步到 Cloudflare R2，官网的稳定版下载入口优先使用 R2，R2 不可用时自动
-回退到 GitHub Release。
+资产同步到 Cloudflare R2，并将与 `openctrlc` 当前版本一致的工作区包清单和
+`bun.lock` 同步到该 Release 版本后提交到 `dev`。官网的稳定版下载入口优先使用 R2，
+R2 不可用时自动回退到 GitHub Release。
 
 ## 本地标签同步
 

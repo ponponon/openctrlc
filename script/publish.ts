@@ -23,15 +23,23 @@ const pkgjsons = await Array.fromAsync(
 ).then((arr) => arr.filter((x) => !x.includes("node_modules") && !x.includes("dist")))
 
 async function prepareReleaseFiles() {
+  const currentVersion = (await Bun.file("./packages/opencode/package.json").json()).version
+
   for (const file of pkgjsons) {
-    let pkg = await Bun.file(file).text()
-    pkg = pkg.replaceAll(/"version": "[^"]+"/g, `"version": "${Script.version}"`)
+    const manifest = await Bun.file(file).json()
+    if (manifest.version !== currentVersion) continue
+
+    const pkg = await Bun.file(file).text()
+    const updated = pkg.replace(/(^\s*"version"\s*:\s*)"[^"]+"/m, `$1"${Script.version}"`)
+    if (updated === pkg) throw new Error(`Failed to update package version in ${file}`)
     console.log("updated:", file)
-    await Bun.file(file).write(pkg)
+    await Bun.file(file).write(updated)
   }
 
   await $`bun install`
-  await $`./packages/sdk/js/script/build.ts`
+  if (process.env.OPENCTRLC_SYNC_VERSIONS_ONLY !== "1") {
+    await $`./packages/sdk/js/script/build.ts`
+  }
 }
 
 if (Script.release && !Script.preview) {
@@ -40,6 +48,10 @@ if (Script.release && !Script.preview) {
 }
 
 await prepareReleaseFiles()
+
+if (process.env.OPENCTRLC_SYNC_VERSIONS_ONLY === "1") {
+  process.exit(0)
+}
 
 console.log("\n=== cli ===\n")
 await $`bun ./packages/opencode/script/publish.ts`

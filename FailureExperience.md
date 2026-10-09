@@ -1796,3 +1796,7 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 安装 deb 后点击图标毫无反应，命令行直接运行才暴露 `A JavaScript error occurred in the main process` 与 `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`。`@openctrlc/remote-relay` 为 Bun 设计，`exports` 直接指向 `src/*.ts`；electron-vite 默认把 `dependencies` 全部 external，electron-builder 又把 workspace 包连同源码打进 asar，Node 22+ 明确拒绝为 `node_modules` 下的 `.ts` 做类型剥离，主进程在任何窗口创建前就崩。开发期 `bun run` 一切正常，只有打包产物会踩中，因此不能用 dev 环境通过来推断发布可用。
 
 以后凡是有 `exports` 指向 `.ts` 的包进入 desktop 依赖，必须二选一：提供 JS 构建产物，或在 `externalizeDeps.exclude` 里强制内联（并放到 `devDependencies` 防止进 asar），两者同时做最稳。举一反三的检查点：`asar list` 出来的 `.ts` 只有在“被 external import 加载”时才致命（effect/ajv 等包的 src 只是随包附带，运行时走 dist，无害）；main 和 preload 的 external 策略要同步，renderer 由 vite 转译不受影响。验证不能只靠点桌面图标——无反应时先在命令行跑打包产物看 stderr，并对 `out/main/*.js` 断言不存在对目标包的外部 import，比肉眼看窗口可靠得多。
+
+## 判断产品版本不能只依赖本地 package.json
+
+用户指出 GitHub Releases 已发布 `v1.1.4`，但多个 workspace `package.json` 仍是 `1.18.18`。先前只依据 `UPSTREAM.md` 的旧同步记录和本地清单，就把 `1.18.18` 解释成当前 OpenCtrlC 版本；实际上 Release 工作流通过 `OPENCTRLC_VERSION` 给 CLI/Desktop 构建注入了 `1.1.4`，而且 npm `openctrlc` latest 也是 `1.1.4`，只是发布后没有把 workspace 版本元数据回写到 `dev`。以后判断版本状态要交叉核对 GitHub 最新稳定 Release、npm dist-tag、Release 标签中的 package manifest、版本计算脚本和发布工作流；明确区分运行时注入版本与源码 package.json 的同步状态，并在正式发布后自动提交工作区版本清单。

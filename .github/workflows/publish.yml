@@ -460,3 +460,65 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sync-release-versions:
+    needs:
+      - version
+      - publish
+    if: github.repository == 'ponponon/openctrlc'
+    concurrency:
+      group: openctrlc-release-version-sync
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Skip stale release version sync
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          latest_tag="$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)"
+          if [ "$latest_tag" != "v$RELEASE_VERSION" ]; then
+            echo "Skipping v$RELEASE_VERSION version sync because $latest_tag is now latest."
+            echo "sync=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "sync=true" >> "$GITHUB_OUTPUT"
+
+      - name: Sync workspace package versions
+        if: steps.latest.outputs.sync == 'true'
+        env:
+          OPENCTRLC_CHANNEL: prod
+          OPENCTRLC_VERSION: ${{ needs.version.outputs.version }}
+          OPENCTRLC_SYNC_VERSIONS_ONLY: "1"
+        run: bun ./script/publish.ts
+
+      - name: Commit synchronized package versions
+        if: steps.latest.outputs.sync == 'true'
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ':(glob)**/package.json' bun.lock
+          if git diff --cached --quiet; then
+            echo "Package versions already match v$RELEASE_VERSION."
+            exit 0
+          fi
+          git diff --cached --check
+          if git diff --cached --unified=0 | rg -n -i '(api[_-]?key|client[_-]?secret|password|access[_-]?token|private[_-]?key)[[:space:]]*[:=][[:space:]]*["\x27]?[[:alnum:]_+/=-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{36,}|-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----'; then
+            echo "Potential secret detected in staged release metadata." >&2
+            exit 1
+          fi
+          git commit -m "chore(release) : 同步发行版本 v$RELEASE_VERSION"
+          git push origin HEAD:dev
