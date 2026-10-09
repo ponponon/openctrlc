@@ -178,10 +178,18 @@ const markBoundaryGesture = (input: {
   target: EventTarget | null
   delta: number
   onMarkScrollGesture: (target?: EventTarget | null) => void
+  onPauseAutoScroll?: () => void
 }) => {
   const target = boundaryTarget(input.root, input.target)
-  if (target === input.root) {
+  const mark = () => {
     input.onMarkScrollGesture(input.root)
+    const max = input.root.scrollHeight - input.root.clientHeight
+    const distance = max - input.root.scrollTop
+    if (input.onPauseAutoScroll && max > 1 && (input.delta < 0 || distance > 2)) input.onPauseAutoScroll()
+  }
+
+  if (target === input.root) {
+    mark()
     return
   }
   if (
@@ -192,7 +200,7 @@ const markBoundaryGesture = (input: {
       clientHeight: target.clientHeight,
     })
   ) {
-    input.onMarkScrollGesture(input.root)
+    mark()
   }
 }
 
@@ -309,6 +317,7 @@ export function MessageTimeline(props: {
   setScrollRef: (el: HTMLDivElement | undefined) => void
   onScheduleScrollState: (el: HTMLDivElement) => void
   onAutoScrollHandleScroll: () => void
+  onPauseAutoScroll: () => void
   onMarkScrollGesture: (target?: EventTarget | null) => void
   hasScrollGesture: () => boolean
   onUserScroll: () => void
@@ -899,6 +908,7 @@ export function MessageTimeline(props: {
       target: event.target,
       delta,
       onMarkScrollGesture: props.onMarkScrollGesture,
+      onPauseAutoScroll: props.onPauseAutoScroll,
     })
   }
 
