@@ -52,7 +52,12 @@ const require = __cjs_mod__.createRequire(import.meta.url);
 `,
         },
       },
-      externalizeDeps: { include: [nodePtyPkg] },
+      externalizeDeps: {
+        include: [nodePtyPkg],
+        // remote-relay exports raw .ts; Node refuses to strip types under
+        // node_modules, so an externalized import crashes the packaged main process.
+        exclude: ["@openctrlc/remote-relay"],
+      },
     },
     plugins: [
       {
@@ -88,6 +93,7 @@ const require = __cjs_mod__.createRequire(import.meta.url);
   },
   preload: {
     build: {
+      externalizeDeps: { exclude: ["@openctrlc/remote-relay"] },
       rollupOptions: {
         input: { index: "src/preload/index.ts", "remote-peer": "src/preload/remote-peer.ts" },
         output: {

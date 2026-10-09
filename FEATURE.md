@@ -3274,3 +3274,10 @@ Relay 转发请求等待桌面端响应头时最多等待 15 秒。桌面 WebSoc
 - `packages/app/src/pages/session/session-side-panel.tsx`：上下文标签首次打开后保留，并在未选中时固定其数据会话。
 - `packages/app/src/components/session/session-context-tab.tsx`：按会话缓存快照、以虚拟列表显示原始消息，并将 token 增量从逐行前缀扫描改为线性计算。
 - 验证：在 `packages/app` 执行 `bun typecheck`、`git diff --check`；Playwright 的 `e2e/regression/review-tab-switch.spec.ts` 确认切换会话时 Review 面板实例不变，`e2e/smoke/session-context-chart.spec.ts` 确认上下文图表与消息分布正常渲染。上下文标签保留挂载由组件生命周期代码实现。
+
+## 桌面打包内联 remote-relay 修复 Linux 启动崩溃
+
+Linux 安装 deb 后点击图标无反应：主进程启动即抛 `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`。根因是 `@openctrlc/remote-relay` 的 `exports` 直接指向 `src/*.ts` 源码，`externalizeDeps` 把它留成运行时 import，electron-builder 又把它打进 asar，而 Node 拒绝对 `node_modules` 下的 `.ts` 做类型剥离。修复方式：`electron.vite.config.ts` 的 main/preload 都配置 `externalizeDeps.exclude: ["@openctrlc/remote-relay"]` 让其被 rollup 转译内联，同时把该包从 desktop 的 `dependencies` 移到 `devDependencies`，使其不再进入 asar。
+
+- 代码：`packages/desktop/electron.vite.config.ts`、`packages/desktop/package.json`、`packages/desktop/electron.vite.config.test.ts`。
+- 验证：`bun test` 新增 3 条配置契约用例通过；`bun typecheck` 通过；`electron-vite build` 后 `out/main/index.js`、`out/preload/*.js` 中 `remote-relay` 外部引用为 0 且协议符号已内联；`electron-builder --linux deb` 产物 asar 中无 remote-relay，`dist/linux-unpacked/cn.quniv.openctrlc` 启动后主进程与 renderer 持续存活、stderr 无 JS 错误。

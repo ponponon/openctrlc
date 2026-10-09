@@ -1782,3 +1782,9 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 ## 已显示的远程工作区不代表每个后台请求都成功
 
 远程浏览器可先从工作区快照和缓存恢复项目/会话列表；之后按目录刷新的 provider、agent、permission、会话列表等请求仍可能因桌面 Relay 断连而失败。把任一后台请求失败都显示成“无法重新加载项目”，会把局部/传输故障描述成整页加载失败，并在多个项目上产生持久弹窗。应保留已有工作区数据，将网络传输和桌面不可达错误交给统一的服务器健康状态展示；桌面恢复后复用 `server.connected` 触发的同步队列刷新。只有非连接类错误继续进入对应的诊断提示。
+
+## exports 指向 .ts 源码的 workspace 包不能作为 Electron 主进程的 external 依赖
+
+安装 deb 后点击图标毫无反应，命令行直接运行才暴露 `A JavaScript error occurred in the main process` 与 `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`。`@openctrlc/remote-relay` 为 Bun 设计，`exports` 直接指向 `src/*.ts`；electron-vite 默认把 `dependencies` 全部 external，electron-builder 又把 workspace 包连同源码打进 asar，Node 22+ 明确拒绝为 `node_modules` 下的 `.ts` 做类型剥离，主进程在任何窗口创建前就崩。开发期 `bun run` 一切正常，只有打包产物会踩中，因此不能用 dev 环境通过来推断发布可用。
+
+以后凡是有 `exports` 指向 `.ts` 的包进入 desktop 依赖，必须二选一：提供 JS 构建产物，或在 `externalizeDeps.exclude` 里强制内联（并放到 `devDependencies` 防止进 asar），两者同时做最稳。举一反三的检查点：`asar list` 出来的 `.ts` 只有在“被 external import 加载”时才致命（effect/ajv 等包的 src 只是随包附带，运行时走 dist，无害）；main 和 preload 的 external 策略要同步，renderer 由 vite 转译不受影响。验证不能只靠点桌面图标——无反应时先在命令行跑打包产物看 stderr，并对 `out/main/*.js` 断言不存在对目标包的外部 import，比肉眼看窗口可靠得多。
