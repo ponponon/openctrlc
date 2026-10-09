@@ -163,13 +163,21 @@
 
 @media (max-width: 767px) {
   [data-slot="titlebar-remote-connection-trigger"] {
-    max-width: min(50vw, 200px);
+    max-width: 64px;
     gap: 4px;
     padding-inline: 6px;
   }
 
   [data-slot="titlebar-remote-connection-host"] {
-    max-width: min(18vw, 76px);
+    display: none;
+  }
+
+  [data-slot="titlebar-remote-connection-divider"] {
+    display: none;
+  }
+
+  [data-slot="titlebar-remote-connection-route"] {
+    display: none;
   }
 
   [data-slot="titlebar-remote-connection-lite-label"] {
