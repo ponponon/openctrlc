@@ -3315,3 +3315,25 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 
 - 代码：`packages/desktop/scripts/dev.ts` 在应用请求重启后调用 `scripts/predev.ts`。
 - 验证：`packages/desktop` 类型检查和 `git diff --check`；实际应用重启需在本机开发环境确认。
+
+## 内嵌 UI 未命中资产返回 404 而非首页
+
+内嵌 Web UI 的资源映射在桌面端重建后会丢弃旧的 content-hash 文件名。跨重建存活的旧标签页仍会请求旧 hash；旧实现对任何未命中路径都回退 `index.html`，把 HTML 交给 CSS/JS 解析器，页面因此进入半旧半新的混合状态。现在只有导航路径（无扩展名的路由）才回退首页，`/assets/*` 等静态资产未命中一律返回 404，让旧资源请求明确失败。内嵌映射缺失首页时仍返回 `x-openctrlc-ui: missing-index` 的 503 诊断页。
+
+- 代码：`packages/opencode/src/server/shared/ui.ts`（`isStaticAssetPath` 区分导航与资产）。
+- 测试：`packages/opencode/test/server/httpapi-ui.test.ts` 新增资产 404、导航回退首页、缺首页诊断三条用例。
+
+## 会话布局诊断面板
+
+会话页附加 `?debug=layout` 查询参数后，在左下角显示实时布局诊断：视口与 visualViewport 尺寸、`#root`/`main`/会话 frame/面板行/侧栏的坐标与尺寸、frame 是否铺满（fill ✓/✗）、`.size-full` 规则是否加载、面板行 `flex-direction` 与侧栏 `flex-grow` 是否生效、样式表数量。异常行标红，便于在平板等无法本地复现的环境用一张截图定位留白根因。开启状态写入 sessionStorage，SPA 路由切换不丢失；`?debug=layout0` 关闭。
+
+- 代码：`packages/app/src/components/layout-debug.tsx`、`packages/app/src/pages/layout-new.tsx`。
+- 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 新增 `layoutDebug.title`/`layoutDebug.hint`。
+- 验证：`packages/app` 类型检查与 i18n parity 测试通过；Playwright 1524×1068 截图确认面板渲染与标红状态。
+
+## 开发预检拒绝被占用的后端端口
+
+`predev` 启动时探测本地后端端口（默认 4096，`OPENCTRLC_DEV_PORT` 可覆盖）：端口已被占用即报错退出并打印占用进程（lsof），提示陈旧 sidecar 会用过期或上游回退的 UI 破坏远程页面。`OPENCTRLC_SKIP_PORT_CHECK=1` 用于确需并行监听的场景。
+
+- 代码：`packages/desktop/scripts/predev.ts`（`assertDevPortFree`）。
+- 验证：4096 被陈旧进程占用时 predev 立即失败并列出 `bun … serve --port 4096` 的 PID；`packages/desktop` 类型检查通过。
