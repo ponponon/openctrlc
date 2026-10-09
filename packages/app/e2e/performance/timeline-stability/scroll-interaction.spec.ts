@@ -248,6 +248,26 @@ test("pauses follow during keyboard capture before the first scroll event", asyn
   expect(await scroller.evaluate((element) => element.scrollTop)).toBeCloseTo(before, 0)
 })
 
+test("keeps follow paused through layout correction until the user scrolls down to latest", async ({ page }) => {
+  const { scroller } = await setupFollowedTimeline(page)
+  await scroller.evaluate((element) => {
+    element.parentElement?.dispatchEvent(new KeyboardEvent("keydown", { key: "PageUp", bubbles: true }))
+    element.scrollTop = element.scrollHeight
+    element.dispatchEvent(new Event("scroll"))
+  })
+
+  await growVirtualContent(scroller)
+  await expect.poll(() => distanceFromBottom(scroller)).toBeGreaterThan(100)
+
+  await scroller.evaluate((element) => {
+    element.parentElement?.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }))
+    element.scrollTop = element.scrollHeight
+    element.dispatchEvent(new Event("scroll"))
+  })
+  await growVirtualContent(scroller)
+  await expect.poll(() => distanceFromBottom(scroller)).toBeLessThanOrEqual(1)
+})
+
 test("pauses follow as soon as the timeline scrollbar thumb is grabbed", async ({ page }) => {
   const { scroller } = await setupFollowedTimeline(page)
   const before = await scrollToBottom(scroller)

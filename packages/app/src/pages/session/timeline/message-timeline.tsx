@@ -177,14 +177,17 @@ const markBoundaryGesture = (input: {
   root: HTMLDivElement
   target: EventTarget | null
   delta: number
-  onMarkScrollGesture: (target?: EventTarget | null) => void
+  onMarkScrollGesture: (target?: EventTarget | null, direction?: "up" | "down" | null) => void
   onPauseAutoScroll?: () => void
+  shouldResumeAutoScroll?: () => boolean
+  onResumeAutoScroll?: () => void
 }) => {
   const target = boundaryTarget(input.root, input.target)
   const mark = () => {
-    input.onMarkScrollGesture(input.root)
+    input.onMarkScrollGesture(input.root, input.delta > 0 ? "down" : "up")
     const max = input.root.scrollHeight - input.root.clientHeight
     const distance = max - input.root.scrollTop
+    if (input.delta > 0 && distance <= 2 && input.shouldResumeAutoScroll?.()) input.onResumeAutoScroll?.()
     if (input.onPauseAutoScroll && max > 1 && (input.delta < 0 || distance > 2)) input.onPauseAutoScroll()
   }
 
@@ -318,7 +321,7 @@ export function MessageTimeline(props: {
   onScheduleScrollState: (el: HTMLDivElement) => void
   onAutoScrollHandleScroll: () => void
   onPauseAutoScroll: () => void
-  onMarkScrollGesture: (target?: EventTarget | null) => void
+  onMarkScrollGesture: (target?: EventTarget | null, direction?: "up" | "down" | null) => void
   hasScrollGesture: () => boolean
   onUserScroll: () => void
   onHistoryScroll: () => void
@@ -340,6 +343,7 @@ export function MessageTimeline(props: {
   setHistoryAnchor?: (handlers?: { capture: (kind: HistoryAnchorKind) => HistoryAnchor }) => void
 }) {
   let touchGesture: number | undefined
+  let pointerGestureY: number | undefined
 
   const navigate = useNavigate()
   const global = useGlobal()
@@ -891,6 +895,8 @@ export function MessageTimeline(props: {
       delta,
       onMarkScrollGesture: props.onMarkScrollGesture,
       onPauseAutoScroll: props.onPauseAutoScroll,
+      shouldResumeAutoScroll: props.autoScrollPaused,
+      onResumeAutoScroll: props.onResumeScroll,
     })
   }
 
@@ -915,6 +921,8 @@ export function MessageTimeline(props: {
       delta,
       onMarkScrollGesture: props.onMarkScrollGesture,
       onPauseAutoScroll: props.onPauseAutoScroll,
+      shouldResumeAutoScroll: props.autoScrollPaused,
+      onResumeAutoScroll: props.onResumeScroll,
     })
   }
 
@@ -923,10 +931,31 @@ export function MessageTimeline(props: {
   }
 
   const handleListPointerDown = (event: PointerEvent & { currentTarget: HTMLDivElement }) => {
-    markPointerScrollGesture({ target: event.target, onMark: props.onMarkScrollGesture })
+    pointerGestureY = event.clientY
+    markPointerScrollGesture({
+      target: event.target,
+      onMark: (target) => props.onMarkScrollGesture(target, null),
+    })
   }
 
   const handleListPointerMove = (event: PointerEvent) => {
+    if (event.buttons === 1 && pointerGestureY !== undefined) {
+      const delta = pointerGestureY - event.clientY
+      pointerGestureY = event.clientY
+      if (delta) {
+        const direction = delta > 0 ? "down" : "up"
+        props.onMarkScrollGesture(event.target, direction)
+        const root = listRoot()
+        if (
+          direction === "down" &&
+          root &&
+          props.autoScrollPaused() &&
+          root.scrollHeight - root.clientHeight - root.scrollTop <= 2
+        ) {
+          props.onResumeScroll()
+        }
+      }
+    }
     markPointerScrollGesture({ target: event.target, buttons: event.buttons, onMark: props.onMarkScrollGesture })
   }
 
@@ -937,8 +966,11 @@ export function MessageTimeline(props: {
     const root = listRoot()
     if (!root || scrollKeyOwner(root, event.target, key) !== root) return
     anchorRegistry.cancelCorrections()
-    props.onMarkScrollGesture(root)
-    if (root.scrollTop > 0 && (key === "up" || key === "page-up" || key === "home")) props.onPauseAutoScroll()
+    const direction = key === "up" || key === "page-up" || key === "home" ? "up" : "down"
+    props.onMarkScrollGesture(root, direction)
+    if (root.scrollTop > 0 && direction === "up") props.onPauseAutoScroll()
+    if (direction === "down" && props.autoScrollPaused() && root.scrollHeight - root.clientHeight - root.scrollTop <= 2)
+      props.onResumeScroll()
   }
 
   const handleListScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
@@ -1992,11 +2024,12 @@ export function MessageTimeline(props: {
         onTouchCancel={handleListTouchEnd}
         onPointerDown={handleListPointerDown}
         onPointerMove={handleListPointerMove}
-        onThumbPointerDown={() => {
+        onThumbPointerDown={(event) => {
           anchorRegistry.cancelCorrections()
           const root = listRoot()
           if (!root) return
-          props.onMarkScrollGesture(root)
+          pointerGestureY = event.clientY
+          props.onMarkScrollGesture(root, null)
           props.onPauseAutoScroll()
         }}
         onKeyDownCapture={handleListKeyDownCapture}

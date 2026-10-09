@@ -1112,8 +1112,9 @@ export default function Page() {
   let messageMark = 0
 
   const scrollGestureWindowMs = 250
+  let scrollIntentDirection: "up" | "down" | undefined
 
-  const markScrollGesture = (target?: EventTarget | null) => {
+  const markScrollGesture = (target?: EventTarget | null, direction?: "up" | "down" | null) => {
     const root = scroller
     if (!root) return
 
@@ -1121,6 +1122,7 @@ export default function Page() {
     const nested = el?.closest("[data-scrollable]")
     if (nested && nested !== root) return
 
+    if (direction !== undefined) scrollIntentDirection = direction ?? undefined
     setUi("scrollGesture", Date.now())
   }
 
@@ -1305,7 +1307,7 @@ export default function Page() {
     if (key) {
       if (!scroller || !isScrollKeyTarget(target ?? null, key)) return
       if (scrollKeyOwner(scroller, target ?? null, key) !== scroller) return
-      markScrollGesture(scroller)
+      markScrollGesture(scroller, key === "up" || key === "page-up" || key === "home" ? "up" : "down")
       return
     }
 
@@ -1737,6 +1739,7 @@ export default function Page() {
     overflowAnchor: "none",
     bottomThreshold: 2,
     isUserInteracting: hasScrollGesture,
+    shouldResumeOnScroll: () => hasScrollGesture() && scrollIntentDirection === "down",
   })
   // The session's persisted `follow` flag is the source of truth for "stay pinned to
   // the newest message". `autoScroll.userScrolled` mirrors it, but it is only synced
@@ -1759,6 +1762,7 @@ export default function Page() {
       () => params.id,
       (id) => {
         if (!id) return
+        scrollIntentDirection = undefined
         autoScroll.setUserScrolled(view().scroll("timeline")?.follow === false)
       },
     ),
@@ -1797,6 +1801,7 @@ export default function Page() {
 
   const resumeScroll = () => {
     setStore("messageId", undefined)
+    scrollIntentDirection = undefined
     autoScroll.resume()
     scrollToEnd()
     saveTimelineScroll(scroller, true)

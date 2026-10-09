@@ -2305,7 +2305,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ### 实现范围
 
-- 时间线滚动事件始终同步“是否在底部”，不再要求 250ms 手势窗口；滚动条、触控板惯性、键盘和虚拟列表校正都能暂停/恢复跟随。
+- 时间线滚动事件始终同步位置，但自动恢复跟随需要明确的向下滚动意图；向上回看后，虚拟列表或布局校正即使暂时把视口放到底部，也不能清除暂停状态。滚轮、触屏、键盘和滚动条向下到最新时可恢复，点击“跳转到最新”仍强制恢复。
 - 虚拟列表的 `anchorTo` / `followOnAppend` 跟随 `shouldAnchorBottom()`：只有仍在底部时才 end 吸底并在 append 时滚到底；离开底部后改为 start 锚定，仅对视口上方的行高变化做阅读位置补偿。
 - “跳转到最新”按钮在离开底部超过 32px 时显示（原先要超过一屏），方便暂停跟随时随时回底。
 - 距底吸底容差从 80px 收紧到 24px，减少“只上滑一点就被拽回”的边界体感。
@@ -2316,13 +2316,14 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ### 代码位置
 
-- `packages/app/src/pages/session/timeline/message-timeline.tsx`：动态 `anchorTo`/`followOnAppend`，滚动时始终上报位置状态，暂停时估算新输出条数，工具命中自动展开。
+- `packages/app/src/pages/session/timeline/message-timeline.tsx`：动态 `anchorTo`/`followOnAppend`，滚动时始终上报位置状态并传递输入方向，暂停时估算新输出条数，工具命中自动展开。
+- `packages/ui/src/hooks/create-auto-scroll.tsx`：允许会话按真实向下滚动意图恢复跟随；短暂无滚动空间或布局校正不再清除显式暂停。
 - `packages/app/src/pages/session/timeline/pending-output.ts`：新输出计数纯函数（可单测）。
 - `packages/app/src/pages/session.tsx`：放宽“跳转到最新”显示阈值。
 - `packages/app/src/pages/session/session-search.ts`：`sessionSearchMatchFragment` / `sessionSearchToolOutputHits` / `sessionSearchToolInputHits` 映射工具命中。
 - `packages/session-ui/src/components/message-part.tsx`：工具 command/output 接入 `SearchTextHighlight`。
 - `packages/app/src/i18n/{en,zh,ja,ko}.ts`、`packages/app/src/context/language.tsx`：`session.messages.newOutputs` 复数文案。
-- `packages/app/e2e/regression/session-timeline-follow-pause.spec.ts`、`session-search-tool-hit.spec.ts`：回归暂停跟随与工具命中高亮。
+- `packages/app/e2e/regression/session-timeline-follow-pause.spec.ts`、`packages/app/e2e/performance/timeline-stability/scroll-interaction.spec.ts`、`session-search-tool-hit.spec.ts`：回归暂停跟随、布局校正后的恢复门禁与工具命中高亮。
 
 ### 验证方式
 

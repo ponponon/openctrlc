@@ -9,6 +9,7 @@ export interface AutoScrollOptions {
   overflowAnchor?: "none" | "auto" | "dynamic"
   bottomThreshold?: number
   isUserInteracting?: () => boolean
+  shouldResumeOnScroll?: () => boolean
 }
 
 export function createAutoScroll(options: AutoScrollOptions) {
@@ -18,6 +19,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
   let auto: { top: number; time: number } | undefined
 
   const threshold = () => options.bottomThreshold ?? 10
+  const shouldResumeOnScroll = () => options.shouldResumeOnScroll?.() ?? true
 
   const [store, setStore] = createStore({
     contentRef: undefined as HTMLElement | undefined,
@@ -101,10 +103,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
   const stop = () => {
     const el = store.scrollRef
     if (!el) return
-    if (!canScroll(el)) {
-      if (store.userScrolled) setStore("userScrolled", false)
-      return
-    }
+    if (!canScroll(el)) return
     if (store.userScrolled) return
 
     setStore("userScrolled", true)
@@ -128,12 +127,12 @@ export function createAutoScroll(options: AutoScrollOptions) {
     if (!el) return
 
     if (!canScroll(el)) {
-      if (store.userScrolled) setStore("userScrolled", false)
+      if (store.userScrolled && shouldResumeOnScroll()) setStore("userScrolled", false)
       return
     }
 
     if (distanceFromBottom(el) < threshold()) {
-      if (store.userScrolled) setStore("userScrolled", false)
+      if (store.userScrolled && shouldResumeOnScroll()) setStore("userScrolled", false)
       return
     }
 
@@ -176,7 +175,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
       if (options.isUserInteracting?.()) return
       const el = store.scrollRef
       if (el && !canScroll(el)) {
-        if (store.userScrolled) setStore("userScrolled", false)
+        if (store.userScrolled && shouldResumeOnScroll()) setStore("userScrolled", false)
         return
       }
       if (!active()) return
