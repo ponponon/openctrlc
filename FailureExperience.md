@@ -18,7 +18,7 @@
 
 ## 桌面端渲染层会热更新，内嵌 server 不会
 
-改完 Session 接口后，首页那一列在用户那里整列变空，看起来像被改坏了。排查发现：渲染层由 Vite dev server（5173）提供，源码一改就生效；而桌面端的内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`，由 `desktop/scripts/predev.ts` 调 `opencode/script/build-node.ts` 生成），运行中的进程（Electron utility，持有 `openctrlc-dev.db`、监听 50585）还是改动前的代码。`bun ./scripts/dev.ts` 的重启循环只重新拉起 `electron-vite dev`，不会重跑 `predev`，所以“应用内重启”会一直复用旧 server bundle。教训有两条：一是跨进程边界的改动必须同时重建内嵌 server 并完整重启 App，验证时要检查运行进程实际加载的产物（`lsof -p <pid>`、bundle 里 grep 新代码的字符串、直接 curl 接口看返回字段），不要只看源码和类型检查；二是 UI 不能静默依赖新字段，服务端没有该字段时要显示明确的占位（`—`）而不是整列留空，避免把版本错配伪装成界面损坏。
+改完 Session 接口后，首页那一列在用户那里整列变空，看起来像被改坏了。排查发现：渲染层由 Vite dev server（5173）提供，源码一改就生效；而桌面端的内嵌 server 来自预构建的 `packages/opencode/dist/node/node.js`（`packages/desktop/electron.vite.config.ts` 的 `OPENCTRLC_SERVER_DIST`，由 `desktop/scripts/predev.ts` 调 `opencode/script/build-node.ts` 生成），运行中的进程（Electron utility，持有 `openctrlc-dev.db`、监听 50585）还是改动前的代码。此前 `bun ./scripts/dev.ts` 的重启循环只重新拉起 `electron-vite dev`，不会重跑 `predev`，所以“应用内重启”会一直复用旧 server bundle。现在开发监督脚本在应用请求重启后会重新执行增量 `predev`，有源码变化就重建 sidecar bundle；日常不需要强制构建环境变量。强制模式会绕过增量判断，还会触发插件构建和 CLI 下载，只应作为检测异常时的兜底。跨进程边界的改动仍须确认运行进程实际加载的产物（`lsof -p <pid>`、bundle 中的新代码标记、直接 curl 接口响应），不能只看源码和类型检查；UI 对服务端暂缺字段也要显示明确占位（`—`），不要让版本错配看起来像界面损坏。
 
 ## 展示派生数值时必须确认口径，不能混用两种来源
 

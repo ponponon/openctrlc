@@ -3308,3 +3308,10 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 - `packages/app/src/components/titlebar.tsx`、`titlebar.css`：统一标题栏状态入口和响应式详情面板。
 - `packages/app/src/i18n/{en,zh,ja,ko}.ts`：新增四种目标语言文案。
 - 验证：`packages/app` 执行 `bun typecheck`，并执行 `git diff --check`；未重启应用或开发服务器。
+
+## 桌面开发版重启时检查 sidecar 内嵌界面
+
+开发版通过应用菜单重启时，开发监督脚本会先重新执行增量 `predev` 检查，再启动 Electron。sidecar 内嵌 Web UI 或服务端源码有变化时自动重建；产物已最新时跳过。日常无需设置 `OPENCTRLC_PREDEV_FORCE=1`，该变量只用于强制重建或排查时间戳检测异常。
+
+- 代码：`packages/desktop/scripts/dev.ts` 在应用请求重启后调用 `scripts/predev.ts`。
+- 验证：`packages/desktop` 类型检查和 `git diff --check`；实际应用重启需在本机开发环境确认。

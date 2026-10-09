@@ -7,7 +7,20 @@ while (true) {
     stderr: "inherit",
   })
   const exitCode = await child.exited
-  if (exitCode === DEV_RESTART_EXIT_CODE) continue
+  if (exitCode === DEV_RESTART_EXIT_CODE) {
+    console.log("dev:desktop app restart requested; checking embedded sidecar build")
+    const prepare = Bun.spawn(["bun", "./scripts/predev.ts"], {
+      stdin: "inherit",
+      stdout: "inherit",
+      stderr: "inherit",
+    })
+    const prepareExitCode = await prepare.exited
+    if (prepareExitCode !== 0) {
+      process.exitCode = prepareExitCode
+      break
+    }
+    continue
+  }
   process.exitCode = exitCode
   break
 }
