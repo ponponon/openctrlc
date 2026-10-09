@@ -1138,6 +1138,7 @@ function ProviderConnection(props: {
           onKeyDown={handleKey}
           tabIndex={newLayout() ? undefined : 0}
           autofocus={!newLayout() && store.methodIndex === undefined ? true : undefined}
+          class="outline-none"
         >
           <Switch>
             <Match when={loading()}>

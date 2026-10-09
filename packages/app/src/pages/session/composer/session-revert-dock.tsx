@@ -44,7 +44,7 @@ export function SessionRevertDock(props: {
       fallback={
         <DockTray data-component="session-revert-dock">
           <div
-            class="pl-3 pr-2 py-2 flex items-center gap-2"
+            class="pl-3 pr-2 py-2 flex items-center gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v2-border-border-focus"
             role="button"
             tabIndex={0}
             onClick={toggle}
@@ -107,7 +107,7 @@ export function SessionRevertDock(props: {
         class="w-full overflow-hidden rounded-xl border-[0.5px] border-v2-border-border-base bg-v2-background-bg-layer-01"
       >
         <div
-          class="flex h-[42px] items-center gap-2 pl-4 pr-2"
+          class="flex h-[42px] items-center gap-2 rounded-lg pl-4 pr-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v2-border-border-focus"
           role="button"
           tabIndex={0}
           onClick={toggle}

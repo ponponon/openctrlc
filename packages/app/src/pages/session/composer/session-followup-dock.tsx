@@ -32,7 +32,7 @@ export function SessionFollowupDock(props: {
       }}
     >
       <div
-        class="pl-3 pr-2 py-2 flex items-center gap-2"
+        class="pl-3 pr-2 py-2 flex items-center gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v2-border-border-focus"
         role="button"
         tabIndex={0}
         onClick={toggle}

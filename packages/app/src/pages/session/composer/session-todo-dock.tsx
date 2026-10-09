@@ -111,7 +111,8 @@ export function SessionTodoDock(props: {
         <div
           data-action="session-todo-toggle"
           classList={{
-            "flex items-center gap-2 overflow-visible": true,
+            "flex items-center gap-2 overflow-visible rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v2-border-border-focus":
+              true,
             "h-[42px] pl-4 pr-2": settings.general.newLayoutDesigns(),
             "pl-3 pr-2 py-2": !settings.general.newLayoutDesigns(),
           }}

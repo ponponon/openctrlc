@@ -520,7 +520,7 @@ export function SessionSidePanel(props: {
                               aria-labelledby={reviewTabID}
                               tabIndex={props.reviewHasFocusableContent() ? undefined : 0}
                               data-slot="tabs-content"
-                              class="flex flex-col h-full overflow-hidden contain-strict"
+                              class="flex flex-col h-full overflow-hidden contain-strict outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v2-border-border-focus"
                             >
                               {props.reviewPanel()}
                             </div>
@@ -801,7 +801,7 @@ export function SessionSidePanel(props: {
                             aria-labelledby={reviewTabID}
                             tabIndex={props.reviewHasFocusableContent() ? undefined : 0}
                             data-slot="tabs-content"
-                            class="flex flex-col h-full overflow-hidden contain-strict"
+                            class="flex flex-col h-full overflow-hidden contain-strict outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-v2-border-border-focus"
                             hidden={activeTab() !== "review"}
                           >
                             {props.reviewPanel()}
