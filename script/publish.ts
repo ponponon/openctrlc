@@ -12,6 +12,7 @@ const tag = Script.channel === "beta" ? "beta" : `v${Script.version}`
 
 if (process.env.OPENCTRLC_NPM_ONLY === "1") {
   await $`bun ./packages/opencode/script/publish.ts`
+  await $`bun ./script/verify-npm-release.ts ${Script.version} ${Script.channel}`
   process.exit(0)
 }
 

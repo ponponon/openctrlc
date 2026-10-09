@@ -148,6 +148,17 @@ bun ./script/publish.ts
 `OPENCTRLC_NPM_ONLY=1` 只发布 CLI、平台二进制包和迁移期兼容别名，不会尝试发布未配置
 npm scope 的 SDK，也不会运行 Docker、AUR 或 Homebrew 发布流程。
 
+该命令成功发布后会自动运行 `script/verify-npm-release.ts`：检查主包、兼容别名和全部
+12 个平台包都能按精确版本查询，并检查主包和兼容别名的发布 dist-tag 指向该版本。npm
+元数据尚未传播时会按 5–30 秒间隔重试最多 12 次；每轮查询超时 15 秒。仍不完整会返回失败，
+之后可单独重跑：
+
+```bash
+OPENCTRLC_VERSION=<version> \
+OPENCTRLC_CHANNEL=prod \
+bun ./script/verify-npm-release.ts
+```
+
 注意：上述本地构建在 macOS 上只自动修复 ad-hoc 签名，不会自动使用 Developer ID，
 也不会复用 GitHub 工作流的签名 artifact。若 npm 包需要与 Release 保持相同签名，
 应在构建后、运行 npm 发布命令前下载同版本 Release 的三份 `openctrlc-darwin-*.zip`，

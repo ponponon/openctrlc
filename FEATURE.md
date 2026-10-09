@@ -1,3 +1,22 @@
+## npm 发布完成性核验
+
+### 功能目标
+
+`npm publish` 命令成功返回后，registry 元数据仍可能尚未传播到所有包。发布流程现在会等到
+14 个包的精确版本和两个主包的 dist-tag 都可见，再将 npm 发布步骤报告为成功。
+
+### 实现范围
+
+- `script/verify-npm-release.ts` 从刚构建的 `packages/opencode/dist` 读取 12 个平台包名，并连同 `openctrlc` 与兼容别名 `openctrlc-ai` 一起查询 npm registry。
+- 按当前发布渠道检查两个主包的 dist-tag；正式版检查 `latest`，Beta 检查 `beta`。
+- 版本或 dist-tag 尚未传播时执行最多 12 次有限重试，完成后输出缺失项；超过等待上限则以失败退出。
+- `OPENCTRLC_NPM_ONLY=1 bun ./script/publish.ts` 在包发布阶段结束后自动运行核验脚本。
+
+### 验证方式
+
+- 对已发布版本运行 `OPENCTRLC_VERSION=<version> OPENCTRLC_CHANNEL=prod bun ./script/verify-npm-release.ts`，确认 14 个包的精确版本和两个 `latest` dist-tag 均匹配。
+- 若核验失败，检查列出的包名或 dist-tag，并在 registry 元数据传播后单独重跑脚本。
+
 ## 兼容旧版 Relay 的工作区快照键
 
 ### 功能目标
