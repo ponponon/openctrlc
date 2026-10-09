@@ -1540,6 +1540,8 @@ export const dict = {
   "debugBar.direction.tip": "在不更改所选语言的情况下，强制设置整个应用的布局方向",
   "debugBar.direction.ltr": "LTR",
   "debugBar.direction.rtl": "RTL",
+  "layoutDebug.title": "布局诊断",
+  "layoutDebug.hint": "去掉 debug=layout 查询参数即可关闭",
   "common.key.ctrl": "Ctrl",
   "common.key.alt": "Alt",
   "common.key.shift": "Shift",

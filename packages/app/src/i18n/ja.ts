@@ -1477,6 +1477,8 @@ export const dict = {
   "debugBar.direction.tip": "選択中の言語を変更せずに、アプリ全体のレイアウト方向を強制設定",
   "debugBar.direction.ltr": "LTR",
   "debugBar.direction.rtl": "RTL",
+  "layoutDebug.title": "レイアウト診断",
+  "layoutDebug.hint": "クエリパラメータ debug=layout を外すと閉じます",
   "common.key.ctrl": "Ctrl",
   "common.key.alt": "Alt",
   "common.key.shift": "Shift",

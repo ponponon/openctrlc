@@ -3,6 +3,7 @@ import { createStore } from "solid-js/store"
 import { DebugBar } from "@/components/debug-bar"
 import { TabsInfoPopup } from "@/components/help-button"
 import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
+import { LayoutDebug, layoutDebugEnabled } from "@/components/layout-debug"
 import { usePlatform } from "@/context/platform"
 import { setV2Toast, ToastRegion } from "@/utils/toast"
 
@@ -44,6 +45,7 @@ export default function NewLayout(props: ParentProps) {
       {import.meta.env.DEV && state.debugTools && <DebugBar inline />}
       <TabsInfoPopup />
       <ToastRegion v2 />
+      {layoutDebugEnabled() && <LayoutDebug />}
     </div>
   )
 }

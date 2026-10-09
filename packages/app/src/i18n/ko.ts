@@ -1192,6 +1192,8 @@ export const dict = {
   "debugBar.direction.tip": "선택한 언어를 변경하지 않고 전체 앱의 레이아웃 방향 강제 설정",
   "debugBar.direction.ltr": "LTR",
   "debugBar.direction.rtl": "RTL",
+  "layoutDebug.title": "레이아웃 진단",
+  "layoutDebug.hint": "쿼리 매개변수 debug=layout을 제거하면 닫힙니다",
   "common.key.ctrl": "Ctrl",
   "common.key.alt": "Alt",
   "common.key.shift": "Shift",

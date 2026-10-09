@@ -1203,6 +1203,8 @@ export const dict = {
   "debugBar.direction.tip": "Force the full app layout direction without changing the selected language",
   "debugBar.direction.ltr": "LTR",
   "debugBar.direction.rtl": "RTL",
+  "layoutDebug.title": "Layout diagnostics",
+  "layoutDebug.hint": "Remove the debug=layout query parameter to close",
 
   "app.name.desktop": "OpenCtrlC Desktop",
 
