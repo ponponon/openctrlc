@@ -92,10 +92,6 @@
     min-width: 36px;
   }
 
-  [data-slot="titlebar-v2-spacer"] {
-    display: none;
-  }
-
   [data-slot="titlebar-tabs"] {
     flex: 1 1 0;
     width: 0;
