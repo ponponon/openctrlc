@@ -1090,6 +1090,12 @@ export const dict = {
   "remoteAccess.viewerLastSeen": "Last used {{time}}",
   "remote.liteNetwork": "Lite",
   "remote.liteNetworkHint": "Slow or metered network — heavy previews and prefetch are limited",
+  "remote.connection.title": "Remote connection",
+  "remote.connection.route": "Connection route",
+  "remote.connection.desktops": "Switch desktop",
+  "remote.connection.current": "Current",
+  "remote.connection.open": "Open remote connection details",
+  "remote.connection.desktopFallback": "Remote desktop",
   "remote.transport.connecting": "Relay · P2P…",
   "remote.transport.connectingHint":
     "Requests currently use the relay while a peer-to-peer connection is being negotiated.",

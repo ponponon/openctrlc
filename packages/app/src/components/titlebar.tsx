@@ -400,7 +400,7 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                   "md:pl-4": !macTrafficLights(),
                 }}
               >
-                <ChannelIndicator debugTools={props.debugTools} />
+                <ChannelIndicator debugTools={props.debugTools} bottom={bottom()} />
                 <Show when={windows() || linux()}>
                   <WindowsAppMenu command={command} platform={platform} variant="v2" />
                 </Show>
@@ -846,24 +846,30 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
   )
 }
 
-function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void } }) {
+function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void }; bottom?: boolean }) {
   const platform = usePlatform()
   const language = useLanguage()
   const global = useGlobal()
   const server = useServer()
   const channel = import.meta.env.VITE_OPENCTRLC_CHANNEL
-  const [host, setHost] = createSignal(remoteHostName(platform.remoteSessionID))
-  const [liteNet, setLiteNet] = createSignal(readNetworkQuality().lite)
-  const [transport, setTransport] = createSignal<RemoteTransportStatus>(
-    platform.remoteTransport?.getStatus() ?? "relay",
-  )
+  const [shown, setShown] = createSignal(false)
+  let connectionTrigger: HTMLButtonElement | undefined
+  const [state, setState] = createStore({
+    host: remoteHostName(platform.remoteSessionID),
+    network: readNetworkQuality(),
+    transport: platform.remoteTransport?.getStatus() ?? ("relay" as RemoteTransportStatus),
+  })
   const desktops = createMemo(() => listRemoteDesktops())
   const activeId = createMemo(() => activeRemoteSessionID())
+  const currentDesktopID = () => platform.remoteSessionID ?? activeId()
+  const currentHost = createMemo(
+    () => desktops().find((item) => item.sessionID === currentDesktopID())?.hostName ?? state.host,
+  )
 
   onMount(() => {
-    setLiteNet(readNetworkQuality().lite)
-    const unsubscribeNetwork = onNetworkQualityChange((quality) => setLiteNet(quality.lite))
-    const unsubscribe = platform.remoteTransport?.subscribe(setTransport)
+    setState("network", readNetworkQuality())
+    const unsubscribeNetwork = onNetworkQualityChange((network) => setState("network", network))
+    const unsubscribe = platform.remoteTransport?.subscribe((transport) => setState("transport", transport))
     onCleanup(() => {
       unsubscribeNetwork()
       unsubscribe?.()
@@ -876,119 +882,239 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
       return {
         label: language.t("remote.desktop.offlineTitle"),
         hint: language.t("remote.desktop.offlineDescription"),
-        class: "bg-v2-state-bg-danger text-v2-state-fg-danger",
         dot: "bg-v2-state-fg-danger",
       }
-    const status = transport()
+    const status = state.transport
     if (status === "direct")
       return {
         label: language.t("remote.transport.direct"),
         hint: language.t("remote.transport.directHint"),
-        class: "bg-v2-state-bg-success text-v2-state-fg-success",
         dot: "bg-v2-state-fg-success",
       }
     if (status === "turn")
       return {
         label: language.t("remote.transport.turn"),
         hint: language.t("remote.transport.turnHint"),
-        class: "bg-v2-background-bg-layer-01 text-v2-text-text-muted",
         dot: "bg-v2-text-text-muted",
       }
     if (status === "checking")
       return {
         label: language.t("remote.transport.checking"),
         hint: language.t("remote.transport.checkingHint"),
-        class: "bg-v2-state-bg-warning text-v2-state-fg-warning",
         dot: "bg-v2-state-fg-warning",
       }
     if (status === "connecting")
       return {
         label: language.t("remote.transport.connecting"),
         hint: language.t("remote.transport.connectingHint"),
-        class: "bg-v2-state-bg-warning text-v2-state-fg-warning",
         dot: "bg-v2-state-fg-warning",
       }
     if (status === "unavailable")
       return {
         label: language.t("remote.transport.unavailable"),
         hint: language.t("remote.transport.unavailableHint"),
-        class: "bg-v2-background-bg-layer-01 text-v2-text-text-muted",
         dot: "bg-v2-text-text-muted",
       }
     return {
       label: language.t("remote.transport.relay"),
       hint: language.t("remote.transport.relayHint"),
-      class: "bg-v2-background-bg-layer-01 text-v2-text-text-muted",
       dot: "bg-v2-text-text-muted",
     }
   })
 
-  const transportChip = () => (
-    <Show when={transportState()}>
-      {(state) => (
-        <div
-          data-slot="titlebar-remote-transport"
-          class={`flex max-w-[150px] min-w-0 items-center gap-1.5 truncate rounded-sm px-2 text-12-regular ${state().class}`}
-          title={state().hint}
-          aria-label={state().hint}
-          role="status"
-          aria-live="polite"
-        >
-          <span class={`size-1.5 shrink-0 rounded-full ${state().dot}`} aria-hidden="true" />
-          <span data-slot="titlebar-remote-transport-label" class="truncate">{state().label}</span>
-        </div>
-      )}
-    </Show>
-  )
-
   createEffect(() => {
     const known = remoteHostName(platform.remoteSessionID)
     if (known) {
-      setHost(known)
+      setState("host", known)
       return
     }
+    let disposed = false
     void platform.remoteAccess
       ?.getState()
       .then((state) => {
-        if (state.hostName) setHost(state.hostName)
+        if (!disposed && state.hostName) setState("host", state.hostName)
       })
       .catch(() => undefined)
+    onCleanup(() => {
+      disposed = true
+    })
   })
 
-  const hostChip = createMemo(() => {
-    const name = host()
-    const list = desktops()
-    if (list.length > 1) {
-      return (
-        <select
-          data-slot="titlebar-remote-host"
-          class="max-w-[180px] truncate rounded-sm border-0 bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
-          title={name}
-          value={activeId() ?? ""}
-          onChange={(event) => {
-            const id = event.currentTarget.value
-            if (id) switchRemoteDesktop(id)
-          }}
-        >
-          {list.map((item) => (
-            <option value={item.sessionID} selected={item.sessionID === activeId()}>
-              {item.hostName}
-            </option>
-          ))}
-        </select>
-      )
-    }
-    if (!name) return null
-    return (
-      <div
-        data-slot="titlebar-remote-host"
-        class="max-w-[160px] truncate rounded-sm bg-v2-background-bg-layer-01 px-2 text-12-regular text-v2-text-text-base"
-        title={name}
+  const displayHost = () =>
+    currentHost() ?? (platform.remoteSessionID ? language.t("remote.connection.desktopFallback") : undefined)
+  const triggerTitle = () =>
+    transportState()?.hint ?? (state.network.lite ? language.t("remote.liteNetworkHint") : undefined)
+  const showConnectionControl = () => !!platform.remoteSessionID || !!displayHost() || state.network.lite
+
+  const connectionControl = () => (
+    <Show when={showConnectionControl()}>
+      <KobaltePopover
+        open={shown()}
+        onOpenChange={setShown}
+        placement={props.bottom ? "top-start" : "bottom-start"}
+        gutter={6}
       >
-        {name}
-      </div>
-    )
-  })
+        <KobaltePopover.Trigger
+          as="button"
+          ref={(element) => (connectionTrigger = element)}
+          type="button"
+          data-slot="titlebar-remote-connection-trigger"
+          class="group"
+          aria-label={language.t("remote.connection.open")}
+          aria-expanded={shown()}
+          title={triggerTitle()}
+        >
+          <Show
+            when={transportState()}
+            fallback={
+              <IconV2
+                name="monitor"
+                size="small"
+                class="shrink-0 text-v2-icon-icon-muted"
+                aria-hidden="true"
+              />
+            }
+          >
+            {(route) => (
+              <span
+                data-slot="titlebar-remote-connection-dot"
+                class={"size-2 shrink-0 rounded-full " + route().dot}
+                aria-hidden="true"
+              />
+            )}
+          </Show>
+          <span data-slot="titlebar-remote-connection-host" class="truncate">
+            {displayHost() ?? language.t("remote.liteNetwork")}
+          </span>
+          <Show when={transportState()}>
+            {(route) => (
+              <>
+                <span data-slot="titlebar-remote-connection-divider" aria-hidden="true" />
+                <span data-slot="titlebar-remote-connection-route" class="truncate">
+                  {route().label}
+                </span>
+              </>
+            )}
+          </Show>
+          <Show when={state.network.lite}>
+            <span
+              data-slot="titlebar-remote-connection-lite"
+              class="shrink-0 rounded-full bg-v2-state-bg-warning px-1.5 text-11-regular text-v2-state-fg-warning"
+              title={language.t("remote.liteNetworkHint")}
+            >
+              <span data-slot="titlebar-remote-connection-lite-label">{language.t("remote.liteNetwork")}</span>
+            </span>
+          </Show>
+          <IconV2
+            name="chevron-down"
+            size="small"
+            class="shrink-0 text-v2-icon-icon-muted transition-transform group-aria-expanded:rotate-180 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+        </KobaltePopover.Trigger>
+        <KobaltePopover.Portal>
+          <KobaltePopover.Content
+            ref={(element) => {
+              const theme = connectionTrigger?.closest("[data-theme]")?.getAttribute("data-theme")
+              if (theme) element.setAttribute("data-theme", theme)
+            }}
+            data-component="titlebar-remote-connection-popover"
+            class="z-50 w-[360px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-v2-border-border-base bg-v2-background-bg-base text-v2-text-text-base shadow-[var(--v2-elevation-floating)] outline-none"
+          >
+            <div class="max-h-[min(520px,calc(var(--app-viewport-height)-56px))] overflow-y-auto p-3">
+              <header class="flex min-w-0 items-start gap-3 px-1 pb-3">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-v2-background-bg-layer-01 text-v2-icon-icon-base">
+                  <IconV2 name="monitor" />
+                </span>
+                <div class="min-w-0 flex-1">
+                  <h2 class="text-14-medium text-v2-text-text-strong">{language.t("remote.connection.title")}</h2>
+                  <Show when={displayHost()}>
+                    {(host) => <p class="mt-0.5 truncate text-12-regular text-v2-text-text-muted">{host()}</p>}
+                  </Show>
+                </div>
+              </header>
+
+              <Show when={platform.remoteSessionID}>
+                <Show when={transportState()}>
+                  {(route) => (
+                    <section
+                      data-slot="titlebar-remote-connection-section"
+                      class="rounded-lg bg-v2-background-bg-layer-01 p-3"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class={"size-2 shrink-0 rounded-full " + route().dot} aria-hidden="true" />
+                        <h3 class="text-13-medium text-v2-text-text-strong">
+                          {language.t("remote.connection.route")}
+                        </h3>
+                      </div>
+                      <p class="mt-2 text-13-medium text-v2-text-text-base">{route().label}</p>
+                      <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">{route().hint}</p>
+                    </section>
+                  )}
+                </Show>
+              </Show>
+
+              <Show when={state.network.lite}>
+                <section
+                  data-slot="titlebar-remote-network-section"
+                  class="mt-2 rounded-lg border border-v2-border-border-base p-3"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="size-2 shrink-0 rounded-full bg-v2-state-fg-warning" aria-hidden="true" />
+                    <h3 class="text-13-medium text-v2-text-text-strong">{language.t("remote.liteNetwork")}</h3>
+                  </div>
+                  <p class="mt-1.5 text-12-regular leading-5 text-v2-text-text-muted">
+                    {language.t("remote.liteNetworkHint")}
+                  </p>
+                </section>
+              </Show>
+
+              <Show when={platform.remoteSessionID && desktops().length > 1}>
+                <section class="mt-3">
+                  <h3 class="px-1 pb-1.5 text-12-medium text-v2-text-text-muted">
+                    {language.t("remote.connection.desktops")}
+                  </h3>
+                  <div class="flex flex-col gap-1">
+                    <For each={desktops()}>
+                      {(desktop) => {
+                        const current = () => desktop.sessionID === currentDesktopID()
+                        return (
+                          <button
+                            type="button"
+                            class="flex min-h-10 w-full min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v2-border-border-focus motion-reduce:transition-none"
+                            classList={{
+                              "bg-v2-background-bg-layer-01": current(),
+                            }}
+                            aria-current={current() ? "true" : undefined}
+                            onClick={() => {
+                              if (current()) return
+                              setShown(false)
+                              switchRemoteDesktop(desktop.sessionID)
+                            }}
+                          >
+                            <IconV2 name="monitor" size="small" class="shrink-0 text-v2-icon-icon-muted" />
+                            <span class="min-w-0 flex-1 truncate text-13-regular text-v2-text-text-base">
+                              {desktop.hostName}
+                            </span>
+                            <Show when={current()}>
+                              <span class="shrink-0 text-12-medium text-v2-text-text-muted">
+                                {language.t("remote.connection.current")}
+                              </span>
+                              <IconV2 name="check" size="small" class="shrink-0 text-v2-icon-icon-base" />
+                            </Show>
+                          </button>
+                        )
+                      }}
+                    </For>
+                  </div>
+                </section>
+              </Show>
+            </div>
+          </KobaltePopover.Content>
+        </KobaltePopover.Portal>
+      </KobaltePopover>
+    </Show>
+  )
   if (channel === "dev" && props.debugTools) {
     return (
       <>
@@ -1002,19 +1128,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
         >
           DEV
         </button>
-        <Show when={liteNet()}>
-          <div
-            data-slot="titlebar-lite-network"
-            class="rounded-sm bg-v2-state-bg-warning px-2 text-12-regular text-v2-state-fg-warning"
-            title={language.t("remote.liteNetworkHint")}
-            aria-label={language.t("remote.liteNetworkHint")}
-            role="status"
-          >
-            <span data-slot="titlebar-lite-network-label">{language.t("remote.liteNetwork")}</span>
-          </div>
-        </Show>
-        {transportChip()}
-        {hostChip()}
+        {connectionControl()}
       </>
     )
   }
@@ -1029,19 +1143,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           {channel.toUpperCase()}
         </div>
       )}
-      <Show when={liteNet()}>
-        <div
-          data-slot="titlebar-lite-network"
-          class="rounded-sm bg-v2-state-bg-warning px-2 text-12-regular text-v2-state-fg-warning"
-          title={language.t("remote.liteNetworkHint")}
-          aria-label={language.t("remote.liteNetworkHint")}
-          role="status"
-        >
-          <span data-slot="titlebar-lite-network-label">{language.t("remote.liteNetwork")}</span>
-        </div>
-      </Show>
-      {transportChip()}
-      {hostChip()}
+      {connectionControl()}
     </>
   )
 }

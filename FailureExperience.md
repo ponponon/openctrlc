@@ -1800,3 +1800,7 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 ## 判断产品版本不能只依赖本地 package.json
 
 用户指出 GitHub Releases 已发布 `v1.1.4`，但多个 workspace `package.json` 仍是 `1.18.18`。先前只依据 `UPSTREAM.md` 的旧同步记录和本地清单，就把 `1.18.18` 解释成当前 OpenCtrlC 版本；实际上 Release 工作流通过 `OPENCTRLC_VERSION` 给 CLI/Desktop 构建注入了 `1.1.4`，而且 npm `openctrlc` latest 也是 `1.1.4`，只是发布后没有把 workspace 版本元数据回写到 `dev`。以后判断版本状态要交叉核对 GitHub 最新稳定 Release、npm dist-tag、Release 标签中的 package manifest、版本计算脚本和发布工作流；明确区分运行时注入版本与源码 package.json 的同步状态，并在正式发布后自动提交工作区版本清单。
+
+## 标题栏的连接状态应聚合展示，且不能伪造手动线路控制
+
+把省流提示、Relay/P2P 状态和桌面名称拆成多个标题栏元素，会让用户难以理解它们属于同一个远程连接；窄屏还会把主机名压得不可读。类似状态应共用一个紧凑入口，摘要只保留当前桌面和链路，点击后集中展示解释与可执行操作（例如切换已记住的桌面）。设计控制项前要核对底层是否存在对应能力：省流是自动检测，Relay/P2P 是自动协商时，只能展示状态和解释，不能提供看似可用的手动开关。

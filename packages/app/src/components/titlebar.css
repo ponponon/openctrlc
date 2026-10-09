@@ -97,39 +97,92 @@
     font-size: 10px;
     white-space: nowrap;
   }
+}
 
-  [data-slot="titlebar-lite-network"] {
-    flex: 0 0 8px;
+[data-slot="titlebar-remote-connection-trigger"] {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 8px;
+  border: 1px solid var(--v2-border-border-base);
+  border-radius: 8px;
+  background: var(--v2-background-bg-layer-01);
+  color: var(--v2-text-text-base);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+[data-slot="titlebar-remote-connection-trigger"]:hover,
+[data-slot="titlebar-remote-connection-trigger"][data-expanded] {
+  background: var(--v2-overlay-simple-overlay-hover);
+}
+
+[data-slot="titlebar-remote-connection-trigger"]:focus-visible {
+  outline: 2px solid var(--v2-border-border-focus);
+  outline-offset: 1px;
+}
+
+[data-slot="titlebar-remote-connection-host"] {
+  min-width: 0;
+  max-width: 180px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+[data-slot="titlebar-remote-connection-divider"] {
+  width: 1px;
+  height: 12px;
+  flex: 0 0 1px;
+  background: var(--v2-border-border-base);
+}
+
+[data-slot="titlebar-remote-connection-route"] {
+  min-width: 0;
+  max-width: 120px;
+  color: var(--v2-text-text-muted);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+[data-slot="titlebar-remote-connection-lite"] {
+  display: inline-flex;
+  min-height: 18px;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="titlebar-remote-connection-trigger"] {
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-slot="titlebar-remote-connection-trigger"] {
+    max-width: min(50vw, 200px);
+    gap: 4px;
+    padding-inline: 6px;
+  }
+
+  [data-slot="titlebar-remote-connection-host"] {
+    max-width: min(18vw, 76px);
+  }
+
+  [data-slot="titlebar-remote-connection-lite-label"] {
+    display: none;
+  }
+
+  [data-slot="titlebar-remote-connection-lite"] {
     width: 8px;
+    min-height: 8px;
     height: 8px;
-    padding: 0 !important;
+    padding: 0;
+    overflow: hidden;
     border-radius: 9999px;
-    overflow: hidden;
-  }
-
-  [data-slot="titlebar-lite-network-label"] {
-    display: none;
-  }
-
-  [data-slot="titlebar-remote-transport"] {
-    flex: 0 0 22px;
-    width: 22px;
-    justify-content: center;
-    padding-inline: 0;
-  }
-
-  [data-slot="titlebar-remote-transport-label"] {
-    display: none;
-  }
-
-  [data-slot="titlebar-remote-host"] {
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: min(64px, 20vw) !important;
-    overflow: hidden;
-    padding-inline: 4px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 

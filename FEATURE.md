@@ -3299,3 +3299,11 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 - `.github/workflows/publish.yml`：Release 发布成功后，在 `dev` 执行版本同步并提交；确认该版本仍是最新 Release 后才写入。
 - `docs/release.md`、`UPSTREAM.md`：记录发布后清单同步策略及版本独立于 OpenCode 上游的规则。
 - 当前清单已从 `1.18.18` 同步到 `1.1.4`；锁文件中的第三方 `@opencode-ai/plugin` / `@opencode-ai/sdk` 依赖仍保留其各自的 `1.18.18` 版本。
+
+## 标题栏聚合远程连接状态并支持切换桌面
+
+标题栏把远程桌面名称、当前连接链路和省流提示聚合进一个紧凑入口。点击后可查看连接链路说明和省流状态；存在多个已记住的桌面时，可在同一面板切换桌面。窄屏下保留主机与链路摘要、省流状态用标记呈现，详细说明仍可在面板查看。P2P/Relay 链路由连接层自动协商，不展示没有底层支持的手动线路开关。
+
+- `packages/app/src/components/titlebar.tsx`、`titlebar.css`：统一标题栏状态入口和响应式详情面板。
+- `packages/app/src/i18n/{en,zh,ja,ko}.ts`：新增四种目标语言文案。
+- 验证：`packages/app` 执行 `bun typecheck`，并执行 `git diff --check`；未重启应用或开发服务器。

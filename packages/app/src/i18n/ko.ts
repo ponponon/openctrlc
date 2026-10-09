@@ -809,6 +809,12 @@ export const dict = {
   "remoteAccess.viewerLastSeen": "최근 사용 {{time}}",
   "remote.liteNetwork": "절약",
   "remote.liteNetworkHint": "네트워크가 느리거나 데이터 요금이 적용되어 미리 가져오기와 무거운 미리보기를 제한합니다",
+  "remote.connection.title": "원격 연결",
+  "remote.connection.route": "연결 경로",
+  "remote.connection.desktops": "데스크톱 전환",
+  "remote.connection.current": "현재",
+  "remote.connection.open": "원격 연결 세부 정보 보기",
+  "remote.connection.desktopFallback": "원격 데스크톱",
   "remote.transport.connecting": "릴레이 · P2P 중",
   "remote.transport.connectingHint":
     "P2P 연결을 협상 중입니다. 연결이 완료될 때까지 앱 요청은 릴레이를 통해 전달됩니다.",
