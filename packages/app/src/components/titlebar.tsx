@@ -967,12 +967,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           <Show
             when={transportState()}
             fallback={
-              <IconV2
-                name="monitor"
-                size="small"
-                class="shrink-0 text-v2-icon-icon-muted"
-                aria-hidden="true"
-              />
+              <IconV2 name="monitor" size="small" class="shrink-0 text-v2-icon-icon-muted" aria-hidden="true" />
             }
           >
             {(route) => (
@@ -1043,9 +1038,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
                     >
                       <div class="flex items-center gap-2">
                         <span class={"size-2 shrink-0 rounded-full " + route().dot} aria-hidden="true" />
-                        <h3 class="text-13-medium text-v2-text-text-strong">
-                          {language.t("remote.connection.route")}
-                        </h3>
+                        <h3 class="text-13-medium text-v2-text-text-strong">{language.t("remote.connection.route")}</h3>
                       </div>
                       <p class="mt-2 text-13-medium text-v2-text-text-base">{route().label}</p>
                       <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">{route().hint}</p>

@@ -369,11 +369,7 @@ function history(count: number): TimelineMessage[] {
 async function setupFollowedTimeline(page: Page) {
   const shellID = "prt_scroll_intent_shell"
   await setupTimeline(page, {
-    messages: [
-      ...history(12),
-      userMessage(),
-      assistantMessage([shell(shellID, "completed", lines(50))]),
-    ],
+    messages: [...history(12), userMessage(), assistantMessage([shell(shellID, "completed", lines(50))])],
     settings: { shellToolPartsExpanded: true },
     reducedMotion: true,
   })

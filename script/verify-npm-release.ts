@@ -31,9 +31,7 @@ async function main() {
 
   const packageNames = [ProductPackageName, LegacyProductPackageName, ...platformPackageNames]
   const taggedPackages = [ProductPackageName, LegacyProductPackageName]
-  const retryDelays = [
-    5_000, 10_000, 15_000, 20_000, 25_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000,
-  ]
+  const retryDelays = [5_000, 10_000, 15_000, 20_000, 25_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000]
   const attempts = retryDelays.length + 1
 
   for (const attempt of Array.from({ length: attempts }, (_, index) => index + 1)) {
