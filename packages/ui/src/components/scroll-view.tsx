@@ -19,6 +19,7 @@ export type ScrollViewThumbVisibility = "hover" | "scroll"
 export interface ScrollViewProps extends ComponentProps<"div"> {
   viewportRef?: (el: HTMLDivElement) => void
   onThumbPointerDown?: (event: PointerEvent) => void
+  onKeyDownCapture?: (event: KeyboardEvent) => void
   orientation?: "vertical" | "horizontal" // currently only vertical is fully implemented for thumb
   /**
    * `hover`: show while hovered or scrolling. `scroll`: show only while scrolling.
@@ -113,6 +114,7 @@ export function ScrollView(props: ScrollViewProps) {
       "children",
       "viewportRef",
       "onThumbPointerDown",
+      "onKeyDownCapture",
       "orientation",
       "thumbVisibility",
       "thumbContainer",
@@ -212,6 +214,12 @@ export function ScrollView(props: ScrollViewProps) {
   onMount(() => {
     if (local.viewportRef) {
       local.viewportRef(viewportRef)
+    }
+
+    if (local.onKeyDownCapture) {
+      const handleKeyDownCapture = (event: KeyboardEvent) => local.onKeyDownCapture?.(event)
+      rootRef.addEventListener("keydown", handleKeyDownCapture, true)
+      onCleanup(() => rootRef.removeEventListener("keydown", handleKeyDownCapture, true))
     }
 
     createResizeObserver(

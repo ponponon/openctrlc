@@ -562,7 +562,7 @@ export function MessageTimeline(props: {
     get followOnAppend() {
       return props.shouldAnchorBottom() ? (true as const) : (false as const)
     },
-    // 距底容差从 80px 收紧到 24px，减少“只上滑一点就被拽回”的边界体感。
+    // This is only the virtualizer's near-end tolerance. Follow intent is gated by shouldAnchorBottom above.
     scrollEndThreshold: 24,
     get scrollMargin() {
       return showHeader() ? 64 : 0
@@ -885,7 +885,13 @@ export function MessageTimeline(props: {
       rootHeight: root.clientHeight,
     })
     if (!delta) return
-    markBoundaryGesture({ root, target: event.target, delta, onMarkScrollGesture: props.onMarkScrollGesture })
+    markBoundaryGesture({
+      root,
+      target: event.target,
+      delta,
+      onMarkScrollGesture: props.onMarkScrollGesture,
+      onPauseAutoScroll: props.onPauseAutoScroll,
+    })
   }
 
   const handleListTouchStart = (event: TouchEvent) => {
@@ -924,13 +930,15 @@ export function MessageTimeline(props: {
     markPointerScrollGesture({ target: event.target, buttons: event.buttons, onMark: props.onMarkScrollGesture })
   }
 
-  const handleListKeyDown = (event: KeyboardEvent & { currentTarget: HTMLDivElement }) => {
+  const handleListKeyDownCapture = (event: KeyboardEvent) => {
     const key = scrollKey(event)
     if (!key) return
     if (!isScrollKeyTarget(event.target, key)) return
-    if (scrollKeyOwner(event.currentTarget, event.target, key) !== event.currentTarget) return
+    const root = listRoot()
+    if (!root || scrollKeyOwner(root, event.target, key) !== root) return
     anchorRegistry.cancelCorrections()
-    props.onMarkScrollGesture(event.currentTarget)
+    props.onMarkScrollGesture(root)
+    if (root.scrollTop > 0 && (key === "up" || key === "page-up" || key === "home")) props.onPauseAutoScroll()
   }
 
   const handleListScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
@@ -1984,8 +1992,14 @@ export function MessageTimeline(props: {
         onTouchCancel={handleListTouchEnd}
         onPointerDown={handleListPointerDown}
         onPointerMove={handleListPointerMove}
-        onThumbPointerDown={() => anchorRegistry.cancelCorrections()}
-        onKeyDown={handleListKeyDown}
+        onThumbPointerDown={() => {
+          anchorRegistry.cancelCorrections()
+          const root = listRoot()
+          if (!root) return
+          props.onMarkScrollGesture(root)
+          props.onPauseAutoScroll()
+        }}
+        onKeyDownCapture={handleListKeyDownCapture}
         onScroll={handleListScroll}
         onClick={props.onAutoScrollInteraction}
         class="relative min-w-0 w-full h-full"

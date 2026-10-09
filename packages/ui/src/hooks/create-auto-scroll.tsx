@@ -8,6 +8,7 @@ export interface AutoScrollOptions {
   onUserInteracted?: () => void
   overflowAnchor?: "none" | "auto" | "dynamic"
   bottomThreshold?: number
+  isUserInteracting?: () => boolean
 }
 
 export function createAutoScroll(options: AutoScrollOptions) {
@@ -172,6 +173,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
   createResizeObserver(
     () => store.contentRef,
     () => {
+      if (options.isUserInteracting?.()) return
       const el = store.scrollRef
       if (el && !canScroll(el)) {
         if (store.userScrolled) setStore("userScrolled", false)

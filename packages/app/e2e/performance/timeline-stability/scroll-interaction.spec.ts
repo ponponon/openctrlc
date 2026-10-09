@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "@playwright/test"
 import {
   defineVisualRegions,
   reportVisualStability,
@@ -220,6 +220,53 @@ test("does not claim keyboard scrolling owned by a nested scrollable", async ({ 
   await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeLessThan(nonOverflowBefore)
 })
 
+test("pauses follow before a nested wheel boundary can trigger layout growth", async ({ page }) => {
+  const { scroller, nested } = await setupFollowedTimeline(page)
+  const before = await scrollToBottom(scroller)
+
+  await nested.evaluate((element) => {
+    element.scrollTop = 0
+    element.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: -80 }))
+  })
+  await growVirtualContent(scroller)
+
+  await expect.poll(() => distanceFromBottom(scroller)).toBeGreaterThan(100)
+  expect(await scroller.evaluate((element) => element.scrollTop)).toBeCloseTo(before, 0)
+})
+
+test("pauses follow during keyboard capture before the first scroll event", async ({ page }) => {
+  const { scroller } = await setupFollowedTimeline(page)
+  const before = await scrollToBottom(scroller)
+  await scroller.evaluate((element) => {
+    // Synthetic keydown runs capture handlers without a native scroll event masking the race.
+    element.dispatchEvent(new KeyboardEvent("keydown", { key: "PageUp", bubbles: true, cancelable: true }))
+  })
+
+  await growVirtualContent(scroller)
+
+  await expect.poll(() => distanceFromBottom(scroller)).toBeGreaterThan(100)
+  expect(await scroller.evaluate((element) => element.scrollTop)).toBeCloseTo(before, 0)
+})
+
+test("pauses follow as soon as the timeline scrollbar thumb is grabbed", async ({ page }) => {
+  const { scroller } = await setupFollowedTimeline(page)
+  const before = await scrollToBottom(scroller)
+  const thumb = scroller.locator("xpath=..").locator(".scroll-view__thumb")
+  await scroller.hover()
+  await expect(thumb).toHaveAttribute("data-visible", "true")
+  const box = await thumb.boundingBox()
+  expect(box).not.toBeNull()
+  if (!box) return
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await growVirtualContent(scroller)
+  await page.mouse.up()
+
+  await expect.poll(() => distanceFromBottom(scroller)).toBeGreaterThan(100)
+  expect(await scroller.evaluate((element) => element.scrollTop)).toBeCloseTo(before, 0)
+})
+
 test("jump to latest lands on stable final rows after offscreen growth", async ({ page }, testInfo) => {
   const shellID = "prt_jump_01_shell"
   const followingID = "prt_jump_02_following"
@@ -317,6 +364,45 @@ function history(count: number): TimelineMessage[] {
       ),
     ]
   }).flat()
+}
+
+async function setupFollowedTimeline(page: Page) {
+  const shellID = "prt_scroll_intent_shell"
+  await setupTimeline(page, {
+    messages: [
+      ...history(12),
+      userMessage(),
+      assistantMessage([shell(shellID, "completed", lines(50))]),
+    ],
+    settings: { shellToolPartsExpanded: true },
+    reducedMotion: true,
+  })
+  const scroller = page.locator(".scroll-view__viewport", { has: page.locator("[data-timeline-row]") })
+  const nested = page.locator(`[data-timeline-part-id="${shellID}"] [data-scrollable]`)
+  await expect(nested).toBeVisible()
+  await scrollToBottom(scroller)
+  await expect.poll(() => distanceFromBottom(scroller)).toBeLessThanOrEqual(1)
+  return { scroller, nested }
+}
+
+async function scrollToBottom(scroller: Locator) {
+  return scroller.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+    return element.scrollTop
+  })
+}
+
+async function distanceFromBottom(scroller: Locator) {
+  return scroller.evaluate((element) => element.scrollHeight - element.clientHeight - element.scrollTop)
+}
+
+async function growVirtualContent(scroller: Locator) {
+  await scroller.evaluate((root) => {
+    // Resize the observed virtual content in the same gesture turn, before a scroll event can update follow state.
+    const content = root.querySelector<HTMLElement>("[data-timeline-virtual-content]")
+    if (!content) throw new Error("missing virtual timeline content")
+    content.style.minHeight = `${content.getBoundingClientRect().height + 160}px`
+  })
 }
 
 function lines(count: number) {

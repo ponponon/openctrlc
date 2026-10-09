@@ -1737,6 +1737,7 @@ export default function Page() {
     working: () => true,
     overflowAnchor: "none",
     bottomThreshold: 2,
+    isUserInteracting: hasScrollGesture,
   })
   // The session's persisted `follow` flag is the source of truth for "stay pinned to
   // the newest message". `autoScroll.userScrolled` mirrors it, but it is only synced
@@ -1750,6 +1751,7 @@ export default function Page() {
     view().setScroll("timeline", { x: el.scrollLeft, y: el.scrollTop, follow })
   }
   const pauseTimelineFollow = () => {
+    if (autoScroll.userScrolled() && view().scroll("timeline")?.follow === false) return
     autoScroll.pause()
     saveTimelineScroll(scroller, false)
   }
