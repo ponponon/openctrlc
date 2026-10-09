@@ -88,21 +88,26 @@ function embeddedUIResponse(file: string, body: Uint8Array) {
   return HttpServerResponse.raw(body, { headers })
 }
 
+// Stale tabs from before an embedded-UI rebuild keep requesting old content-hashed
+// asset URLs. Answering those with index.html would hand HTML to the CSS/JS parser
+// and leave the page in a half-old, half-new state; they must fail loudly instead.
+function isStaticAssetPath(pathname: string) {
+  return pathname.startsWith("assets/") || /\.[a-z0-9]+$/i.test(pathname)
+}
+
 export function serveEmbeddedUIEffect(
   requestPath: string,
   fs: FSUtil.Interface,
   embeddedWebUI: Record<string, string>,
 ) {
   const pathname = requestPath.replace(/^\//, "")
-  const asset = embeddedWebUI[pathname] ? pathname : "index.html"
-  const mapped = embeddedWebUI[asset] ?? null
-  if (!mapped) return Effect.succeed(asset === "index.html" ? missingEmbeddedIndex() : notFound())
+  const mappedAsset = embeddedWebUI[pathname]
+  const navigation = mappedAsset === undefined && !isStaticAssetPath(pathname)
+  const mapped = mappedAsset ?? (navigation ? embeddedWebUI["index.html"] : undefined) ?? null
+  const miss = () => (navigation || pathname === "index.html" ? missingEmbeddedIndex() : notFound())
+  if (!mapped) return Effect.succeed(miss())
   const candidates = resolveEmbeddedFileCandidates(mapped)
-  return readFirstEmbedded(fs, candidates).pipe(
-    Effect.map((hit) =>
-      hit ? embeddedUIResponse(hit.file, hit.body) : asset === "index.html" ? missingEmbeddedIndex() : notFound(),
-    ),
-  )
+  return readFirstEmbedded(fs, candidates).pipe(Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : miss())))
 }
 
 function readFirstEmbedded(

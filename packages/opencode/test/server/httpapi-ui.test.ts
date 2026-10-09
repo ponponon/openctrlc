@@ -385,6 +385,55 @@ describe("HttpApi UI fallback", () => {
     }),
   )
 
+  it.live("returns 404 for stale embedded asset URLs instead of index.html", () =>
+    Effect.gen(function* () {
+      const fs = yield* FSUtil.Service
+      const response = yield* serveEmbeddedUIEffect(
+        "/assets/stale-hash.js",
+        { ...fs, readFile: () => Effect.die("stale asset requests must not read files") },
+        { "index.html": "/$bunfs/root/index.html", "assets/current.js": "/$bunfs/root/assets/current.js" },
+      ).pipe(Effect.map(HttpServerResponse.toWeb))
+
+      expect(response.status).toBe(404)
+      expect(response.headers.get("content-type")).toContain("application/json")
+      expect(yield* responseText(response)).toContain("Not Found")
+    }),
+  )
+
+  it.live("falls back to index.html for navigation paths missing from the map", () =>
+    Effect.gen(function* () {
+      const fs = yield* FSUtil.Service
+      const response = yield* serveEmbeddedUIEffect(
+        "/server/aHR0cHM6Ly8/session/ses_stale",
+        {
+          ...fs,
+          readFile: (path) =>
+            path.endsWith("index.html")
+              ? Effect.succeed(new TextEncoder().encode("<html>app</html>"))
+              : Effect.die(`unexpected path ${path}`),
+        },
+        { "index.html": "/$bunfs/root/index.html" },
+      ).pipe(Effect.map(HttpServerResponse.toWeb))
+
+      expect(response.status).toBe(200)
+      expect(yield* responseText(response)).toBe("<html>app</html>")
+    }),
+  )
+
+  it.live("returns the missing-index diagnostic when navigation has no embedded index", () =>
+    Effect.gen(function* () {
+      const fs = yield* FSUtil.Service
+      const response = yield* serveEmbeddedUIEffect(
+        "/server/aHR0cHM6Ly8/session/ses_stale",
+        { ...fs, readFile: () => Effect.die("missing map entry must not read files") },
+        {},
+      ).pipe(Effect.map(HttpServerResponse.toWeb))
+
+      expect(response.status).toBe(503)
+      expect(response.headers.get("x-openctrlc-ui")).toBe("missing-index")
+    }),
+  )
+
   it.live("allows embedded UI terminal wasm, blob attachments, and theme preload CSP", () =>
     Effect.gen(function* () {
       const script = 'document.documentElement.dataset.theme = "dark"'
