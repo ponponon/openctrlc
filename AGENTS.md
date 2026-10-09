@@ -156,6 +156,14 @@ const table = sqliteTable("session", {
 
 - Always run `bun typecheck` from package directories (e.g., `packages/opencode`), never `tsc` directly.
 
+## UI CSS Visual Verification
+
+- Before changing a visual defect, trace the rendered element through its actual DOM ancestors. Read the component styles, global/reset styles, design tokens, and a comparable component before editing.
+- For borders, outlines, shadows, or clipped content, inspect the full paint chain: browser default styles; `:focus`, `:focus-visible`, hover/expanded states; element and ancestor dimensions, box sizing, padding, transforms, `border-radius`, `overflow-x`/`overflow-y`, and stacking contexts. Do not assume a visible line belongs to the component's border.
+- Treat overflow axes independently. Check whether the focused element touches a clipping edge; preserve the intended clipping axis while allowing focus indicators and popovers to remain visible. Do not hide focus indicators on interactive controls to mask clipping.
+- Verify the affected desktop and narrow-screen layouts in the relevant visual states, including keyboard focus and scrolling. A typecheck or production build only proves code/CSS compilation, not visual correctness.
+- If runtime visual verification would require restarting an app or server that local instructions prohibit restarting, do not restart it. Inspect the emitted CSS/build output and explicitly report that live visual verification remains unconfirmed.
+
 ## V2 Session Core
 
 - Keep durable prompt admission separate from model execution. `SessionV2.prompt(...)` admits one durable `session_input` row before scheduling advisory `SessionExecution.wake(sessionID)` unless `resume: false` requests admit-only behavior. The serialized runner promotes admitted inputs into visible user messages at safe boundaries.
