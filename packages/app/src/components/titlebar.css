@@ -111,15 +111,18 @@
   }
 }
 
+/* The connection entry is compact on every platform: the trigger only carries
+   the transport dot, the lite-network dot and the expand chevron. Full host
+   name, route text and lite details live in the popover. */
 [data-slot="titlebar-remote-connection-trigger"] {
   display: flex;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
-  max-width: 320px;
+  max-width: 64px;
   height: 28px;
   align-items: center;
-  gap: 6px;
-  padding-inline: 8px;
+  gap: 4px;
+  padding-inline: 6px;
   border: 1px solid var(--v2-border-border-base);
   border-radius: 8px;
   background: var(--v2-background-bg-layer-01);
@@ -139,101 +142,9 @@
   outline-offset: 1px;
 }
 
-[data-slot="titlebar-remote-connection-host"] {
-  min-width: 0;
-  max-width: 180px;
-  font-size: 12px;
-  line-height: 20px;
-}
-
-[data-slot="titlebar-remote-connection-divider"] {
-  width: 1px;
-  height: 12px;
-  flex: 0 0 1px;
-  background: var(--v2-border-border-base);
-}
-
-[data-slot="titlebar-remote-connection-route"] {
-  min-width: 0;
-  max-width: 120px;
-  color: var(--v2-text-text-muted);
-  font-size: 11px;
-  line-height: 18px;
-}
-
-[data-slot="titlebar-remote-connection-lite"] {
-  display: inline-flex;
-  min-height: 18px;
-  align-items: center;
-}
-
-/* The desktop app is the named host itself, so repeating a potentially long
-   hostname in its title bar only steals room from session tabs. The popover
-   continues to show the full host name and connection details. */
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] {
-  flex: 0 0 auto;
-  min-width: 0;
-  max-width: 64px;
-  gap: 4px;
-  padding-inline: 6px;
-}
-
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-host"],
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-divider"],
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-route"] {
-  display: none;
-}
-
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
-  [data-slot="titlebar-remote-connection-lite-label"] {
-  display: none;
-}
-
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-lite"] {
-  width: 8px;
-  min-height: 8px;
-  height: 8px;
-  padding: 0;
-  overflow: hidden;
-  border-radius: 9999px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   [data-slot="titlebar-remote-connection-trigger"] {
     transition: none;
-  }
-}
-
-@media (max-width: 767px) {
-  [data-slot="titlebar-remote-connection-trigger"] {
-    max-width: 64px;
-    gap: 4px;
-    padding-inline: 6px;
-  }
-
-  [data-slot="titlebar-remote-connection-host"] {
-    display: none;
-  }
-
-  [data-slot="titlebar-remote-connection-divider"] {
-    display: none;
-  }
-
-  [data-slot="titlebar-remote-connection-route"] {
-    display: none;
-  }
-
-  [data-slot="titlebar-remote-connection-lite-label"] {
-    display: none;
-  }
-
-  [data-slot="titlebar-remote-connection-lite"] {
-    width: 8px;
-    min-height: 8px;
-    height: 8px;
-    padding: 0;
-    overflow: hidden;
-    border-radius: 9999px;
   }
 }
 

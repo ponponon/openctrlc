@@ -3338,9 +3338,9 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 - 代码：`packages/desktop/scripts/predev.ts`（`assertDevPortFree`）。
 - 验证：4096 被陈旧进程占用时 predev 立即失败并列出 `bun … serve --port 4096` 的 PID；`packages/desktop` 类型检查通过。
 
-## 连接入口与输入工具栏按可用空间自适应
+## 连接入口统一紧凑形态与工具栏按面板容器自适应
 
-标题栏远程连接入口现在有三种形态：桌面端本机固定 64px 紧凑形态（`data-compact`，只留状态点和箭头，完整主机名与线路说明留在连接详情面板）；标签条放不下时按溢出折叠、剩余空间超过 300px 才展开（滞回，避免临界宽度下抖动）；手机视口 ≤767px 走原有媒体查询兜底。标签溢出状态由 `TitlebarTabStrip` 回传 `{ overflowing, freeSpace }` 驱动。输入工具区的单行/换行不再看视口：会话面板容器 ≥640px 时保持单行 nowrap，<640px 时回到网格换行、发送按钮独占一行，`prompt-input.css` 的窄屏细则同步改为 `@container (width < 640px)`，覆盖「宽视口 + 分栏窄面板」的平板横屏场景。
+标题栏远程连接入口在所有平台（桌面端、远程 Web、手机）统一为固定 64px 紧凑形态：只保留传输状态点（无传输状态时为监视器图标）、省流状态点和展开箭头；主机名、线路说明（如「仅使用中继」）与省流详情全部放在点击后的连接详情面板里。入口不再随视口宽度、平台或标签溢出变化——曾经按标签溢出折叠、300px 滞回展开的判断已随「入口恒小」删除。输入工具区的单行/换行不再看视口：会话面板容器 ≥640px 时保持单行 nowrap，<640px 时回到网格换行、发送按钮独占一行，`prompt-input.css` 的窄屏细则同步改为 `@container (width < 640px)`，覆盖「宽视口 + 分栏窄面板」的平板横屏场景。
 
-- 代码：`packages/app/src/components/titlebar.tsx`、`titlebar-tab-strip.tsx`、`titlebar-connection-compact.ts`、`titlebar.css`；`packages/session-ui/src/v2/components/prompt-input/index.tsx`、`prompt-input.css`。
-- 测试：`packages/app/src/components/titlebar-connection-compact.test.ts` 锁住折叠/展开滞回不变量；`packages/app/e2e/performance/timeline-stability/mobile-layout.spec.ts` 覆盖手机 320–430px 与 1100px 视口下面板 500px/800px 的单双行切换及发送按钮遮挡。
+- 代码：`packages/app/src/components/titlebar.tsx`、`titlebar.css`；`packages/session-ui/src/v2/components/prompt-input/index.tsx`、`prompt-input.css`。
+- 测试：`packages/app/e2e/performance/timeline-stability/mobile-layout.spec.ts` 覆盖手机 320–430px 与 1100px 视口下面板 500px/800px 的单双行切换及发送按钮遮挡。

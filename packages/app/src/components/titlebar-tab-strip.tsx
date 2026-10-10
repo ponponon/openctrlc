@@ -222,7 +222,7 @@ export function TitlebarTabStrip(props: {
   onNavigate: (tab: Tab, el?: HTMLDivElement) => void
   onClose: (tab: Tab) => void
   onReorder: (keys: string[]) => void
-  onOverflowChange: (state: { overflowing: boolean; freeSpace: number }) => void
+  onOverflowChange: (overflowing: boolean) => void
 }) {
   const global = useGlobal()
   const language = useLanguage()
@@ -262,8 +262,7 @@ export function TitlebarTabStrip(props: {
 
   function refreshOverflow() {
     if (!scrollRef) return
-    const freeSpace = scrollRef.clientWidth - scrollRef.scrollWidth
-    props.onOverflowChange({ overflowing: freeSpace < 0, freeSpace })
+    props.onOverflowChange(scrollRef.scrollWidth > scrollRef.clientWidth)
   }
 
   createResizeObserver(
