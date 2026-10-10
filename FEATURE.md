@@ -3366,3 +3366,14 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 - 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `remote.connection.relay*` 键。
 - 文档：`docs/release.md`；`packages/web/src/content/docs/{,zh-cn,ja,ko}/remote-access.mdx` 与 `troubleshooting.mdx`。
 - 验证：根目录 `bun run typecheck` 32 项任务通过；`packages/app` test:unit 933/935（2 个 child-store 既有失败与本功能无关）；`packages/web` `astro build` 通过。未在运行中的桌面上目视确认面板渲染。
+
+## v1.1.7 发布说明草稿与换中继验收观察脚本
+
+预写下一版 `docs/releases/v1.1.7.md`：Features 三条（应用内换中继、失败不回退、连接详情显示中继与徽标）加 Bug Fixes 一条（`d3038929` 标题栏连接入口统一紧凑，该提交在 v1.1.6 tag 之后、尚未发布），Downloads 与 Compare 链接按 v1.1.7 生成。`highlights.tsx` 新增 `"1.1.7"` 描述键映射，四语 i18n 补 `dialog.releaseNotes.v1_1_7.*` 四个键；英文值与 md bullet 逐字一致——更新引导按描述原文查键，发布前若改动 bullet 文案必须同步改映射，否则引导会退回英文原文。
+
+新增 `infra/remote-relay/monitor/relay-switch-observe.sh`，为 `release.md` 换中继验收第 3 步（失败不回退）提供只读基线对比：`snapshot` 把官方中继 healthz 的 sessions/connectedDesktops/authorizedBrowsers 记入临时状态文件，`compare` 输出 delta 与 PASS/FAIL（FAIL 退出码 1）。支持 `RELAY_SSH_TARGET` 经 ssh 读取，或在中继主机上用 `--healthz` 直连本机端口；「公网 healthz 恒 404」的约束写进了读取失败的报错提示。`release.md` 第 3 步已引用该脚本，并注明公网其他用户的新会话会造成误报、FAIL 后需人工排除。
+
+- 代码：`packages/app/src/context/highlights.tsx`、`infra/remote-relay/monitor/relay-switch-observe.sh`。
+- 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `dialog.releaseNotes.v1_1_7.*` 键。
+- 文档：`docs/releases/v1.1.7.md`、`docs/release.md`。
+- 验证：根目录 `bun run typecheck` 32 项通过；`packages/app` test:unit 933/935（2 个 child-store 既有失败）；四条 bullet 与 highlights 映射逐字核对通过；`sh -n` 通过，本地假 healthz 端到端覆盖 snapshot、compare PASS、compare FAIL（退出码 1）、usage 与 healthz 不可达四类分支。未对真实官方中继运行——那需要 `RELAY_SSH_TARGET`，留给发布验收时执行。

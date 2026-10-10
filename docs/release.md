@@ -137,7 +137,12 @@ Homebrew tap 使用的 macOS ZIP 也因此来自签名后的正式 Release。
    `wss://openctrlc-remote.quniv.cn/v1/host`，重新开启手机访问后徽标显示「官方」。
 3. 失败不回退：保存一个可解析但无人监听的地址（如 `https://127.0.0.1:1`），
    重新开启手机访问应明确报错；官方中继的 `sessions` 计数不得因此增加，
-   确认没有会话凭据发往用户未选择的中继。
+   确认没有会话凭据发往用户未选择的中继。可用
+   `RELAY_SSH_TARGET=<user@relay-host> sh infra/remote-relay/monitor/relay-switch-observe.sh snapshot`
+   在测试前记录基线，失败测试结束后把命令末尾的 `snapshot` 换成 `compare` 再运行，
+   得到 PASS/FAIL 结论；在中继主机上直接运行时去掉 `RELAY_SSH_TARGET`、改用
+   `--healthz` 指向本机 healthz（公网 `/healthz` 恒 404）。窗口期内可能混入公网
+   其他用户的新会话，FAIL 后需人工排除再下结论。
 4. 已配对会话不迁移：换址**之前**已开启的手机访问，换址后应继续连接原中继
    （连接详情显示的中继域名不变）；停止并重新开启后才使用新地址，且原授权
    按停止语义全部撤销（这是预期行为，需向用户说明）。
