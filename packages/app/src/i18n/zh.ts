@@ -1108,6 +1108,15 @@ export const dict = {
   "remote.connection.current": "当前",
   "remote.connection.open": "查看远程连接详情",
   "remote.connection.desktopFallback": "远程桌面",
+  "remote.connection.relay": "中继服务器",
+  "remote.connection.relayOfficial": "官方",
+  "remote.connection.relayCustom": "自定义",
+  "remote.connection.relayHintDesktop":
+    "手机访问经此中继转发，并非端到端加密。可在手机访问对话框的「中继服务器」中更换。",
+  "remote.connection.relayHintViewer":
+    "当前连接经此中继转发，并非端到端加密；点对点通道建立后，应用数据不再经过中继。",
+  "remote.connection.relayHintViewerPeer":
+    "点对点通道已建立：应用数据经加密通道传输、不经过此中继；信令与页面资源仍经由它。",
   "remote.transport.connecting": "中继 · 直连中",
   "remote.transport.connectingHint": "点对点连接正在协商；建立完成前，应用请求仍通过中继传输。",
   "remote.transport.checking": "线路识别中",

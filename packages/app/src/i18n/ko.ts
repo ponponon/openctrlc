@@ -825,6 +825,15 @@ export const dict = {
   "remote.connection.current": "현재",
   "remote.connection.open": "원격 연결 세부 정보 보기",
   "remote.connection.desktopFallback": "원격 데스크톱",
+  "remote.connection.relay": "릴레이 서버",
+  "remote.connection.relayOfficial": "공식",
+  "remote.connection.relayCustom": "사용자 지정",
+  "remote.connection.relayHintDesktop":
+    "모바일 액세스는 이 릴레이를 통해 전달되며 종단 간 암호화가 아닙니다. 모바일 액세스 대화 상자의 릴레이 서버에서 변경할 수 있습니다.",
+  "remote.connection.relayHintViewer":
+    "이 연결은 릴레이를 통해 전달되며 종단 간 암호화가 아닙니다. P2P 채널이 설정되면 앱 데이터는 릴레이를 통과하지 않습니다.",
+  "remote.connection.relayHintViewerPeer":
+    "P2P 채널이 연결되었습니다. 앱 데이터는 암호화된 채널을 지나 이 릴레이를 통과하지 않으며, 시그널링과 페이지 리소스만 릴레이를 이용합니다.",
   "remote.transport.connecting": "릴레이 · P2P 중",
   "remote.transport.connectingHint":
     "P2P 연결을 협상 중입니다. 연결이 완료될 때까지 앱 요청은 릴레이를 통해 전달됩니다.",

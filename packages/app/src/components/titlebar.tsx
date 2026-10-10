@@ -37,6 +37,7 @@ import {
   activeRemoteSessionID,
 } from "@/utils/remote-workspace"
 import { readNetworkQuality, onNetworkQualityChange } from "@/utils/network-quality"
+import { officialRelayHosts } from "@/constants/remote"
 import { TitlebarTabStrip } from "@/components/titlebar-tab-strip"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
@@ -861,6 +862,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
     network: readNetworkQuality(),
     transport: platform.remoteTransport?.getStatus() ?? ("relay" as RemoteTransportStatus),
   })
+  const [relay, setRelay] = createSignal<{ host: string; official: boolean }>()
   const desktops = createMemo(() => listRemoteDesktops())
   const activeId = createMemo(() => activeRemoteSessionID())
   const currentDesktopID = () => platform.remoteSessionID ?? activeId()
@@ -870,6 +872,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
 
   onMount(() => {
     setState("network", readNetworkQuality())
+    refreshRelay()
     const unsubscribeNetwork = onNetworkQualityChange((network) => setState("network", network))
     const unsubscribe = platform.remoteTransport?.subscribe((transport) => setState("transport", transport))
     onCleanup(() => {
@@ -923,6 +926,48 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
       dot: "bg-v2-text-text-muted",
     }
   })
+
+  // The relay carrying this UI: the viewer page origin, or the desktop's mobile-access target.
+  const refreshRelay = () => {
+    if (platform.remoteSessionID) {
+      setRelay({ host: location.host, official: officialRelayHosts.includes(location.hostname) })
+      return
+    }
+    const remote = platform.remoteAccess
+    if (!remote) {
+      setRelay(undefined)
+      return
+    }
+    void remote
+      .getState()
+      .then((next) => {
+        const source = next.url ?? next.relayURL
+        if (!source) {
+          setRelay(undefined)
+          return
+        }
+        try {
+          const url = new URL(source)
+          setRelay({ host: url.host, official: officialRelayHosts.includes(url.hostname) })
+        } catch {
+          setRelay(undefined)
+        }
+      })
+      .catch(() => undefined)
+  }
+
+  const relayHint = () => {
+    if (!platform.remoteSessionID) return language.t("remote.connection.relayHintDesktop")
+    if (state.transport === "direct" || state.transport === "turn")
+      return language.t("remote.connection.relayHintViewerPeer")
+    return language.t("remote.connection.relayHintViewer")
+  }
+
+  createEffect(
+    on(shown, (open) => {
+      if (open) refreshRelay()
+    }),
+  )
 
   createEffect(() => {
     const known = remoteHostName(platform.remoteSessionID)
@@ -1033,6 +1078,34 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
                     </section>
                   )}
                 </Show>
+              </Show>
+
+              <Show when={relay()}>
+                {(info) => (
+                  <section
+                    data-slot="titlebar-remote-relay-section"
+                    class="mt-2 rounded-lg border border-v2-border-border-base p-3"
+                  >
+                    <div class="flex min-w-0 items-center gap-2">
+                      <Icon
+                        name="server"
+                        size="small"
+                        class="shrink-0 text-v2-icon-icon-muted"
+                        aria-hidden="true"
+                      />
+                      <h3 class="text-13-medium text-v2-text-text-strong">
+                        {language.t("remote.connection.relay")}
+                      </h3>
+                      <span class="ml-auto shrink-0 rounded-full border border-v2-border-border-base bg-v2-background-bg-layer-01 px-2 py-0.5 text-11-medium text-v2-text-text-muted">
+                        {info().official
+                          ? language.t("remote.connection.relayOfficial")
+                          : language.t("remote.connection.relayCustom")}
+                      </span>
+                    </div>
+                    <p class="mt-1.5 truncate text-12-medium text-v2-text-text-base">{info().host}</p>
+                    <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">{relayHint()}</p>
+                  </section>
+                )}
               </Show>
 
               <Show when={state.network.lite}>

@@ -1073,6 +1073,15 @@ export const dict = {
   "remote.connection.current": "現在",
   "remote.connection.open": "リモート接続の詳細を表示",
   "remote.connection.desktopFallback": "リモートデスクトップ",
+  "remote.connection.relay": "中継サーバー",
+  "remote.connection.relayOfficial": "公式",
+  "remote.connection.relayCustom": "独自",
+  "remote.connection.relayHintDesktop":
+    "モバイルアクセスはこの中継を経由して転送され、エンドツーエンド暗号化ではありません。モバイルアクセスダイアログの「中継サーバー」で変更できます。",
+  "remote.connection.relayHintViewer":
+    "この接続は中継を経由して転送され、エンドツーエンド暗号化ではありません。P2P チャネルが確立すると、アプリのデータは中継を通りません。",
+  "remote.connection.relayHintViewerPeer":
+    "P2P チャネルが確立済みです。アプリのデータは暗号化されたチャネルを走り、この中継を通りません。シグナリングとページ資材のみが中継を経由します。",
   "remote.transport.connecting": "Relay · 直結中",
   "remote.transport.connectingHint": "P2P 接続を確立中です。接続が完了するまではアプリの通信に Relay を使用します。",
   "remote.transport.checking": "経路を確認中",

@@ -1139,6 +1139,15 @@ export const dict = {
   "remote.connection.current": "Current",
   "remote.connection.open": "Open remote connection details",
   "remote.connection.desktopFallback": "Remote desktop",
+  "remote.connection.relay": "Relay server",
+  "remote.connection.relayOfficial": "Official",
+  "remote.connection.relayCustom": "Custom",
+  "remote.connection.relayHintDesktop":
+    "Mobile access is forwarded through this relay; it is not end-to-end encrypted. Change it in the mobile access dialog under Relay server.",
+  "remote.connection.relayHintViewer":
+    "This connection is forwarded through the relay and is not end-to-end encrypted; app data stops using the relay once a peer channel is up.",
+  "remote.connection.relayHintViewerPeer":
+    "Peer channel is up: app data travels over an encrypted channel and bypasses this relay; signaling and page assets still use it.",
   "remote.transport.connecting": "Relay · P2P…",
   "remote.transport.connectingHint":
     "Requests currently use the relay while a peer-to-peer connection is being negotiated.",
