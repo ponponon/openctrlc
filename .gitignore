@@ -35,3 +35,5 @@ logs/
 tsconfig.tsbuildinfo
 .SECRET_AGENTS.md
 .workbuddy/
+# Static UI preview (not part of the app)
+/index.html
