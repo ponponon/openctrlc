@@ -754,6 +754,10 @@ export const dict = {
   "download.faq.a6.p1": "데이터와 정보는 OpenCtrlC에서 공유 링크를 생성할 때만 저장됩니다.",
   "download.faq.a6.p2.beforeShare": "더 알아보기:",
   "download.faq.a6.shareLink": "공유 페이지",
+  "download.faq.qRemote": "모바일 액세스는 데이터를 어떤 경로로 전송하나요? 릴레이가 대화를 읽을 수 있나요?",
+  "download.faq.aRemote.p1":
+    "데스크톱과 휴대폰은 기본적으로 공식 릴레이 openctrlc-remote.quniv.cn 를 통해 연결하며, 데스크톱 앱에서 소스 수정 없이 자체 릴레이로 바꿀 수 있습니다. 릴레이 전달은 종단 간 암호화가 아니므로 릴레이 운영자가 전송 중인 내용을 기술적으로 확인할 수 있습니다. 다만 프롬프트와 메시지 본문은 의도적으로 저장되지 않고 요청 액세스 로그도 비활성화되어 있습니다. P2P 직결이 설정되면 트래픽은 DTLS를 사용해 릴레이를 통과하지 않습니다. 자세한 내용은",
+  "download.faq.aRemote.link": "모바일 원격 액세스 문서",
 
   "enterprise.title": "OpenCtrlC | 조직을 위한 엔터프라이즈 솔루션",
   "enterprise.meta.description": "OpenCtrlC 엔터프라이즈 솔루션 문의",

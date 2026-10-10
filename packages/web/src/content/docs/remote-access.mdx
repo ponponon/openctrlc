@@ -24,6 +24,16 @@ TLS protects each hop of the WSS/HTTPS path, but it is not end-to-end encryption
 
 The public relay at `openctrlc-remote.quniv.cn` is a single, limited-capacity deployment. Access speed and availability depend on its region and bandwidth. The relay source and deployment example are in [`packages/remote-relay`](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay); teams can operate a relay in a region they trust.
 
+## Choose a relay
+
+New sessions resolve the relay target in this order:
+
+1. The `OPENCTRLC_REMOTE_RELAY_URL` environment variable, when set (for development and testing).
+2. The address saved under **Relay server** in the desktop's mobile access dialog.
+3. The default relay `wss://openctrlc-remote.quniv.cn/v1/host`.
+
+You can switch relays without rebuilding or editing source: open the mobile access dialog, paste a domain, an `https://` origin, or a full `wss://` address into **Relay server**, and save; the desktop completes the address for you. The new address applies the next time mobile access starts. An already-paired session keeps using the relay that holds its credentials until it is stopped, so existing phone approvals are not silently moved. A custom relay that cannot be reached fails with an error instead of falling back to the default relay. Choose **Use default** to return to the official relay.
+
 ## Operate a relay
 
 See the [Remote Relay README](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay) for its Docker Compose and OpenResty setup. A deployment needs a public HTTPS hostname, WebSocket upgrades, long-lived streaming timeouts, and a trusted TLS certificate. Restarting a single instance disconnects active transports and in-flight requests. If a persistent data directory is configured, the relay restores resumable sessions and browser grants so desktops can reconnect; in-flight streams are not restored.

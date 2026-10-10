@@ -738,6 +738,10 @@ export const dict = {
   "download.faq.a6.p1": "只有当您在 OpenCtrlC 中创建分享链接时，您的数据和信息才会被存储。",
   "download.faq.a6.p2.beforeShare": "了解更多关于",
   "download.faq.a6.shareLink": "分享页面",
+  "download.faq.qRemote": "手机访问的数据怎么传输？中继能读到我的对话吗？",
+  "download.faq.aRemote.p1":
+    "桌面端默认通过官方中继 openctrlc-remote.quniv.cn 与手机通信，也可以在桌面应用内直接换成自己的中继，无需修改源码。中继转发并非端到端加密：中继运营方在技术上可以查看传输中的内容，但提示词和消息正文不会被主动保存，请求访问日志也已关闭。建立点对点直连后，流量改用 DTLS、不再经过中继。详见",
+  "download.faq.aRemote.link": "远程访问文档",
 
   "enterprise.title": "OpenCtrlC | 面向组织的 OpenCtrlC 企业版解决方案",
   "enterprise.meta.description": "联系 OpenCtrlC 获取企业版解决方案",

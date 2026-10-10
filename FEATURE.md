@@ -3344,3 +3344,14 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 
 - 代码：`packages/app/src/components/titlebar.tsx`、`titlebar.css`；`packages/session-ui/src/v2/components/prompt-input/index.tsx`、`prompt-input.css`。
 - 测试：`packages/app/e2e/performance/timeline-stability/mobile-layout.spec.ts` 覆盖手机 320–430px 与 1100px 视口下面板 500px/800px 的单双行切换及发送按钮遮挡。
+
+## 手机访问可替换中继服务器与安全说明补齐
+
+桌面端新增应用内中继地址设置：手机访问对话框的「中继服务器」可直接粘贴域名、`https://` 或 `wss://` 地址（保存时自动补全 `wss://…/v1/host`，粘贴配对链接按其源地址处理），写入 Electron store 的 `remoteAccessRelayURL`。新建会话的中继解析优先级为：`OPENCTRLC_REMOTE_RELAY_URL` 环境变量 > 应用内设置 > 官方默认 `wss://openctrlc-remote.quniv.cn/v1/host`；已配对会话始终使用持有其凭据的原中继，换地址只影响下次开启的手机访问；自定义中继连接失败时明确报错，不回退默认中继，避免会话凭据发往用户未选择的服务器。
+
+产品与文档同步如实说明安全边界：默认中继转发是 TLS 终止于中继的非端到端链路，运营方在技术上可查看传输中的内容（提示词/消息正文不主动保存、访问日志关闭），P2P DataChannel（DTLS）建立后数据不经过中继。官网下载页 FAQ、四语 README、四语 remote-access 文档（新增「选择中继」章节）与 PRODUCT.md 均写明默认地址、应用内替换方式与上述边界，不宣称"中继读不到对话"。
+
+- 代码：`packages/desktop/src/main/{remote-access,remote-relay-url,store-keys,ipc}.ts`、`src/preload/index.ts`、`packages/app/src/context/platform.tsx`、`src/components/dialog-remote-access.tsx`。
+- 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts`（`remoteAccess.relay*` 键）；`packages/console/app/src/i18n/{en,zh,ja,ko}.ts` 与 `routes/download/index.tsx`（下载页 FAQ）；`packages/web/src/content/docs/{,zh-cn,ja,ko}/remote-access.mdx`；`README{,.zh,.ja,.ko}.md`；`PRODUCT.md`。
+- 测试：`packages/desktop/src/main/remote-relay-url.test.ts` 5 条解析用例通过。
+- 验证：根目录 `bun run typecheck` 32 项任务通过；`packages/app` test:unit 933/935 通过（2 个 child-store 既有失败与本功能无关）；console 下载页与语言测试通过。未做真实换中继的公网端到端验收。

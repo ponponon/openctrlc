@@ -768,6 +768,10 @@ export const dict = {
   "download.faq.a6.p1": "Your data and information is only stored when you create sharable links in OpenCtrlC.",
   "download.faq.a6.p2.beforeShare": "Learn more about",
   "download.faq.a6.shareLink": "share pages",
+  "download.faq.qRemote": "How does phone access transfer my data? Can the relay read my conversations?",
+  "download.faq.aRemote.p1":
+    "Desktop and phone coordinate through the official relay openctrlc-remote.quniv.cn by default, and you can replace it with your own relay right in the desktop app — no source changes. Relay forwarding is not end-to-end encryption: the relay operator can technically inspect content in transit, but prompts and message bodies are not intentionally stored and request access logs are disabled. Once a direct peer connection is up, traffic uses DTLS and bypasses the relay. See the",
+  "download.faq.aRemote.link": "mobile remote access documentation",
 
   "enterprise.title": "OpenCtrlC | Enterprise solutions for your organisation",
   "enterprise.meta.description": "Contact OpenCtrlC for enterprise solutions",

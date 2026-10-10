@@ -21,7 +21,7 @@ OpenCtrlC is an independently maintained open-source fork of [OpenCode](https://
 OpenCode gives us a strong foundation for AI-assisted coding. OpenCtrlC extends that foundation with a product focus on desktop usability, clear session history, and working from more than one device:
 
 - **A richer desktop workflow** — use a native app on macOS, Windows, or Linux, alongside the CLI and TUI. The desktop shares the local project and session model with the CLI, with session search, turn navigation, context inspection, and visual analysis of token usage, cost, and timing.
-- **Phone access to your workspace** — pair with a QR code, approve the browser in the desktop app, and open the current workspace from your phone. The desktop connects outbound through a relay, so you do not need to expose a port on your computer. Relay traffic is not end-to-end encrypted; the relay operator can inspect content while forwarding it.
+- **Phone access to your workspace** — pair with a QR code, approve the browser in the desktop app, and open the current workspace from your phone. The desktop connects outbound through a relay, so you do not need to expose a port on your computer. Relay traffic is not end-to-end encrypted; the relay operator can inspect content while forwarding it. The default relay is `openctrlc-remote.quniv.cn`, and you can swap in your own relay from the desktop app without editing source.
 - **The coding workflow stays inspectable** — review tool calls, generated changes, and command results; choose the model provider or local model that fits your work; and keep project rules and Skills close to the code.
 - **Bring compatible OpenCode sessions along** — export readable transcripts and import compatible sessions by ID.
 

@@ -467,6 +467,12 @@ export default function Download() {
               </Faq>
             </li>
             <li>
+              <Faq question={i18n.t("download.faq.qRemote")}>
+                {i18n.t("download.faq.aRemote.p1")}{" "}
+                <a href={language.route("/docs/remote-access/")}>{i18n.t("download.faq.aRemote.link")}</a>.
+              </Faq>
+            </li>
+            <li>
               <Faq question={i18n.t("home.faq.q8")}>
                 {i18n.t("home.faq.a8.p1")}{" "}
                 <a href={config.github.repoUrl} target="_blank">

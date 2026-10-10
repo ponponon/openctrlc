@@ -24,6 +24,16 @@ WSS/HTTPS 中继链路由 TLS 保护，但这不是端到端加密：中继会�
 
 `openctrlc-remote.quniv.cn` 上的公共中继目前是单实例、有限容量的部署。速度和可用性取决于中继所在地区和带宽。中继源码与部署示例位于 [`packages/remote-relay`](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay)，团队也可以在信任的地区自行部署。
 
+## 选择中继
+
+新建会话按以下顺序解析中继地址：
+
+1. 设置了 `OPENCTRLC_REMOTE_RELAY_URL` 环境变量时优先使用（用于开发和测试）。
+2. 手机访问对话框中「中继服务器」保存的地址。
+3. 默认中继 `wss://openctrlc-remote.quniv.cn/v1/host`。
+
+无需重新构建或修改源码即可更换中继：打开手机访问对话框，在「中继服务器」中粘贴域名、`https://` 地址或完整的 `wss://` 地址并保存，桌面端会自动补全。新地址在下次开启手机访问时生效；已配对的会话在停止前始终使用持有其凭据的中继，手机端已有授权不会被悄悄迁移。自定义中继无法连接时会明确报错，而不会悄悄回退到默认中继。点击「恢复默认」可回到官方中继。
+
 ## 部署中继
 
 参阅[中继服务 README](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay)了解 Docker Compose 和 OpenResty 配置。部署需要一个公网 HTTPS 域名、WebSocket 升级支持、足够长的流式连接超时和可信 TLS 证书。重启单实例会断开现有连接和处理中请求。配置持久化数据目录后，中继会恢复可续接的会话和浏览器授权，桌面端可重新连接；正在传输的请求和流无法恢复。

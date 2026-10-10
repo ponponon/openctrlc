@@ -761,6 +761,10 @@ export const dict = {
   "download.faq.a6.p1": "あなたのデータと情報は、OpenCtrlCで共有リンクを作成したときにのみ保存されます。",
   "download.faq.a6.p2.beforeShare": "詳しくは",
   "download.faq.a6.shareLink": "共有ページ",
+  "download.faq.qRemote": "モバイルアクセスのデータはどう経路を通りますか？中継は会話を読めますか？",
+  "download.faq.aRemote.p1":
+    "デスクトップとスマートフォンは既定で公式中継 openctrlc-remote.quniv.cn を経由して連携し、デスクトップアプリからソース変更なしで独自の中継に切り替えられます。中継の転送はエンドツーエンド暗号化ではなく、中継運営者は転送中の内容を技術的に確認できます。ただしプロンプトやメッセージ本文は意図的に保存されず、リクエストのアクセスログも無効です。P2P 直接接続が確立すると、トラフィックは DTLS を使い中継を通りません。詳細は",
+  "download.faq.aRemote.link": "モバイルリモートアクセスのドキュメント",
 
   "enterprise.title": "OpenCtrlC | 組織向けエンタープライズソリューション",
   "enterprise.meta.description": "エンタープライズソリューションについてOpenCtrlCに問い合わせる",
