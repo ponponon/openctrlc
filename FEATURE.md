@@ -3355,3 +3355,14 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 - 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts`（`remoteAccess.relay*` 键）；`packages/console/app/src/i18n/{en,zh,ja,ko}.ts` 与 `routes/download/index.tsx`（下载页 FAQ）；`packages/web/src/content/docs/{,zh-cn,ja,ko}/remote-access.mdx`；`README{,.zh,.ja,.ko}.md`；`PRODUCT.md`。
 - 测试：`packages/desktop/src/main/remote-relay-url.test.ts` 5 条解析用例通过。
 - 验证：根目录 `bun run typecheck` 32 项任务通过；`packages/app` test:unit 933/935 通过（2 个 child-store 既有失败与本功能无关）；console 下载页与语言测试通过。未做真实换中继的公网端到端验收。
+
+## 连接详情显示当前中继与中继排障指引
+
+标题栏「远程连接」详情新增「中继服务器」区块：显示当前实际使用的中继域名与「官方/自定义」徽标（判定基于 `packages/app/src/constants/remote.ts` 的官方主机清单，覆盖 `openctrlc-remote` 与 `openctrlc-p2p`）。取值优先级：远程查看上下文用页面自身的 origin（流量正经过它）；桌面本地用 remoteAccess 状态——有进行中或恢复中的会话时显示其配对 URL 的 origin（实际所在中继），否则显示下一次新会话的目标地址。面板每次打开刷新一次，避免与手机访问对话框里的设置脱节。提示语按上下文三选一：本地（提示可在手机访问对话框更换）、远程且走中继（非端到端）、远程且点对点已建立（数据不经过中继、信令仍经过）。
+
+配套：`docs/release.md` 新增打包产物上必须手工完成的换中继五步验收（换址生效、恢复默认、失败不回退、已配对会话不迁移、徽标与提示语上下文正确）；四语 remote-access 文档新增「连不上中继」小节（现象、基础网络排查、健康检查不公开探测的说明、换中继路径、桌面侧/手机侧链路独立），四语 troubleshooting 常见问题追加交叉条目。
+
+- 代码：`packages/app/src/components/titlebar.tsx`、`packages/app/src/constants/remote.ts`。
+- 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `remote.connection.relay*` 键。
+- 文档：`docs/release.md`；`packages/web/src/content/docs/{,zh-cn,ja,ko}/remote-access.mdx` 与 `troubleshooting.mdx`。
+- 验证：根目录 `bun run typecheck` 32 项任务通过；`packages/app` test:unit 933/935（2 个 child-store 既有失败与本功能无关）；`packages/web` `astro build` 通过。未在运行中的桌面上目视确认面板渲染。

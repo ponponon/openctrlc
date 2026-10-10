@@ -34,6 +34,17 @@ New sessions resolve the relay target in this order:
 
 You can switch relays without rebuilding or editing source: open the mobile access dialog, paste a domain, an `https://` origin, or a full `wss://` address into **Relay server**, and save; the desktop completes the address for you. The new address applies the next time mobile access starts. An already-paired session keeps using the relay that holds its credentials until it is stopped, so existing phone approvals are not silently moved. A custom relay that cannot be reached fails with an error instead of falling back to the default relay. Choose **Use default** to return to the official relay.
 
+## Can't reach the relay
+
+Symptoms: mobile access stays on "Connecting…" or "Restoring…", the QR page does not open, or the desktop reports that it cannot connect to the relay.
+
+1. Check basic connectivity first. The desktop needs outbound HTTPS/WSS; corporate proxies and captive portals are the usual cause. The default relay is a single, limited-capacity instance, and the desktop retries with backoff, so a short outage may recover on its own after a minute.
+2. The official relay intentionally hides its health endpoint from the public web (public `/healthz` returns 404 by design), so a browser cannot confirm it is up. A QR page that opens on the phone only proves the phone's network path works; it does not mean the desktop side is connected.
+3. If it keeps failing, switch relays: open the desktop mobile access dialog, paste an address you trust under **Relay server**, save, then stop and re-enable mobile access (see "Choose a relay" above). An unreachable custom relay shows an error instead of silently falling back to the default relay.
+4. To run your own relay, see "Operate a relay" below.
+
+Desktop-to-relay and phone-to-relay are independent paths: if the phone page loads but sessions do not work, the desktop side is the one that is offline.
+
 ## Operate a relay
 
 See the [Remote Relay README](https://github.com/ponponon/openctrlc/tree/dev/packages/remote-relay) for its Docker Compose and OpenResty setup. A deployment needs a public HTTPS hostname, WebSocket upgrades, long-lived streaming timeouts, and a trusted TLS certificate. Restarting a single instance disconnects active transports and in-flight requests. If a persistent data directory is configured, the relay restores resumable sessions and browser grants so desktops can reconnect; in-flight streams are not restored.
