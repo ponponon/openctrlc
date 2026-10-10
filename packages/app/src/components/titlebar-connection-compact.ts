@@ -6,10 +6,7 @@
 // on every resize.
 export const CONNECTION_EXPAND_SPARE = 300
 
-export function nextConnectionCompact(
-  compact: boolean,
-  state: { overflowing: boolean; freeSpace: number },
-) {
+export function nextConnectionCompact(compact: boolean, state: { overflowing: boolean; freeSpace: number }) {
   if (state.overflowing) return true
   return compact && state.freeSpace <= CONNECTION_EXPAND_SPARE
 }

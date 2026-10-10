@@ -31,8 +31,7 @@ test("mobile portrait keeps the titlebar and v2 composer inside 320–430px", as
         controlsOverflow: controls.scrollWidth - controls.clientWidth,
         submitAlignSelf: submitStyle.alignSelf,
         submitInsideRow: submitRect.right <= rowRect.right + 1,
-        controlsOverlapSubmit:
-          controlsRect.right > submitRect.left + 1 && controlsRect.bottom > submitRect.top + 1,
+        controlsOverlapSubmit: controlsRect.right > submitRect.left + 1 && controlsRect.bottom > submitRect.top + 1,
       }
     })
 
@@ -75,8 +74,7 @@ test("wide viewport with a narrow session panel wraps composer controls", async 
         rowDisplay: rowStyle.display,
         controlsWrap: controlsStyle.flexWrap,
         submitAlignSelf: submitStyle.alignSelf,
-        controlsOverlapSubmit:
-          controlsRect.right > submitRect.left + 1 && controlsRect.bottom > submitRect.top + 1,
+        controlsOverlapSubmit: controlsRect.right > submitRect.left + 1 && controlsRect.bottom > submitRect.top + 1,
       }
     }
 

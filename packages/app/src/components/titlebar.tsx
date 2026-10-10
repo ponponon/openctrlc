@@ -402,11 +402,7 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                   "md:pl-4": !macTrafficLights(),
                 }}
               >
-                <ChannelIndicator
-                  debugTools={props.debugTools}
-                  bottom={bottom()}
-                  compact={connectionCompact()}
-                />
+                <ChannelIndicator debugTools={props.debugTools} bottom={bottom()} compact={connectionCompact()} />
                 <Show when={windows() || linux()}>
                   <WindowsAppMenu command={command} platform={platform} variant="v2" />
                 </Show>

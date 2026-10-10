@@ -178,12 +178,9 @@
   padding-inline: 6px;
 }
 
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
-  [data-slot="titlebar-remote-connection-host"],
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
-  [data-slot="titlebar-remote-connection-divider"],
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
-  [data-slot="titlebar-remote-connection-route"] {
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-host"],
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-divider"],
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-route"] {
   display: none;
 }
 
@@ -192,8 +189,7 @@
   display: none;
 }
 
-[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
-  [data-slot="titlebar-remote-connection-lite"] {
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] [data-slot="titlebar-remote-connection-lite"] {
   width: 8px;
   min-height: 8px;
   height: 8px;

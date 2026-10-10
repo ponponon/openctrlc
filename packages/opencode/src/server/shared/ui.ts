@@ -107,7 +107,9 @@ export function serveEmbeddedUIEffect(
   const miss = () => (navigation || pathname === "index.html" ? missingEmbeddedIndex() : notFound())
   if (!mapped) return Effect.succeed(miss())
   const candidates = resolveEmbeddedFileCandidates(mapped)
-  return readFirstEmbedded(fs, candidates).pipe(Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : miss())))
+  return readFirstEmbedded(fs, candidates).pipe(
+    Effect.map((hit) => (hit ? embeddedUIResponse(hit.file, hit.body) : miss())),
+  )
 }
 
 function readFirstEmbedded(

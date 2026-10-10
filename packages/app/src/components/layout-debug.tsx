@@ -107,7 +107,10 @@ function collect(): Line[] {
       text: `frame  ${fmt(frameBox)} fill ${frameWidthFilled && frameHeightFilled ? "✓" : "✗"} css .size-full ${ruleLoaded ? "✓" : "✗"}${frameComputed ? ` style ${frameComputed.width}/${frameComputed.height}` : ""}`,
       bad: !frameBox || !frameWidthFilled || !frameHeightFilled || !ruleLoaded,
     },
-    { text: `row    ${fmt(rowBox)} dir ${rowDirection}${rowDirection === "row" ? " ✓" : " ✗"}`, bad: rowDirection !== "row" },
+    {
+      text: `row    ${fmt(rowBox)} dir ${rowDirection}${rowDirection === "row" ? " ✓" : " ✗"}`,
+      bad: rowDirection !== "row",
+    },
     {
       text: `aside  ${fmt(asideBox)} grow ${asideGrow}${asideGrow === "1" ? " ✓" : " ✗"}`,
       bad: aside !== null && asideGrow !== "1",
