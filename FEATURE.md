@@ -3377,3 +3377,15 @@ GitHub Release 和 npm 主包使用 OpenCtrlC 自己的版本号。正式 Releas
 - 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `dialog.releaseNotes.v1_1_7.*` 键。
 - 文档：`docs/releases/v1.1.7.md`、`docs/release.md`。
 - 验证：根目录 `bun run typecheck` 32 项通过；`packages/app` test:unit 933/935（2 个 child-store 既有失败）；四条 bullet 与 highlights 映射逐字核对通过；`sh -n` 通过，本地假 healthz 端到端覆盖 snapshot、compare PASS、compare FAIL（退出码 1）、usage 与 healthz 不可达四类分支。未对真实官方中继运行——那需要 `RELAY_SSH_TARGET`，留给发布验收时执行。
+
+## 更新引导查键契约测试与反引号修复
+
+`packages/app/src/context/highlights.tsx` 把 `releaseDescriptionKeys` 提升到模块级并导出，`loadReleaseHighlights` 一并导出，让测试能直接驱动真实查键路径。新增 `highlights.test.ts` 三条用例：每个已映射版本的键集合与 `docs/releases/v*.md` 的 Features/Bug Fixes bullet 逐字一致、且英文 dict 值等于 bullet；忠实模拟 changelog.json 的 parseMarkdown 形态（h2/ul/li、反引号→code、HTML 转义）跑完整 `loadReleaseHighlights` 管线，断言每条展示的 highlight 都解析出 translationKey；映射键在 zh/ja/ko 均存在、且不等于英文原文（必须真正翻译）。
+
+测试先红后绿，抓到既有 bug：v1.1.6 的 layoutDiagnostics 按 md 原文（含反引号）写键，而运行时描述经 `<code>` 与 textContent 后不含反引号，查键失败——中/日/韩界面该条更新说明一直静默回退英文。已去掉映射键与四语 dict 值里的反引号（英文值改为与运行时描述一致，用户可见文案不变；三语翻译属首次真正生效）。经验记入 FailureExperience.md：发布说明 bullet 尽量不写反引号，键必须按 parseMarkdown 之后的文本写。
+
+desktop `bun run build`（electron-vite）完整跑通并抽查产物：preload 含 `remote-access-set-relay-url`、main 含 `remoteAccessRelayURL` store 键、渲染产物含四语新键。`infra/remote-relay/README.md` 运维小节补 observe 脚本 snapshot/compare 用法。
+
+- 代码/测试：`packages/app/src/context/{highlights.tsx,highlights.test.ts}`、`packages/app/src/i18n/{en,zh,ja,ko}.ts`、`FailureExperience.md`。
+- 文档：`infra/remote-relay/README.md`。
+- 验证：根目录 `bun run typecheck` 32 项通过；`packages/app` test:unit 936/938（2 个既有失败 child-store、identity-residuals，两者只读我未改动的文件）；desktop `bun run build` 通过。
