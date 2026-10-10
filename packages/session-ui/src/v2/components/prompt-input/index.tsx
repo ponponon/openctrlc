@@ -198,11 +198,11 @@ export function PromptInputV2(props: PromptInputV2Props) {
 
         <div
           data-slot="prompt-input-controls-row"
-          class="grid min-h-11 grid-cols-1 gap-1 px-2 sm:flex sm:items-center sm:h-11 sm:min-h-0"
+          class="grid min-h-11 grid-cols-1 gap-1 px-2 @min-[640px]:flex @min-[640px]:items-center @min-[640px]:h-11 @min-[640px]:min-h-0"
         >
           <div
             data-slot="prompt-input-controls"
-            class="flex min-w-0 flex-1 flex-wrap items-center gap-1 sm:flex-nowrap"
+            class="flex min-w-0 flex-1 flex-wrap items-center gap-1 @min-[640px]:flex-nowrap"
             aria-hidden={state.mode === "shell"}
             inert={state.mode === "shell" ? true : undefined}
             style={buttons()}

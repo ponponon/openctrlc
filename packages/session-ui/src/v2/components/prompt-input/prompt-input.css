@@ -1,4 +1,8 @@
-@media (max-width: 639px) {
+/* Keyed to the composer's ancestor container width (session panel), not the
+   viewport: in split view the viewport can be tablet-wide while the panel is
+   phone-narrow, which is exactly when controls must wrap. Complements the
+   `@min-[640px]:` row layout switch in index.tsx. */
+@container (width < 640px) {
   [data-component="prompt-input-v2"] [data-slot="prompt-input-controls-row"] {
     padding-block: 4px 8px;
   }
