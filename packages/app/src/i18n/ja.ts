@@ -1434,6 +1434,14 @@ export const dict = {
     "タイトルバーのコントロールが圧縮される問題と、スクロール領域やクリップ領域でフォーカス表示が消える問題を修正しました。",
   "dialog.releaseNotes.v1_1_6.staleAssets":
     "古い埋め込み CSS と JavaScript のアセット URL はアプリ HTML ではなく 404 を返し、新旧リソースの混在による表示不具合を防ぎます。",
+  "dialog.releaseNotes.v1_1_7.ownRelay":
+    "モバイルアクセスで独自の中継を使えるようになりました。アクセスダイアログの「中継サーバー」にドメインまたは wss:// アドレスを貼り付けると、デスクトップが自動補完します。",
+  "dialog.releaseNotes.v1_1_7.noFallback":
+    "接続できないカスタム中継は明示的にエラーになり、公式中継へ黙ってフォールバックしなくなりました。",
+  "dialog.releaseNotes.v1_1_7.relayDetails":
+    "リモート接続の詳細に、中継のホスト名、公式/独自バッジ、現在の経路で中継が何を見えるかを平易な言葉で示す表示が追加されました。",
+  "dialog.releaseNotes.v1_1_7.connectionEntry":
+    "タイトルバーの接続エントリがプラットフォームやタブの増減でサイズ変化する問題を修正しました。各環境で安定したコンパクト表示になり、詳細はポップオーバー内に収めています。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

@@ -1497,6 +1497,14 @@ export const dict = {
     "修复标题栏控件被挤压，以及可滚动或裁切区域中的键盘焦点提示消失的问题。",
   "dialog.releaseNotes.v1_1_6.staleAssets":
     "过期的内嵌 CSS 和 JavaScript 资源现在会返回 404，而不是错误返回应用页面，避免新旧页面资源混用后失效。",
+  "dialog.releaseNotes.v1_1_7.ownRelay":
+    "手机访问现在可以使用你自己的中继：在访问对话框的「中继服务器」粘贴域名或 wss:// 地址，桌面端会自动补全。",
+  "dialog.releaseNotes.v1_1_7.noFallback":
+    "自定义中继无法连接时会明确报错，不再悄悄回退到官方中继。",
+  "dialog.releaseNotes.v1_1_7.relayDetails":
+    "远程连接详情现在会显示中继域名、官方或自定义徽标，并用平实的语言说明当前链路上中继能看到什么。",
+  "dialog.releaseNotes.v1_1_7.connectionEntry":
+    "修复标题栏连接入口在不同平台、标签增减时尺寸变化的问题；现在各端都保持稳定的紧凑形态，详情收在弹层里。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",

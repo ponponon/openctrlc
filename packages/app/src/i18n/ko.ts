@@ -1149,6 +1149,14 @@ export const dict = {
     "제목 표시줄 컨트롤이 눌리는 문제와 스크롤 또는 잘림 영역에서 키보드 포커스 표시가 사라지는 문제를 수정했습니다.",
   "dialog.releaseNotes.v1_1_6.staleAssets":
     "오래된 내장 CSS 및 JavaScript 자산 URL이 앱 HTML 대신 404를 반환해 서로 다른 버전의 리소스가 섞일 때 발생하는 문제를 방지합니다.",
+  "dialog.releaseNotes.v1_1_7.ownRelay":
+    "이제 모바일 액세스에서 자체 릴레이를 사용할 수 있습니다. 액세스 대화 상자의 릴레이 서버에 도메인 또는 wss:// 주소를 붙여넣으면 데스크톱이 자동으로 보완합니다.",
+  "dialog.releaseNotes.v1_1_7.noFallback":
+    "연결할 수 없는 사용자 지정 릴레이는 명시적으로 오류를 표시하며 공식 릴레이로 몰래 대체되지 않습니다.",
+  "dialog.releaseNotes.v1_1_7.relayDetails":
+    "원격 연결 세부 정보에 릴레이 호스트 이름, 공식/사용자 지정 배지, 현재 경로에서 릴레이가 무엇을 볼 수 있는지에 대한 평이한 설명이 표시됩니다.",
+  "dialog.releaseNotes.v1_1_7.connectionEntry":
+    "제목 표시줄 연결 항목이 플랫폼이나 탭 열림/닫힘에 따라 크기가 변하는 문제를 수정했습니다. 모든 환경에서 안정적인 컴팩트 형태를 유지하며 세부 정보는 팝오버 안에 담습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

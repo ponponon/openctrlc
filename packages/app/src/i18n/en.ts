@@ -557,6 +557,14 @@ export const dict = {
     "Fixed title-bar controls getting squeezed and focus indicators disappearing around clipped or scrollable UI.",
   "dialog.releaseNotes.v1_1_6.staleAssets":
     "Stale embedded CSS and JavaScript asset URLs now return 404 instead of the app HTML, preventing mixed-version pages from breaking.",
+  "dialog.releaseNotes.v1_1_7.ownRelay":
+    "Mobile access can now use your own relay: paste a domain or wss:// address under Relay server in the access dialog, and the desktop completes it for you.",
+  "dialog.releaseNotes.v1_1_7.noFallback":
+    "A custom relay that cannot be reached now fails with a clear error instead of silently falling back to the official relay.",
+  "dialog.releaseNotes.v1_1_7.relayDetails":
+    "The remote connection details now show the relay hostname with an official or custom badge and a plain-language note about what the relay can see on the current route.",
+  "dialog.releaseNotes.v1_1_7.connectionEntry":
+    "Fixed the title-bar connection entry changing size across platforms and as tabs opened and closed; it is now a stable compact control with details inside the popover.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",
