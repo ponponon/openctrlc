@@ -805,6 +805,16 @@ export const dict = {
     "현재 Relay는 브라우저 수 사용자 지정 제한을 지원하지 않습니다. Relay를 업데이트하면 저장한 제한이 적용됩니다.",
   "remoteAccess.viewerLimitOverCapacity":
     "제한을 낮춰도 기존 승인은 유지됩니다. 새 브라우저를 승인하려면 기존 승인을 취소하거나 제한을 높이세요.",
+  "remoteAccess.relayLabel": "릴레이 서버",
+  "remoteAccess.relayDescription":
+    "모바일 액세스는 기본적으로 공식 릴레이를 사용합니다. 공식 릴레이를 신뢰하지 않으면 소스를 수정하지 않고 자체 릴레이 주소로 바꿀 수 있으며, 새 주소는 다음에 모바일 액세스를 켤 때 적용됩니다.",
+  "remoteAccess.relayHelp": "도메인, https:// 주소 또는 전체 wss:// 주소를 붙여넣으면 저장할 때 자동으로 보완됩니다.",
+  "remoteAccess.relayInvalid": "이 릴레이 주소를 저장할 수 없습니다. 올바른 도메인 또는 주소를 입력한 후 다시 시도하세요.",
+  "remoteAccess.relayReset": "기본값 복원",
+  "remoteAccess.relayActiveHint":
+    "진행 중인 세션은 이전 릴레이에 연결된 상태를 유지하며, 모바일 액세스를 다시 켜면 새 주소가 적용됩니다.",
+  "remoteAccess.relayTrustNote":
+    "릴레이 트래픽은 TLS로 전달되며 종단 간 암호화가 아닙니다. 릴레이 운영자가 전송 중인 내용을 기술적으로 확인할 수 있고, 프롬프트와 메시지 본문은 의도적으로 저장되지 않습니다. 운영자를 신뢰할 수 없으면 자체 릴레이로 전환하세요.",
   "remoteAccess.viewerApproved": "승인 {{time}}",
   "remoteAccess.viewerLastSeen": "최근 사용 {{time}}",
   "remote.liteNetwork": "절약",

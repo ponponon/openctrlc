@@ -19,7 +19,13 @@ import type { ServerReadyData } from "../preload/types"
 import { hostname } from "node:os"
 import type { PeerIceServer, PeerRoute, PeerRouteBytes, PeerSignal } from "@openctrlc/remote-relay/protocol"
 import { getStore } from "./store"
-import { REMOTE_ACCESS_ENABLED_KEY, REMOTE_ACCESS_SESSION_KEY, REMOTE_ACCESS_VIEWER_LIMIT_KEY } from "./store-keys"
+import {
+  REMOTE_ACCESS_ENABLED_KEY,
+  REMOTE_ACCESS_RELAY_URL_KEY,
+  REMOTE_ACCESS_SESSION_KEY,
+  REMOTE_ACCESS_VIEWER_LIMIT_KEY,
+} from "./store-keys"
+import { parseRelayURLInput } from "./remote-relay-url"
 import { consumeRejectedPeerStream, type RejectedPeerStream } from "./remote-peer-rejection"
 import { remoteAcceptEncoding, shouldCompressRemoteResponse } from "./remote-response-encoding"
 
@@ -95,6 +101,7 @@ export class RemoteAccessService {
   #workspace?: RemoteWorkspaceSnapshot
   #workspaceJSON?: string
   #viewerLimit = DEFAULT_VIEWER_LIMIT
+  #configuredRelayURL?: string
 
   constructor(
     private readonly getServer: () => Promise<ServerReadyData>,
@@ -103,6 +110,7 @@ export class RemoteAccessService {
     const store = getStore()
     const savedLimit = store.get(REMOTE_ACCESS_VIEWER_LIMIT_KEY)
     this.#viewerLimit = isViewerLimit(savedLimit) ? savedLimit : DEFAULT_VIEWER_LIMIT
+    this.#configuredRelayURL = normalizeRelayURL(store.get(REMOTE_ACCESS_RELAY_URL_KEY))
     const savedSession = readPersistedSession()
     if (savedSession) {
       this.#sessionID = savedSession.sessionID
@@ -117,6 +125,7 @@ export class RemoteAccessService {
       viewerLimit: this.#viewerLimit,
       ...(restore ? { status: "connecting" as const } : {}),
     }
+    this.#state = { ...this.#state, ...this.#relayState() }
   }
 
   isEnabled() {
@@ -463,6 +472,27 @@ export class RemoteAccessService {
     return Promise.resolve()
   }
 
+  /** Relay target for NEW sessions only; already-paired sessions keep the Relay holding their credentials. */
+  #newSessionRelayURL() {
+    return process.env.OPENCTRLC_REMOTE_RELAY_URL ?? this.#configuredRelayURL ?? defaultRelayURL
+  }
+
+  #relayState() {
+    return { relayURL: this.#newSessionRelayURL(), relayCustom: this.#configuredRelayURL !== undefined }
+  }
+
+  setRelayURL(value?: string) {
+    const relayURL = value === undefined ? undefined : parseRelayURLInput(value)
+    if (value !== undefined && !relayURL) return Promise.reject(new Error("Invalid relay address"))
+    const configured = relayURL === defaultRelayURL ? undefined : relayURL
+    if (configured === this.#configuredRelayURL) return Promise.resolve()
+    if (configured) getStore().set(REMOTE_ACCESS_RELAY_URL_KEY, configured)
+    else getStore().delete(REMOTE_ACCESS_RELAY_URL_KEY)
+    this.#configuredRelayURL = configured
+    this.#setState({ ...this.#state })
+    return Promise.resolve()
+  }
+
   #sendStopOnNewSocket(sessionID: string, hostToken: string, relay: string) {
     return new Promise<void>((resolve) => {
       let timeout: ReturnType<typeof setTimeout> | undefined
@@ -578,7 +608,7 @@ export class RemoteAccessService {
           if (generation !== this.#generation) return this.#state
         }
       }
-      const relay = process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL
+      const relay = this.#newSessionRelayURL()
       await this.#connect(this.#relayURL ?? relay, generation, false)
       getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
       return this.#state
@@ -813,7 +843,7 @@ export class RemoteAccessService {
   async #resume(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
     const relay = this.#reconnectCreateSession
-      ? (process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL)
+      ? this.#newSessionRelayURL()
       : (this.#relayURL ?? legacyRelayURL)
     try {
       await this.#connect(relay, generation, !this.#reconnectCreateSession)
@@ -827,7 +857,7 @@ export class RemoteAccessService {
         persistSession(undefined)
         this.#reconnectCreateSession = true
         try {
-          await this.#connect(process.env.OPENCTRLC_REMOTE_RELAY_URL ?? defaultRelayURL, generation, false)
+          await this.#connect(this.#newSessionRelayURL(), generation, false)
           getStore().set(REMOTE_ACCESS_ENABLED_KEY, true)
         } catch {
           this.#scheduleReconnect(generation)
@@ -1487,8 +1517,8 @@ export class RemoteAccessService {
   }
 
   #setState(state: RemoteAccessState) {
-    this.#state = state
-    const withHost = { ...state, hostName: hostname().slice(0, 120) }
+    this.#state = { ...state, ...this.#relayState() }
+    const withHost = { ...this.#state, hostName: hostname().slice(0, 120) }
     for (const listener of this.#listeners) listener(withHost)
   }
 }

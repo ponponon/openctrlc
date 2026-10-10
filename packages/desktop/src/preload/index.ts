@@ -73,6 +73,7 @@ const api: ElectronAPI = {
     getState: () => ipcRenderer.invoke("remote-access-state"),
     start: () => ipcRenderer.invoke("remote-access-start"),
     setViewerLimit: (limit) => ipcRenderer.invoke("remote-access-set-viewer-limit", limit),
+    setRelayURL: (url) => ipcRenderer.invoke("remote-access-set-relay-url", url),
     stop: () => ipcRenderer.invoke("remote-access-stop"),
     rotatePairingLink: () => ipcRenderer.invoke("remote-access-rotate-link"),
     revokeViewer: (viewerID) => ipcRenderer.invoke("remote-access-revoke-viewer", viewerID),

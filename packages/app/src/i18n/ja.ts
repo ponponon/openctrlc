@@ -1052,6 +1052,17 @@ export const dict = {
     "現在の Relay はブラウザー数のカスタム上限に対応していません。Relay を更新すると保存した上限が適用されます。",
   "remoteAccess.viewerLimitOverCapacity":
     "上限を下げても既存の許可は維持されます。新しいブラウザーを許可するには、既存の許可を取り消すか上限を上げてください。",
+  "remoteAccess.relayLabel": "中継サーバー",
+  "remoteAccess.relayDescription":
+    "モバイルアクセスは既定で公式中継を使います。公式中継を信用できない場合は、ソースを変更せずに独自の中継アドレスへ差し替えられます。新しいアドレスは次にモバイルアクセスを開始したときから適用されます。",
+  "remoteAccess.relayHelp":
+    "ドメイン、https:// アドレス、または完全な wss:// アドレスを貼り付けると、保存時に自動補完されます。",
+  "remoteAccess.relayInvalid": "この中継アドレスを保存できませんでした。有効なドメインまたはアドレスを入力して再試行してください。",
+  "remoteAccess.relayReset": "既定に戻す",
+  "remoteAccess.relayActiveHint":
+    "実行中のセッションは元の中継に接続したままです。モバイルアクセスを再度開始すると新しいアドレスが使われます。",
+  "remoteAccess.relayTrustNote":
+    "中継の通信は TLS で転送され、エンドツーエンド暗号化ではありません。中継運営者は転送中の内容を技術的に確認でき、プロンプトやメッセージ本文は意図的に保存されません。運営者を信用できない場合は、自前の中継へ切り替えてください。",
   "remoteAccess.viewerApproved": "承認 {{time}}",
   "remoteAccess.viewerLastSeen": "最終使用 {{time}}",
   "remote.liteNetwork": "省流量",

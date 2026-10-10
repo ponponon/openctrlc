@@ -47,6 +47,10 @@ export type RemoteAccessState = {
   authorizedViewers?: RemoteAccessAuthorizedViewer[]
   hostName?: string
   error?: string
+  /** Relay target used for new sessions. */
+  relayURL?: string
+  /** True when a custom relay address is saved instead of the default relay. */
+  relayCustom?: boolean
 }
 export type RemoteTransportStatus = "connecting" | "checking" | "direct" | "turn" | "relay" | "unavailable"
 export type RemoteTransportPlatform = {
@@ -59,6 +63,7 @@ export type RemoteAccessPlatform = {
   subscribe(callback: (state: RemoteAccessState) => void): Promise<() => void>
   start(): Promise<RemoteAccessState>
   setViewerLimit(limit: number): Promise<void>
+  setRelayURL(url?: string): Promise<void>
   stop(): Promise<void>
   rotatePairingLink(): Promise<void>
   revokeViewer(viewerID: string): Promise<void>

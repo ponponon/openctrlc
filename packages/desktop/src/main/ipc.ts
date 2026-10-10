@@ -87,6 +87,10 @@ export function registerIpcHandlers(deps: Deps) {
     if (typeof limit !== "number") throw new Error("Invalid browser limit")
     return deps.remoteAccess.setViewerLimit(limit)
   })
+  ipcMain.handle("remote-access-set-relay-url", (_event: IpcMainInvokeEvent, value: unknown) => {
+    if (value !== undefined && typeof value !== "string") throw new Error("Invalid relay address")
+    return deps.remoteAccess.setRelayURL(value as string | undefined)
+  })
   ipcMain.on("remote-access-workspace", (_event, value: unknown) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return
     deps.remoteAccess.updateWorkspace(value as Parameters<RemoteAccessService["updateWorkspace"]>[0])

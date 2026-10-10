@@ -1118,6 +1118,17 @@ export const dict = {
     "This relay does not support custom browser limits yet. The saved limit will apply after the relay is updated.",
   "remoteAccess.viewerLimitOverCapacity":
     "Existing approvals are kept when you lower the limit. Revoke a browser or raise the limit before approving another.",
+  "remoteAccess.relayLabel": "Relay server",
+  "remoteAccess.relayDescription":
+    "Mobile access uses the official relay by default. Replace it with an address you trust — no source changes needed. A new address applies the next time mobile access starts.",
+  "remoteAccess.relayHelp":
+    "Paste a domain, an https:// address, or a full wss:// address; the desktop completes it for you.",
+  "remoteAccess.relayInvalid": "Could not save this relay address. Enter a valid domain or address and try again.",
+  "remoteAccess.relayReset": "Use default",
+  "remoteAccess.relayActiveHint":
+    "The current session stays connected to its relay; the new address applies when mobile access starts again.",
+  "remoteAccess.relayTrustNote":
+    "Relay traffic is forwarded over TLS, not end-to-end encrypted: the relay operator can inspect content in transit, and prompts or message bodies are not intentionally stored. If you don't trust the operator, switch to a relay you run yourself.",
   "remoteAccess.viewerApproved": "Approved {{time}}",
   "remoteAccess.viewerLastSeen": "Last used {{time}}",
   "remote.liteNetwork": "Lite",

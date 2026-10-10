@@ -27,6 +27,8 @@ function normalizeRemoteAccessState(next: Partial<RemoteAccessState>): RemoteAcc
     next.authorizedDevices >= 0
       ? next.authorizedDevices
       : emptyState.authorizedDevices
+  const relayURL =
+    typeof next.relayURL === "string" && /^wss?:\/\//.test(next.relayURL) ? next.relayURL : emptyState.relayURL
 
   return {
     ...emptyState,
@@ -36,6 +38,8 @@ function normalizeRemoteAccessState(next: Partial<RemoteAccessState>): RemoteAcc
     viewerLimit,
     effectiveViewerLimit: reportedEffectiveViewerLimit ?? emptyState.effectiveViewerLimit,
     viewerLimitSupported: next.viewerLimitSupported === true && reportedEffectiveViewerLimit !== undefined,
+    relayURL,
+    relayCustom: next.relayCustom === true,
   }
 }
 
@@ -77,6 +81,9 @@ export function DialogRemoteAccess() {
   const [viewerLimitInvalid, setViewerLimitInvalid] = createSignal(false)
   const [viewerLimitSaveFailed, setViewerLimitSaveFailed] = createSignal(false)
   const [savingViewerLimit, setSavingViewerLimit] = createSignal(false)
+  const [relayDraft, setRelayDraft] = createSignal("")
+  const [relaySaveFailed, setRelaySaveFailed] = createSignal(false)
+  const [savingRelay, setSavingRelay] = createSignal(false)
   const [qrCode] = createResource(
     () => state.url,
     (url) => QRCode.toDataURL(url, { errorCorrectionLevel: "Q", margin: 2, width: 264 }),
@@ -102,6 +109,15 @@ export function DialogRemoteAccess() {
     on(
       () => state.viewerLimit,
       (limit) => setViewerLimitDraft(String(limit)),
+    ),
+  )
+
+  createEffect(
+    on(
+      () => state.relayURL,
+      (url) => {
+        if (url) setRelayDraft(url)
+      },
     ),
   )
 
@@ -152,6 +168,35 @@ export function DialogRemoteAccess() {
       setViewerLimitSaveFailed(true)
     } finally {
       setSavingViewerLimit(false)
+    }
+  }
+
+  const saveRelay = async () => {
+    const value = relayDraft().trim()
+    if (!value) {
+      setRelaySaveFailed(true)
+      return
+    }
+    setSavingRelay(true)
+    setRelaySaveFailed(false)
+    try {
+      await remoteAccess?.setRelayURL(value)
+    } catch {
+      setRelaySaveFailed(true)
+    } finally {
+      setSavingRelay(false)
+    }
+  }
+
+  const resetRelay = async () => {
+    setSavingRelay(true)
+    setRelaySaveFailed(false)
+    try {
+      await remoteAccess?.setRelayURL(undefined)
+    } catch {
+      setRelaySaveFailed(true)
+    } finally {
+      setSavingRelay(false)
     }
   }
 
@@ -233,6 +278,65 @@ export function DialogRemoteAccess() {
                 {language.t("remoteAccess.viewerLimitOverCapacity")}
               </p>
             </Show>
+          </section>
+          <section class="flex min-w-0 flex-col gap-3 rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01 p-4">
+            <div class="min-w-0">
+              <label for="remote-access-relay-url" class="text-14-medium text-v2-text-text-strong">
+                {language.t("remoteAccess.relayLabel")}
+              </label>
+              <p class="mt-1 text-12-regular leading-5 text-v2-text-text-muted">
+                {language.t("remoteAccess.relayDescription")}
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <TextInputV2
+                id="remote-access-relay-url"
+                class="min-w-0 flex-1 basis-64"
+                aria-label={language.t("remoteAccess.relayLabel")}
+                aria-describedby="remote-access-relay-url-help"
+                invalid={relaySaveFailed()}
+                spellcheck={false}
+                value={relayDraft()}
+                onInput={(event) => {
+                  setRelayDraft(event.currentTarget.value)
+                  setRelaySaveFailed(false)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return
+                  event.preventDefault()
+                  void saveRelay()
+                }}
+              />
+              <ButtonV2
+                size="normal"
+                variant="outline"
+                disabled={savingRelay() || !relayDraft().trim() || relayDraft().trim() === state.relayURL}
+                onClick={() => void saveRelay()}
+              >
+                {language.t("common.save")}
+              </ButtonV2>
+              <Show when={state.relayCustom}>
+                <ButtonV2 size="normal" variant="ghost" disabled={savingRelay()} onClick={() => void resetRelay()}>
+                  {language.t("remoteAccess.relayReset")}
+                </ButtonV2>
+              </Show>
+            </div>
+            <p id="remote-access-relay-url-help" class="text-12-regular leading-5 text-v2-text-text-muted">
+              {language.t("remoteAccess.relayHelp")}
+            </p>
+            <Show when={relaySaveFailed()}>
+              <p class="w-full text-12-regular leading-5 text-v2-state-fg-danger" role="alert">
+                {language.t("remoteAccess.relayInvalid")}
+              </p>
+            </Show>
+            <Show when={state.status === "active"}>
+              <p class="w-full text-12-regular leading-5 text-v2-state-fg-warning" role="status">
+                {language.t("remoteAccess.relayActiveHint")}
+              </p>
+            </Show>
+            <p class="rounded-lg bg-v2-background-bg-base p-3 text-12-regular leading-5 text-v2-text-text-muted">
+              {language.t("remoteAccess.relayTrustNote")}
+            </p>
           </section>
         </Show>
         <Show when={state.status === "active"}>

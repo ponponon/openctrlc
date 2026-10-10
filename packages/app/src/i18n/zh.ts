@@ -1089,6 +1089,15 @@ export const dict = {
   "remoteAccess.viewerLimitSaveFailed": "无法保存浏览器数量上限，请重试。",
   "remoteAccess.viewerLimitRelayUnsupported": "当前中继版本暂不支持自定义浏览器上限；更新中继后，保存的设置才会生效。",
   "remoteAccess.viewerLimitOverCapacity": "调低上限不会撤销已有授权。若要批准新浏览器，请先撤销一个授权或调高上限。",
+  "remoteAccess.relayLabel": "中继服务器",
+  "remoteAccess.relayDescription":
+    "手机访问默认使用官方中继。若不信任官方中继，可以替换为你自己的地址，无需修改源码；新地址将在下次开启手机访问时生效。",
+  "remoteAccess.relayHelp": "可粘贴域名、https:// 地址或完整的 wss:// 地址，保存时会自动补全。",
+  "remoteAccess.relayInvalid": "无法保存这个中继地址，请输入有效的域名或地址后重试。",
+  "remoteAccess.relayReset": "恢复默认",
+  "remoteAccess.relayActiveHint": "进行中的会话仍连接原中继，重新开启手机访问后改用新地址。",
+  "remoteAccess.relayTrustNote":
+    "中继流量经 TLS 转发，并非端到端加密：中继运营方在技术上可以查看传输中的内容，提示词和消息正文不会被主动保存。若不信任运营方，请换成自己搭建的中继。",
   "remoteAccess.viewerApproved": "批准于 {{time}}",
   "remoteAccess.viewerLastSeen": "最近使用 {{time}}",
   "remote.liteNetwork": "省流",
