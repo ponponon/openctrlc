@@ -1427,7 +1427,7 @@ export const dict = {
   "dialog.releaseNotes.v1_1_6.connectionControls":
     "セッションタブでタイトルバーが埋まると、接続コントロールを自動的にコンパクト表示し、主要な操作を使いやすくしました。",
   "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
-    "`?debug=layout` で任意のレイアウト診断パネルを表示し、ビューポートやセッション領域のサイズを確認できるようになりました。",
+    "?debug=layout で任意のレイアウト診断パネルを表示し、ビューポートやセッション領域のサイズを確認できるようになりました。",
   "dialog.releaseNotes.v1_1_6.responsiveComposer":
     "入力ツールバーがセッションパネルの幅に合わせて折り返すようになり、分割表示や狭いパネルでも操作しやすくなりました。",
   "dialog.releaseNotes.v1_1_6.focusAndTitlebar":

@@ -1142,7 +1142,7 @@ export const dict = {
   "dialog.releaseNotes.v1_1_6.connectionControls":
     "세션 탭으로 제목 표시줄이 좁아지면 연결 컨트롤이 자동으로 간결하게 표시되어 주요 작업을 계속 사용할 수 있습니다.",
   "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
-    "선택 사항인 `?debug=layout` 레이아웃 진단 패널을 추가해 뷰포트와 세션 영역의 크기를 확인하고 레이아웃 문제를 조사할 수 있습니다.",
+    "선택 사항인 ?debug=layout 레이아웃 진단 패널을 추가해 뷰포트와 세션 영역의 크기를 확인하고 레이아웃 문제를 조사할 수 있습니다.",
   "dialog.releaseNotes.v1_1_6.responsiveComposer":
     "입력 도구 모음이 세션 패널 너비에 맞춰 줄바꿈되어 분할 화면과 좁은 패널에서도 계속 사용할 수 있습니다.",
   "dialog.releaseNotes.v1_1_6.focusAndTitlebar":

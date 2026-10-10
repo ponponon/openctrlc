@@ -95,6 +95,58 @@ function parseChangelog(value: unknown): ParsedRelease[] | undefined {
   return value.releases.map(parseRelease).filter((release): release is ParsedRelease => release !== undefined)
 }
 
+/** English release-note bullets mapped to their translation keys, per released version. */
+export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof dict>> = {
+  "1.1.4": {
+    "Kept the session context panel responsive when switching between session tabs, with cached snapshots, virtualized raw messages, and faster token usage calculations.":
+      "dialog.releaseNotes.v1_1_4.contextPanel",
+    "Made remote device authorization easier to review with recent activity ordering, full local timestamps, and clearer expiration reminders.":
+      "dialog.releaseNotes.v1_1_4.remoteAuthorization",
+    "Added clearer guidance on the mobile pairing page for finding and approving a new device request in the desktop app.":
+      "dialog.releaseNotes.v1_1_4.mobilePairing",
+    "Fixed virtualized session and file rows failing during rapid updates, stale reads, or recursive size measurement.":
+      "dialog.releaseNotes.v1_1_4.virtualRows",
+    "Preserved the active session panel while switching tabs to avoid unnecessary reloads and recomputation.":
+      "dialog.releaseNotes.v1_1_4.sessionTabs",
+  },
+  "1.1.5": {
+    "Combined remote desktop, connection route, and lite-network status in the title bar; open the control to inspect the route and switch between saved desktops.":
+      "dialog.releaseNotes.v1_1_5.remoteDesktopStatus",
+    "Improved portrait phone navigation and session interactions, and kept Review and context panels stable when switching session tabs.":
+      "dialog.releaseNotes.v1_1_5.mobileNavigation",
+    "Made remote access recovery clearer and improved loading of the remote workspace.":
+      "dialog.releaseNotes.v1_1_5.remoteRecovery",
+    "Fixed virtualized rows and session loading failures during rapid updates, scrolling, and tab changes.":
+      "dialog.releaseNotes.v1_1_5.sessionLoading",
+    "Fixed packaged desktop startup failures on Linux caused by loading TypeScript source files as external dependencies.":
+      "dialog.releaseNotes.v1_1_5.linuxStartup",
+    "Fixed mobile toolbar overlap and scroll behavior that could hide content or unexpectedly jump to the bottom.":
+      "dialog.releaseNotes.v1_1_5.mobileToolbar",
+  },
+  "1.1.6": {
+    "Title-bar connection controls now compact automatically when open session tabs use up available space, keeping key actions accessible.":
+      "dialog.releaseNotes.v1_1_6.connectionControls",
+    "Added an optional ?debug=layout overlay that reports viewport and session-frame measurements for layout troubleshooting.":
+      "dialog.releaseNotes.v1_1_6.layoutDiagnostics",
+    "The session composer now wraps controls according to its panel width, so split-screen and narrow side panels remain usable.":
+      "dialog.releaseNotes.v1_1_6.responsiveComposer",
+    "Fixed title-bar controls getting squeezed and focus indicators disappearing around clipped or scrollable UI.":
+      "dialog.releaseNotes.v1_1_6.focusAndTitlebar",
+    "Stale embedded CSS and JavaScript asset URLs now return 404 instead of the app HTML, preventing mixed-version pages from breaking.":
+      "dialog.releaseNotes.v1_1_6.staleAssets",
+  },
+  "1.1.7": {
+    "Mobile access can now use your own relay: paste a domain or wss:// address under Relay server in the access dialog, and the desktop completes it for you.":
+      "dialog.releaseNotes.v1_1_7.ownRelay",
+    "A custom relay that cannot be reached now fails with a clear error instead of silently falling back to the official relay.":
+      "dialog.releaseNotes.v1_1_7.noFallback",
+    "The remote connection details now show the relay hostname with an official or custom badge and a plain-language note about what the relay can see on the current route.":
+      "dialog.releaseNotes.v1_1_7.relayDetails",
+    "Fixed the title-bar connection entry changing size across platforms and as tabs opened and closed; it is now a stable compact control with details inside the popover.":
+      "dialog.releaseNotes.v1_1_7.connectionEntry",
+  },
+}
+
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {
   const current = normalizeReleaseVersion(input.current)
   const previous = normalizeReleaseVersion(input.previous)
@@ -112,56 +164,6 @@ function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; p
     return index === -1 ? releases.length : index
   })()
 
-  const releaseDescriptionKeys: Record<string, Record<string, keyof typeof dict>> = {
-    "1.1.4": {
-      "Kept the session context panel responsive when switching between session tabs, with cached snapshots, virtualized raw messages, and faster token usage calculations.":
-        "dialog.releaseNotes.v1_1_4.contextPanel",
-      "Made remote device authorization easier to review with recent activity ordering, full local timestamps, and clearer expiration reminders.":
-        "dialog.releaseNotes.v1_1_4.remoteAuthorization",
-      "Added clearer guidance on the mobile pairing page for finding and approving a new device request in the desktop app.":
-        "dialog.releaseNotes.v1_1_4.mobilePairing",
-      "Fixed virtualized session and file rows failing during rapid updates, stale reads, or recursive size measurement.":
-        "dialog.releaseNotes.v1_1_4.virtualRows",
-      "Preserved the active session panel while switching tabs to avoid unnecessary reloads and recomputation.":
-        "dialog.releaseNotes.v1_1_4.sessionTabs",
-    },
-    "1.1.5": {
-      "Combined remote desktop, connection route, and lite-network status in the title bar; open the control to inspect the route and switch between saved desktops.":
-        "dialog.releaseNotes.v1_1_5.remoteDesktopStatus",
-      "Improved portrait phone navigation and session interactions, and kept Review and context panels stable when switching session tabs.":
-        "dialog.releaseNotes.v1_1_5.mobileNavigation",
-      "Made remote access recovery clearer and improved loading of the remote workspace.":
-        "dialog.releaseNotes.v1_1_5.remoteRecovery",
-      "Fixed virtualized rows and session loading failures during rapid updates, scrolling, and tab changes.":
-        "dialog.releaseNotes.v1_1_5.sessionLoading",
-      "Fixed packaged desktop startup failures on Linux caused by loading TypeScript source files as external dependencies.":
-        "dialog.releaseNotes.v1_1_5.linuxStartup",
-      "Fixed mobile toolbar overlap and scroll behavior that could hide content or unexpectedly jump to the bottom.":
-        "dialog.releaseNotes.v1_1_5.mobileToolbar",
-    },
-    "1.1.6": {
-      "Title-bar connection controls now compact automatically when open session tabs use up available space, keeping key actions accessible.":
-        "dialog.releaseNotes.v1_1_6.connectionControls",
-      "Added an optional `?debug=layout` overlay that reports viewport and session-frame measurements for layout troubleshooting.":
-        "dialog.releaseNotes.v1_1_6.layoutDiagnostics",
-      "The session composer now wraps controls according to its panel width, so split-screen and narrow side panels remain usable.":
-        "dialog.releaseNotes.v1_1_6.responsiveComposer",
-      "Fixed title-bar controls getting squeezed and focus indicators disappearing around clipped or scrollable UI.":
-        "dialog.releaseNotes.v1_1_6.focusAndTitlebar",
-      "Stale embedded CSS and JavaScript asset URLs now return 404 instead of the app HTML, preventing mixed-version pages from breaking.":
-        "dialog.releaseNotes.v1_1_6.staleAssets",
-    },
-    "1.1.7": {
-      "Mobile access can now use your own relay: paste a domain or wss:// address under Relay server in the access dialog, and the desktop completes it for you.":
-        "dialog.releaseNotes.v1_1_7.ownRelay",
-      "A custom relay that cannot be reached now fails with a clear error instead of silently falling back to the official relay.":
-        "dialog.releaseNotes.v1_1_7.noFallback",
-      "The remote connection details now show the relay hostname with an official or custom badge and a plain-language note about what the relay can see on the current route.":
-        "dialog.releaseNotes.v1_1_7.relayDetails",
-      "Fixed the title-bar connection entry changing size across platforms and as tabs opened and closed; it is now a stable compact control with details inside the popover.":
-        "dialog.releaseNotes.v1_1_7.connectionEntry",
-    },
-  }
   const highlights = releases.slice(start, end).flatMap((release) => {
     const version = normalizeReleaseVersion(release.tag)
     const items =
@@ -189,7 +191,7 @@ function dedupeKey(highlight: Highlight) {
   return [highlight.title, highlight.description, highlight.media?.type ?? "", highlight.media?.src ?? ""].join("\n")
 }
 
-function loadReleaseHighlights(value: unknown, current?: string, previous?: string) {
+export function loadReleaseHighlights(value: unknown, current?: string, previous?: string) {
   const releases = parseChangelog(value)
   if (!releases?.length) return []
   return sliceHighlights({ releases, current, previous })

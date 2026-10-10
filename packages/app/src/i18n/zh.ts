@@ -1490,7 +1490,7 @@ export const dict = {
   "dialog.releaseNotes.v1_1_6.connectionControls":
     "会话标签占满标题栏空间时，连接入口会自动折叠，确保主要操作仍然可用。",
   "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
-    "新增可选的 `?debug=layout` 布局诊断面板，可查看视口和会话区域的尺寸，便于排查布局问题。",
+    "新增可选的 ?debug=layout 布局诊断面板，可查看视口和会话区域的尺寸，便于排查布局问题。",
   "dialog.releaseNotes.v1_1_6.responsiveComposer":
     "输入工具栏现在会根据会话面板宽度自动换行，让分屏和窄面板中的操作保持可用。",
   "dialog.releaseNotes.v1_1_6.focusAndTitlebar":

@@ -550,7 +550,7 @@ export const dict = {
   "dialog.releaseNotes.v1_1_6.connectionControls":
     "Title-bar connection controls now compact automatically when open session tabs use up available space, keeping key actions accessible.",
   "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
-    "Added an optional `?debug=layout` overlay that reports viewport and session-frame measurements for layout troubleshooting.",
+    "Added an optional ?debug=layout overlay that reports viewport and session-frame measurements for layout troubleshooting.",
   "dialog.releaseNotes.v1_1_6.responsiveComposer":
     "The session composer now wraps controls according to its panel width, so split-screen and narrow side panels remain usable.",
   "dialog.releaseNotes.v1_1_6.focusAndTitlebar":

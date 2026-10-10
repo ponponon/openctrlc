@@ -1858,3 +1858,7 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 ## 连接入口最终统一为紧凑形态，主机名只留在详情面板
 
 此前「桌面端不应在标题栏重复自己的主机名」仍默认远程 Web 要在入口展示主机名，并为此做过按标签溢出折叠、300px 滞回展开的条件判断。产品复核（2026-10-10，用户在 MacBook Chrome 远程页上明确要求「都是小小的」）推翻了这个前提：入口在所有平台统一为 64px 紧凑形态，只保留传输状态点、省流状态点和展开箭头；主机名、线路与省流说明全部由点击后的详情面板承载。条件折叠逻辑随之整段删除——入口恒小后不存在挤占标签的问题，也不再需要平台区分或 `data-compact` 属性。以后不要再按「Web 需要自我识别」复活宽入口；判断标准是信息在详情面板是否可达，而不是入口是否自解释。
+
+## 发布说明查键被反引号打断
+
+`docs/releases/*.md` 的 bullet 会经官网 `parseMarkdown` 转成 HTML 存进 `changelog.json`，`releaseNoteSections` 再用 `textContent` 提取——反引号片段先变成 `<code>` 再被剥掉，运行时描述里没有反引号。`highlights.tsx` 的 `releaseDescriptionKeys` 如果按 md 原文（含反引号）写键，查键必然失败：英文界面无感（显示原文），但中文/日文/韩文界面会**静默回退英文**且没有任何报错。v1.1.6 的 `layoutDiagnostics` 就中了这一枪，翻译键从未生效过。教训：映射键必须等于"经 parseMarkdown + textContent 之后"的描述，不是 md 原文；发布说明的 bullet 尽量不写反引号。`packages/app/src/context/highlights.test.ts` 已忠实模拟该转换并把契约固化成测试，改 bullet 或映射不一致会直接红。
