@@ -28,7 +28,7 @@ The relay listens on `0.0.0.0:4097` by default. Set `OPENCTRLC_REMOTE_PUBLIC_URL
 
 The production example under [`infra/remote-relay`](../../infra/remote-relay) runs the relay in an isolated container, binds its port to host loopback only, and adds a dedicated OpenResty virtual host for `openctrlc-remote.quniv.cn`. The OpenResty instance must have a valid certificate for the hostname and forward WebSocket upgrades, long-lived streams, and the client's actual IP to the relay. See its [deployment guide](../../infra/remote-relay/README.md) for the host-specific script and operational checks.
 
-For another domain, change `OPENCTRLC_REMOTE_PUBLIC_URL`, the OpenResty `server_name`, and the certificate paths together. Desktop clients can override the relay URL with `OPENCTRLC_REMOTE_RELAY_URL` when testing another deployment.
+For another domain, change `OPENCTRLC_REMOTE_PUBLIC_URL`, the OpenResty `server_name`, and the certificate paths together. For new sessions, desktop clients resolve the relay in this order: the `OPENCTRLC_REMOTE_RELAY_URL` environment variable (testing), the address saved under **Relay server** in the mobile access dialog (the supported end-user path; no rebuild needed), then the built-in default. Already-paired sessions keep the relay that holds their credentials until stopped.
 
 ## Operational limits
 
