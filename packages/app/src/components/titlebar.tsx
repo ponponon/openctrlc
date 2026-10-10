@@ -38,6 +38,7 @@ import {
 } from "@/utils/remote-workspace"
 import { readNetworkQuality, onNetworkQualityChange } from "@/utils/network-quality"
 import { TitlebarTabStrip } from "@/components/titlebar-tab-strip"
+import { nextConnectionCompact } from "@/components/titlebar-connection-compact"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
 import { readSessionTabsRemovedDetail, SESSION_TABS_REMOVED_EVENT } from "@/components/titlebar-session-events"
@@ -388,6 +389,7 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
             })
 
             const [tabsAreOverflowing, setTabsAreOverflowing] = createSignal(false)
+            const [connectionCompact, setConnectionCompact] = createSignal(false)
 
             return (
               <div
@@ -400,7 +402,11 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                   "md:pl-4": !macTrafficLights(),
                 }}
               >
-                <ChannelIndicator debugTools={props.debugTools} bottom={bottom()} />
+                <ChannelIndicator
+                  debugTools={props.debugTools}
+                  bottom={bottom()}
+                  compact={connectionCompact()}
+                />
                 <Show when={windows() || linux()}>
                   <WindowsAppMenu command={command} platform={platform} variant="v2" />
                 </Show>
@@ -432,7 +438,10 @@ export function Titlebar(props: { update?: TitlebarUpdate; debugTools?: { visibl
                   tabs={tabsStore}
                   currentTab={currentTab}
                   forceTruncate={tabsAreOverflowing()}
-                  onOverflowChange={setTabsAreOverflowing}
+                  onOverflowChange={(state) => {
+                    setTabsAreOverflowing(state.overflowing)
+                    setConnectionCompact((compact) => nextConnectionCompact(compact, state))
+                  }}
                   onNavigate={(tab, el) => {
                     tabs.select(tab)
                     // block/inline must be "nearest": default block:"start" scrolls overflow
@@ -848,7 +857,11 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
   )
 }
 
-function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () => void }; bottom?: boolean }) {
+function ChannelIndicator(props: {
+  debugTools?: { visible: boolean; toggle: () => void }
+  bottom?: boolean
+  compact?: boolean
+}) {
   const platform = usePlatform()
   const language = useLanguage()
   const global = useGlobal()
@@ -961,6 +974,7 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
           ref={(element) => (connectionTrigger = element)}
           type="button"
           data-slot="titlebar-remote-connection-trigger"
+          data-compact={platform.platform === "desktop" || props.compact ? "true" : undefined}
           class="group"
           aria-label={language.t("remote.connection.open")}
           aria-expanded={shown()}

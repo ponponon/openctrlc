@@ -167,6 +167,41 @@
   align-items: center;
 }
 
+/* The desktop app is the named host itself, so repeating a potentially long
+   hostname in its title bar only steals room from session tabs. The popover
+   continues to show the full host name and connection details. */
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"] {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 64px;
+  gap: 4px;
+  padding-inline: 6px;
+}
+
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
+  [data-slot="titlebar-remote-connection-host"],
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
+  [data-slot="titlebar-remote-connection-divider"],
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
+  [data-slot="titlebar-remote-connection-route"] {
+  display: none;
+}
+
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
+  [data-slot="titlebar-remote-connection-lite-label"] {
+  display: none;
+}
+
+[data-slot="titlebar-remote-connection-trigger"][data-compact="true"]
+  [data-slot="titlebar-remote-connection-lite"] {
+  width: 8px;
+  min-height: 8px;
+  height: 8px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-slot="titlebar-remote-connection-trigger"] {
     transition: none;
