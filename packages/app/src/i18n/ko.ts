@@ -1120,6 +1120,16 @@ export const dict = {
     "TypeScript 소스 파일을 외부 종속성으로 불러와 Linux 데스크톱 패키지가 시작되지 않던 문제를 수정했습니다.",
   "dialog.releaseNotes.v1_1_5.mobileToolbar":
     "모바일 도구 모음이 콘텐츠를 가리는 문제와 스크롤 중 콘텐츠가 숨겨지거나 갑자기 맨 아래로 이동하는 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_6.connectionControls":
+    "세션 탭으로 제목 표시줄이 좁아지면 연결 컨트롤이 자동으로 간결하게 표시되어 주요 작업을 계속 사용할 수 있습니다.",
+  "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
+    "선택 사항인 `?debug=layout` 레이아웃 진단 패널을 추가해 뷰포트와 세션 영역의 크기를 확인하고 레이아웃 문제를 조사할 수 있습니다.",
+  "dialog.releaseNotes.v1_1_6.responsiveComposer":
+    "입력 도구 모음이 세션 패널 너비에 맞춰 줄바꿈되어 분할 화면과 좁은 패널에서도 계속 사용할 수 있습니다.",
+  "dialog.releaseNotes.v1_1_6.focusAndTitlebar":
+    "제목 표시줄 컨트롤이 눌리는 문제와 스크롤 또는 잘림 영역에서 키보드 포커스 표시가 사라지는 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_6.staleAssets":
+    "오래된 내장 CSS 및 JavaScript 자산 URL이 앱 HTML 대신 404를 반환해 서로 다른 버전의 리소스가 섞일 때 발생하는 문제를 방지합니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

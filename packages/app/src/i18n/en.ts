@@ -547,6 +547,16 @@ export const dict = {
     "Fixed packaged desktop startup failures on Linux caused by loading TypeScript source files as external dependencies.",
   "dialog.releaseNotes.v1_1_5.mobileToolbar":
     "Fixed mobile toolbar overlap and scroll behavior that could hide content or unexpectedly jump to the bottom.",
+  "dialog.releaseNotes.v1_1_6.connectionControls":
+    "Title-bar connection controls now compact automatically when open session tabs use up available space, keeping key actions accessible.",
+  "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
+    "Added an optional `?debug=layout` overlay that reports viewport and session-frame measurements for layout troubleshooting.",
+  "dialog.releaseNotes.v1_1_6.responsiveComposer":
+    "The session composer now wraps controls according to its panel width, so split-screen and narrow side panels remain usable.",
+  "dialog.releaseNotes.v1_1_6.focusAndTitlebar":
+    "Fixed title-bar controls getting squeezed and focus indicators disappearing around clipped or scrollable UI.",
+  "dialog.releaseNotes.v1_1_6.staleAssets":
+    "Stale embedded CSS and JavaScript asset URLs now return 404 instead of the app HTML, preventing mixed-version pages from breaking.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

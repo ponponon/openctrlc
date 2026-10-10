@@ -1404,6 +1404,16 @@ export const dict = {
     "TypeScript ソースを外部依存として読み込むことで Linux のパッケージ版デスクトップが起動しない問題を修正しました。",
   "dialog.releaseNotes.v1_1_5.mobileToolbar":
     "モバイルツールバーがコンテンツに重なる問題と、スクロール時に内容が隠れたり最下部へ意図せず移動したりする問題を修正しました。",
+  "dialog.releaseNotes.v1_1_6.connectionControls":
+    "セッションタブでタイトルバーが埋まると、接続コントロールを自動的にコンパクト表示し、主要な操作を使いやすくしました。",
+  "dialog.releaseNotes.v1_1_6.layoutDiagnostics":
+    "`?debug=layout` で任意のレイアウト診断パネルを表示し、ビューポートやセッション領域のサイズを確認できるようになりました。",
+  "dialog.releaseNotes.v1_1_6.responsiveComposer":
+    "入力ツールバーがセッションパネルの幅に合わせて折り返すようになり、分割表示や狭いパネルでも操作しやすくなりました。",
+  "dialog.releaseNotes.v1_1_6.focusAndTitlebar":
+    "タイトルバーのコントロールが圧縮される問題と、スクロール領域やクリップ領域でフォーカス表示が消える問題を修正しました。",
+  "dialog.releaseNotes.v1_1_6.staleAssets":
+    "古い埋め込み CSS と JavaScript のアセット URL はアプリ HTML ではなく 404 を返し、新旧リソースの混在による表示不具合を防ぎます。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
