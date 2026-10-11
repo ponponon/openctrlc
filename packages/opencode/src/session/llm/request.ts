@@ -9,15 +9,22 @@ import type { MessageV2 } from "../message-v2"
 import type { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
 import { SystemPrompt } from "../system"
-import { InstallationVersion } from "@openctrlc/core/installation/version"
+import { InstallationVersion, SpoofedOpencodeVersion } from "@openctrlc/core/installation/version"
 import { Brand } from "@openctrlc/identity"
 import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
 
-// 伪装成原版 opencode 以避免被 zen 服务器限制
-const USER_AGENT = `opencode/${InstallationVersion}`
+// ⚠️ 发往 opencode zen 的请求必须伪装成原版 opencode，且版本号必须是上游
+// 版本（>= 1.18.0）：服务端会解析 User-Agent 中的版本，用我们自己的
+// InstallationVersion（发行版 1.1.x、开发态 local）会被拒绝，报
+// "OpenCode 1.18.0 or newer is required to use the free tier"。
+// 所以这里用 SpoofedOpencodeVersion 固定伪装，不能改回 InstallationVersion。
+// 非 zen 请求（其他模型服务商）使用真实产品身份。
+// 详见 FailureExperience.md「发往 zen 的 User-Agent 必须伪装品牌和版本号」。
+const ZEN_USER_AGENT = `opencode/${SpoofedOpencodeVersion}`
+const PRODUCT_USER_AGENT = `${Brand.cli}/${InstallationVersion}`
 
 type PrepareInput = {
   readonly user: SessionV1.User
@@ -207,12 +214,12 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
             "x-opencode-session": input.sessionID,
             "x-opencode-request": input.user.id,
             "x-opencode-client": input.flags.client,
-            "User-Agent": USER_AGENT,
+            "User-Agent": ZEN_USER_AGENT,
           }
         : {
             "x-session-affinity": input.sessionID,
             "X-Session-Id": input.sessionID,
-            "User-Agent": USER_AGENT,
+            "User-Agent": PRODUCT_USER_AGENT,
           }),
       ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
       ...input.model.headers,

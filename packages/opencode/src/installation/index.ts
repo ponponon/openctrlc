@@ -11,7 +11,7 @@ import { AppProcess } from "@openctrlc/core/process"
 import path from "path"
 import { makeRuntime } from "@openctrlc/core/effect/runtime"
 import semver from "semver"
-import { InstallationChannel, InstallationVersion } from "@openctrlc/core/installation/version"
+import { InstallationChannel, InstallationVersion, SpoofedOpencodeVersion } from "@openctrlc/core/installation/version"
 import { NpmConfig } from "@openctrlc/core/npm-config"
 import { InstallationEvent } from "@openctrlc/schema/installation-event"
 import { Brand } from "@openctrlc/identity"
@@ -42,9 +42,13 @@ export const Info = Schema.Struct({
 }).annotate({ identifier: "InstallationInfo" })
 export type Info = Schema.Schema.Type<typeof Info>
 
+// 伪装成原版 opencode 以避免被 zen 服务器限制。
+// ⚠️ 版本段必须用 SpoofedOpencodeVersion：我们自己的 InstallationVersion
+// （1.1.x/local）低于 zen 要求的 1.18.0，会触发
+// "OpenCode 1.18.0 or newer is required to use the free tier"。
+// 详见 FailureExperience.md「发往 zen 的 User-Agent 必须伪装品牌和版本号」。
 export function userAgent(client = "cli") {
-  // 伪装成原版 opencode 以避免被 zen 服务器限制
-  return `opencode/${InstallationChannel}/${InstallationVersion}/${client}`
+  return `opencode/${InstallationChannel}/${SpoofedOpencodeVersion}/${client}`
 }
 
 export const USER_AGENT = userAgent()

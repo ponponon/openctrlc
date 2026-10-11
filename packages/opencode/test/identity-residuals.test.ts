@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test"
+import { SpoofedOpencodeVersion } from "@openctrlc/core/installation/version"
 import { Brand } from "@openctrlc/identity"
 import { debugInitializeRequest } from "../src/mcp/client-info"
+import semver from "semver"
 
 const read = (path: string) => Bun.file(path).text()
 
@@ -32,6 +34,28 @@ test("uses the product CLI in the web search User-Agent", async () => {
 
   expect(source).toContain('"User-Agent": `${Brand.cli}/${InstallationVersion}`')
   expect(source).not.toContain('"User-Agent": `opencode/${InstallationVersion}`')
+})
+
+test("zen User-Agent spoofs the upstream version while other requests use product identity", async () => {
+  const request = await read("./src/session/llm/request.ts")
+
+  // zen 分支必须伪装上游版本号（>= 1.18.0），禁止退回 InstallationVersion：
+  // 1.1.x/local 会被 zen 拒绝并报 "OpenCode 1.18.0 or newer is required"。
+  expect(request).toContain("`opencode/${SpoofedOpencodeVersion}`")
+  expect(request).not.toContain("`opencode/${InstallationVersion}`")
+  // 非 zen 分支用真实产品身份。
+  expect(request).toContain("`${Brand.cli}/${InstallationVersion}`")
+
+  // models.opencode.ai 目录与 installation UA 同样不能携带我们自己的版本号。
+  const models = await read("../core/src/models-dev.ts")
+  expect(models).toContain("`opencode/${InstallationChannel}/${SpoofedOpencodeVersion}/${Flag.OPENCTRLC_CLIENT}`")
+  expect(models).not.toContain("`${InstallationChannel}/${InstallationVersion}/")
+})
+
+test("spoofed opencode version satisfies the zen free tier minimum", () => {
+  // zen 服务端要求 UA 中版本 >= 1.18.0；伪装版本必须是合法 semver 且不低于该下限。
+  expect(semver.valid(SpoofedOpencodeVersion)).not.toBeNull()
+  expect(semver.gte(SpoofedOpencodeVersion, "1.18.0")).toBe(true)
 })
 
 test("uses product identity for all MCP client initialization paths", async () => {

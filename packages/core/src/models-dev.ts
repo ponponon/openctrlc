@@ -7,7 +7,7 @@ import { Flag } from "./flag/flag"
 import { Flock } from "./util/flock"
 import { Hash } from "./util/hash"
 import { FSUtil } from "./fs-util"
-import { InstallationChannel, InstallationVersion } from "./installation/version"
+import { InstallationChannel, SpoofedOpencodeVersion } from "./installation/version"
 import { EventV2 } from "./event"
 import { makeGlobalNode } from "./effect/app-node"
 import { httpClient } from "./effect/app-node-platform"
@@ -21,8 +21,11 @@ const InterleavedField = Schema.Union([
   Schema.String,
 ])
 
-// 伪装成原版 opencode 以避免被限制
-const USER_AGENT = `opencode/${InstallationChannel}/${InstallationVersion}/${Flag.OPENCTRLC_CLIENT}`
+// 伪装成原版 opencode 以避免被 opencode.ai 目录服务限制。
+// 品牌和版本号都要像上游：版本段必须用 SpoofedOpencodeVersion（我们自己的
+// InstallationVersion 是 1.1.x/local，将来目录服务若加上 zen 同款版本门禁
+// 就会重演 "OpenCode 1.18.0 or newer" 故障）。详见 FailureExperience.md。
+const USER_AGENT = `opencode/${InstallationChannel}/${SpoofedOpencodeVersion}/${Flag.OPENCTRLC_CLIENT}`
 
 const CostTier = Schema.Struct({
   input: Schema.Finite,

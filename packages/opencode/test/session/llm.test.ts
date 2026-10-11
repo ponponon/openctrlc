@@ -1,5 +1,7 @@
 import { PermissionV1 } from "@openctrlc/core/v1/permission"
 import { ConfigV1 } from "@openctrlc/core/v1/config/config"
+import { SpoofedOpencodeVersion } from "@openctrlc/core/installation/version"
+import { Brand } from "@openctrlc/identity"
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test"
 import { SessionV1 } from "@openctrlc/core/v1/session"
 import path from "path"
@@ -815,10 +817,16 @@ describe("session.llm.stream", () => {
           expect(headers.get("x-parent-session-id")).toBe(parentSessionID ?? null)
           if (input.providerID.startsWith("opencode")) {
             expect(headers.get("x-opencode-session")).toBe(sessionID)
+            // zen 免费层校验 User-Agent 中的版本 >= 1.18.0，必须伪装成上游版本
+            // 号（SpoofedOpencodeVersion），不能带我们自己的 InstallationVersion。
+            // 详见 FailureExperience.md「发往 zen 的 User-Agent 必须伪装品牌和版本号」。
+            expect(headers.get("user-agent")).toStartWith(`opencode/${SpoofedOpencodeVersion}`)
             return
           }
           expect(headers.get("x-session-affinity")).toBe(sessionID)
           expect(headers.get("X-Session-Id")).toBe(sessionID)
+          // 非 zen 请求使用真实产品身份，不得伪装成 opencode。
+          expect(headers.get("user-agent")).toStartWith(`${Brand.cli}/`)
         }),
       {
         config: () => {
