@@ -166,7 +166,14 @@ for (const scenario of scenarios) {
       `message:${userID}`,
       `messages:start:${messages.at(-initialPageSize)!.info.id}`,
     ])
-    await expect(page.locator(assistantPartIDs.slice(1).map((id) => `[data-timeline-part-id="${id}"]`).join(","))).toHaveCount(initialPageSize)
+    await expect(
+      page.locator(
+        assistantPartIDs
+          .slice(1)
+          .map((id) => `[data-timeline-part-id="${id}"]`)
+          .join(","),
+      ),
+    ).toHaveCount(initialPageSize)
     await page.evaluate(() => {
       ;(
         window as Window & {
@@ -178,7 +185,9 @@ for (const scenario of scenarios) {
     expect(await visibleContentHidden(page)).toBe(false)
     const beforeHistory = await probeSamples(page)
     history.resolve()
-    await expect(page.locator(assistantPartIDs.map((id) => `[data-timeline-part-id="${id}"]`).join(","))).toHaveCount(assistants.length)
+    await expect(page.locator(assistantPartIDs.map((id) => `[data-timeline-part-id="${id}"]`).join(","))).toHaveCount(
+      assistants.length,
+    )
     await expect.poll(() => requests.filter((request) => request.phase === "end").length).toBe(2)
     await expect(page.getByRole("button", { name: "Stop" })).toBeVisible()
     await waitForProbeSamples(page, beforeHistory)

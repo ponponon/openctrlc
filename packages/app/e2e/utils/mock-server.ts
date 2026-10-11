@@ -298,8 +298,7 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
 
     const currentMessagesMatch = path.match(/^\/api\/session\/([^/]+)\/message$/)
     if (currentMessagesMatch) {
-      if (config.protocol === "v1")
-        return json(route, { data: [], parents: [], cursor: {} })
+      if (config.protocol === "v1") return json(route, { data: [], parents: [], cursor: {} })
       const token = url.searchParams.get("cursor") ?? undefined
       const before = token ? cursors.get(token) : undefined
       if (token && !before) return json(route, { error: "Invalid cursor" }, undefined, 400)
@@ -506,15 +505,15 @@ function currentMessage(value: unknown): unknown[] {
               state.status === "pending"
                 ? { status: "streaming", input: state.raw ?? JSON.stringify(state.input ?? {}) }
                 : state.status === "completed"
-                ? {
-                    status: "completed",
-                    input: state.input ?? {},
-                    metadata: {
-                      ...(state.metadata && typeof state.metadata === "object" ? state.metadata : {}),
-                      ...(typeof state.title === "string" ? { title: state.title } : {}),
-                    },
-                    content: [{ type: "text", text: state.output ?? "" }],
-                  }
+                  ? {
+                      status: "completed",
+                      input: state.input ?? {},
+                      metadata: {
+                        ...(state.metadata && typeof state.metadata === "object" ? state.metadata : {}),
+                        ...(typeof state.title === "string" ? { title: state.title } : {}),
+                      },
+                      content: [{ type: "text", text: state.output ?? "" }],
+                    }
                   : state.status === "error"
                     ? {
                         status: "error",

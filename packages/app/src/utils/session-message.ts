@@ -230,13 +230,7 @@ function userParts(sessionID: string, message: SessionMessageUser): Part[] {
         if (!comment) return []
         return [
           {
-            ...textPart(
-              sessionID,
-              message.id,
-              sections.length + index,
-              formatCommentNote(comment),
-              true,
-            ),
+            ...textPart(sessionID, message.id, sections.length + index, formatCommentNote(comment), true),
             metadata: createCommentMetadata(comment),
           },
         ]

@@ -740,9 +740,7 @@ async function expandSteps(page: Page, options: { visibleOnly?: boolean } = {}) 
       await toggle.click()
       const timelineRow = page.locator(`[data-timeline-key="${timelineKey}"]`)
       const content = page.locator(`[data-timeline-key="${timelineKey}"] [data-slot="session-turn-steps-content"]`)
-      await expect
-        .poll(async () => !(await timelineRow.count()) || (await content.isVisible()))
-        .toBe(true)
+      await expect.poll(async () => !(await timelineRow.count()) || (await content.isVisible())).toBe(true)
       expanded = true
       break
     }
