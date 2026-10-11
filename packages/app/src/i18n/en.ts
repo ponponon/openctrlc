@@ -565,6 +565,8 @@ export const dict = {
     "The remote connection details now show the relay hostname with an official or custom badge and a plain-language note about what the relay can see on the current route.",
   "dialog.releaseNotes.v1_1_7.connectionEntry":
     "Fixed the title-bar connection entry changing size across platforms and as tabs opened and closed; it is now a stable compact control with details inside the popover.",
+  "dialog.releaseNotes.v1_1_7.projectAvatarColors":
+    "Project, session, and tab icons now show stable colors when project metadata has no color set.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

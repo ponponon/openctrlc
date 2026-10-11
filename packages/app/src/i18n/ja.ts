@@ -1443,6 +1443,8 @@ export const dict = {
     "リモート接続の詳細に、中継のホスト名、公式/独自バッジ、現在の経路で中継が何を見えるかを平易な言葉で示す表示が追加されました。",
   "dialog.releaseNotes.v1_1_7.connectionEntry":
     "タイトルバーの接続エントリがプラットフォームやタブの増減でサイズ変化する問題を修正しました。各環境で安定したコンパクト表示になり、詳細はポップオーバー内に収めています。",
+  "dialog.releaseNotes.v1_1_7.projectAvatarColors":
+    "プロジェクトの色がメタデータに設定されていない場合も、プロジェクト、セッション、タブのアイコンに安定した色が表示されるようになりました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
