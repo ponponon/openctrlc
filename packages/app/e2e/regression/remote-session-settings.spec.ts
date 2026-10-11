@@ -17,7 +17,7 @@ test("session settings use the remote server context", async ({ page }) => {
   await configureServers(page)
 
   await page.goto(`/server/${base64Encode(serverB)}/session/${sessionB.id}`)
-  await expect(page.getByText(sessionB.title).first()).toBeVisible()
+  await expect(page.locator("main").getByRole("heading", { level: 1 })).toContainText(sessionB.title)
   await page.keyboard.press("Control+,")
 
   const dialog = page.locator(".settings-v2-dialog")
@@ -68,7 +68,7 @@ test("auto-accept responds for an unfocused server session", async ({ page }) =>
 
   const hrefB = `/server/${base64Encode(serverB)}/session/${sessionB.id}`
   await page.goto(`/server/${base64Encode(serverA)}/session/${sessionA.id}`)
-  await expect(page.getByText(sessionA.title).first()).toBeVisible()
+  await expect(page.locator("main").getByRole("heading", { level: 1 })).toContainText(sessionA.title)
   await page.keyboard.press("Control+,")
   const autoAccept = page.locator(".settings-v2-dialog").locator('[data-action="settings-auto-accept-permissions"]')
   await autoAccept.locator('[data-slot="switch-control"]').click()

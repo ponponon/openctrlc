@@ -8,7 +8,7 @@ test("Chromium WebRTC channel exchanges control and fragmented binary data", asy
   const packageRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..")
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? 3000}`
   const origin = new URL(baseURL).origin
-  const moduleURL = (file: string) => `/@fs${resolve(packageRoot, file)}`
+  const moduleURL = (file: string) => `/@fs/${resolve(packageRoot, file)}`
 
   await page.route(`${origin}/`, (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>WebRTC transport harness</title>" }),
@@ -163,7 +163,7 @@ test("direct terminal socket preserves send order and closes cleanly on page shu
   const packageRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..")
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? 3000}`
   const origin = new URL(baseURL).origin
-  const moduleURL = (file: string) => `/@fs${resolve(packageRoot, file)}`
+  const moduleURL = (file: string) => `/@fs/${resolve(packageRoot, file)}`
 
   await page.route(`${origin}/`, (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>WebRTC lifecycle harness</title>" }),
@@ -392,7 +392,7 @@ test("a rejected direct WebSocket falls back to Relay with the session query", a
   const packageRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..")
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? 3000}`
   const origin = new URL(baseURL).origin
-  const moduleURL = (file: string) => `/@fs${resolve(packageRoot, file)}`
+  const moduleURL = (file: string) => `/@fs/${resolve(packageRoot, file)}`
 
   await page.route(`${origin}/`, (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Relay WebSocket fallback harness</title>" }),
@@ -617,7 +617,7 @@ test("a rejected direct upload stops reading and sending its request body", asyn
   const packageRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..")
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? 3000}`
   const origin = new URL(baseURL).origin
-  const moduleURL = (file: string) => `/@fs${resolve(packageRoot, file)}`
+  const moduleURL = (file: string) => `/@fs/${resolve(packageRoot, file)}`
 
   await page.route(`${origin}/`, (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>WebRTC upload harness</title>" }),
@@ -870,7 +870,7 @@ test("legacy relay 401 skips peer signaling without retrying and keeps the relay
         Object.defineProperty(window, "WebSocket", { configurable: true, value: NativeWebSocket })
       }
     },
-    { clientModule: `/@fs${resolve(packageRoot, "app/src/utils/remote-peer.ts")}` },
+    { clientModule: `/@fs/${resolve(packageRoot, "app/src/utils/remote-peer.ts")}` },
   )
 
   expect(result).toEqual({

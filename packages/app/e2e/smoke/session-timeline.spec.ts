@@ -33,6 +33,7 @@ test.describe("smoke: session timeline", () => {
   test("keeps the visible message fixed while prepending history", async ({ page }) => {
     const requests: { before?: string; phase: "start" | "end"; at: number }[] = []
     await mockOpenCodeServer(page, {
+      protocol: "v1",
       sessions: fixture.sessions,
       provider: fixture.provider,
       directory: fixture.directory,
@@ -91,6 +92,7 @@ test.describe("smoke: session timeline", () => {
 
   test("preserves the timeline gap above the composer", async ({ page }) => {
     await mockOpenCodeServer(page, {
+      protocol: "v1",
       sessions: fixture.sessions,
       provider: fixture.provider,
       directory: fixture.directory,
@@ -117,6 +119,7 @@ test.describe("smoke: session timeline", () => {
 
   test("paints cached session tabs at the latest message", async ({ page }) => {
     await mockOpenCodeServer(page, {
+      protocol: "v1",
       sessions: fixture.sessions,
       provider: fixture.provider,
       directory: fixture.directory,
@@ -243,6 +246,7 @@ test.describe("smoke: session timeline", () => {
 
   test("paints a cold session tab at the latest message", async ({ page }) => {
     await mockOpenCodeServer(page, {
+      protocol: "v1",
       sessions: fixture.sessions,
       provider: fixture.provider,
       directory: fixture.directory,
@@ -322,6 +326,7 @@ test.describe("smoke: session timeline", () => {
   test("renders seeded timeline in order while paging through history", async ({ page }) => {
     const errors = trackPageErrors(page)
     await mockOpenCodeServer(page, {
+      protocol: "v1",
       sessions: fixture.sessions,
       provider: fixture.provider,
       directory: fixture.directory,
@@ -511,6 +516,19 @@ async function expectCanScrollToStart(
     expectOrderedIDs(expectedPartIDs, current.visibleIds, "visible part")
     expectOrderedIDs(expectedMessageIDs, unique(current.messageIds), "mounted message")
     expectOrderedIDs(expectedMessageIDs, unique(current.visibleMessageIds), "visible message")
+
+    if (
+      current.scrollTop > 1 &&
+      seenParts.size === expectedPartIDs.length &&
+      seenMessages.size === expectedMessageIDs.length
+    ) {
+      await page.mouse.wheel(0, -Math.max(current.scrollTop + current.clientHeight, 1000))
+      await waitForTimelineStable(page)
+      current = await timelineState(page)
+      collectSeen(current, seenParts, seenMessages)
+      samples.push(sampleTraversal(current, seenParts.size, seenMessages.size))
+      expectNoSmokeErrors(errors, current.errorToasts, current.forbiddenText)
+    }
 
     if (
       current.scrollTop <= 1 &&
@@ -720,9 +738,11 @@ async function expandSteps(page: Page, options: { visibleOnly?: boolean } = {}) 
         if (!inViewport) continue
       }
       await toggle.click()
-      await expect(
-        page.locator(`[data-timeline-key="${timelineKey}"] [data-slot="session-turn-steps-content"]`),
-      ).toBeVisible()
+      const timelineRow = page.locator(`[data-timeline-key="${timelineKey}"]`)
+      const content = page.locator(`[data-timeline-key="${timelineKey}"] [data-slot="session-turn-steps-content"]`)
+      await expect
+        .poll(async () => !(await timelineRow.count()) || (await content.isVisible()))
+        .toBe(true)
       expanded = true
       break
     }

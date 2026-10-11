@@ -259,6 +259,16 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
       })
     }
 
+    const currentMessageMatch = path.match(/^\/api\/session\/([^/]+)\/message\/([^/]+)$/)
+    if (currentMessageMatch) {
+      if (config.protocol === "v1") return json(route, { error: "Message not found" }, undefined, 404)
+      config.onMessage?.({ sessionID: currentMessageMatch[1]!, messageID: currentMessageMatch[2]! })
+      if (config.messageDelay !== undefined) await new Promise((resolve) => setTimeout(resolve, config.messageDelay))
+      const message = config.message?.(currentMessageMatch[1]!, currentMessageMatch[2]!)
+      if (message === undefined) return json(route, { error: "Message not found" }, undefined, 404)
+      return json(route, { data: currentMessage(message)[0] })
+    }
+
     const sessionMatch = path.match(/^\/session\/([^/]+)$/)
     if (sessionMatch) {
       const session = config.sessions.find((s) => s.id === sessionMatch[1])
@@ -288,6 +298,8 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
 
     const currentMessagesMatch = path.match(/^\/api\/session\/([^/]+)\/message$/)
     if (currentMessagesMatch) {
+      if (config.protocol === "v1")
+        return json(route, { data: [], parents: [], cursor: {} })
       const token = url.searchParams.get("cursor") ?? undefined
       const before = token ? cursors.get(token) : undefined
       if (token && !before) return json(route, { error: "Invalid cursor" }, undefined, 400)
@@ -300,8 +312,8 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
       const cursor = pageData.cursor ? `cursor_${++nextCursor}` : undefined
       if (cursor) cursors.set(cursor, pageData.cursor!)
       return json(route, {
-        data: pageData.items.map(currentMessage).reverse(),
-        parents: config.parentMessages?.(currentMessagesMatch[1]).map(currentMessage),
+        data: pageData.items.toReversed().flatMap(currentMessage),
+        parents: config.parentMessages?.(currentMessagesMatch[1]).flatMap(currentMessage),
         cursor: { next: cursor },
       })
     }
@@ -379,63 +391,156 @@ export function currentSession(session: { id: string } & Record<string, unknown>
   }
 }
 
-function currentMessage(value: unknown) {
+function currentMessage(value: unknown): unknown[] {
   const item = value as {
     info: Record<string, unknown> & { id: string; role: "user" | "assistant"; time: { created: number } }
     parts: Array<Record<string, unknown> & { type: string }>
   }
   if (item.info.role === "user") {
-    return {
+    const comments = item.parts.flatMap((part) => {
+      if (part.type !== "text" || part.synthetic !== true || !part.metadata || typeof part.metadata !== "object")
+        return []
+      const comment = (part.metadata as Record<string, unknown>).opencodeComment
+      return comment && typeof comment === "object" ? [comment] : []
+    })
+    const summary = item.info.summary
+    const metadata = {
+      ...(summary ? { summary } : {}),
+      ...(comments.length ? { opencodeComments: comments } : {}),
+    }
+    const message = {
       id: item.info.id,
       type: "user",
       time: item.info.time,
       text: item.parts
-        .flatMap((part) => (part.type === "text" && typeof part.text === "string" ? [part.text] : []))
+        .flatMap((part) => {
+          if (part.type !== "text" || typeof part.text !== "string") return []
+          const isComment =
+            part.synthetic === true &&
+            part.metadata &&
+            typeof part.metadata === "object" &&
+            "opencodeComment" in part.metadata
+          return isComment ? [] : [part.text]
+        })
         .join("\n"),
+      files: item.parts.flatMap((part) => {
+        if (part.type !== "file" || typeof part.url !== "string" || typeof part.mime !== "string") return []
+        const data = part.url.match(/^data:[^,]*;base64,(.*)$/s)?.[1]
+        const mention =
+          part.source && typeof part.source === "object" && "text" in part.source
+            ? (part.source.text as { value?: unknown; start?: unknown; end?: unknown })
+            : undefined
+        return [
+          {
+            data: data ?? "",
+            mime: part.mime,
+            source: data === undefined ? { type: "uri", uri: part.url } : { type: "inline" },
+            name: typeof part.filename === "string" ? part.filename : undefined,
+            mention:
+              mention &&
+              typeof mention.value === "string" &&
+              typeof mention.start === "number" &&
+              typeof mention.end === "number"
+                ? { text: mention.value, start: mention.start, end: mention.end }
+                : undefined,
+          },
+        ]
+      }),
+      agents: item.parts.flatMap((part) => {
+        if (part.type !== "agent" || typeof part.name !== "string") return []
+        const mention = part.source as { value?: unknown; start?: unknown; end?: unknown } | undefined
+        return [
+          {
+            name: part.name,
+            mention:
+              mention &&
+              typeof mention.value === "string" &&
+              typeof mention.start === "number" &&
+              typeof mention.end === "number"
+                ? { text: mention.value, start: mention.start, end: mention.end }
+                : undefined,
+          },
+        ]
+      }),
+      metadata: Object.keys(metadata).length ? metadata : undefined,
     }
+    const compactions = item.parts.flatMap((part) =>
+      part.type === "compaction"
+        ? [
+            {
+              id: part.id,
+              type: "compaction",
+              status: "completed",
+              reason: part.auto === true ? "auto" : "manual",
+              summary: "",
+              recent: "",
+              time: item.info.time,
+            },
+          ]
+        : [],
+    )
+    return [message, ...compactions]
   }
-  return {
-    id: item.info.id,
-    type: "assistant",
-    parentID: item.info.parentID,
-    time: item.info.time,
-    agent: item.info.agent ?? "build",
-    model: { id: item.info.modelID ?? "model", providerID: item.info.providerID ?? "provider" },
-    cost: item.info.cost,
-    tokens: item.info.tokens,
-    error: item.info.error,
-    content: item.parts.flatMap<unknown>((part) => {
-      if (part.type === "text" || part.type === "reasoning") return [{ type: part.type, text: part.text ?? "" }]
-      if (part.type !== "tool") return []
-      const state = part.state as Record<string, unknown>
-      return [
-        {
-          type: "tool",
-          id: part.id,
-          name: part.tool,
-          time: state.time ?? { created: item.info.time.created },
-          state:
-            state.status === "pending"
-              ? { status: "streaming", input: state.raw ?? JSON.stringify(state.input ?? {}) }
-              : state.status === "completed"
+  return [
+    {
+      id: item.info.id,
+      type: "assistant",
+      parentID: item.info.parentID,
+      time: item.info.time,
+      agent: item.info.agent ?? "build",
+      model: { id: item.info.modelID ?? "model", providerID: item.info.providerID ?? "provider" },
+      cost: item.info.cost,
+      tokens: item.info.tokens,
+      error: currentError(item.info.error),
+      content: item.parts.flatMap<unknown>((part) => {
+        if (part.type === "text" || part.type === "reasoning") return [{ type: part.type, text: part.text ?? "" }]
+        if (part.type !== "tool") return []
+        const state = part.state as Record<string, unknown>
+        return [
+          {
+            type: "tool",
+            id: part.id,
+            name: part.tool,
+            time: state.time ?? { created: item.info.time.created },
+            state:
+              state.status === "pending"
+                ? { status: "streaming", input: state.raw ?? JSON.stringify(state.input ?? {}) }
+                : state.status === "completed"
                 ? {
                     status: "completed",
                     input: state.input ?? {},
-                    structured: state.metadata ?? {},
+                    metadata: {
+                      ...(state.metadata && typeof state.metadata === "object" ? state.metadata : {}),
+                      ...(typeof state.title === "string" ? { title: state.title } : {}),
+                    },
                     content: [{ type: "text", text: state.output ?? "" }],
                   }
-                : state.status === "error"
-                  ? {
-                      status: "error",
-                      input: state.input ?? {},
-                      structured: state.metadata ?? {},
-                      content: [],
-                      error: { type: "ToolError", message: state.error ?? "Tool failed" },
-                    }
-                  : { status: "running", input: state.input ?? {}, structured: state.metadata ?? {}, content: [] },
-        },
-      ]
-    }),
+                  : state.status === "error"
+                    ? {
+                        status: "error",
+                        input: state.input ?? {},
+                        metadata: state.metadata ?? {},
+                        content: [],
+                        error: { type: "ToolError", message: state.error ?? "Tool failed" },
+                      }
+                    : { status: "running", input: state.input ?? {}, metadata: state.metadata ?? {}, content: [] },
+          },
+        ]
+      }),
+    },
+  ]
+}
+
+function currentError(value: unknown) {
+  if (!value || typeof value !== "object") return
+  if ("type" in value && typeof value.type === "string" && "message" in value && typeof value.message === "string") {
+    return { type: value.type, message: value.message }
+  }
+  if (!("name" in value) || typeof value.name !== "string") return
+  const data = "data" in value && value.data && typeof value.data === "object" ? value.data : undefined
+  return {
+    type: value.name,
+    message: data && "message" in data && typeof data.message === "string" ? data.message : value.name,
   }
 }
 

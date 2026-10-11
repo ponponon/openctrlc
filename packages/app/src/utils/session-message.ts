@@ -7,6 +7,7 @@ import type {
 } from "@opencode-ai/client/promise"
 import type { AssistantMessage, FilePart, Message, Part, ToolPart, UserMessage } from "@openctrlc/sdk/v2"
 import type { TextChannel } from "@openctrlc/schema/llm"
+import { createCommentMetadata, formatCommentNote, parseCommentNote, readCommentMetadata } from "./comment-note"
 import { Option, Schema } from "effect"
 
 const emptyTokens = { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } }
@@ -197,19 +198,53 @@ function userMessage(
   agent: string,
   model: { id: string; providerID: string; variant?: string },
 ): UserMessage {
+  const metadata = record(message.metadata) ? message.metadata : undefined
+  const summary = metadata && record(metadata.summary) ? (metadata.summary as UserMessage["summary"]) : undefined
   return {
     id: message.id,
     sessionID,
     role: "user",
     time: message.time,
+    summary,
     agent,
     model: { providerID: model.providerID, modelID: model.id, variant: model.variant },
   }
 }
 
 function userParts(sessionID: string, message: SessionMessageUser): Part[] {
+  const metadata = record(message.metadata) ? message.metadata : undefined
+  const sections = message.text.split(/\n(?=The user made the following comment regarding )/)
+  const textParts = sections.flatMap((text, index): Part[] => {
+    const comment = parseCommentNote(text)
+    if (!comment) return [textPart(sessionID, message.id, index, text)]
+    return [
+      {
+        ...textPart(sessionID, message.id, index, text, true),
+        metadata: createCommentMetadata(comment),
+      },
+    ]
+  })
+  const metadataComments = Array.isArray(metadata?.opencodeComments)
+    ? metadata.opencodeComments.flatMap((value, index): Part[] => {
+        const comment = readCommentMetadata({ opencodeComment: value })
+        if (!comment) return []
+        return [
+          {
+            ...textPart(
+              sessionID,
+              message.id,
+              sections.length + index,
+              formatCommentNote(comment),
+              true,
+            ),
+            metadata: createCommentMetadata(comment),
+          },
+        ]
+      })
+    : []
   return [
-    textPart(sessionID, message.id, 0, message.text),
+    ...textParts,
+    ...metadataComments,
     ...(message.files ?? []).map(
       (file, index): FilePart => ({
         id: `${message.id}:file:${index}`,
@@ -332,8 +367,8 @@ function toolPart(sessionID: string, messageID: string, tool: SessionMessageAssi
       return {
         status: "running" as const,
         input: normalizeToolInput(tool.name, tool.state.input),
-        // metadata: normalizeToolMetadata(tool.name, tool.state.structured),
         metadata: normalizeToolMetadata(tool.name, tool.state.metadata ?? {}),
+        title: typeof tool.state.metadata?.title === "string" ? tool.state.metadata.title : tool.name,
         time: { start },
       }
     }
@@ -366,8 +401,7 @@ function toolPart(sessionID: string, messageID: string, tool: SessionMessageAssi
       status: "completed" as const,
       input: normalizeToolInput(tool.name, tool.state.input),
       output: tool.state.content.flatMap((item) => (item.type === "text" ? [item.text] : [])).join("\n"),
-      title: tool.name,
-      // metadata: normalizeToolMetadata(tool.name, tool.state.structured),
+      title: typeof tool.state.metadata?.title === "string" ? tool.state.metadata.title : tool.name,
       metadata: normalizeToolMetadata(tool.name, tool.state.metadata ?? {}),
       time: { start, end: tool.time.completed ?? start },
       attachments: attachments.length ? attachments : undefined,

@@ -361,6 +361,7 @@ async function mockServer(
   onEventDelivered?: (event: { directory: string; payload: Record<string, unknown> }) => void,
 ) {
   await mockOpenCodeServer(page, {
+    protocol: "v1",
     directory,
     project: project(),
     provider: provider(),

@@ -29,8 +29,9 @@ const assistants = Array.from({ length: initialPageSize + 1 }, (_, index) =>
 )
 const messages = [userMessage(), ...assistants]
 const lastAssistant = assistants.at(-1)!
-const lastPartID = assistants.at(-1)!.parts[0]!.id
-const userPartID = `prt_${userID}_text`
+const lastPartID = `${lastAssistant.info.id}:text:0`
+const userPartID = `${userID}:text:0`
+const assistantPartIDs = assistants.map((message) => `${message.info.id}:text:0`)
 const completed = {
   ...lastAssistant.info,
   time: { ...lastAssistant.info.time, completed: lastAssistant.info.time.created + 15_000 },
@@ -114,7 +115,10 @@ for (const scenario of scenarios) {
             const rect = part.getBoundingClientRect()
             return rect.width > 0 && rect.height > 0 && rect.bottom > view.top && rect.top < view.bottom
           })
-          .flatMap((part) => (part.dataset.timelinePartId ? [part.dataset.timelinePartId] : []))
+          .flatMap((part) => {
+            const text = part.innerText.trim()
+            return text ? [text] : []
+          })
       }
       const state = {
         armed: false,
@@ -133,15 +137,15 @@ for (const scenario of scenarios) {
           const virtual = document.querySelector<HTMLElement>("[data-timeline-virtual-content]")
           const viewport = virtual?.closest<HTMLElement>(".scroll-view__viewport")
           const view = viewport?.getBoundingClientRect()
-          const visible = (partID: string) => {
-            const part = viewport?.querySelector<HTMLElement>(`[data-timeline-part-id="${CSS.escape(partID)}"]`)
-            const rect = part?.getBoundingClientRect()
-            return (
-              !!rect && !!view && rect.width > 0 && rect.height > 0 && rect.bottom > view.top && rect.top < view.bottom
-            )
-          }
-          if (!virtual || state.visibleParts.length === 0 || state.visibleParts.some((partID) => !visible(partID)))
+          const visible = (text: string) =>
+            [...(viewport?.querySelectorAll<HTMLElement>("[data-timeline-part-id]") ?? [])].some((part) => {
+              if (!part.innerText.includes(text)) return false
+              const rect = part.getBoundingClientRect()
+              return !!view && rect.width > 0 && rect.height > 0 && rect.bottom > view.top && rect.top < view.bottom
+            })
+          if (!virtual || state.visibleParts.length === 0 || state.visibleParts.some((text) => !visible(text))) {
             state.hidden = true
+          }
           state.samples++
         }
         if (!state.stop) requestAnimationFrame(() => setTimeout(sample, 0))
@@ -162,7 +166,7 @@ for (const scenario of scenarios) {
       `message:${userID}`,
       `messages:start:${messages.at(-initialPageSize)!.info.id}`,
     ])
-    await expect(page.locator('[data-timeline-part-id^="prt_history_root_"]')).toHaveCount(initialPageSize)
+    await expect(page.locator(assistantPartIDs.slice(1).map((id) => `[data-timeline-part-id="${id}"]`).join(","))).toHaveCount(initialPageSize)
     await page.evaluate(() => {
       ;(
         window as Window & {
@@ -174,7 +178,7 @@ for (const scenario of scenarios) {
     expect(await visibleContentHidden(page)).toBe(false)
     const beforeHistory = await probeSamples(page)
     history.resolve()
-    await expect(page.locator('[data-timeline-part-id^="prt_history_root_"]')).toHaveCount(assistants.length)
+    await expect(page.locator(assistantPartIDs.map((id) => `[data-timeline-part-id="${id}"]`).join(","))).toHaveCount(assistants.length)
     await expect.poll(() => requests.filter((request) => request.phase === "end").length).toBe(2)
     await expect(page.getByRole("button", { name: "Stop" })).toBeVisible()
     await waitForProbeSamples(page, beforeHistory)

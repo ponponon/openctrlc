@@ -69,7 +69,7 @@ test("creates a session in a new project, connects OpenCode Go, and selects its 
   })
 
   await page.goto("/")
-  const addProject = page.locator('[data-action="home-add-project-row"]')
+  const addProject = page.getByRole("complementary", { name: "Projects" }).getByRole("button", { name: "Add project" })
   await expectAppVisible(addProject)
   await addProject.click()
   await page.locator("[data-directory-path]").click()

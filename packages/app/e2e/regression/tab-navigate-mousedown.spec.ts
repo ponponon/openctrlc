@@ -60,14 +60,16 @@ test("keyboard navigation follows the visible tab order", async ({ page }) => {
   )
 
   const hrefA = `/server/${base64Encode(server)}/session/${sessionA.id}`
+  const hrefUnresolved = `/server/${base64Encode(server)}/session/${unresolvedSessionID}`
   const hrefC = `/server/${base64Encode(server)}/session/${sessionC.id}`
   await page.goto(hrefA)
-  await expect(page.locator("[data-titlebar-tab-slot]:visible")).toHaveCount(2)
+  await expect(page.locator("[data-titlebar-tab-slot]:visible")).toHaveCount(3)
+  await expect(page.locator(`[data-titlebar-tab-slot]:has(a[href="${hrefUnresolved}"])`)).toBeVisible()
   await expect(page.locator(`[data-titlebar-tab-slot]:has(a[href="${hrefC}"])`)).toBeVisible()
 
   await page.keyboard.press("Control+Alt+ArrowRight")
 
-  await expect(page).toHaveURL(new RegExp(`${hrefC.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`))
+  await expect(page).toHaveURL(new RegExp(`${hrefUnresolved.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`))
 })
 
 function session(id: string, title: string) {

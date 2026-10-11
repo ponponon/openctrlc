@@ -461,6 +461,7 @@ function readExpanded(element: Element) {
 
 async function mockServer(page: Page, events: EventPayload[], messages = [userMessage, assistantMessage]) {
   await mockOpenCodeServer(page, {
+    protocol: "v1",
     directory,
     project: project(),
     provider: provider(),
