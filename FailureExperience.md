@@ -1868,3 +1868,9 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 2026-10-11 为发布构建运行 `OPENCTRLC_CHANNEL=prod` 后，`packages/opencode/dist/node` 被编译为 `latest` 通道。随后 `bun run dev:desktop` 的 `predev` 只按文件时间判断嵌入式 sidecar 是否过期，没有把请求的 `dev` 通道纳入缓存键，因此误判该产物仍然可复用。Electron 窗口虽显示 DEV，内嵌服务却按 `latest` 打开 `~/.local/share/openctrlc/openctrlc.db`，而 DEV 会话应由 `openctrlc-dev.db` 提供，旧标签的会话 ID 因此在当前服务中查不到。数据库记录没有被我执行迁移或删除。
 
 桌面开发与正式发布共用 `packages/opencode/dist/node` 输出目录，任何仅靠 mtime 的构建缓存都必须同时校验通道。sidecar 构建现在写入通道标记，`predev` 将其与当前通道（正式版映射为 `latest`）比较；缺失或不匹配就重建。不能根据窗口的 DEV 标识推断后端通道正确，也不要在通道标记不一致时继续复用发布产物。
+
+## 首页项目头像不能假设服务器元数据总有颜色
+
+首页多服务器列表和最近会话从 `Global` 的 `ServerCtx.projects.list()` 取项目；它会合并服务器项目元数据，但不会包含 `Layout` 针对当前活动服务器临时分配的颜色。头像组件收到空 `icon.color` 后统一回退灰色，于是首页项目、会话和标签头像会一起失去颜色。这是 UI 数据路径问题，不是数据库迁移或数据损坏。
+
+以后头像渲染必须在已有颜色之外，为缺少颜色的项目按稳定工作目录生成一致的颜色；不要依赖某个特定 Layout 上下文已经先给对象补好颜色，也不要为了视觉 fallback 写回服务器数据库。项目列表、最近会话、标签、选择器和侧边栏都要传同一个项目身份，确保同一项目的颜色在不同界面和重启后保持稳定。

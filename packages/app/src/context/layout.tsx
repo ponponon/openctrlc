@@ -34,11 +34,20 @@ const DEFAULT_TERMINAL_HEIGHT = 280
 const DEFAULT_REVIEW_PANEL_OPENED = false
 export type AvatarColorKey = (typeof AVATAR_COLOR_KEYS)[number]
 
-export function getAvatarColors(key?: string) {
-  if (key && AVATAR_COLOR_KEYS.includes(key as AvatarColorKey)) {
+function getStableAvatarColor(identity: string): AvatarColorKey {
+  const hash = [...identity].reduce(
+    (value, character) => Math.imul(value ^ character.charCodeAt(0), 0x01000193) >>> 0,
+    0x811c9dc5,
+  )
+  return AVATAR_COLOR_KEYS[hash % AVATAR_COLOR_KEYS.length]
+}
+
+export function getAvatarColors(key?: string, identity?: string) {
+  const color = key && AVATAR_COLOR_KEYS.includes(key as AvatarColorKey) ? key : identity && getStableAvatarColor(identity)
+  if (color) {
     return {
-      background: `var(--avatar-background-${key})`,
-      foreground: `var(--avatar-text-${key})`,
+      background: `var(--avatar-background-${color})`,
+      foreground: `var(--avatar-text-${color})`,
     }
   }
   return {
@@ -47,7 +56,7 @@ export function getAvatarColors(key?: string) {
   }
 }
 
-export function getProjectAvatarVariant(key?: string): ProjectAvatarVariant {
+export function getProjectAvatarVariant(key?: string, identity?: string): ProjectAvatarVariant {
   if (key === "mint") return "cyan"
   if (key === "lime") return "green"
   if (
@@ -62,6 +71,12 @@ export function getProjectAvatarVariant(key?: string): ProjectAvatarVariant {
     key === "gray"
   )
     return key
+  if (identity) {
+    const color = getStableAvatarColor(identity)
+    if (color === "mint") return "cyan"
+    if (color === "lime") return "green"
+    return color
+  }
   return "gray"
 }
 
@@ -436,12 +451,6 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
     const [colors, setColors] = createStore<Record<string, AvatarColorKey>>({})
     const colorRequested = new Map<string, AvatarColorKey>()
 
-    function pickAvailableColor(used: Set<string>): AvatarColorKey {
-      const available = AVATAR_COLOR_KEYS.filter((c) => !used.has(c))
-      if (available.length === 0) return AVATAR_COLOR_KEYS[Math.floor(Math.random() * AVATAR_COLOR_KEYS.length)]
-      return available[Math.floor(Math.random() * available.length)]
-    }
-
     function enrich(project: { worktree: string; expanded: boolean }) {
       const [childStore] = serverSync().child(project.worktree, { bootstrap: false })
       const projectID = childStore.project
@@ -544,21 +553,12 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         if (project.icon?.color) colorRequested.delete(project.worktree)
       }
 
-      const used = new Set<string>()
-      for (const project of projects) {
-        const color = project.icon?.color ?? colors[project.worktree]
-        if (color) used.add(color)
-      }
-
       for (const project of projects) {
         if (project.icon?.color || project.icon?.override || project.icon?.url) continue
         const worktree = project.worktree
         const existing = colors[worktree]
-        const color = existing ?? pickAvailableColor(used)
-        if (!existing) {
-          used.add(color)
-          setColors(worktree, color)
-        }
+        const color = existing ?? getStableAvatarColor(worktree)
+        if (!existing) setColors(worktree, color)
         if (!project.id) continue
 
         const requested = colorRequested.get(worktree)
