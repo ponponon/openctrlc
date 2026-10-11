@@ -76,6 +76,8 @@ async function mtime(path: string) {
 async function shouldBuildNode() {
   if (force) return true
   const serverDist = join(repoRoot, "opencode/dist/node")
+  const builtChannel = await Bun.file(join(serverDist, "openctrlc-channel")).text().catch(() => "")
+  if (builtChannel.trim() !== (channel === "prod" ? "latest" : channel)) return true
   const out = await mtime(join(serverDist, "node.js"))
   const appDist = join(repoRoot, "app/dist")
   if (!out || !(await mtime(join(appDist, "index.html")))) return true

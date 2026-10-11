@@ -1862,3 +1862,9 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 ## 发布说明查键被反引号打断
 
 `docs/releases/*.md` 的 bullet 会经官网 `parseMarkdown` 转成 HTML 存进 `changelog.json`，`releaseNoteSections` 再用 `textContent` 提取——反引号片段先变成 `<code>` 再被剥掉，运行时描述里没有反引号。`highlights.tsx` 的 `releaseDescriptionKeys` 如果按 md 原文（含反引号）写键，查键必然失败：英文界面无感（显示原文），但中文/日文/韩文界面会**静默回退英文**且没有任何报错。v1.1.6 的 `layoutDiagnostics` 就中了这一枪，翻译键从未生效过。教训：映射键必须等于"经 parseMarkdown + textContent 之后"的描述，不是 md 原文；发布说明的 bullet 尽量不写反引号。`packages/app/src/context/highlights.test.ts` 已忠实模拟该转换并把契约固化成测试，改 bullet 或映射不一致会直接红。
+
+## 桌面开发启动必须校验 sidecar 构建通道
+
+2026-10-11 为发布构建运行 `OPENCTRLC_CHANNEL=prod` 后，`packages/opencode/dist/node` 被编译为 `latest` 通道。随后 `bun run dev:desktop` 的 `predev` 只按文件时间判断嵌入式 sidecar 是否过期，没有把请求的 `dev` 通道纳入缓存键，因此误判该产物仍然可复用。Electron 窗口虽显示 DEV，内嵌服务却按 `latest` 打开 `~/.local/share/openctrlc/openctrlc.db`，而 DEV 会话应由 `openctrlc-dev.db` 提供，旧标签的会话 ID 因此在当前服务中查不到。数据库记录没有被我执行迁移或删除。
+
+桌面开发与正式发布共用 `packages/opencode/dist/node` 输出目录，任何仅靠 mtime 的构建缓存都必须同时校验通道。sidecar 构建现在写入通道标记，`predev` 将其与当前通道（正式版映射为 `latest`）比较；缺失或不匹配就重建。不能根据窗口的 DEV 标识推断后端通道正确，也不要在通道标记不一致时继续复用发布产物。

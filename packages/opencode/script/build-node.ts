@@ -29,4 +29,6 @@ await Bun.build({
   files: { "openctrlc-web-ui.gen.ts": embeddedFileMap },
 })
 
+await Bun.write("./dist/node/openctrlc-channel", `${Script.channel}\n`)
+
 console.log("Build complete")
