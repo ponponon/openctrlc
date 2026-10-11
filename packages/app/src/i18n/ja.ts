@@ -1447,7 +1447,8 @@ export const dict = {
     "プロジェクトの色がメタデータに設定されていない場合も、プロジェクト、セッション、タブのアイコンに安定した色が表示されるようになりました。",
   "dialog.releaseNotes.v1_1_7.historyMetadata":
     "会話履歴の読み込み時に、Review のコメント、メッセージの要約、ツールのタイトルが保持されるようになりました。",
-  "dialog.releaseNotes.v1_1_7.zenFreeTier": "クライアントのバージョン検証により OpenCode Zen の無料モデルを利用できない問題を修正しました。",
+  "dialog.releaseNotes.v1_1_7.zenFreeTier":
+    "クライアントのバージョン検証により OpenCode Zen の無料モデルを利用できない問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
