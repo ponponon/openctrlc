@@ -133,7 +133,7 @@ Homebrew tap 使用的 macOS ZIP 也因此来自签名后的正式 Release。
 
 ```bash
 OPENCTRLC_VERSION=<version> OPENCTRLC_CHANNEL=prod bun run build:release
-CSC_IDENTITY_AUTO_DISCOVERY=false bunx electron-builder --mac --dir \
+OPENCTRLC_CHANNEL=prod CSC_IDENTITY_AUTO_DISCOVERY=false bunx electron-builder --mac --dir \
   --config electron-builder.config.ts -c.mac.notarize=false
 /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
   dist/mac-arm64/OpenCtrlC.app/Contents/Info.plist
