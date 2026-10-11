@@ -620,11 +620,7 @@ function HomeProjectAvatar(props: { project: LocalProject; outline?: boolean }) 
     <ProjectAvatar
       fallback={name()}
       src={props.outline ? undefined : getProjectAvatarSource(props.project.id, props.project.icon)}
-      variant={
-        props.outline
-          ? "outline"
-          : getProjectAvatarVariant(props.project.icon?.color, props.project.worktree)
-      }
+      variant={props.outline ? "outline" : getProjectAvatarVariant(props.project.icon?.color, props.project.worktree)}
     />
   )
 }

@@ -43,7 +43,8 @@ function getStableAvatarColor(identity: string): AvatarColorKey {
 }
 
 export function getAvatarColors(key?: string, identity?: string) {
-  const color = key && AVATAR_COLOR_KEYS.includes(key as AvatarColorKey) ? key : identity && getStableAvatarColor(identity)
+  const color =
+    key && AVATAR_COLOR_KEYS.includes(key as AvatarColorKey) ? key : identity && getStableAvatarColor(identity)
   if (color) {
     return {
       background: `var(--avatar-background-${color})`,
