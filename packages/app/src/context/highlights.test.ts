@@ -10,7 +10,7 @@ import { loadReleaseHighlights, releaseDescriptionKeys } from "./highlights"
 const releasesDir = new URL("../../../../docs/releases/", import.meta.url)
 
 function releaseContent(version: string) {
-  return readFileSync(new URL(`v${version}.md`, releasesDir), "utf8")
+  return readFileSync(new URL(`v${version}.md`, releasesDir), "utf8").replace(/\r\n?/g, "\n")
 }
 
 // changelog.json serves parseMarkdown output (h2/ul/li and inline code HTML),

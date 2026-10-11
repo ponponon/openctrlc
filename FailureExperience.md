@@ -1880,3 +1880,7 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 2026-10-11 发布前 CI 在 Linux 和 Windows 同时暴露两项应用测试债务：`identity-residuals.test.ts` 会枚举全部 `e2e/**/*.ts` 文件，但新增性能/回归 fixture 后没有登记到“无持久化”清单；`child-store.test.ts` 仍断言首次真实目录访问会启用 `references` 查询，而 `f5b49bb4` 已改成只有上下文补全面板主动调用 `loadReferences` 时才加载。
 
 新增 E2E fixture 时，要同步检查持久化键盘点；没有键的 fixture 必须登记为无持久化。把查询改成按需加载时，更新目录激活测试以锁定“激活不会预取”，并在主动触发入口验证它确实加载；不能仅为通过旧断言把懒加载重新打开，也不能忽略发布前的红 CI。
+
+## Windows 测试读取 Markdown 必须先统一换行符
+
+2026-10-11，Windows unit CI 的 release highlights 测试把 `v1.1.4` 的 bullet 解析成空列表。Windows checkout 使用 CRLF，而测试辅助函数只按 `\n` 拆 Markdown 行；JavaScript 正则 `^## (.+)$` 不会跨过行尾 `\r`，导致标题没有转换成 `<h2>`，后续运行时解析也就没有 highlights。测试需在读取文本时先将 `\r\n` 和单独的 `\r` 统一成 `\n`，再执行模拟 Markdown 到 HTML 的转换。凡测试依赖文本行结构，不能默认跨平台 checkout 的换行格式相同。
