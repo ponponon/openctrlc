@@ -3389,3 +3389,14 @@ desktop `bun run build`（electron-vite）完整跑通并抽查产物：preload 
 - 代码/测试：`packages/app/src/context/{highlights.tsx,highlights.test.ts}`、`packages/app/src/i18n/{en,zh,ja,ko}.ts`、`FailureExperience.md`。
 - 文档：`infra/remote-relay/README.md`。
 - 验证：根目录 `bun run typecheck` 32 项通过；`packages/app` test:unit 936/938（2 个既有失败 child-store、identity-residuals，两者只读我未改动的文件）；desktop `bun run build` 通过。
+
+## 打包链路预检与真实中继观察脚本首验
+
+electron-builder mac `--dir` 模式（`CSC_IDENTITY_AUTO_DISCOVERY=false` + `-c.mac.notarize=false`，只打包不签名不启动）在本地完整跑通：native 依赖 rebuild、electron zip 解包、`dist/mac-arm64/OpenCtrlC.app`（asar 412MB，抽查含 `out/main/index.js` 与 `out/preload/index.js` 入口）。`native/` 目录未构建时出现的 extraResources 缺文件告警属预期，验收包需先跑 `native:build`；该预检命令与提示已写进 `docs/release.md` 换中继验收节。
+
+`relay-switch-observe.sh` 对真实官方中继完成只读首验：`RELAY_SSH_TARGET=pon@111.228.41.233` 经 ssh 读取 healthz 成功（sessions=1、connectedDesktops=1、authorizedBrowsers=7），连续 snapshot/compare delta 0 → PASS，字段解析与退出码符合设计；基线文件用后即删。未在中继上执行任何写操作。
+
+用 cspell（默认词典）扫描本会话新增的 79 行英文文案：仅 openctrlc/quniv/healthz/DTLS/OPENCTRLC 等产品与协议词误报，无拼写错误，并人工复核语法。拼写检查走 `.openctrlc/command/spellcheck.md` 的约定（只查改动行）。
+
+- 文档：`docs/release.md`（本地打包预检与 native:build 前置）。
+- 验证：打包产物 `dist/`、`out/` 均在 gitignore，未入库；工作区仅剩两处既有无关测试改动。

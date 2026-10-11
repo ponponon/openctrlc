@@ -129,6 +129,16 @@ Homebrew tap 使用的 macOS ZIP 也因此来自签名后的正式 Release。
 涉及中继解析、手机访问或连接详情改动的版本，发布前必须在**打包产物**上手工走完
 （不要用 dev 环境代替：dev 可能设置 `OPENCTRLC_REMOTE_RELAY_URL`，走的不是用户路径）：
 
+本地预检打包（只打包、不签名、不启动）可在 `packages/desktop` 下执行：
+
+```bash
+CSC_IDENTITY_AUTO_DISCOVERY=false bunx electron-builder --mac --dir \
+  --config electron-builder.config.ts -c.mac.notarize=false
+```
+
+产物在 `dist/mac-arm64/OpenCtrlC.app`。若 `native/` 尚未构建，会出现 extraResources
+缺文件告警——要跑完整功能的验收包，先执行 `bun run --cwd packages/desktop native:build`。
+
 1. 换中继并生效：手机访问对话框 →「中继服务器」粘贴一个可用的测试中继域名
    （裸域名或 `https://` 开头均可）→ 保存后输入框应显示自动补全的
    `wss://…/v1/host`；停止手机访问后重新开启，标题栏连接详情的中继域名应变为
