@@ -222,7 +222,7 @@ describe("createChildStoreManager", () => {
     }
   })
 
-  test("keeps non-bootstrapping children passive until a real directory access", () => {
+  test("activates directory queries without eagerly loading references", () => {
     let manager: ReturnType<typeof createChildStoreManager> | undefined
     const offset = querySingles.length
     const bootstraps: string[] = []
@@ -264,7 +264,7 @@ describe("createChildStoreManager", () => {
       expect(queries[0]?.().enabled).toBe(true)
       expect(queries[3]?.().enabled).toBe(true)
       expect(queries[4]?.().enabled).toBe(true)
-      expect(queries[5]?.().enabled).toBe(true)
+      expect(queries[5]?.().enabled).toBe(false)
       expect(bootstraps).toEqual(["/project"])
 
       manager.child("/project", { bootstrap: false })
