@@ -1445,6 +1445,8 @@ export const dict = {
     "タイトルバーの接続エントリがプラットフォームやタブの増減でサイズ変化する問題を修正しました。各環境で安定したコンパクト表示になり、詳細はポップオーバー内に収めています。",
   "dialog.releaseNotes.v1_1_7.projectAvatarColors":
     "プロジェクトの色がメタデータに設定されていない場合も、プロジェクト、セッション、タブのアイコンに安定した色が表示されるようになりました。",
+  "dialog.releaseNotes.v1_1_7.historyMetadata":
+    "会話履歴の読み込み時に、Review のコメント、メッセージの要約、ツールのタイトルが保持されるようになりました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

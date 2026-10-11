@@ -1160,6 +1160,8 @@ export const dict = {
     "제목 표시줄 연결 항목이 플랫폼이나 탭 열림/닫힘에 따라 크기가 변하는 문제를 수정했습니다. 모든 환경에서 안정적인 컴팩트 형태를 유지하며 세부 정보는 팝오버 안에 담습니다.",
   "dialog.releaseNotes.v1_1_7.projectAvatarColors":
     "프로젝트 메타데이터에 색상이 설정되지 않은 경우에도 프로젝트, 세션, 탭 아이콘에 안정적인 색상이 표시됩니다.",
+  "dialog.releaseNotes.v1_1_7.historyMetadata":
+    "대화 기록을 불러올 때 Review 댓글, 메시지 요약 및 도구 제목이 유지됩니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

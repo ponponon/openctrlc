@@ -146,6 +146,8 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
       "dialog.releaseNotes.v1_1_7.connectionEntry",
     "Project, session, and tab icons now show stable colors when project metadata has no color set.":
       "dialog.releaseNotes.v1_1_7.projectAvatarColors",
+    "Preserved review comments, message summaries, and tool titles when loading conversation history.":
+      "dialog.releaseNotes.v1_1_7.historyMetadata",
   },
 }
 

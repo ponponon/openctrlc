@@ -567,6 +567,8 @@ export const dict = {
     "Fixed the title-bar connection entry changing size across platforms and as tabs opened and closed; it is now a stable compact control with details inside the popover.",
   "dialog.releaseNotes.v1_1_7.projectAvatarColors":
     "Project, session, and tab icons now show stable colors when project metadata has no color set.",
+  "dialog.releaseNotes.v1_1_7.historyMetadata":
+    "Preserved review comments, message summaries, and tool titles when loading conversation history.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

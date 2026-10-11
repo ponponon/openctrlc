@@ -1505,6 +1505,7 @@ export const dict = {
     "修复标题栏连接入口在不同平台、标签增减时尺寸变化的问题；现在各端都保持稳定的紧凑形态，详情收在弹层里。",
   "dialog.releaseNotes.v1_1_7.projectAvatarColors":
     "项目、会话和标签图标在项目元数据未设置颜色时，也会显示稳定的项目颜色。",
+  "dialog.releaseNotes.v1_1_7.historyMetadata": "加载对话历史时会保留 Review 评论、消息摘要和工具标题。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",
