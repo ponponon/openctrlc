@@ -295,7 +295,7 @@ jobs:
             exit 1
           fi
           export NODE_OPTIONS="--max-old-space-size=6144"
-          bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop build:release
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:mac -- --publish never
 
@@ -340,7 +340,7 @@ jobs:
         run: |
           set -euo pipefail
           export NODE_OPTIONS="--max-old-space-size=6144"
-          bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop build:release
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:win -- --publish never --${{ matrix.arch }}
 
@@ -379,7 +379,7 @@ jobs:
         run: |
           set -euo pipefail
           export NODE_OPTIONS="--max-old-space-size=6144"
-          bun run --cwd packages/desktop build
+          bun run --cwd packages/desktop build:release
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:linux -- --publish never --${{ matrix.arch }}
           # electron-builder emits distro-specific architecture spellings on Linux;

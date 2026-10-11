@@ -132,12 +132,14 @@ Homebrew tap 使用的 macOS ZIP 也因此来自签名后的正式 Release。
 本地预检打包（只打包、不签名、不启动）可在 `packages/desktop` 下执行：
 
 ```bash
+OPENCTRLC_VERSION=<version> OPENCTRLC_CHANNEL=prod bun run build:release
 CSC_IDENTITY_AUTO_DISCOVERY=false bunx electron-builder --mac --dir \
   --config electron-builder.config.ts -c.mac.notarize=false
+/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+  dist/mac-arm64/OpenCtrlC.app/Contents/Info.plist
 ```
 
-产物在 `dist/mac-arm64/OpenCtrlC.app`。若 `native/` 尚未构建，会出现 extraResources
-缺文件告警——要跑完整功能的验收包，先执行 `bun run --cwd packages/desktop native:build`。
+`build:release` 会先按 `OPENCTRLC_VERSION` 更新桌面打包元数据，再构建应用，确保安装包内版本与发布标签一致。核对 PlistBuddy 输出的版本号与发布版本相同。产物在 `dist/mac-arm64/OpenCtrlC.app`。若 `native/` 尚未构建，会出现 extraResources 缺文件告警——要跑完整功能的验收包，先执行 `bun run --cwd packages/desktop native:build`。
 
 1. 换中继并生效：手机访问对话框 →「中继服务器」粘贴一个可用的测试中继域名
    （裸域名或 `https://` 开头均可）→ 保存后输入框应显示自动补全的
