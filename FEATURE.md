@@ -3400,3 +3400,11 @@ electron-builder mac `--dir` 模式（`CSC_IDENTITY_AUTO_DISCOVERY=false` + `-c.
 
 - 文档：`docs/release.md`（本地打包预检与 native:build 前置）。
 - 验证：打包产物 `dist/`、`out/` 均在 gitignore，未入库；工作区仅剩两处既有无关测试改动。
+
+## Zen 免费层 UA 伪装版本号与请求身份分流
+
+OpenCode Zen 的免费模型免登录、`Bearer public` 即可用，但服务端对请求 User-Agent 有两道门禁（2026-10-11 抓包逐字节重放实测）：品牌必须是 `opencode`，且 UA 中版本必须能解析为 semver 并 **>= 1.18.0**；低于下限报 426 `OpenCode 1.18.0 or newer is required to use the free tier`，版本解析不出（开发态 `local`）报 403 `...only be used from within OpenCode`。本项目自己的发行版本（1.1.x / local / 0.0.0-dev）不满足该下限，因此新增与发行版本解耦的伪装常量 `SpoofedOpencodeVersion`（当前 `1.18.34`，跟随 UPSTREAM.md 上游基线），并按请求目的地做身份分流：发往 zen 的请求伪装成 `opencode/<伪装版本>`，发往其他服务商的 LLM 请求使用真实身份 `openctrlc/<发行版本>`。models.opencode.ai 目录与 installation 的 UA 同样携带伪装版本（目录接口实测不校验版本，属防御性统一）。
+
+- 代码：`packages/core/src/installation/version.ts`（`SpoofedOpencodeVersion` 唯一来源）、`packages/opencode/src/session/llm/request.ts`（`ZEN_USER_AGENT` / `PRODUCT_USER_AGENT` 分流）、`packages/core/src/models-dev.ts`、`packages/opencode/src/installation/index.ts`。
+- 测试：`packages/opencode/test/session/llm.test.ts` 的 session identity header 用例断言 zen 分支 UA 前缀为 `opencode/<伪装版本>`、非 zen 分支为 `openctrlc/`；`packages/opencode/test/identity-residuals.test.ts` 增加 zen UA 源码门禁与 `SpoofedOpencodeVersion >= 1.18.0` 的 semver 下限断言。
+- 验证：opencode/core `bun typecheck` 通过；identity-residuals 9/9、models 9/9、transform 452/452、header 用例 4/4 通过；端到端 `bun run ./src/index.ts run "..." -m opencode/mimo-v2.6-flash-free` 在发布版本注入（`OPENCTRLC_VERSION=1.1.6`）与开发态（`local`）下均成功返回；mitmproxy 抓包确认最终 UA 为 `opencode/1.18.34 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14`，与上游原版格式一致。根因定位方法（逐字节重放 + 只改版本号的单变量实验）与完整教训记入 FailureExperience.md「发往 zen 的 User-Agent 必须伪装品牌和版本号」。

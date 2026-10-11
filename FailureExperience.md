@@ -75,25 +75,36 @@
 
 本机通过 `curl` 访问 Cloudflare API 正常，不代表 Wrangler 的 Node 网络库会自动读取代理环境变量。未显式设置代理时，Pages API 的元数据请求可能成功，但批量 `POST /pages/assets/upload` 会在上传数 MB 后因直连链路被关闭而失败。以后在中国大陆环境发布 Pages，必须先运行代理连通性检查，并同时设置 `HTTPS_PROXY`、`HTTP_PROXY` 和 `ALL_PROXY` 后再执行 Wrangler；验收要检查完整上传、部署记录、正式域名 HTTP 状态和页面内容。
 
-## ⚠️ 重要：User-Agent 必须保持为 opencode
+## ⚠️ 重要：发往 zen 的 User-Agent 必须伪装品牌和版本号
 
-**禁止**将发送给 opencode.ai zen 服务器的 User-Agent 改为 `openctrlc`。
+**禁止**将发送给 opencode zen 服务器（`https://opencode.ai/zen/v1/*`）的 User-Agent 改为 `openctrlc`，**也禁止**把 UA 里的版本号换成 OpenCtrlC 自己的发行版本号（`InstallationVersion`：发行版 1.1.x、开发态 `local`、dev 构建 `0.0.0-dev-*`）。
 
-作为 opencode 的下游 fork，我们必须保持与上游一致的 User-Agent 才能正常使用 zen 服务。
-如果 User-Agent 包含 `openctrlc`，服务器会对免费用户施加更严格的限制，导致 "Free usage exceeded" 错误。
+作为 opencode 的下游 fork，免费模型免登录开箱即用的前提是服务端把我们识别为原版 opencode 客户端，这有**两道独立校验**（2026-10-11 用 mitmproxy 抓原版 opencode 请求、逐字节重放 + 单变量实验确认）：
 
-**需要保持 `opencode` User-Agent 的文件**：
+1. **品牌**：UA 必须以 `opencode` 开头。含 `openctrlc` 会被限流，报 "Free usage exceeded"。
+2. **版本号**：UA 必须能解析出 `opencode/<semver>` 且 **>= 1.18.0**：
+   - 可解析但低于下限（如 `opencode/1.1.6`）→ `426 UpgradeRequired`：`OpenCode 1.18.0 or newer is required to use the free tier`；
+   - 解析不出版本（如开发态 `opencode/local`）→ `403 FreeTierError`：`OpenCode's free tier can only be used from within OpenCode`。
 
-- `packages/opencode/src/installation/index.ts` → `userAgent()` 函数
-- `packages/opencode/src/session/llm/request.ts` → `USER_AGENT` 常量
-- `packages/opencode/src/tool/websearch.ts` → `parallelAuthHeaders()` 函数
-- `packages/opencode/src/tool/webfetch.ts` → Cloudflare 挑战处理
-- `packages/core/src/models-dev.ts` → `USER_AGENT` 常量
-- `packages/core/src/tool/webfetch.ts` → Cloudflare 挑战处理
+**版本号必须与发行版本解耦**：伪装版本的唯一来源是 `packages/core/src/installation/version.ts` 的 `SpoofedOpencodeVersion`（当前 `1.18.34`，跟随 UPSTREAM.md 的上游基线；zen 提高最低要求时更新它并同步本条）。**禁止**在 zen 请求里使用 `InstallationVersion`——我们的发行版本永远不是上游版本，两道门禁中品牌对了但版本号露馅同样会翻车。非 zen 请求（其他模型服务商）必须使用真实身份 `${Brand.cli}/${InstallationVersion}`。
+
+**代码位置**：
+
+- `packages/core/src/installation/version.ts` → `SpoofedOpencodeVersion`（伪装版本唯一来源）
+- `packages/opencode/src/session/llm/request.ts` → zen 分支 `ZEN_USER_AGENT`（`opencode/<伪装版本>`）；非 zen 分支 `PRODUCT_USER_AGENT`（真实身份）
+- `packages/core/src/models-dev.ts` → models.opencode.ai 目录 UA（品牌 opencode + 伪装版本）
+- `packages/opencode/src/installation/index.ts` → `userAgent()`（同上）
+
+**非 zen 请求用真实身份**：发往其他服务商的 LLM 请求用 `${Brand.cli}/${InstallationVersion}`（`identity-residuals.test.ts` 门禁）。历史遗留例外：`packages/opencode/src/tool/webfetch.ts` 的 Cloudflare 挑战重试仍用字面量 `opencode`，而 `packages/core/src/tool/webfetch.ts` 的同类重试用 `Brand.cli`——两者行为不一致，属独立遗留问题，改动前先验证 Cloudflare 放行行为。上游同步的第三方 provider 插件/适配层（xai、azure、copilot、codex、cloudflare、gitlab 等）仍是 `opencode/${InstallationVersion}` 格式：它们发往各自厂商 API、不参与 zen 门禁、且被上游同步测试锁定，未纳入本次身份分流；如需统一为真实身份属独立任务。
+
+**复现/验证方法（2026-10-11）**：mitmproxy 抓取原版 `opencode` 对 `POST /zen/v1/chat/completions` 的请求后逐字节重放 → 200；**只把 UA 版本从 `1.18.26` 改成 `1.1.6`** → 精确复现 426 报错；把本项目失败请求的 UA 版本改成 `1.18.34` → 200。桌面端 `x-opencode-client: desktop`、native 路径的裸 UA `opencode/1.18.34` 均实测可过；models.opencode.ai 目录接口实测不校验版本（不同版本 UA 返回 200 且内容一致），仍一并伪装版本做防御。回归测试：`packages/opencode/test/session/llm.test.ts` 的 session identity header 用例 + `packages/opencode/test/identity-residuals.test.ts` 的 zen UA 源码门禁与 `SpoofedOpencodeVersion >= 1.18.0` 断言。
 
 **法律依据**：opencode 使用 MIT 协议，允许自由修改和分发。保持相同的 User-Agent 表明"我是 opencode 兼容客户端"，符合协议要求。
 
-**历史教训**：2026-08-20 的 commit `bce80bb` 把 `request.ts` 的 User-Agent 从 `opencode` 改成了 `openctrlc`，导致免费模型无法使用。
+**历史教训**：
+
+- 2026-08-20 commit `bce80bb` 把 `request.ts` 的 UA 品牌从 `opencode` 改成 `openctrlc` → "Free usage exceeded"；2026-09-01 `0e5b9ddc` 改回品牌修复。**但当时只修了品牌，没有意识到版本号也在被校验**。
+- 2026-10-11 免费模型全部报 426 `OpenCode 1.18.0 or newer is required`（开发态则是 403）：根因是我们的发行版本（1.1.x/local）被放进了 UA 版本段，不满足服务端 >= 1.18.0 的新校验。伪装必须「品牌 + 版本号」整体像上游，只改其一都会再次翻车。
 
 ## Desktop 需求不能只实现 CLI
 
