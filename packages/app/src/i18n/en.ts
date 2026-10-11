@@ -569,6 +569,8 @@ export const dict = {
     "Project, session, and tab icons now show stable colors when project metadata has no color set.",
   "dialog.releaseNotes.v1_1_7.historyMetadata":
     "Preserved review comments, message summaries, and tool titles when loading conversation history.",
+  "dialog.releaseNotes.v1_1_7.zenFreeTier":
+    "Fixed OpenCode Zen free-tier requests being rejected because the client reported its own version.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

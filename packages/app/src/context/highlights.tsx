@@ -148,6 +148,8 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
       "dialog.releaseNotes.v1_1_7.projectAvatarColors",
     "Preserved review comments, message summaries, and tool titles when loading conversation history.":
       "dialog.releaseNotes.v1_1_7.historyMetadata",
+    "Fixed OpenCode Zen free-tier requests being rejected because the client reported its own version.":
+      "dialog.releaseNotes.v1_1_7.zenFreeTier",
   },
 }
 

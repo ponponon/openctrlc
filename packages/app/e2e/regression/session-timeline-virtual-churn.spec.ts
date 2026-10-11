@@ -7,6 +7,9 @@ test("keeps the virtual timeline stable while scrolling and removing a message b
 
   const messages = historyMessages(80)
   const timeline = await setupTimeline(page, { messages, viewport: { width: 1400, height: 800 } })
+  const reviewToggle = page.getByRole("button", { name: "Toggle review" })
+  if ((await reviewToggle.getAttribute("aria-expanded")) !== "false") await reviewToggle.click()
+  await expect(reviewToggle).toHaveAttribute("aria-expanded", "false")
   const scroller = page.locator(".scroll-view__viewport", { has: page.locator("[data-timeline-row]") })
   const firstResponse = page.getByText("Historical response 0.", { exact: false })
   const finalResponse = page.getByText("Historical response 79.", { exact: false })
