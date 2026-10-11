@@ -1087,15 +1087,8 @@ function ChannelIndicator(props: { debugTools?: { visible: boolean; toggle: () =
                     class="mt-2 rounded-lg border border-v2-border-border-base p-3"
                   >
                     <div class="flex min-w-0 items-center gap-2">
-                      <Icon
-                        name="server"
-                        size="small"
-                        class="shrink-0 text-v2-icon-icon-muted"
-                        aria-hidden="true"
-                      />
-                      <h3 class="text-13-medium text-v2-text-text-strong">
-                        {language.t("remote.connection.relay")}
-                      </h3>
+                      <Icon name="server" size="small" class="shrink-0 text-v2-icon-icon-muted" aria-hidden="true" />
+                      <h3 class="text-13-medium text-v2-text-text-strong">{language.t("remote.connection.relay")}</h3>
                       <span class="ml-auto shrink-0 rounded-full border border-v2-border-border-base bg-v2-background-bg-layer-01 px-2 py-0.5 text-11-medium text-v2-text-text-muted">
                         {info().official
                           ? language.t("remote.connection.relayOfficial")

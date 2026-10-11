@@ -1113,8 +1113,7 @@ export const dict = {
   "remote.connection.relayCustom": "自定义",
   "remote.connection.relayHintDesktop":
     "手机访问经此中继转发，并非端到端加密。可在手机访问对话框的「中继服务器」中更换。",
-  "remote.connection.relayHintViewer":
-    "当前连接经此中继转发，并非端到端加密；点对点通道建立后，应用数据不再经过中继。",
+  "remote.connection.relayHintViewer": "当前连接经此中继转发，并非端到端加密；点对点通道建立后，应用数据不再经过中继。",
   "remote.connection.relayHintViewerPeer":
     "点对点通道已建立：应用数据经加密通道传输、不经过此中继；信令与页面资源仍经由它。",
   "remote.transport.connecting": "中继 · 直连中",
@@ -1499,8 +1498,7 @@ export const dict = {
     "过期的内嵌 CSS 和 JavaScript 资源现在会返回 404，而不是错误返回应用页面，避免新旧页面资源混用后失效。",
   "dialog.releaseNotes.v1_1_7.ownRelay":
     "手机访问现在可以使用你自己的中继：在访问对话框的「中继服务器」粘贴域名或 wss:// 地址，桌面端会自动补全。",
-  "dialog.releaseNotes.v1_1_7.noFallback":
-    "自定义中继无法连接时会明确报错，不再悄悄回退到官方中继。",
+  "dialog.releaseNotes.v1_1_7.noFallback": "自定义中继无法连接时会明确报错，不再悄悄回退到官方中继。",
   "dialog.releaseNotes.v1_1_7.relayDetails":
     "远程连接详情现在会显示中继域名、官方或自定义徽标，并用平实的语言说明当前链路上中继能看到什么。",
   "dialog.releaseNotes.v1_1_7.connectionEntry":

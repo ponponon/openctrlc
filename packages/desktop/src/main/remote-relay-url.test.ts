@@ -14,9 +14,7 @@ describe("parseRelayURLInput", () => {
   })
 
   test("treats a pasted pairing link as its relay origin", () => {
-    expect(parseRelayURLInput("https://relay.example.com/join/abc123#secret")).toBe(
-      "wss://relay.example.com/v1/host",
-    )
+    expect(parseRelayURLInput("https://relay.example.com/join/abc123#secret")).toBe("wss://relay.example.com/v1/host")
   })
 
   test("allows plain ws for local test deployments", () => {

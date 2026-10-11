@@ -842,9 +842,7 @@ export class RemoteAccessService {
 
   async #resume(generation: number) {
     if (generation !== this.#generation || this.#state.status !== "reconnecting") return
-    const relay = this.#reconnectCreateSession
-      ? this.#newSessionRelayURL()
-      : (this.#relayURL ?? legacyRelayURL)
+    const relay = this.#reconnectCreateSession ? this.#newSessionRelayURL() : (this.#relayURL ?? legacyRelayURL)
     try {
       await this.#connect(relay, generation, !this.#reconnectCreateSession)
     } catch (error) {

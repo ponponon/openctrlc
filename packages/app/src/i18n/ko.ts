@@ -809,7 +809,8 @@ export const dict = {
   "remoteAccess.relayDescription":
     "모바일 액세스는 기본적으로 공식 릴레이를 사용합니다. 공식 릴레이를 신뢰하지 않으면 소스를 수정하지 않고 자체 릴레이 주소로 바꿀 수 있으며, 새 주소는 다음에 모바일 액세스를 켤 때 적용됩니다.",
   "remoteAccess.relayHelp": "도메인, https:// 주소 또는 전체 wss:// 주소를 붙여넣으면 저장할 때 자동으로 보완됩니다.",
-  "remoteAccess.relayInvalid": "이 릴레이 주소를 저장할 수 없습니다. 올바른 도메인 또는 주소를 입력한 후 다시 시도하세요.",
+  "remoteAccess.relayInvalid":
+    "이 릴레이 주소를 저장할 수 없습니다. 올바른 도메인 또는 주소를 입력한 후 다시 시도하세요.",
   "remoteAccess.relayReset": "기본값 복원",
   "remoteAccess.relayActiveHint":
     "진행 중인 세션은 이전 릴레이에 연결된 상태를 유지하며, 모바일 액세스를 다시 켜면 새 주소가 적용됩니다.",

@@ -68,11 +68,7 @@ describe("release highlight translation keys", () => {
   })
 
   test("mapped release notes are translated in every product language", () => {
-    const bundles = [
-      ["zh", zh] as const,
-      ["ja", ja] as const,
-      ["ko", ko] as const,
-    ]
+    const bundles = [["zh", zh] as const, ["ja", ja] as const, ["ko", ko] as const]
     for (const mapping of Object.values(releaseDescriptionKeys)) {
       for (const key of Object.values(mapping)) {
         for (const [locale, dict] of bundles) {
