@@ -1886,3 +1886,7 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 ## Windows 测试读取 Markdown 必须先统一换行符
 
 2026-10-11，Windows unit CI 的 release highlights 测试把 `v1.1.4` 的 bullet 解析成空列表。Windows checkout 使用 CRLF，而测试辅助函数只按 `\n` 拆 Markdown 行；JavaScript 正则 `^## (.+)$` 不会跨过行尾 `\r`，导致标题没有转换成 `<h2>`，后续运行时解析也就没有 highlights。测试需在读取文本时先将 `\r\n` 和单独的 `\r` 统一成 `\n`，再执行模拟 Markdown 到 HTML 的转换。凡测试依赖文本行结构，不能默认跨平台 checkout 的换行格式相同。
+
+## Playwright 应直接操作目标标签而不是反转面板开关
+
+2026-10-11，发布 CI 的 `review-open-file` E2E 在 Context 标签断言失败。错误截图表明 Session 面板里可能已经有 Context 标签，但当前选中项仍是 Files Changed；旧测试用即时 `count()` 判断要不要点“查看上下文”按钮，而该按钮本身是 toggle，页面状态更新期间再点会关闭面板。应等待 Context 标签可见，读取它自己的 `data-selected` 状态，未选中时直接点击该标签，再等待选中断言；不要用即时 `count()` 决定是否触发会反转状态的全局 toggle。发布 CI 失败时先读失败 job 和错误上下文，再只复现相关 spec/重跑失败 job；不要为单项失败重复运行完整矩阵。
