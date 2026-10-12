@@ -3408,3 +3408,18 @@ OpenCode Zen 的免费模型免登录、`Bearer public` 即可用，但服务端
 - 代码：`packages/core/src/installation/version.ts`（`SpoofedOpencodeVersion` 唯一来源）、`packages/opencode/src/session/llm/request.ts`（`ZEN_USER_AGENT` / `PRODUCT_USER_AGENT` 分流）、`packages/core/src/models-dev.ts`、`packages/opencode/src/installation/index.ts`。
 - 测试：`packages/opencode/test/session/llm.test.ts` 的 session identity header 用例断言 zen 分支 UA 前缀为 `opencode/<伪装版本>`、非 zen 分支为 `openctrlc/`；`packages/opencode/test/identity-residuals.test.ts` 增加 zen UA 源码门禁与 `SpoofedOpencodeVersion >= 1.18.0` 的 semver 下限断言。
 - 验证：opencode/core `bun typecheck` 通过；identity-residuals 9/9、models 9/9、transform 452/452、header 用例 4/4 通过；端到端 `bun run ./src/index.ts run "..." -m opencode/mimo-v2.6-flash-free` 在发布版本注入（`OPENCTRLC_VERSION=1.1.6`）与开发态（`local`）下均成功返回；mitmproxy 抓包确认最终 UA 为 `opencode/1.18.34 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14`，与上游原版格式一致。根因定位方法（逐字节重放 + 只改版本号的单变量实验）与完整教训记入 FailureExperience.md「发往 zen 的 User-Agent 必须伪装品牌和版本号」。
+
+## 项目重载失败弹窗忽略客户端取消请求
+
+会话明明加载成功却弹「无法重新加载 <项目> / Request was cancelled」：499 只是客户端提前关闭连接（目录切换、旧请求被替代、sidecar 重启），项目本身没有加载失败。`showProjectReloadError` 现在在入口处用 `isClientAbortError` 统一拦截取消类错误，不再创建持久 Toast；`server-sync` 的会话列表加载在 catch 开头同样跳过取消。bootstrap 里 providers / slow 任务原有的逐点过滤保留，helper 级守卫保证后续新增调用点不会再漏——本次泄漏点正是 `onMcp` 刷新路径的 `loadCommands`，它绕过了当初只护住 bootstrap 调用点的过滤。四语补 `error.chain.requestCancelled`，仍会走到取消分支的提示（发送失败、会话列表）不再回退英文。
+
+- 代码：`packages/app/src/utils/project-reload-error.ts`、`packages/app/src/context/server-sync.tsx`。
+- 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `error.chain.requestCancelled`。
+- 测试：`packages/app/src/utils/project-reload-error.test.ts`（取消不弹、真实失败仍弹）；`packages/app` test:unit 940/940，i18n parity 与 server-errors 通过，`bun typecheck` 通过。
+
+## 服务端日志按大小轮转与天数保留
+
+`~/.local/share/openctrlc/log/openctrlc.log` 原先用 `Logger.toFile(..., { flag: "a" })` 无限追加：45 天涨到 40MB、157 个 run 混在一个文件里。`fileLogger` 改用 `Logger.batched` + 同步追加，每次 flush 前检查大小：单文件 ≥10MB 轮转成 `openctrlc.log.1` / `.2`（最多保留 2 份），logger 创建时删除 7 天前的轮转文件；待轮转文件超过 15MB 属于旧版本遗留的超大日志，直接删除而不是永远顺位后挪。flush 前检查保证长驻进程单次运行也不会无界增长，桌面「查看日志 / 导出日志」入口不变，轮转文件仍会被一并收集。
+
+- 代码：`packages/core/src/observability/logging.ts`（`MAX_LOG_BYTES` 10MB、`KEEP_ROTATED_LOGS` 2、`MAX_LOG_AGE_DAYS` 7）。
+- 测试：`packages/core/test/effect/observability.test.ts` 新增 4 条（超大文件首轮转、遗留超大文件丢弃、过期轮转文件清理、运行中批量写入后轮转）；`packages/core` 1112/1112 通过，`bun typecheck` 通过。
