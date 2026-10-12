@@ -201,11 +201,7 @@ test("file logger rotates mid-run once a batch pushes it past the limit", async 
   await Effect.scoped(
     Effect.gen(function* () {
       const logger = yield* fileLogger(file, "run-a")
-      yield* Effect.logInfo(megabyte)
-        .pipe(
-          Effect.repeat({ times: 11 }),
-          Effect.provide(Logger.layer([logger])),
-        )
+      yield* Effect.logInfo(megabyte).pipe(Effect.repeat({ times: 11 }), Effect.provide(Logger.layer([logger])))
       // Let the first window flush the big batch, then keep the logger alive
       // across a second window so the size check runs against that batch.
       yield* Effect.sleep(1200)

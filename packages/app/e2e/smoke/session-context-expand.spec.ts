@@ -104,7 +104,10 @@ const allMessages = buildMessages()
 function pageMessages(sessionIDArg: string, limit: number, before?: string) {
   const messages = sessionIDArg === sessionID ? allMessages : []
   const end = before
-    ? Math.max(0, messages.findIndex((message) => message.info.id === before))
+    ? Math.max(
+        0,
+        messages.findIndex((message) => message.info.id === before),
+      )
     : messages.length
   const start = Math.max(0, end - limit)
   return { items: messages.slice(start, end), cursor: start > 0 ? messages[start]!.info.id : undefined }
@@ -214,7 +217,10 @@ test.describe("repro: context raw message expand with heavy list", () => {
       while (node) {
         if (node instanceof HTMLElement) {
           const style = getComputedStyle(node)
-          if ((style.overflowY === "auto" || style.overflowY === "scroll") && node.scrollHeight > node.clientHeight + 10) {
+          if (
+            (style.overflowY === "auto" || style.overflowY === "scroll") &&
+            node.scrollHeight > node.clientHeight + 10
+          ) {
             node.scrollTop = Math.floor(node.scrollHeight * 0.5)
             return
           }
@@ -283,7 +289,10 @@ test.describe("repro: context raw message expand with heavy list", () => {
       while (node) {
         if (node instanceof HTMLElement) {
           const style = getComputedStyle(node)
-          if ((style.overflowY === "auto" || style.overflowY === "scroll") && node.scrollHeight > node.clientHeight + 10) {
+          if (
+            (style.overflowY === "auto" || style.overflowY === "scroll") &&
+            node.scrollHeight > node.clientHeight + 10
+          ) {
             node.scrollTop += 1200
             return
           }
