@@ -299,6 +299,20 @@ jobs:
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:mac -- --publish never
 
+      - name: Prepare update feed file
+        run: |
+          set -euo pipefail
+          bun packages/desktop/scripts/rewrite-update-feed.ts
+          mkdir -p packages/desktop/latest-yml-aarch64-apple-darwin
+          cp packages/desktop/dist/latest-mac.yml packages/desktop/latest-yml-aarch64-apple-darwin/
+
+      - name: Upload update feed file
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: latest-yml-aarch64-apple-darwin
+          path: packages/desktop/latest-yml-aarch64-apple-darwin/*.yml
+          if-no-files-found: error
+
       - name: Upload macOS Desktop assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -343,6 +357,29 @@ jobs:
           bun run --cwd packages/desktop build:release
           bun run --cwd packages/desktop check:icons -- --channel prod --resources
           bun run --cwd packages/desktop package:win -- --publish never --${{ matrix.arch }}
+
+      - name: Prepare update feed file
+        id: feed
+        env:
+          MATRIX_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          case "$MATRIX_ARCH" in
+            x64) triple=x86_64-pc-windows-msvc ;;
+            arm64) triple=aarch64-pc-windows-msvc ;;
+            *) echo "unknown arch $MATRIX_ARCH" >&2; exit 1 ;;
+          esac
+          bun packages/desktop/scripts/rewrite-update-feed.ts
+          mkdir -p "packages/desktop/latest-yml-${triple}"
+          cp packages/desktop/dist/latest.yml "packages/desktop/latest-yml-${triple}/"
+          echo "triple=${triple}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload update feed file
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: latest-yml-${{ steps.feed.outputs.triple }}
+          path: packages/desktop/latest-yml-${{ steps.feed.outputs.triple }}/*.yml
+          if-no-files-found: error
 
       - name: Upload Windows Desktop assets
         env:
@@ -396,6 +433,29 @@ jobs:
             fi
           done
 
+      - name: Prepare update feed file
+        id: feed
+        env:
+          MATRIX_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          case "$MATRIX_ARCH" in
+            x64) triple=x86_64-unknown-linux-gnu ;;
+            arm64) triple=aarch64-unknown-linux-gnu ;;
+            *) echo "unknown arch $MATRIX_ARCH" >&2; exit 1 ;;
+          esac
+          bun packages/desktop/scripts/rewrite-update-feed.ts
+          mkdir -p "packages/desktop/latest-yml-${triple}"
+          cp packages/desktop/dist/latest-linux*.yml "packages/desktop/latest-yml-${triple}/"
+          echo "triple=${triple}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload update feed file
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: latest-yml-${{ steps.feed.outputs.triple }}
+          path: packages/desktop/latest-yml-${{ steps.feed.outputs.triple }}/*.yml
+          if-no-files-found: error
+
       - name: Upload Linux Desktop assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -408,6 +468,38 @@ jobs:
             "packages/desktop/dist/openctrlc-linux-${{ matrix.arch }}.rpm" \
             --clobber --repo "$GH_REPO"
 
+  finalize-update-feed:
+    needs:
+      - version
+      - build-desktop-macos
+      - build-desktop-windows
+      - build-desktop-linux
+    if: github.repository == 'ponponon/openctrlc'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Download update feed files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: latest-yml-*
+          path: update-feed
+
+      - name: Upload update feed files to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ needs.version.outputs.repo }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          LATEST_YML_DIR: ${{ github.workspace }}/update-feed
+        run: |
+          set -euo pipefail
+          find update-feed -name '*.yml'
+          bun packages/desktop/scripts/finalize-latest-yml.ts
+
   publish:
     needs:
       - version
@@ -416,6 +508,7 @@ jobs:
       - build-desktop-macos
       - build-desktop-windows
       - build-desktop-linux
+      - finalize-update-feed
     if: github.repository == 'ponponon/openctrlc'
     runs-on: ubuntu-24.04
     outputs:
@@ -442,6 +535,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release edit "${{ needs.version.outputs.tag }}" --draft=false --repo "${{ needs.version.outputs.repo }}"
+
+  verify-update-feed:
+    needs:
+      - version
+      - publish
+    if: github.repository == 'ponponon/openctrlc'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Verify update feed is publicly reachable
+        env:
+          GH_REPO: ${{ needs.version.outputs.repo }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        run: bun script/verify-update-feed.ts
 
   sync-downloads:
     needs:

@@ -71,6 +71,16 @@ jobs:
         env:
           OPENCTRLC_EXPERIMENTAL_DISABLE_FILEWATCHER: ${{ runner.os == 'Windows' && 'true' || 'false' }}
 
+      - name: Run release contract tests
+        if: runner.os == 'Linux'
+        working-directory: script
+        run: bun test publish-contract.test.ts verify-update-feed.test.ts
+
+      - name: Run desktop script tests
+        if: runner.os == 'Linux'
+        working-directory: packages/desktop
+        run: bun test scripts/
+
       - name: Check generated client
         if: runner.os == 'Linux'
         working-directory: packages/client
