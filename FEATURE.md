@@ -3422,3 +3422,18 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 - 代码：`packages/desktop/scripts/{rewrite-update-feed,finalize-latest-yml}.ts`、`script/verify-update-feed.ts`、`.github/workflows/publish.yml`（`finalize-update-feed`/`verify-update-feed` job）、`script/publish.ts`。
 - 测试：三脚本同名 `*.test.ts`；`script/publish-contract.test.ts` 锁定 job 拓扑、upload 通配符、步骤顺序、verify 无 token/`contents: read`、双侧 channel 清单一致；由 `.github/workflows/test.yml` 的 `Run release contract tests` 与 `Run desktop script tests` 步骤执行（此前这些测试从不进 CI）。
 - 文档：`docs/release.md` 发布前检查第 7 条；教训见 FailureExperience.md「发布链路要同时验证生成了和上传了」。
+
+## 项目重载失败弹窗忽略客户端取消请求
+
+会话明明加载成功却弹「无法重新加载 <项目> / Request was cancelled」：499 只是客户端提前关闭连接（目录切换、旧请求被替代、sidecar 重启），项目本身没有加载失败。`showProjectReloadError` 现在在入口处用 `isClientAbortError` 统一拦截取消类错误，不再创建持久 Toast；`server-sync` 的会话列表加载在 catch 开头同样跳过取消。bootstrap 里 providers / slow 任务原有的逐点过滤保留，helper 级守卫保证后续新增调用点不会再漏——本次泄漏点正是 `onMcp` 刷新路径的 `loadCommands`，它绕过了当初只护住 bootstrap 调用点的过滤。四语补 `error.chain.requestCancelled`，仍会走到取消分支的提示（发送失败、会话列表）不再回退英文。
+
+- 代码：`packages/app/src/utils/project-reload-error.ts`、`packages/app/src/context/server-sync.tsx`。
+- 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `error.chain.requestCancelled`。
+- 测试：`packages/app/src/utils/project-reload-error.test.ts`（取消不弹、真实失败仍弹）；`packages/app` test:unit 940/940，i18n parity 与 server-errors 通过，`bun typecheck` 通过。
+
+## 服务端日志按大小轮转与天数保留
+
+`~/.local/share/openctrlc/log/openctrlc.log` 原先用 `Logger.toFile(..., { flag: "a" })` 无限追加：45 天涨到 40MB、157 个 run 混在一个文件里。`fileLogger` 改用 `Logger.batched` + 同步追加，每次 flush 前检查大小：单文件 ≥10MB 轮转成 `openctrlc.log.1` / `.2`（最多保留 2 份），logger 创建时删除 7 天前的轮转文件；待轮转文件超过 15MB 属于旧版本遗留的超大日志，直接删除而不是永远顺位后挪。flush 前检查保证长驻进程单次运行也不会无界增长，桌面「查看日志 / 导出日志」入口不变，轮转文件仍会被一并收集。
+
+- 代码：`packages/core/src/observability/logging.ts`（`MAX_LOG_BYTES` 10MB、`KEEP_ROTATED_LOGS` 2、`MAX_LOG_AGE_DAYS` 7）。
+- 测试：`packages/core/test/effect/observability.test.ts` 新增 4 条（超大文件首轮转、遗留超大文件丢弃、过期轮转文件清理、运行中批量写入后轮转）；`packages/core` 1112/1112 通过，`bun typecheck` 通过。

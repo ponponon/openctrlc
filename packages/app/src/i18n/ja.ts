@@ -840,6 +840,7 @@ export const dict = {
   "error.serverSync.connectFailed": "サーバーに接続できませんでした。`{{url}}`でサーバーが実行されていますか？",
   "directory.error.invalidUrl": "URL内のディレクトリが無効です。",
   "error.chain.unknown": "不明なエラー",
+  "error.chain.requestCancelled": "リクエストがキャンセルされました",
   "error.chain.causedBy": "原因:",
   "error.chain.apiError": "APIエラー",
   "error.chain.status": "ステータス: {{status}}",
@@ -1449,6 +1450,12 @@ export const dict = {
     "会話履歴の読み込み時に、Review のコメント、メッセージの要約、ツールのタイトルが保持されるようになりました。",
   "dialog.releaseNotes.v1_1_7.zenFreeTier":
     "クライアントのバージョン検証により OpenCode Zen の無料モデルを利用できない問題を修正しました。",
+  "dialog.releaseNotes.v1_1_8.logRotation":
+    "サーバーログは 10 MB でローテーションし、最大 2 世代を保持します。起動時に 7 日を超えたローテーションファイルを削除します。",
+  "dialog.releaseNotes.v1_1_8.cancelledRequest":
+    "プロジェクトの読み込みが成功している場合、リクエストをキャンセルしても誤って再読み込み失敗と表示されなくなりました。",
+  "dialog.releaseNotes.v1_1_8.contextRows":
+    "スクロール後に展開したセッションコンテキスト行の位置がずれ、他のメッセージに重なる問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

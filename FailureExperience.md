@@ -1894,6 +1894,8 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 
 新增 E2E fixture 时，要同步检查持久化键盘点；没有键的 fixture 必须登记为无持久化。把查询改成按需加载时，更新目录激活测试以锁定“激活不会预取”，并在主动触发入口验证它确实加载；不能仅为通过旧断言把懒加载重新打开，也不能忽略发布前的红 CI。
 
+2026-10-12，v1.1.8 候选再次被同一清单门禁拦住：新增 `e2e/smoke/session-context-expand.spec.ts` 使用了 server 与 tabs 两项持久化键，却没有登记到 `expectedPersistence`，使 App 单测 939 过、1 失败。新增 smoke/E2E 文件时，除了判断它是否零持久化，也要把实际初始化的键精确登记到映射表，并在推送前运行 App 单测；新增回归覆盖本身不代表清单已同步。
+
 ## Windows 测试读取 Markdown 必须先统一换行符
 
 2026-10-11，Windows unit CI 的 release highlights 测试把 `v1.1.4` 的 bullet 解析成空列表。Windows checkout 使用 CRLF，而测试辅助函数只按 `\n` 拆 Markdown 行；JavaScript 正则 `^## (.+)$` 不会跨过行尾 `\r`，导致标题没有转换成 `<h2>`，后续运行时解析也就没有 highlights。测试需在读取文本时先将 `\r\n` 和单独的 `\r` 统一成 `\n`，再执行模拟 Markdown 到 HTML 的转换。凡测试依赖文本行结构，不能默认跨平台 checkout 的换行格式相同。
@@ -1913,3 +1915,25 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 教训：(1) 关闭工具的自动发布（`--publish never`）时，必须盘点它同时跳过了哪些**必要产物**，把缺的那部分接回手工上传链路，不能只看安装包传没传；(2) 发布产物要在公开后从**匿名公网视角**验证（现由 `verify-update-feed` job 自动化，含 3 次重试防资产可见性延迟假红），job 绿灯不等于用户路径可用；(3) `script/publish-contract.test.ts` 当时既是红的（job 白名单缺 `sync-release-versions`）又没有任何 workflow 执行它——发布契约测试必须接入 CI（现挂在 `test.yml`，并覆盖 `packages/desktop/scripts/` 与 `electron-builder.config.test.ts`），否则等于没有契约；(4) 界面版本 v1.18.18 与 feed tag v1.1.7 对不上，是打包路径未注入 `OPENCTRLC_VERSION` 的陈旧版本（现由 `prepare.ts` 与 `electron-builder.config.ts` 双层警告兜底），排障时不要用界面版本推断 feed 版本。
 
 实现期补充教训：`Bun.write(path, data, { append: true })` 的未知 options 会被静默忽略且默认覆盖写入，追加写必须用 `node:fs/promises` 的 `appendFile`（`$GITHUB_STEP_SUMMARY` 曾因此会覆盖前序 step 的内容）；YAML 解析用 `parseDocument` + `doc.errors` 收集错误而非 try/catch，且对外抛错必须带文件名前缀，否则 CI 里多个 channel file 无法定位是哪一个坏了；`as T` 类型断言替代不了运行时校验，门禁脚本必须对上游产出做结构 fail-closed（空 `files`、缺 `size` 曾可绿灯放行）。
+
+## 取消类错误的拦截必须收敛到错误提示入口
+
+2026-10-12，会话明明加载成功，桌面端仍弹「无法重新加载 crawler_console / Request was cancelled」。此前已记录过“客户端中断不能进入项目级 bootstrap 失败分支”，bootstrap 路径也确实用 `runOptionalMcpTask` 和逐点 `isClientAbortError` 过滤了，但那次修复只护住了当时列出的调用点：`server-sync` 的 `onMcp` 刷新路径调 `loadCommands` 后仍直接 `showProjectReloadError`，同一类 499 于是从另一个入口再次冒出来。
+
+教训：取消/中断类错误的过滤不能散落在各调用点，必须收敛到错误展示 helper（`showProjectReloadError`）入口统一拦截，调用点只负责描述“哪个项目、什么错误”。判断只用 `isClientAbortError`（`cause.kind === "cancelled"` 或 `status === 499`），不要匹配文案；新增错误提示调用点时，先确认 helper 已挡掉 cancelled，再考虑是否还需要调用点自己的过滤（会话列表这类不走 helper 的提示要在 catch 开头自己挡）。
+
+## 长期运行的日志文件必须有大小和天数上限
+
+2026-10-12 用户指出 `~/.local/share/openctrlc/log/openctrlc.log` 已 40MB、混着 8 月底的数据：`Logger.toFile(..., { flag: "a" })` 只会无限追加，没有任何轮转。诊断日志的价值集中在最近几天，无界增长既占磁盘，也让“查看日志 / 导出日志”和人工排查变慢。
+
+以后进程级日志写入点都要显式设定单文件上限与保留天数（现为 10MB × 3 份、7 天），并在每次 flush 前检查，保证长驻进程单次运行也不会无界；旧版本遗留的超大文件按策略直接丢弃，而不是永远顺位后挪。新增日志通道时先确认它的保留策略，不要默认“追加就行”。
+
+## 虚拟行容器用 transform 定位会让 sticky 行头落进展开内容里
+
+2026-10-12 用户截图报「上下文面板点开任何一行，展开位置不对，其他行还盖在展开内容上」。根因在 `b7aa8b50`（10-08）给原始消息表引入的虚拟化：虚拟行 wrapper 用 `transform: translateY(...)` 定位，而行头是 `position: sticky`（`StickyAccordionHeader`）。sticky 的吸附基准是最近滚动容器的视口，但祖先一旦有 transform，sticky 先在 transform 前的坐标系里解析吸附位置，再被 transform 平移一次——列表滚过顶部后，行头就被多平移一个 `translateY` 的量（实测 header 落在 1737 而视口顶是 105，差值正好等于该行的 translateY 1632px），最终悬在展开 JSON 中间；行头 `z-index: 10` 又让它画在其它虚拟行之上，看起来像图层错乱。未滚动过顶部时不触发，所以初次 e2e 没抓到。
+
+修复与经验：
+
+- 虚拟行定位改用 `top: start - scrollMargin`（与 `message-timeline.tsx` 一致），不要在含 sticky 后代的容器上用 transform 做纵向位移；需要 transform 时先确认内部没有 sticky/fixed 元素。
+- 回归测试必须覆盖「滚过列表顶部、sticky 已吸附」的状态，只在列表顶部展开验不出这类 bug。
+- 同一次修复还纠正了容器高度：TanStack `getTotalSize()` 返回值已扣除 `scrollMargin`，再减一次会让容器比内容矮一个 scrollMargin，尾部虚拟行永远滚不到（实测 maxScroll 停在倒数第二屏）。虚拟列表容器高度直接用 `getTotalSize()`。

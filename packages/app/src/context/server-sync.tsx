@@ -36,6 +36,7 @@ import type { ProjectMeta } from "./global-sync/types"
 import { SESSION_RECENT_LIMIT } from "./global-sync/types"
 import { formatServerError, isTransientConnectionError } from "@/utils/server-errors"
 import { showProjectReloadError } from "@/utils/project-reload-error"
+import { isClientAbortError } from "@openctrlc/sdk/error-interceptor"
 import { queryOptions, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/solid-query"
 import type { SolidQueryOptions } from "@tanstack/solid-query"
 import { createRefreshQueue } from "./global-sync/queue"
@@ -523,6 +524,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
               sessionMeta.set(key, { limit })
             })
             .catch((err) => {
+              if (isClientAbortError(err)) return
               console.error("Failed to load sessions", err)
               if (platform.remoteSessionID && isTransientConnectionError(err)) return
               const project = getFilename(directory)

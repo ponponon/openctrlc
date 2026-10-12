@@ -4,7 +4,7 @@ import { Effect, Layer, Logger } from "effect"
 import fs from "fs/promises"
 import os from "os"
 import path from "path"
-import { fileLogger } from "../../src/observability/logging"
+import { fileLogger, KEEP_ROTATED_LOGS, MAX_LOG_AGE_DAYS, MAX_LOG_BYTES } from "../../src/observability/logging"
 import { resource } from "../../src/observability/otlp"
 import { Global } from "../../src/global"
 import { Brand } from "@openctrlc/identity"
@@ -122,3 +122,96 @@ test("default file logger writes under the OpenCtrlC log path", async () => {
   expect(await Bun.file(file).exists()).toBe(true)
   await fs.rm(file, { force: true })
 })
+
+test("file logger rotates an oversized file into the first rotated slot", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "openctrlc-log-test-"))
+  await using _ = {
+    async [Symbol.asyncDispose]() {
+      await fs.rm(dir, { recursive: true, force: true })
+    },
+  }
+  const file = path.join(dir, "openctrlc.log")
+  await fs.writeFile(file, "x".repeat(MAX_LOG_BYTES + 1024))
+
+  const logger = fileLogger(file, "run-a")
+  expect(await Bun.file(`${file}.1`).exists()).toBe(true)
+  expect(await Bun.file(file).exists()).toBe(false)
+
+  await Effect.logInfo("after rotation").pipe(
+    Effect.provide(Logger.layer([logger]).pipe(Layer.provide(NodeFileSystem.layer), Layer.orDie)),
+    Effect.scoped,
+    Effect.runPromise,
+  )
+
+  const lines = (await Bun.file(file).text()).trim().split("\n")
+  expect(lines).toHaveLength(1)
+  expect(lines[0]).toContain("after rotation")
+  expect(lines[0]).toContain("run=run-a")
+  expect((await Bun.file(`${file}.1`).text()).startsWith("x")).toBe(true)
+})
+
+test("file logger drops a legacy file far past the rotation limit", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "openctrlc-log-test-"))
+  await using _ = {
+    async [Symbol.asyncDispose]() {
+      await fs.rm(dir, { recursive: true, force: true })
+    },
+  }
+  const file = path.join(dir, "openctrlc.log")
+  await fs.writeFile(file, "x".repeat(MAX_LOG_BYTES * 3))
+
+  fileLogger(file, "run-a")
+
+  expect(await Bun.file(file).exists()).toBe(false)
+  expect(await Bun.file(`${file}.1`).exists()).toBe(false)
+})
+
+test("file logger prunes rotated copies past the retention window", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "openctrlc-log-test-"))
+  await using _ = {
+    async [Symbol.asyncDispose]() {
+      await fs.rm(dir, { recursive: true, force: true })
+    },
+  }
+  const file = path.join(dir, "openctrlc.log")
+  const stale = `${file}.1`
+  const recent = `${file}.2`
+  await fs.writeFile(stale, "old")
+  await fs.writeFile(recent, "newer")
+  const expired = new Date(Date.now() - (MAX_LOG_AGE_DAYS + 1) * 24 * 60 * 60 * 1000)
+  await fs.utimes(stale, expired, expired)
+
+  fileLogger(file, "run-a")
+
+  expect(await Bun.file(stale).exists()).toBe(false)
+  expect(await Bun.file(recent).exists()).toBe(true)
+  expect(KEEP_ROTATED_LOGS).toBe(2)
+})
+
+test("file logger rotates mid-run once a batch pushes it past the limit", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "openctrlc-log-test-"))
+  await using _ = {
+    async [Symbol.asyncDispose]() {
+      await fs.rm(dir, { recursive: true, force: true })
+    },
+  }
+  const file = path.join(dir, "openctrlc.log")
+  const megabyte = "y".repeat(1024 * 1024)
+
+  await Effect.scoped(
+    Effect.gen(function* () {
+      const logger = yield* fileLogger(file, "run-a")
+      yield* Effect.logInfo(megabyte).pipe(Effect.repeat({ times: 11 }), Effect.provide(Logger.layer([logger])))
+      // Let the first window flush the big batch, then keep the logger alive
+      // across a second window so the size check runs against that batch.
+      yield* Effect.sleep(1200)
+      yield* Effect.logInfo("mid-run rotation").pipe(Effect.provide(Logger.layer([logger])))
+      yield* Effect.sleep(1200)
+    }),
+  ).pipe(Effect.runPromise)
+
+  expect(await Bun.file(`${file}.1`).exists()).toBe(true)
+  const current = (await Bun.file(file).text()).trim()
+  expect(current).toContain("mid-run rotation")
+  expect(current.split("\n")).toHaveLength(1)
+}, 15_000)

@@ -534,7 +534,9 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
       .filter((item) => messageByID().has(String(item.key)))
       .map((item) => item.key),
   )
-  const virtualRowsHeight = createMemo(() => Math.max(0, messageVirtualizer.getTotalSize() - scrollMargin()))
+  // TanStack getTotalSize() already excludes scrollMargin; subtracting it again
+  // makes the container too short and leaves the tail rows unreachable while scrolling.
+  const virtualRowsHeight = createMemo(() => Math.max(0, messageVirtualizer.getTotalSize()))
 
   const restoreScroll = () => {
     const el = scroll()
@@ -874,10 +876,13 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
                           data-message-id={messageID}
                           style={{
                             position: "absolute",
-                            top: "0",
+                            // Position with `top`, not transform: an ancestor transform
+                            // makes the sticky row header resolve its stick point in
+                            // pre-transform coordinates, so once the list scrolls past
+                            // its top the header lands inside the expanded JSON.
+                            top: (item()?.start ?? 0) - scrollMargin() + "px",
                             left: "0",
                             width: "100%",
-                            transform: "translateY(" + ((item()?.start ?? 0) - scrollMargin()) + "px)",
                           }}
                         >
                           <RawMessage
