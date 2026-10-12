@@ -11,6 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-10-12-desktop-update-feed-release-design.md`
 
 **通用约定（每个任务都适用）：**
+
 - commit message 用中文 `type(scope): subject`，尾行 `edit by mimo-v2.6-flash`
 - 每次 commit 前 `git diff --cached` 检查无 api key / 密码 / 私钥
 - 测试从包目录跑，不从仓库根目录跑
@@ -20,25 +21,26 @@
 
 ## File Structure
 
-| 文件 | 动作 | 职责 |
-|---|---|---|
-| `packages/desktop/scripts/rewrite-update-feed.ts` | 新建 | build job 内按 sha512 重写 channel file 的 url + 结构断言 |
-| `packages/desktop/scripts/rewrite-update-feed.test.ts` | 新建 | 上述脚本的 fixture 测试 |
-| `packages/desktop/scripts/finalize-latest-yml.ts` | 修改 | 拆出 `buildOutputs`，tag 改 `RELEASE_TAG`，4 文件齐全校验，`import.meta.main` 守卫 |
-| `packages/desktop/scripts/finalize-latest-yml.test.ts` | 新建 | 合并与缺失校验测试 |
-| `script/verify-update-feed.ts` | 新建 | Release 公开后匿名公网校验 channel file 与安装包 |
-| `script/verify-update-feed.test.ts` | 新建 | 本地 `Bun.serve` 端到端测试 |
-| `packages/desktop/scripts/prepare.ts` | 修改 | prod 缺 `OPENCTRLC_VERSION` 时警告 |
-| `.github/workflows/publish.yml` | 修改 | 3 个 build job 加 rewrite+artifact；新增 `finalize-update-feed`、`verify-update-feed` |
-| `script/publish-contract.test.ts` | 修改 | 修白名单/禁止词，加新链路断言 |
-| `.github/workflows/test.yml` | 修改 | 挂载契约测试 |
-| `FEATURE.md` / `FailureExperience.md` / `docs/release.md` | 修改 | 文档与教训 |
+| 文件                                                      | 动作 | 职责                                                                                  |
+| --------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------- |
+| `packages/desktop/scripts/rewrite-update-feed.ts`         | 新建 | build job 内按 sha512 重写 channel file 的 url + 结构断言                             |
+| `packages/desktop/scripts/rewrite-update-feed.test.ts`    | 新建 | 上述脚本的 fixture 测试                                                               |
+| `packages/desktop/scripts/finalize-latest-yml.ts`         | 修改 | 拆出 `buildOutputs`，tag 改 `RELEASE_TAG`，4 文件齐全校验，`import.meta.main` 守卫    |
+| `packages/desktop/scripts/finalize-latest-yml.test.ts`    | 新建 | 合并与缺失校验测试                                                                    |
+| `script/verify-update-feed.ts`                            | 新建 | Release 公开后匿名公网校验 channel file 与安装包                                      |
+| `script/verify-update-feed.test.ts`                       | 新建 | 本地 `Bun.serve` 端到端测试                                                           |
+| `packages/desktop/scripts/prepare.ts`                     | 修改 | prod 缺 `OPENCTRLC_VERSION` 时警告                                                    |
+| `.github/workflows/publish.yml`                           | 修改 | 3 个 build job 加 rewrite+artifact；新增 `finalize-update-feed`、`verify-update-feed` |
+| `script/publish-contract.test.ts`                         | 修改 | 修白名单/禁止词，加新链路断言                                                         |
+| `.github/workflows/test.yml`                              | 修改 | 挂载契约测试                                                                          |
+| `FEATURE.md` / `FailureExperience.md` / `docs/release.md` | 修改 | 文档与教训                                                                            |
 
 ---
 
 ### Task 1: rewrite-update-feed 脚本
 
 **Files:**
+
 - Create: `packages/desktop/scripts/rewrite-update-feed.ts`
 - Test: `packages/desktop/scripts/rewrite-update-feed.test.ts`
 
@@ -260,6 +262,7 @@ edit by mimo-v2.6-flash"
 ### Task 2: finalize-latest-yml 改造
 
 **Files:**
+
 - Modify: `packages/desktop/scripts/finalize-latest-yml.ts`
 - Test: `packages/desktop/scripts/finalize-latest-yml.test.ts`
 
@@ -361,12 +364,7 @@ Expected: FAIL，`buildOutputs` 未导出 / `RELEASE_TAG` 断言失败
 import { $ } from "bun"
 import path from "path"
 
-export const REQUIRED_CHANNEL_FILES = [
-  "latest.yml",
-  "latest-mac.yml",
-  "latest-linux.yml",
-  "latest-linux-arm64.yml",
-]
+export const REQUIRED_CHANNEL_FILES = ["latest.yml", "latest-mac.yml", "latest-linux.yml", "latest-linux-arm64.yml"]
 
 type FileEntry = {
   url: string
@@ -495,8 +493,9 @@ if (import.meta.main) {
 ```
 
 要点：
+
 - `parse`/`serialize`/merge 主体保持原样；`read` 增加 `dir` 参数；环境变量检查与 `gh` 上传移入 `import.meta.main` 守卫，脚本可被测试 import。
-- 删除原 `OPENCTRLC_VERSION` 必填检查与 `beta ? "beta" : \`v${version}\`` tag 推导，改为 `RELEASE_TAG` 必填。
+- 删除原 `OPENCTRLC_VERSION` 必填检查与 `beta ? "beta" : \`v${version}\``tag 推导，改为`RELEASE_TAG` 必填。
 - 输出不满 4 个文件时抛 `missing channel files: ...`。
 
 - [ ] **Step 4: 运行测试确认通过**
@@ -524,6 +523,7 @@ edit by mimo-v2.6-flash"
 ### Task 3: verify-update-feed 脚本
 
 **Files:**
+
 - Create: `script/verify-update-feed.ts`
 - Test: `script/verify-update-feed.test.ts`
 
@@ -700,8 +700,7 @@ export async function collectResults(baseUrl: string): Promise<Check[]> {
         continue
       }
       const head = await fetchHead(`${baseUrl}/${entry.url}`)
-      const mismatch =
-        head.length !== undefined && entry.size !== undefined && head.length !== entry.size
+      const mismatch = head.length !== undefined && entry.size !== undefined && head.length !== entry.size
       results.push({
         target: `${name} → ${entry.url}`,
         kind: "installer",
@@ -757,6 +756,7 @@ if (import.meta.main) {
 ```
 
 要点：
+
 - 校验时对安装包只取响应头（`body.cancel()`），不下载几百 MB。
 - 不使用 `GH_TOKEN`：Release 公开后走真实用户的匿名公网路径。
 - `UPDATE_FEED_BASE_URL` 可覆盖，测试指向本地 `Bun.serve`。
@@ -781,6 +781,7 @@ edit by mimo-v2.6-flash"
 ### Task 4: prepare.ts 版本注入警告
 
 **Files:**
+
 - Modify: `packages/desktop/scripts/prepare.ts`
 
 - [ ] **Step 1: 加警告（在 import 之后、`await import("./prebuild")` 之前）**
@@ -835,6 +836,7 @@ edit by mimo-v2.6-flash"
 ### Task 5: publish.yml 接线 + 契约测试修复 + test.yml 挂载
 
 **Files:**
+
 - Modify: `.github/workflows/publish.yml`
 - Modify: `script/publish-contract.test.ts`
 - Modify: `.github/workflows/test.yml`
@@ -846,21 +848,21 @@ edit by mimo-v2.6-flash"
 1. job 白名单改为（顺序 = YAML 中声明顺序）：
 
 ```ts
-  expect(Object.keys(workflow.jobs ?? {})).toEqual([
-    "version",
-    "ensure-tag",
-    "build-cli",
-    "sign-cli-macos",
-    "check-desktop-icons",
-    "build-desktop-macos",
-    "build-desktop-windows",
-    "build-desktop-linux",
-    "finalize-update-feed",
-    "publish",
-    "verify-update-feed",
-    "sync-downloads",
-    "sync-release-versions",
-  ])
+expect(Object.keys(workflow.jobs ?? {})).toEqual([
+  "version",
+  "ensure-tag",
+  "build-cli",
+  "sign-cli-macos",
+  "check-desktop-icons",
+  "build-desktop-macos",
+  "build-desktop-windows",
+  "build-desktop-linux",
+  "finalize-update-feed",
+  "publish",
+  "verify-update-feed",
+  "sync-downloads",
+  "sync-release-versions",
+])
 ```
 
 2. 禁止词列表删除 `"script/publish.ts",` 一行（`publish.yml:503` 现状即使用它，该禁止词已过期）。
@@ -868,28 +870,28 @@ edit by mimo-v2.6-flash"
 3. 第一个 test 末尾（`expect(linuxSource).toContain('[ "$source" != "$target" ]')` 之后）追加：
 
 ```ts
-  expect(desktopSource).toContain("rewrite-update-feed.ts")
-  expect(windowsSource).toContain("rewrite-update-feed.ts")
-  expect(linuxSource).toContain("rewrite-update-feed.ts")
+expect(desktopSource).toContain("rewrite-update-feed.ts")
+expect(windowsSource).toContain("rewrite-update-feed.ts")
+expect(linuxSource).toContain("rewrite-update-feed.ts")
 
-  const finalize = workflow.jobs?.["finalize-update-feed"]
-  expect(finalize?.needs).toEqual(["version", "build-desktop-macos", "build-desktop-windows", "build-desktop-linux"])
-  expect(finalize?.["runs-on"]).toBe("ubuntu-24.04")
-  const finalizeSource = JSON.stringify(finalize?.steps ?? [])
-  expect(finalizeSource).toContain("latest-yml-*")
-  expect(finalizeSource).toContain("*.yml")
-  expect(finalizeSource).toContain("finalize-latest-yml.ts")
-  expect(finalizeSource).toContain("RELEASE_TAG")
-  expect(finalizeSource).toContain("GH_TOKEN")
+const finalize = workflow.jobs?.["finalize-update-feed"]
+expect(finalize?.needs).toEqual(["version", "build-desktop-macos", "build-desktop-windows", "build-desktop-linux"])
+expect(finalize?.["runs-on"]).toBe("ubuntu-24.04")
+const finalizeSource = JSON.stringify(finalize?.steps ?? [])
+expect(finalizeSource).toContain("latest-yml-*")
+expect(finalizeSource).toContain("*.yml")
+expect(finalizeSource).toContain("finalize-latest-yml.ts")
+expect(finalizeSource).toContain("RELEASE_TAG")
+expect(finalizeSource).toContain("GH_TOKEN")
 
-  expect(publish?.needs).toContain("finalize-update-feed")
+expect(publish?.needs).toContain("finalize-update-feed")
 
-  const verify = workflow.jobs?.["verify-update-feed"]
-  expect(verify?.needs).toEqual(["version", "publish"])
-  expect(verify?.["runs-on"]).toBe("ubuntu-24.04")
-  const verifySource = JSON.stringify(verify?.steps ?? [])
-  expect(verifySource).toContain("verify-update-feed.ts")
-  expect(verifySource).not.toContain("secrets.GITHUB_TOKEN")
+const verify = workflow.jobs?.["verify-update-feed"]
+expect(verify?.needs).toEqual(["version", "publish"])
+expect(verify?.["runs-on"]).toBe("ubuntu-24.04")
+const verifySource = JSON.stringify(verify?.steps ?? [])
+expect(verifySource).toContain("verify-update-feed.ts")
+expect(verifySource).not.toContain("secrets.GITHUB_TOKEN")
 ```
 
 说明：`verify` 步骤不得携带 token（匿名校验真实用户路径）；`finalize` 步骤的 `*.yml` 断言锁定 upload-artifact 通配符写法（保证文件落在 artifact 根目录，与 download 的 `<path>/<artifact名>/` 结构对齐）。
@@ -906,46 +908,46 @@ Expected: FAIL（白名单不符 —— `finalize-update-feed` 还不存在）
 **(a) macOS job** —— 在 `Build and notarize macOS Desktop` 步骤之后、`Upload macOS Desktop assets` 之前插入：
 
 ```yaml
-      - name: Prepare update feed file
-        run: |
-          set -euo pipefail
-          bun packages/desktop/scripts/rewrite-update-feed.ts
-          mkdir -p packages/desktop/latest-yml-aarch64-apple-darwin
-          cp packages/desktop/dist/latest-mac.yml packages/desktop/latest-yml-aarch64-apple-darwin/
+- name: Prepare update feed file
+  run: |
+    set -euo pipefail
+    bun packages/desktop/scripts/rewrite-update-feed.ts
+    mkdir -p packages/desktop/latest-yml-aarch64-apple-darwin
+    cp packages/desktop/dist/latest-mac.yml packages/desktop/latest-yml-aarch64-apple-darwin/
 
-      - name: Upload update feed file
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: latest-yml-aarch64-apple-darwin
-          path: packages/desktop/latest-yml-aarch64-apple-darwin/*.yml
-          if-no-files-found: error
+- name: Upload update feed file
+  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+  with:
+    name: latest-yml-aarch64-apple-darwin
+    path: packages/desktop/latest-yml-aarch64-apple-darwin/*.yml
+    if-no-files-found: error
 ```
 
 **(b) Windows job** —— 在 `Build and package Windows Desktop` 之后、`Upload Windows Desktop assets` 之前插入：
 
 ```yaml
-      - name: Prepare update feed file
-        id: feed
-        env:
-          MATRIX_ARCH: ${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          case "$MATRIX_ARCH" in
-            x64) triple=x86_64-pc-windows-msvc ;;
-            arm64) triple=aarch64-pc-windows-msvc ;;
-            *) echo "unknown arch $MATRIX_ARCH" >&2; exit 1 ;;
-          esac
-          bun packages/desktop/scripts/rewrite-update-feed.ts
-          mkdir -p "packages/desktop/latest-yml-${triple}"
-          cp packages/desktop/dist/latest.yml "packages/desktop/latest-yml-${triple}/"
-          echo "triple=${triple}" >> "$GITHUB_OUTPUT"
+- name: Prepare update feed file
+  id: feed
+  env:
+    MATRIX_ARCH: ${{ matrix.arch }}
+  run: |
+    set -euo pipefail
+    case "$MATRIX_ARCH" in
+      x64) triple=x86_64-pc-windows-msvc ;;
+      arm64) triple=aarch64-pc-windows-msvc ;;
+      *) echo "unknown arch $MATRIX_ARCH" >&2; exit 1 ;;
+    esac
+    bun packages/desktop/scripts/rewrite-update-feed.ts
+    mkdir -p "packages/desktop/latest-yml-${triple}"
+    cp packages/desktop/dist/latest.yml "packages/desktop/latest-yml-${triple}/"
+    echo "triple=${triple}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload update feed file
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: latest-yml-${{ steps.feed.outputs.triple }}
-          path: packages/desktop/latest-yml-${{ steps.feed.outputs.triple }}/*.yml
-          if-no-files-found: error
+- name: Upload update feed file
+  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+  with:
+    name: latest-yml-${{ steps.feed.outputs.triple }}
+    path: packages/desktop/latest-yml-${{ steps.feed.outputs.triple }}/*.yml
+    if-no-files-found: error
 ```
 
 （Windows job 已有 `defaults.run.shell: bash`，case 语法可用。）
@@ -953,28 +955,28 @@ Expected: FAIL（白名单不符 —— `finalize-update-feed` 还不存在）
 **(c) Linux job** —— 在 `Build and package Linux Desktop` 之后、`Upload Linux Desktop assets` 之前插入：
 
 ```yaml
-      - name: Prepare update feed file
-        id: feed
-        env:
-          MATRIX_ARCH: ${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          case "$MATRIX_ARCH" in
-            x64) triple=x86_64-unknown-linux-gnu ;;
-            arm64) triple=aarch64-unknown-linux-gnu ;;
-            *) echo "unknown arch $MATRIX_ARCH" >&2; exit 1 ;;
-          esac
-          bun packages/desktop/scripts/rewrite-update-feed.ts
-          mkdir -p "packages/desktop/latest-yml-${triple}"
-          cp packages/desktop/dist/latest-linux*.yml "packages/desktop/latest-yml-${triple}/"
-          echo "triple=${triple}" >> "$GITHUB_OUTPUT"
+- name: Prepare update feed file
+  id: feed
+  env:
+    MATRIX_ARCH: ${{ matrix.arch }}
+  run: |
+    set -euo pipefail
+    case "$MATRIX_ARCH" in
+      x64) triple=x86_64-unknown-linux-gnu ;;
+      arm64) triple=aarch64-unknown-linux-gnu ;;
+      *) echo "unknown arch $MATRIX_ARCH" >&2; exit 1 ;;
+    esac
+    bun packages/desktop/scripts/rewrite-update-feed.ts
+    mkdir -p "packages/desktop/latest-yml-${triple}"
+    cp packages/desktop/dist/latest-linux*.yml "packages/desktop/latest-yml-${triple}/"
+    echo "triple=${triple}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload update feed file
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: latest-yml-${{ steps.feed.outputs.triple }}
-          path: packages/desktop/latest-yml-${{ steps.feed.outputs.triple }}/*.yml
-          if-no-files-found: error
+- name: Upload update feed file
+  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+  with:
+    name: latest-yml-${{ steps.feed.outputs.triple }}
+    path: packages/desktop/latest-yml-${{ steps.feed.outputs.triple }}/*.yml
+    if-no-files-found: error
 ```
 
 注意：Linux 的重命名（`openctrlc-linux-{arch}.{ext}`）发生在 build 步骤内部，故 rewrite 必须放在其后（本插入点满足）；`cp latest-linux*.yml` 在 x64 job 匹配 `latest-linux.yml`，arm64 job 匹配 `latest-linux-arm64.yml`，glob 无匹配时 `set -euo pipefail` 使 job 失败（期望行为）。
@@ -982,34 +984,34 @@ Expected: FAIL（白名单不符 —— `finalize-update-feed` 还不存在）
 **(d) 新增 `finalize-update-feed` job** —— 插在 `build-desktop-linux` job 结束与 `  publish:` 之间：
 
 ```yaml
-  finalize-update-feed:
-    needs:
-      - version
-      - build-desktop-macos
-      - build-desktop-windows
-      - build-desktop-linux
-    if: github.repository == 'ponponon/openctrlc'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-        with:
-          ref: ${{ github.sha }}
+finalize-update-feed:
+  needs:
+    - version
+    - build-desktop-macos
+    - build-desktop-windows
+    - build-desktop-linux
+  if: github.repository == 'ponponon/openctrlc'
+  runs-on: ubuntu-24.04
+  steps:
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      with:
+        ref: ${{ github.sha }}
 
-      - uses: ./.github/actions/setup-bun
+    - uses: ./.github/actions/setup-bun
 
-      - name: Download update feed files
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: latest-yml-*
-          path: update-feed
+    - name: Download update feed files
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        pattern: latest-yml-*
+        path: update-feed
 
-      - name: Upload update feed files to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ needs.version.outputs.repo }}
-          RELEASE_TAG: ${{ needs.version.outputs.tag }}
-          LATEST_YML_DIR: ${{ github.workspace }}/update-feed
-        run: bun packages/desktop/scripts/finalize-latest-yml.ts
+    - name: Upload update feed files to release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPO: ${{ needs.version.outputs.repo }}
+        RELEASE_TAG: ${{ needs.version.outputs.tag }}
+        LATEST_YML_DIR: ${{ github.workspace }}/update-feed
+      run: bun packages/desktop/scripts/finalize-latest-yml.ts
 ```
 
 结构依据：`download-artifact` 默认（`merge-multiple: false`）把每个 artifact 解到 `update-feed/<artifact名>/`；upload 侧用 `path: .../*.yml` 通配符（hierarchy 从通配符所在段保留），文件落在 artifact 根 → 最终 `update-feed/latest-yml-<triple>/latest-*.yml`，与 finalize 的 `read(dir, subdir, filename)` 约定一致。
@@ -1017,38 +1019,38 @@ Expected: FAIL（白名单不符 —— `finalize-update-feed` 还不存在）
 **(e) `publish` job 的 needs 增加 `finalize-update-feed`：**
 
 ```yaml
-  publish:
-    needs:
-      - version
-      - build-cli
-      - sign-cli-macos
-      - build-desktop-macos
-      - build-desktop-windows
-      - build-desktop-linux
-      - finalize-update-feed
+publish:
+  needs:
+    - version
+    - build-cli
+    - sign-cli-macos
+    - build-desktop-macos
+    - build-desktop-windows
+    - build-desktop-linux
+    - finalize-update-feed
 ```
 
 **(f) 新增 `verify-update-feed` job** —— 插在 `publish` job 结束与 `  sync-downloads:` 之间：
 
 ```yaml
-  verify-update-feed:
-    needs:
-      - version
-      - publish
-    if: github.repository == 'ponponon/openctrlc'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-        with:
-          ref: ${{ github.sha }}
+verify-update-feed:
+  needs:
+    - version
+    - publish
+  if: github.repository == 'ponponon/openctrlc'
+  runs-on: ubuntu-24.04
+  steps:
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      with:
+        ref: ${{ github.sha }}
 
-      - uses: ./.github/actions/setup-bun
+    - uses: ./.github/actions/setup-bun
 
-      - name: Verify update feed is publicly reachable
-        env:
-          GH_REPO: ${{ needs.version.outputs.repo }}
-          RELEASE_TAG: ${{ needs.version.outputs.tag }}
-        run: bun script/verify-update-feed.ts
+    - name: Verify update feed is publicly reachable
+      env:
+        GH_REPO: ${{ needs.version.outputs.repo }}
+        RELEASE_TAG: ${{ needs.version.outputs.tag }}
+      run: bun script/verify-update-feed.ts
 ```
 
 不配置 `GH_TOKEN`：匿名公网 GET，覆盖真实用户路径；失败时脚本 `exit 1` 使 job 与 workflow 红灯，`$GITHUB_STEP_SUMMARY` 写入明细表。
@@ -1058,10 +1060,10 @@ Expected: FAIL（白名单不符 —— `finalize-update-feed` 还不存在）
 `.github/workflows/test.yml` 的 `unit` job 中，在 `Run unit tests` 步骤之后、`Check generated client` 之前插入：
 
 ```yaml
-      - name: Run release contract tests
-        if: runner.os == 'Linux'
-        working-directory: script
-        run: bun test publish-contract.test.ts
+- name: Run release contract tests
+  if: runner.os == 'Linux'
+  working-directory: script
+  run: bun test publish-contract.test.ts
 ```
 
 说明：只挂契约测试不挂 `script/` 全量（`translate-app.test.ts` 存在 2 个与本任务无关的既有失败，挂全量会把 CI 打红）；`working-directory: script` 避开根目录 bunfig 的 `do-not-run-tests-from-root` 守卫。
@@ -1096,6 +1098,7 @@ edit by mimo-v2.6-flash"
 ### Task 6: 文档
 
 **Files:**
+
 - Modify: `FEATURE.md`（末尾追加）
 - Modify: `FailureExperience.md`（末尾追加）
 - Modify: `docs/release.md`（发布前检查清单追加第 7 条）
@@ -1128,7 +1131,7 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 在第 6 条（`6. 发布后验证 Release 页面、官网首页、\`/download\`、\`/changelog\` 和 \`/docs/\`。`）之后、`### 远程中继换址验收（Desktop 手工）` 之前插入：
 
-```markdown
+````markdown
 7. 确认 `verify-update-feed` job 绿灯：Release 公开后自动匿名校验 4 个
    `latest*.yml` 及其指向的安装包可公网访问。手动核验（`<tag>` 换成实际 tag）：
 
@@ -1138,7 +1141,9 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
        && echo "$f OK" || echo "$f MISSING"
    done
    ```
-```
+````
+
+````
 
 - [ ] **Step 4: Commit**
 
@@ -1148,7 +1153,7 @@ git diff --cached
 git commit -m "docs(release): 补自动更新 feed 链路文档与教训
 
 edit by mimo-v2.6-flash"
-```
+````
 
 ---
 
@@ -1159,10 +1164,12 @@ edit by mimo-v2.6-flash"
 - [ ] **Step 1: 脚本测试全绿**
 
 Run:
+
 ```bash
 cd packages/desktop && bun test scripts/
 cd ../../script && bun test publish-contract.test.ts verify-update-feed.test.ts
 ```
+
 Expected: 全部 pass, 0 fail
 
 - [ ] **Step 2: desktop typecheck**

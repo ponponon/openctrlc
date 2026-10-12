@@ -106,7 +106,9 @@ test("fails when a channel file is not an object", async () => {
   try {
     const results = await collectResults(base)
     expect(results.some((result) => result.kind === "installer")).toBe(false)
-    expect(results.filter((result) => result.note === "channel file is not an object").length).toBe(CHANNEL_FILES.length)
+    expect(results.filter((result) => result.note === "channel file is not an object").length).toBe(
+      CHANNEL_FILES.length,
+    )
     expect(results.filter((result) => !result.ok).length).toBe(CHANNEL_FILES.length)
   } finally {
     await server.stop(true)
@@ -147,7 +149,10 @@ test("skips the size check when the response is compressed", async () => {
   const files: Record<string, string> = { "app.deb": "abc" }
   for (const name of CHANNEL_FILES) files[name] = channelYml("app.deb", 99)
   const compressed = Bun.gzipSync(Buffer.from("abc"))
-  const { dir, server, base } = await serve(files, () => new Response(compressed, { headers: { "content-encoding": "gzip" } }))
+  const { dir, server, base } = await serve(
+    files,
+    () => new Response(compressed, { headers: { "content-encoding": "gzip" } }),
+  )
   try {
     const results = await collectResults(base)
     const installers = results.filter((result) => result.kind === "installer")

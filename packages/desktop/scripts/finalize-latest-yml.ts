@@ -4,12 +4,7 @@ import { $ } from "bun"
 import { readdir } from "node:fs/promises"
 import path from "path"
 
-export const REQUIRED_CHANNEL_FILES = [
-  "latest.yml",
-  "latest-mac.yml",
-  "latest-linux.yml",
-  "latest-linux-arm64.yml",
-]
+export const REQUIRED_CHANNEL_FILES = ["latest.yml", "latest-mac.yml", "latest-linux.yml", "latest-linux-arm64.yml"]
 
 type FileEntry = {
   url: string
