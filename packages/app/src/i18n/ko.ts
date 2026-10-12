@@ -1165,6 +1165,12 @@ export const dict = {
     "대화 기록을 불러올 때 Review 댓글, 메시지 요약 및 도구 제목이 유지됩니다.",
   "dialog.releaseNotes.v1_1_7.zenFreeTier":
     "클라이언트 버전 검증 때문에 OpenCode Zen 무료 모델을 사용할 수 없던 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_8.logRotation":
+    "서버 로그는 10MB에서 순환하고 최대 두 개의 이전 파일을 보관하며, 시작 시 7일이 지난 순환 로그를 삭제합니다.",
+  "dialog.releaseNotes.v1_1_8.cancelledRequest":
+    "프로젝트 로드가 성공한 경우 요청을 취소해도 프로젝트를 다시 불러오지 못했다는 잘못된 오류가 표시되지 않습니다.",
+  "dialog.releaseNotes.v1_1_8.contextRows":
+    "스크롤한 뒤 세션 컨텍스트 행을 펼치면 위치가 어긋나 다른 메시지를 덮는 문제를 수정했습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

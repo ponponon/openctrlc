@@ -1508,6 +1508,10 @@ export const dict = {
     "项目、会话和标签图标在项目元数据未设置颜色时，也会显示稳定的项目颜色。",
   "dialog.releaseNotes.v1_1_7.historyMetadata": "加载对话历史时会保留 Review 评论、消息摘要和工具标题。",
   "dialog.releaseNotes.v1_1_7.zenFreeTier": "修复 OpenCode Zen 免费模型因客户端版本校验而无法使用的问题。",
+  "dialog.releaseNotes.v1_1_8.logRotation":
+    "服务端日志现在会在达到 10 MB 时轮转，最多保留两份轮转文件，并在启动时清理超过七天的文件。",
+  "dialog.releaseNotes.v1_1_8.cancelledRequest": "项目实际加载成功时，取消请求不会再误报为项目重新加载失败。",
+  "dialog.releaseNotes.v1_1_8.contextRows": "修复滚动后展开的会话上下文行位置错乱、遮挡其他消息的问题。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",

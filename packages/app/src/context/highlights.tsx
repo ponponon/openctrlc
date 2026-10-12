@@ -151,6 +151,14 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "Fixed OpenCode Zen free-tier requests being rejected because the client reported its own version.":
       "dialog.releaseNotes.v1_1_7.zenFreeTier",
   },
+  "1.1.8": {
+    "Server logs now rotate at 10 MB, keep up to two rotated files, and prune rotated files older than seven days on startup.":
+      "dialog.releaseNotes.v1_1_8.logRotation",
+    "Canceled requests no longer show a false project reload failure when the project itself loaded successfully.":
+      "dialog.releaseNotes.v1_1_8.cancelledRequest",
+    "Fixed expanded session context rows appearing at the wrong position or overlapping other messages after scrolling.":
+      "dialog.releaseNotes.v1_1_8.contextRows",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {
