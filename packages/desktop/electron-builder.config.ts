@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
@@ -29,6 +30,19 @@ const channel = (() => {
   if (raw === "dev" || raw === "beta" || raw === "prod") return raw
   return "dev"
 })()
+
+// This config is loaded by electron-builder's own loader, so keep the check sync
+// (no Bun APIs or top-level await) to avoid breaking config evaluation.
+if (channel === "prod" && !process.env.OPENCTRLC_VERSION) {
+  const pkg: { version?: string } = JSON.parse(readFileSync(path.join(packageDir, "package.json"), "utf8"))
+  console.warn(
+    [
+      "WARNING: packaging for prod without OPENCTRLC_VERSION.",
+      `package.json version ${pkg.version} will be embedded as-is and may not match the release tag.`,
+      "Set OPENCTRLC_VERSION (CI does this automatically) before packaging a publishable build.",
+    ].join("\n"),
+  )
+}
 
 const APP_IDS = {
   dev: `${Brand.desktopAppId}.dev`,
