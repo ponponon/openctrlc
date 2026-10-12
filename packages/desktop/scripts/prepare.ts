@@ -1,6 +1,16 @@
 #!/usr/bin/env bun
 import { Script } from "@openctrlc/script"
 
+if (process.env.OPENCTRLC_CHANNEL === "prod" && !process.env.OPENCTRLC_VERSION) {
+  console.warn(
+    [
+      "WARNING: OPENCTRLC_CHANNEL=prod without OPENCTRLC_VERSION.",
+      "The build will embed the stale package.json version, which will not match the release tag.",
+      "Set OPENCTRLC_VERSION before packaging a publishable build (CI sets it automatically).",
+    ].join("\n"),
+  )
+}
+
 await import("./prebuild")
 
 const pkg = await Bun.file("./package.json").json()
