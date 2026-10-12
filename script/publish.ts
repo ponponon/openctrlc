@@ -67,7 +67,7 @@ await $`bun ./packages/ui/script/publish.ts`
 
 if (Script.release) {
   await $`bun ./packages/desktop/scripts/finalize-latest-json.ts`
-  await $`bun ./packages/desktop/scripts/finalize-latest-yml.ts`
+  // channel file uploads only happen in the CI finalize-update-feed job
 }
 
 if (Script.release && !Script.preview) {
