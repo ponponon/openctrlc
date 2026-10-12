@@ -92,3 +92,57 @@ test("fails when dist has no channel file", async () => {
     await rm(dist, { recursive: true, force: true })
   }
 })
+
+test("fails with filename when channel yaml is empty", async () => {
+  const dist = await mkdtemp(join(tmpdir(), "openctrlc-rewrite-emptyyaml-"))
+  try {
+    await Bun.write(join(dist, "latest.yml"), "")
+    await expect(rewriteFeed(dist)).rejects.toThrow("latest.yml: invalid or empty yaml")
+  } finally {
+    await rm(dist, { recursive: true, force: true })
+  }
+})
+
+test("fails with filename when channel yaml is malformed", async () => {
+  const dist = await mkdtemp(join(tmpdir(), "openctrlc-rewrite-badyaml-"))
+  try {
+    await Bun.write(join(dist, "latest.yml"), "files: [")
+    await expect(rewriteFeed(dist)).rejects.toThrow("latest.yml: invalid yaml")
+  } finally {
+    await rm(dist, { recursive: true, force: true })
+  }
+})
+
+test("fails when channel yaml has no files entries", async () => {
+  const dist = await makeDist()
+  try {
+    const ymlPath = join(dist, "latest-linux.yml")
+    const yml = parse(await Bun.file(ymlPath).text())
+    yml.files = []
+    await Bun.write(ymlPath, stringify(yml))
+    await expect(rewriteFeed(dist)).rejects.toThrow("latest-linux.yml: no files entries")
+  } finally {
+    await rm(dist, { recursive: true, force: true })
+  }
+})
+
+test("does not assert linux extensions for non-linux channel files", async () => {
+  const dist = await mkdtemp(join(tmpdir(), "openctrlc-rewrite-win-"))
+  try {
+    await writeFile(join(dist, "setup.exe"), "exe-bytes")
+    const yml = {
+      version: "1.1.8",
+      files: [{ url: "Setup.exe", sha512: sha512("exe-bytes"), size: 9 }],
+      path: "Setup.exe",
+      sha512: sha512("exe-bytes"),
+      releaseDate: "2026-10-12T00:00:00.000Z",
+    }
+    await Bun.write(join(dist, "latest.yml"), stringify(yml))
+    const result = await rewriteFeed(dist)
+    expect(result.rewritten).toEqual(["latest.yml"])
+    const updated = parse(await Bun.file(join(dist, "latest.yml")).text())
+    expect(updated.files[0].url).toBe("setup.exe")
+  } finally {
+    await rm(dist, { recursive: true, force: true })
+  }
+})

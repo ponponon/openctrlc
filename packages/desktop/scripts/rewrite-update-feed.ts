@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { parse, stringify } from "yaml"
+import { parseDocument, stringify } from "yaml"
 
 const packageDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,8 +25,12 @@ export async function rewriteFeed(distDir: string) {
 
   for (const name of ymlNames) {
     const file = path.join(distDir, name)
-    const channel = parse(await Bun.file(file).text()) as ChannelFile
+    const doc = parseDocument(await Bun.file(file).text())
+    if (doc.errors.length > 0) throw new Error(`${name}: invalid yaml: ${doc.errors[0].message}`)
+    const channel = doc.toJS() as ChannelFile | null
+    if (!channel || typeof channel !== "object") throw new Error(`${name}: invalid or empty yaml`)
     const entries = channel.files ?? []
+    if (entries.length === 0) throw new Error(`${name}: no files entries`)
     const first = entries[0]
     if (!first?.url || !first.sha512) throw new Error(`${name}: first entry missing url or sha512`)
     const firstUrl = first.url
@@ -43,6 +47,7 @@ export async function rewriteFeed(distDir: string) {
     }
 
     if (name.startsWith("latest-linux")) assertLinuxInstallers(name, entries)
+    // Relies on electron-builder's updateInfoBuilder invariant that top-level path equals files[0].url; recheck this guard if that behavior changes.
     if (changed && channel.path === firstUrl) channel.path = entries[0].url
 
     if (changed) {
