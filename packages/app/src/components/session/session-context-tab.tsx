@@ -496,12 +496,36 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
   let frame: number | undefined
   let pending: { x: number; y: number } | undefined
   const getParts = (id: string) => (sync().data.part[id] ?? []) as Part[]
-  const scrollMargin = () => {
+  // scrollMargin must be a signal shared by the virtualizer options and the row
+  // styles. Reading it live from the DOM in both places let them drift whenever
+  // content above the list (stats/system prompt) resized async: the virtualizer
+  // kept the stale value in its measurements while styles used the new one,
+  // shifting every row by the difference.
+  const [scrollMarginPx, setScrollMarginPx] = createSignal(0)
+  const scrollMargin = () => scrollMarginPx()
+  const updateScrollMargin = () => {
     const viewport = scroll()
     const list = messageListRoot()
-    if (!viewport || !list) return 0
-    return list.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop
+    if (!viewport || !list) return
+    const next = list.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop
+    if (Math.abs(next - scrollMarginPx()) >= 0.5) setScrollMarginPx(next)
   }
+  createEffect(
+    on(
+      () => [scroll(), messageListRoot()] as const,
+      ([viewport, list]) => {
+        if (!viewport || !list) return
+        updateScrollMargin()
+        // Resizing anything above (or inside) the list moves it; re-sync so the
+        // virtualizer re-measures starts against the same value styles render.
+        const host = list.parentElement
+        if (!host) return
+        const observer = new ResizeObserver(() => updateScrollMargin())
+        observer.observe(host)
+        onCleanup(() => observer.disconnect())
+      },
+    ),
+  )
   const messageVirtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
     get count() {
       return messages().length
@@ -850,17 +874,36 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
                   const item = createMemo(() => virtualItemByKey().get(key))
                   const message = createMemo(() => messageByID().get(String(key)))
                   let element: HTMLDivElement | undefined
+                  let rowObserver: ResizeObserver | undefined
+
+                  // The context tab mounts while hidden (keep-mounted panel), so
+                  // measuring at onMount would cache offsetHeight 0 and TanStack's
+                  // own observer never pushes the real size back. Skip hidden
+                  // measurements and re-push sizes through resizeItem ourselves.
+                  const pushRowSize = () => {
+                    const el = element
+                    const index = item()?.index
+                    if (!el || index === undefined || el.offsetHeight === 0) return
+                    messageVirtualizer.resizeItem(index, el.offsetHeight)
+                  }
+                  const observeRow = (el: HTMLDivElement) => {
+                    rowObserver?.disconnect()
+                    rowObserver = new ResizeObserver(() => pushRowSize())
+                    rowObserver.observe(el)
+                  }
 
                   onMount(() => {
-                    if (element) messageVirtualizer.measureElement(element)
+                    if (!element) return
+                    if (element.offsetHeight > 0) messageVirtualizer.measureElement(element)
                   })
+                  onCleanup(() => rowObserver?.disconnect())
                   createEffect(
                     on(
                       () => item()?.index,
                       (index) => {
                         if (index === undefined || !element) return
                         element.dataset.index = String(index)
-                        messageVirtualizer.measureElement(element)
+                        if (element.offsetHeight > 0) messageVirtualizer.measureElement(element)
                       },
                       { defer: true },
                     ),
@@ -872,7 +915,10 @@ export function SessionContextTab(props: { sessionID: Accessor<string | undefine
                       {(messageID) => (
                         <div
                           data-index={item()?.index ?? -1}
-                          ref={(el) => (element = el)}
+                          ref={(el) => {
+                            element = el
+                            observeRow(el)
+                          }}
                           data-message-id={messageID}
                           style={{
                             position: "absolute",

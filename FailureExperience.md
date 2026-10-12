@@ -1929,3 +1929,15 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 - 虚拟行定位改用 `top: start - scrollMargin`（与 `message-timeline.tsx` 一致），不要在含 sticky 后代的容器上用 transform 做纵向位移；需要 transform 时先确认内部没有 sticky/fixed 元素。
 - 回归测试必须覆盖「滚过列表顶部、sticky 已吸附」的状态，只在列表顶部展开验不出这类 bug。
 - 同一次修复还纠正了容器高度：TanStack `getTotalSize()` 返回值已扣除 `scrollMargin`，再减一次会让容器比内容矮一个 scrollMargin，尾部虚拟行永远滚不到（实测 maxScroll 停在倒数第二屏）。虚拟列表容器高度直接用 `getTotalSize()`。
+
+## 隐藏面板里的虚拟行测量会把 0 写进缓存，scrollMargin 双源读取会漂移
+
+2026-10-12 用户重启 `bun run dev:desktop` 后发现上一个修复不完整：`tool: skill` 行展开后 JSON 位置对了，但后续虚拟行仍停在折叠位（`top: 64/96/128px`）盖在内容上；容器高度恒为 0。CDP 实测定位到两个叠加问题：
+
+1. **keep-mounted 的上下文面板在隐藏状态挂载**：`onMount` 里 `measureElement` 读到 `offsetHeight === 0`，把 0 写进 TanStack 的 `itemSizeCache`；而 `getTotalSize()`/`start` 全部基于 0，后续行自然不再位移。TanStack 自己的 ResizeObserver 因 `targetWindow`/面板隐藏时序没有把真实尺寸推回去。
+2. **`scrollMargin` 双源漂移**：虚拟器 options 里的 `scrollMargin` 是在测量瞬间求值后被缓存的，而行样式每次渲染都实时读 DOM。上方统计/系统提示区异步撑高后，两边差了 1456.5px（实测 impliedStart0=5976 vs live=7432.5），所有行被整体上移出容器（`top: -1456.5px`），盖到列表上方的统计区。
+
+修复与经验：
+- 虚拟行的尺寸推送不能只依赖 TanStack：组件层自建 `ResizeObserver`，尺寸非 0 时调 `resizeItem(index, height)` 主动回写；隐藏时跳过测量（0 不入缓存）。
+- `scrollMargin` 这类「虚拟器 options 和渲染样式共享」的几何量必须是同一个 Solid signal，禁止两边各自实时读 DOM；列表位置变化（ResizeObserver 观察列表宿主）时统一重算并同步给虚拟器。
+- 虚拟列表的隐藏面板场景要在修复后用「重启 App → 隐藏态挂载 → 展开」的完整路径回归，只在已显示的面板上测展开验不出隐藏态写 0。
