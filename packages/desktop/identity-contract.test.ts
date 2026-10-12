@@ -81,6 +81,6 @@ test("uses the OpenCtrlC renderer title and README copy", async () => {
   expect(renderer).toContain("<title>OpenCtrlC</title>")
   expect(renderer).not.toContain("<title>OpenCode</title>")
   expect(readme).toContain("# OpenCtrlC Desktop")
-  expect(readme).toContain("The OpenCtrlC Desktop app")
+  expect(readme).toContain("The native OpenCtrlC desktop client")
   expect(readme).not.toContain("# OpenCode Desktop")
 })

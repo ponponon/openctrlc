@@ -57,6 +57,8 @@ function parse(content: string): LatestYml {
   return { version, files, releaseDate }
 }
 
+// Hand-rolled whitelist serializer: only version/files/releaseDate are emitted.
+// Unknown top-level fields (e.g. a future releaseNotes config) are dropped.
 function serialize(data: LatestYml) {
   const lines = [`version: ${data.version}`, "files:"]
   for (const file of data.files) {

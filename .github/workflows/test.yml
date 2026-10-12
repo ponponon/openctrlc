@@ -79,7 +79,7 @@ jobs:
       - name: Run desktop script tests
         if: runner.os == 'Linux'
         working-directory: packages/desktop
-        run: bun test scripts/ electron-builder.config.test.ts
+        run: bun test scripts/ electron-builder.config.test.ts identity-contract.test.ts
 
       - name: Check generated client
         if: runner.os == 'Linux'
