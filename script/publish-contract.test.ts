@@ -8,7 +8,14 @@ type Workflow = {
   on?: { push?: unknown; workflow_dispatch?: unknown }
   jobs?: Record<
     string,
-    { "runs-on"?: unknown; needs?: unknown; if?: string; strategy?: unknown; steps?: Array<Record<string, unknown>> }
+    {
+      "runs-on"?: unknown
+      needs?: unknown
+      if?: string
+      strategy?: unknown
+      permissions?: unknown
+      steps?: Array<Record<string, unknown>>
+    }
   >
 }
 
@@ -115,13 +122,26 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
 
   // upload-artifact keeps hierarchy from the wildcard segment, so the download
   // lands at <path>/<artifact name>/ and matches finalize's latest-yml-<triple>/ dirs
-  expect(desktopSource).toContain("*.yml")
-  expect(windowsSource).toContain("*.yml")
-  expect(linuxSource).toContain("*.yml")
-  const linuxUpload = (workflow.jobs?.["build-desktop-linux"]?.steps ?? []).find(
-    (step) => step.name === "Upload update feed file",
+  const stepIndex = (job: string, name: string) =>
+    (workflow.jobs?.[job]?.steps ?? []).findIndex((step) => step.name === name)
+  const uploadPath = (job: string) => {
+    const step = (workflow.jobs?.[job]?.steps ?? []).find((entry) => entry.name === "Upload update feed file")
+    return ((step?.with ?? {}) as { path?: string }).path ?? ""
+  }
+
+  expect(uploadPath("build-desktop-macos")).toMatch(/\/\*\.yml$/)
+  expect(uploadPath("build-desktop-windows")).toMatch(/\/\*\.yml$/)
+  expect(uploadPath("build-desktop-linux")).toMatch(/\/\*\.yml$/)
+
+  expect(stepIndex("build-desktop-macos", "Prepare update feed file")).toBeGreaterThan(
+    stepIndex("build-desktop-macos", "Build and notarize macOS Desktop"),
   )
-  expect(JSON.stringify(linuxUpload?.with ?? {})).toContain("*.yml")
+  expect(stepIndex("build-desktop-windows", "Prepare update feed file")).toBeGreaterThan(
+    stepIndex("build-desktop-windows", "Build and package Windows Desktop"),
+  )
+  expect(stepIndex("build-desktop-linux", "Prepare update feed file")).toBeGreaterThan(
+    stepIndex("build-desktop-linux", "Build and package Linux Desktop"),
+  )
 
   const finalize = workflow.jobs?.["finalize-update-feed"]
   expect(finalize?.needs).toEqual(["version", "build-desktop-macos", "build-desktop-windows", "build-desktop-linux"])
@@ -137,6 +157,7 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   const verify = workflow.jobs?.["verify-update-feed"]
   expect(verify?.needs).toEqual(["version", "publish"])
   expect(verify?.["runs-on"]).toBe("ubuntu-24.04")
+  expect(verify?.permissions).toEqual({ contents: "read" })
   const verifySource = JSON.stringify(verify?.steps ?? [])
   expect(verifySource).toContain("verify-update-feed.ts")
   expect(verifySource).not.toContain("secrets.GITHUB_TOKEN")

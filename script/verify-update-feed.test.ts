@@ -192,24 +192,32 @@ test("main exits 1 and appends a failed summary when a channel is missing", asyn
   for (const name of CHANNEL_FILES) files[name] = channelYml("app.deb", 3)
   const { dir, server, base } = await serve(files)
   const summaryPath = join(dir, "summary.md")
-  const run = () =>
-    Bun.spawn([process.execPath, join(import.meta.dir, "verify-update-feed.ts")], {
+  const run = async () => {
+    const proc = Bun.spawn([process.execPath, join(import.meta.dir, "verify-update-feed.ts")], {
       env: {
         ...process.env,
         GH_REPO: "x/y",
         RELEASE_TAG: "v1",
         UPDATE_FEED_BASE_URL: base,
+        UPDATE_FEED_RETRY_DELAY_MS: "0",
         GITHUB_STEP_SUMMARY: summaryPath,
       },
       stdout: "pipe",
       stderr: "pipe",
-    }).exited
+    })
+    const [exit, stdout] = await Promise.all([proc.exited, new Response(proc.stdout).text()])
+    return { exit, stdout }
+  }
   try {
-    expect(await run()).toBe(0)
+    const passing = await run()
+    expect(passing.exit).toBe(0)
+    expect(passing.stdout).not.toContain("retrying")
     expect(await Bun.file(summaryPath).text()).toContain("✅")
 
     await rm(join(dir, "latest-linux-arm64.yml"))
-    expect(await run()).toBe(1)
+    const failing = await run()
+    expect(failing.exit).toBe(1)
+    expect(failing.stdout).toContain("retrying")
     expect(await Bun.file(summaryPath).text()).toContain("❌")
   } finally {
     await server.stop(true)

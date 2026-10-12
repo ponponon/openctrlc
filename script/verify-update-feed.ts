@@ -204,8 +204,17 @@ if (import.meta.main) {
   const tag = process.env.RELEASE_TAG
   if (!tag) throw new Error("RELEASE_TAG is required")
   const baseUrl = process.env.UPDATE_FEED_BASE_URL ?? `https://github.com/${repo}/releases/download/${tag}`
+  const maxAttempts = 3
+  const delay = Number(process.env.UPDATE_FEED_RETRY_DELAY_MS ?? "8000")
+  const retryDelayMs = Number.isFinite(delay) && delay >= 0 ? delay : 8000
 
-  const results = await collectResults(baseUrl)
+  let results = await collectResults(baseUrl)
+  for (let attempt = 1; attempt < maxAttempts && results.some((result) => !result.ok); attempt++) {
+    console.log(`attempt ${attempt}/${maxAttempts} had failures, retrying in ${retryDelayMs / 1000}s`)
+    await Bun.sleep(retryDelayMs)
+    results = await collectResults(baseUrl)
+  }
+
   const summary = renderSummary(results, baseUrl)
   console.log(summary)
 
