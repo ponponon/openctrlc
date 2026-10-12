@@ -37,3 +37,4 @@ tsconfig.tsbuildinfo
 .workbuddy/
 # Static UI preview (not part of the app)
 /index.html
+/.wrangler/
