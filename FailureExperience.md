@@ -1917,3 +1917,12 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 2026-10-12 用户指出 `~/.local/share/openctrlc/log/openctrlc.log` 已 40MB、混着 8 月底的数据：`Logger.toFile(..., { flag: "a" })` 只会无限追加，没有任何轮转。诊断日志的价值集中在最近几天，无界增长既占磁盘，也让“查看日志 / 导出日志”和人工排查变慢。
 
 以后进程级日志写入点都要显式设定单文件上限与保留天数（现为 10MB × 3 份、7 天），并在每次 flush 前检查，保证长驻进程单次运行也不会无界；旧版本遗留的超大文件按策略直接丢弃，而不是永远顺位后挪。新增日志通道时先确认它的保留策略，不要默认“追加就行”。
+
+## 虚拟行容器用 transform 定位会让 sticky 行头落进展开内容里
+
+2026-10-12 用户截图报「上下文面板点开任何一行，展开位置不对，其他行还盖在展开内容上」。根因在 `b7aa8b50`（10-08）给原始消息表引入的虚拟化：虚拟行 wrapper 用 `transform: translateY(...)` 定位，而行头是 `position: sticky`（`StickyAccordionHeader`）。sticky 的吸附基准是最近滚动容器的视口，但祖先一旦有 transform，sticky 先在 transform 前的坐标系里解析吸附位置，再被 transform 平移一次——列表滚过顶部后，行头就被多平移一个 `translateY` 的量（实测 header 落在 1737 而视口顶是 105，差值正好等于该行的 translateY 1632px），最终悬在展开 JSON 中间；行头 `z-index: 10` 又让它画在其它虚拟行之上，看起来像图层错乱。未滚动过顶部时不触发，所以初次 e2e 没抓到。
+
+修复与经验：
+- 虚拟行定位改用 `top: start - scrollMargin`（与 `message-timeline.tsx` 一致），不要在含 sticky 后代的容器上用 transform 做纵向位移；需要 transform 时先确认内部没有 sticky/fixed 元素。
+- 回归测试必须覆盖「滚过列表顶部、sticky 已吸附」的状态，只在列表顶部展开验不出这类 bug。
+- 同一次修复还纠正了容器高度：TanStack `getTotalSize()` 返回值已扣除 `scrollMargin`，再减一次会让容器比内容矮一个 scrollMargin，尾部虚拟行永远滚不到（实测 maxScroll 停在倒数第二屏）。虚拟列表容器高度直接用 `getTotalSize()`。
