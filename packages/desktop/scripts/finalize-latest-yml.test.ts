@@ -61,15 +61,35 @@ test("fails when one channel file source is missing", async () => {
   const dir = await makeFeedRoot()
   try {
     await rm(join(dir, "latest-yml-aarch64-unknown-linux-gnu"), { recursive: true })
-    await expect(buildOutputs(dir)).rejects.toThrow("missing channel files: latest-linux-arm64.yml")
+    expect(buildOutputs(dir)).rejects.toThrow("missing channel files: latest-linux-arm64.yml")
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
 })
 
-test("takes the release tag from RELEASE_TAG instead of deriving it", async () => {
+test("fails when a windows channel source is missing", async () => {
+  const dir = await makeFeedRoot()
+  try {
+    await rm(join(dir, "latest-yml-aarch64-pc-windows-msvc"), { recursive: true })
+    expect(buildOutputs(dir)).rejects.toThrow("windows channel sources incomplete")
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test("fails when a channel source file is empty", async () => {
+  const dir = await makeFeedRoot()
+  try {
+    await Bun.write(join(dir, "latest-yml-x86_64-unknown-linux-gnu", "latest-linux.yml"), "")
+    expect(buildOutputs(dir)).rejects.toThrow("empty or unparseable")
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test("keeps RELEASE_TAG as the only tag source in source", async () => {
   const source = await Bun.file(join(import.meta.dirname, "finalize-latest-yml.ts")).text()
-  expect(source).toContain("RELEASE_TAG")
+  expect(source).toContain("process.env.RELEASE_TAG")
   expect(source).toContain("missing channel files")
   expect(source).not.toContain("OPENCTRLC_CHANNEL")
   expect(source).not.toContain("OPENCTRLC_VERSION")
