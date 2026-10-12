@@ -16,14 +16,18 @@ function channelYml(entryUrl: string, size?: number) {
   })
 }
 
-async function serve(files: Record<string, string>, installer?: () => Response) {
+async function serve(files: Record<string, string>, installer?: () => Response, failOnce: string[] = []) {
   const dir = await mkdtemp(join(tmpdir(), "openctrlc-verify-"))
   for (const [name, content] of Object.entries(files)) await Bun.write(join(dir, name), content)
+  const hits = new Map<string, number>()
   const server = Bun.serve({
     port: 0,
     async fetch(request) {
       const name = new URL(request.url).pathname.slice(1)
       if (installer && name === "app.deb") return installer()
+      const seen = hits.get(name) ?? 0
+      hits.set(name, seen + 1)
+      if (failOnce.includes(name) && seen === 0) return new Response("not found", { status: 404 })
       const file = Bun.file(join(dir, name))
       if (!(await file.exists())) return new Response("not found", { status: 404 })
       return new Response(file)
@@ -219,6 +223,36 @@ test("main exits 1 and appends a failed summary when a channel is missing", asyn
     expect(failing.exit).toBe(1)
     expect(failing.stdout).toContain("retrying")
     expect(await Bun.file(summaryPath).text()).toContain("❌")
+  } finally {
+    await server.stop(true)
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test("recovers when a transient failure clears on retry", async () => {
+  const files: Record<string, string> = { "app.deb": "abc" }
+  for (const name of CHANNEL_FILES) files[name] = channelYml("app.deb", 3)
+  const { dir, server, base } = await serve(files, undefined, [...CHANNEL_FILES])
+  const summaryPath = join(dir, "summary.md")
+  try {
+    const proc = Bun.spawn([process.execPath, join(import.meta.dir, "verify-update-feed.ts")], {
+      env: {
+        ...process.env,
+        GH_REPO: "x/y",
+        RELEASE_TAG: "v1",
+        UPDATE_FEED_BASE_URL: base,
+        UPDATE_FEED_RETRY_DELAY_MS: "0",
+        GITHUB_STEP_SUMMARY: summaryPath,
+      },
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+    const [exit, stdout] = await Promise.all([proc.exited, new Response(proc.stdout).text()])
+    expect(exit).toBe(0)
+    expect(stdout).toContain("retrying")
+    const summary = await Bun.file(summaryPath).text()
+    expect(summary).toContain("✅")
+    expect(summary).not.toContain("❌")
   } finally {
     await server.stop(true)
     await rm(dir, { recursive: true, force: true })
