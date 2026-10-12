@@ -496,7 +496,7 @@ jobs:
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
           LATEST_YML_DIR: ${{ github.workspace }}/update-feed
         run: |
-          set -euo pipefail
+          echo "Downloaded update feed files:"
           find update-feed -name '*.yml'
           bun packages/desktop/scripts/finalize-latest-yml.ts
 

@@ -113,12 +113,21 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   expect(windowsSource).toContain("rewrite-update-feed.ts")
   expect(linuxSource).toContain("rewrite-update-feed.ts")
 
+  // upload-artifact keeps hierarchy from the wildcard segment, so the download
+  // lands at <path>/<artifact name>/ and matches finalize's latest-yml-<triple>/ dirs
+  expect(desktopSource).toContain("*.yml")
+  expect(windowsSource).toContain("*.yml")
+  expect(linuxSource).toContain("*.yml")
+  const linuxUpload = (workflow.jobs?.["build-desktop-linux"]?.steps ?? []).find(
+    (step) => step.name === "Upload update feed file",
+  )
+  expect(JSON.stringify(linuxUpload?.with ?? {})).toContain("*.yml")
+
   const finalize = workflow.jobs?.["finalize-update-feed"]
   expect(finalize?.needs).toEqual(["version", "build-desktop-macos", "build-desktop-windows", "build-desktop-linux"])
   expect(finalize?.["runs-on"]).toBe("ubuntu-24.04")
   const finalizeSource = JSON.stringify(finalize?.steps ?? [])
   expect(finalizeSource).toContain("latest-yml-*")
-  expect(finalizeSource).toContain("*.yml")
   expect(finalizeSource).toContain("finalize-latest-yml.ts")
   expect(finalizeSource).toContain("RELEASE_TAG")
   expect(finalizeSource).toContain("GH_TOKEN")
