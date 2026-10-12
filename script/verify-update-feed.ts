@@ -13,25 +13,38 @@ export type Check = {
   note?: string
 }
 
-type ChannelEntry = { url?: string; size?: number }
-type ChannelFile = { files?: ChannelEntry[] }
+type Fetched = { status: number; text: string; ms: number; error?: string }
+type Meta = { status: number; length?: number; encoding?: string; ms: number; error?: string }
+type SizeCheck = { ok: boolean; note?: string }
 
-async function fetchText(url: string) {
+async function fetchText(url: string): Promise<Fetched> {
   const started = performance.now()
-  const response = await fetch(url, { redirect: "follow" })
-  const text = await response.text()
-  return { status: response.status, text, ms: Math.round(performance.now() - started) }
+  try {
+    const response = await fetch(url, { redirect: "follow" })
+    const text = await response.text()
+    return { status: response.status, text, ms: Math.round(performance.now() - started) }
+  } catch (error) {
+    return { status: 0, text: "", ms: Math.round(performance.now() - started), error: errorMessage(error) }
+  }
 }
 
-async function fetchHead(url: string) {
+async function fetchMeta(url: string): Promise<Meta> {
   const started = performance.now()
-  const response = await fetch(url, { redirect: "follow" })
-  const length = response.headers.get("content-length")
-  await response.body?.cancel()
-  return {
-    status: response.status,
-    length: length === null ? undefined : Number(length),
-    ms: Math.round(performance.now() - started),
+  try {
+    const response = await fetch(url, { redirect: "follow" })
+    const length = response.headers.get("content-length")
+    const encoding = response.headers.get("content-encoding")
+    await response.body?.cancel()
+    const parsedLength = length === null ? Number.NaN : Number(length)
+    const normalized = encoding?.toLowerCase().trim()
+    return {
+      status: response.status,
+      length: Number.isFinite(parsedLength) ? parsedLength : undefined,
+      encoding: normalized && normalized !== "identity" ? normalized : undefined,
+      ms: Math.round(performance.now() - started),
+    }
+  } catch (error) {
+    return { status: 0, ms: Math.round(performance.now() - started), error: errorMessage(error) }
   }
 }
 
@@ -39,14 +52,16 @@ export async function collectResults(baseUrl: string): Promise<Check[]> {
   const results: Check[] = []
   for (const name of CHANNEL_FILES) {
     const channel = await fetchText(`${baseUrl}/${name}`)
+    const channelOk = channel.error === undefined && channel.status === 200
     results.push({
       target: name,
       kind: "channel",
       status: channel.status,
       ms: channel.ms,
-      ok: channel.status === 200,
+      ok: channelOk,
+      note: channel.error === undefined ? undefined : `fetch error: ${channel.error}`,
     })
-    if (channel.status !== 200) continue
+    if (!channelOk) continue
 
     const document = parseDocument(channel.text)
     if (document.errors.length > 0) {
@@ -60,10 +75,44 @@ export async function collectResults(baseUrl: string): Promise<Check[]> {
       })
       continue
     }
-    const parsed = document.toJS() as ChannelFile
+    const parsed: unknown = document.toJS()
+    if (!isRecord(parsed)) {
+      results.push({
+        target: `${name} (structure)`,
+        kind: "channel",
+        status: channel.status,
+        ms: channel.ms,
+        ok: false,
+        note: "channel file is not an object",
+      })
+      continue
+    }
+    if (!isList(parsed.files) || parsed.files.length === 0) {
+      results.push({
+        target: `${name} (structure)`,
+        kind: "channel",
+        status: channel.status,
+        ms: channel.ms,
+        ok: false,
+        note: "no files entries",
+      })
+      continue
+    }
 
-    for (const entry of parsed.files ?? []) {
-      if (!entry.url) {
+    for (const item of parsed.files) {
+      if (!isRecord(item)) {
+        results.push({
+          target: `${name} → (invalid entry)`,
+          kind: "installer",
+          status: channel.status,
+          ms: channel.ms,
+          ok: false,
+          note: "entry is not an object",
+        })
+        continue
+      }
+      const url = typeof item.url === "string" && item.url.length > 0 ? item.url : undefined
+      if (url === undefined) {
         results.push({
           target: `${name} → (missing url)`,
           kind: "installer",
@@ -74,16 +123,31 @@ export async function collectResults(baseUrl: string): Promise<Check[]> {
         })
         continue
       }
-      const head = await fetchHead(`${baseUrl}/${entry.url}`)
-      const mismatch =
-        head.length !== undefined && entry.size !== undefined && head.length !== entry.size
+      const size = typeof item.size === "number" && Number.isFinite(item.size) ? item.size : undefined
+      const meta = await fetchMeta(`${baseUrl}/${url}`)
+      if (meta.error !== undefined) {
+        results.push({
+          target: `${name} → ${url}`,
+          kind: "installer",
+          status: meta.status,
+          ms: meta.ms,
+          ok: false,
+          note: `fetch error: ${meta.error}`,
+        })
+        continue
+      }
+      if (meta.status !== 200) {
+        results.push({ target: `${name} → ${url}`, kind: "installer", status: meta.status, ms: meta.ms, ok: false })
+        continue
+      }
+      const sizeCheck = checkSize(size, meta)
       results.push({
-        target: `${name} → ${entry.url}`,
+        target: `${name} → ${url}`,
         kind: "installer",
-        status: head.status,
-        ms: head.ms,
-        ok: head.status === 200 && !mismatch,
-        note: mismatch ? `size mismatch: yml ${entry.size} vs http ${head.length}` : undefined,
+        status: meta.status,
+        ms: meta.ms,
+        ok: sizeCheck.ok,
+        note: sizeCheck.note,
       })
     }
   }
@@ -101,13 +165,37 @@ export function renderSummary(results: Check[], baseUrl: string): string {
   ]
   for (const result of results) {
     lines.push(
-      `| ${result.target} | ${result.status} | ${result.ms}ms | ${result.ok ? "✅" : "❌"} | ${result.note ?? ""} |`,
+      `| ${cell(result.target)} | ${result.status} | ${result.ms}ms | ${result.ok ? "✅" : "❌"} | ${cell(result.note ?? "")} |`,
     )
   }
   const failed = results.filter((result) => !result.ok)
   lines.push("")
   lines.push(failed.length === 0 ? `All ${results.length} checks passed.` : `${failed.length} check(s) failed.`)
   return lines.join("\n")
+}
+
+function checkSize(size: number | undefined, meta: Meta): SizeCheck {
+  if (size === undefined) return { ok: false, note: "entry missing size" }
+  if (meta.encoding !== undefined) return { ok: true, note: `content-encoding: ${meta.encoding} (size unverified)` }
+  if (meta.length === undefined) return { ok: true, note: "no content-length (size unverified)" }
+  if (meta.length !== size) return { ok: false, note: `size mismatch: yml ${size} vs http ${meta.length}` }
+  return { ok: true }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isList(value: unknown): value is unknown[] {
+  return Array.isArray(value)
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function cell(value: string) {
+  return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ")
 }
 
 if (import.meta.main) {
