@@ -3408,3 +3408,17 @@ OpenCode Zen 的免费模型免登录、`Bearer public` 即可用，但服务端
 - 代码：`packages/core/src/installation/version.ts`（`SpoofedOpencodeVersion` 唯一来源）、`packages/opencode/src/session/llm/request.ts`（`ZEN_USER_AGENT` / `PRODUCT_USER_AGENT` 分流）、`packages/core/src/models-dev.ts`、`packages/opencode/src/installation/index.ts`。
 - 测试：`packages/opencode/test/session/llm.test.ts` 的 session identity header 用例断言 zen 分支 UA 前缀为 `opencode/<伪装版本>`、非 zen 分支为 `openctrlc/`；`packages/opencode/test/identity-residuals.test.ts` 增加 zen UA 源码门禁与 `SpoofedOpencodeVersion >= 1.18.0` 的 semver 下限断言。
 - 验证：opencode/core `bun typecheck` 通过；identity-residuals 9/9、models 9/9、transform 452/452、header 用例 4/4 通过；端到端 `bun run ./src/index.ts run "..." -m opencode/mimo-v2.6-flash-free` 在发布版本注入（`OPENCTRLC_VERSION=1.1.6`）与开发态（`local`）下均成功返回；mitmproxy 抓包确认最终 UA 为 `opencode/1.18.34 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14`，与上游原版格式一致。根因定位方法（逐字节重放 + 只改版本号的单变量实验）与完整教训记入 FailureExperience.md「发往 zen 的 User-Agent 必须伪装品牌和版本号」。
+
+## 桌面自动更新 feed 发布链路
+
+electron-updater 的三平台自动更新依赖 Release 上的 channel file（`latest.yml`/`latest-mac.yml`/`latest-linux.yml`/`latest-linux-arm64.yml`）。根因：electron-builder 在 `--publish never` 下仍会在 `dist/` 生成这些文件但不上传，此前发布只搬了安装包，三平台更新器全部 404。链路现分三段接线（`publish.yml`）：
+
+- **rewrite**（各 build job 内，`packages/desktop/scripts/rewrite-update-feed.ts`）：按 sha512 把 yml 的 `url` 对齐到重命名后的安装包实际文件名（Linux CI 把包改名为 `openctrlc-linux-{arch}.{ext}`），断言 Linux yml 含 deb/AppImage/rpm 三种条目、yml 引用的每个 sha512 都能在 dist 找到；任一不符直接 fail，绝不上传坏 feed。改写后拷入 `latest-yml-<target-triple>/` 并以该名上传 workflow artifact，`path` 必须用 `*.yml` 通配符（upload-artifact 的 hierarchy 规则保证文件落 artifact 根）。
+- **finalize**（`finalize-update-feed` job，`packages/desktop/scripts/finalize-latest-yml.ts`）：download-artifact 以 `pattern: latest-yml-*` 解到 `<path>/<artifact名>/`，与脚本 `latest-yml-<triple>/` 目录约定对齐；合并 Windows 双架构 `latest.yml`（两个 matrix job 产出同名无 arch 后缀文件，必须单点合并否则 `--clobber` 互踩）、校验 4 个 channel file 齐全（缺则报 `missing channel files` + 实际条目列表）、空源/Windows 单源 fail-closed，随后在 draft 阶段 `gh release upload --clobber`。tag 一律取 version job 输出的 `RELEASE_TAG`，脚本不再自行推导。
+- **verify**（`verify-update-feed` job，`script/verify-update-feed.ts`）：Release 公开后**匿名**（`permissions: contents: read`，无 token）公网 GET 4 个 channel file 并逐条校验 `files[].url` 可达、content-length 与 yml `size` 一致（gzip/缺失时降级为可见 note）；结构缺失（空 files、缺 size、非对象）fail-closed；网络异常转结果行不裸崩；至多 3 次尝试（`UPDATE_FEED_RETRY_DELAY_MS` 可调，默认 8s）防 release 刚公开时的可见性延迟假红；结果写 `$GITHUB_STEP_SUMMARY`，任一失败 exit 1 红灯。
+
+配套约束：`app-update.yml` 只在 electron-builder 存在 `publish` 配置时写入，dev 通道无 `publish` 配置故 dev 包无自动更新；mac 桌面仅构建 arm64，`latest-mac.yml` 只含 arm64 是正确的。版本注入警告两层：`packages/desktop/scripts/prepare.ts` 与 `electron-builder.config.ts` 在 prod 通道缺 `OPENCTRLC_VERSION` 时打印警告（不阻断），防源码陈旧版本/未发布版本号进入可发布包。`script/publish.ts` 不再调用 finalize 脚本（channel file 上传只走 CI）。
+
+- 代码：`packages/desktop/scripts/{rewrite-update-feed,finalize-latest-yml}.ts`、`script/verify-update-feed.ts`、`.github/workflows/publish.yml`（`finalize-update-feed`/`verify-update-feed` job）、`script/publish.ts`。
+- 测试：三脚本同名 `*.test.ts`；`script/publish-contract.test.ts` 锁定 job 拓扑、upload 通配符、步骤顺序、verify 无 token/`contents: read`、双侧 channel 清单一致；由 `.github/workflows/test.yml` 的 `Run release contract tests` 与 `Run desktop script tests` 步骤执行（此前这些测试从不进 CI）。
+- 文档：`docs/release.md` 发布前检查第 7 条；教训见 FailureExperience.md「发布链路要同时验证生成了和上传了」。

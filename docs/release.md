@@ -123,6 +123,17 @@ Homebrew tap 使用的 macOS ZIP 也因此来自签名后的正式 Release。
    R2 同步失败时确认官网仍能回退到 GitHub latest。
 5. 检查 staged diff，确认没有 API key、账号密码、证书私钥或本地配置。
 6. 发布后验证 Release 页面、官网首页、`/download`、`/changelog` 和 `/docs/`。
+7. 确认 `verify-update-feed` job 绿灯：Release 公开后自动匿名校验 4 个
+   `latest*.yml` 及其指向的安装包可公网访问（channel file 上传只走 CI 的
+   `finalize-update-feed` job，`script/publish.ts` 不再负责）。手动核验
+   （`<tag>` 换成实际 tag）：
+
+   ```bash
+   for f in latest.yml latest-mac.yml latest-linux.yml latest-linux-arm64.yml; do
+     curl -fsI "https://github.com/ponponon/openctrlc/releases/download/<tag>/$f" >/dev/null \
+       && echo "$f OK" || echo "$f MISSING"
+   done
+   ```
 
 ### 远程中继换址验收（Desktop 手工）
 

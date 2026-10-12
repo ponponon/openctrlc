@@ -32,7 +32,7 @@
 - 新增 `script/verify-update-feed.ts`：发布后公网冒烟校验，失败即红灯（用户已确认必过红灯）。
 - `publish.yml`：三个 build job 加 rewrite + artifact 上传步骤；新增 `finalize-update-feed`、`verify-update-feed` 两个 job；`publish` job 增加 needs。
 - 修 `script/publish-contract.test.ts`（白名单、禁止词、新契约断言），并接入一个 PR/CI 检查让它不再孤儿（实现时查现有 PR workflow 决定挂载点）。
-- `packages/desktop/scripts/prepare.ts`：prod 通道缺 `OPENCTRLC_VERSION` 时打印醒目警告（用户已确认仅警告、不阻断）。
+- `packages/desktop/scripts/prepare.ts` 与 `packages/desktop/electron-builder.config.ts`：prod 通道（含 `latest` 别名，prepare 侧经 `resolveChannel`）缺 `OPENCTRLC_VERSION` 时打印醒目警告（指出将嵌入 npm latest +1 推导的版本号、与目标 release tag 不符），不阻断（用户已确认仅警告）。
 - 文档：`FEATURE.md` 新章节、`FailureExperience.md` 新条目、`docs/release.md` 检查清单补充。
 
 ## 架构与数据流
@@ -98,7 +98,7 @@ version（创建 draft Release v<X.Y.Z>，输出 tag/repo）
 
 ### `packages/desktop/scripts/prepare.ts`（警告）
 
-- 条件：`OPENCTRLC_CHANNEL=prod` 且未设 `OPENCTRLC_VERSION` → 打印醒目多行警告（陈旧版本会被打进可发布包、界面版本将与 Release 不符），不退出。dev/beta 不警告。
+- 条件：`resolveChannel()` 判定为 prod（`latest` 别名归 prod）且未设 `OPENCTRLC_VERSION` → 打印醒目多行警告（指出将嵌入 npm latest +1 推导的版本号、与目标 release tag 不符，而非陈旧值），不退出。dev/beta 不警告。
 
 ## Testing
 
