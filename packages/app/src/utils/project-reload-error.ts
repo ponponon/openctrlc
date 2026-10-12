@@ -1,3 +1,4 @@
+import { isClientAbortError } from "@openctrlc/sdk/error-interceptor"
 import type { Platform } from "@/context/platform"
 import { formatServerError, isTransientConnectionError } from "./server-errors"
 import { showToast } from "./toast"
@@ -13,6 +14,10 @@ export function showProjectReloadError(input: {
   platform: DiagnosticPlatform
   retry?: () => void
 }) {
+  // A cancelled request (499) means the client or a superseding reload let the
+  // call go; the project itself did not fail to reload, so it must not toast.
+  if (isClientAbortError(input.error)) return
+
   if (input.platform.remoteSessionID && isTransientConnectionError(input.error)) return
 
   const actions = [

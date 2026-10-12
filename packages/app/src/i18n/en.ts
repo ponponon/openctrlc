@@ -844,6 +844,7 @@ export const dict = {
   "directory.error.invalidUrl": "Invalid directory in URL.",
 
   "error.chain.unknown": "Unknown error",
+  "error.chain.requestCancelled": "Request was cancelled",
   "error.server.invalidConfiguration": "Invalid configuration",
   "error.chain.causedBy": "Caused by:",
   "error.chain.apiError": "API error",

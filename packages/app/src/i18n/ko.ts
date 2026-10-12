@@ -637,6 +637,7 @@ export const dict = {
   "error.serverSync.connectFailed": "서버에 연결할 수 없습니다. `{{url}}`에서 서버가 실행 중인가요?",
   "directory.error.invalidUrl": "URL에 유효하지 않은 디렉터리가 있습니다.",
   "error.chain.unknown": "알 수 없는 오류",
+  "error.chain.requestCancelled": "요청이 취소되었습니다",
   "error.chain.causedBy": "원인:",
   "error.chain.apiError": "API 오류",
   "error.chain.status": "상태: {{status}}",

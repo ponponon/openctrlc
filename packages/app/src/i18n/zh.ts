@@ -866,6 +866,7 @@ export const dict = {
   "directory.error.invalidUrl": "URL 中的目录无效。",
 
   "error.chain.unknown": "未知错误",
+  "error.chain.requestCancelled": "请求已取消",
   "error.chain.causedBy": "原因：",
   "error.chain.apiError": "API 错误",
   "error.chain.status": "状态：{{status}}",
