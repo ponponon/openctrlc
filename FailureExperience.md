@@ -1946,6 +1946,7 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 2. **`scrollMargin` 双源漂移**：虚拟器 options 里的 `scrollMargin` 是在测量瞬间求值后被缓存的，而行样式每次渲染都实时读 DOM。上方统计/系统提示区异步撑高后，两边差了 1456.5px（实测 impliedStart0=5976 vs live=7432.5），所有行被整体上移出容器（`top: -1456.5px`），盖到列表上方的统计区。
 
 修复与经验：
+
 - 虚拟行的尺寸推送不能只依赖 TanStack：组件层自建 `ResizeObserver`，尺寸非 0 时调 `resizeItem(index, height)` 主动回写；隐藏时跳过测量（0 不入缓存）。
 - `scrollMargin` 这类「虚拟器 options 和渲染样式共享」的几何量必须是同一个 Solid signal，禁止两边各自实时读 DOM；列表位置变化（ResizeObserver 观察列表宿主）时统一重算并同步给虚拟器。
 - 虚拟列表的隐藏面板场景要在修复后用「重启 App → 隐藏态挂载 → 展开」的完整路径回归，只在已显示的面板上测展开验不出隐藏态写 0。
