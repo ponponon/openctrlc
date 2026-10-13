@@ -1171,6 +1171,10 @@ export const dict = {
     "프로젝트 로드가 성공한 경우 요청을 취소해도 프로젝트를 다시 불러오지 못했다는 잘못된 오류가 표시되지 않습니다.",
   "dialog.releaseNotes.v1_1_8.contextRows":
     "스크롤한 뒤 세션 컨텍스트 행을 펼치면 위치가 어긋나 다른 메시지를 덮는 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_8.timelineSteps":
+    "어시스턴트 도구 활동을 접을 수 있는 단계로 묶고 현지화된 요약을 표시해 긴 턴을 더 쉽게 살펴볼 수 있습니다.",
+  "dialog.releaseNotes.v1_1_8.desktopUpdater":
+    "데스크톱 릴리스에서 기본 업데이트 프로그램이 사용하는 업데이트 피드를 게시하고 공개 접근 가능 여부까지 확인합니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

@@ -152,6 +152,10 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
       "dialog.releaseNotes.v1_1_7.zenFreeTier",
   },
   "1.1.8": {
+    "Grouped assistant tool activity into collapsible steps with localized summaries, making long turns easier to scan.":
+      "dialog.releaseNotes.v1_1_8.timelineSteps",
+    "Desktop releases now publish and publicly verify the update feeds used by the built-in updater.":
+      "dialog.releaseNotes.v1_1_8.desktopUpdater",
     "Server logs now rotate at 10 MB, keep up to two rotated files, and prune rotated files older than seven days on startup.":
       "dialog.releaseNotes.v1_1_8.logRotation",
     "Canceled requests no longer show a false project reload failure when the project itself loaded successfully.":

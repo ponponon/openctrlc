@@ -577,6 +577,10 @@ export const dict = {
     "Canceled requests no longer show a false project reload failure when the project itself loaded successfully.",
   "dialog.releaseNotes.v1_1_8.contextRows":
     "Fixed expanded session context rows appearing at the wrong position or overlapping other messages after scrolling.",
+  "dialog.releaseNotes.v1_1_8.timelineSteps":
+    "Grouped assistant tool activity into collapsible steps with localized summaries, making long turns easier to scan.",
+  "dialog.releaseNotes.v1_1_8.desktopUpdater":
+    "Desktop releases now publish and publicly verify the update feeds used by the built-in updater.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

@@ -1456,6 +1456,10 @@ export const dict = {
     "プロジェクトの読み込みが成功している場合、リクエストをキャンセルしても誤って再読み込み失敗と表示されなくなりました。",
   "dialog.releaseNotes.v1_1_8.contextRows":
     "スクロール後に展開したセッションコンテキスト行の位置がずれ、他のメッセージに重なる問題を修正しました。",
+  "dialog.releaseNotes.v1_1_8.timelineSteps":
+    "アシスタントのツール操作を折りたたみ可能なステップにまとめ、ローカライズされた概要を表示することで、長いターンを確認しやすくしました。",
+  "dialog.releaseNotes.v1_1_8.desktopUpdater":
+    "デスクトップ版のリリースで、内蔵アップデーターが利用する更新フィードを公開し、一般公開状態まで検証するようになりました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

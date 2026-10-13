@@ -1512,6 +1512,10 @@ export const dict = {
     "服务端日志现在会在达到 10 MB 时轮转，最多保留两份轮转文件，并在启动时清理超过七天的文件。",
   "dialog.releaseNotes.v1_1_8.cancelledRequest": "项目实际加载成功时，取消请求不会再误报为项目重新加载失败。",
   "dialog.releaseNotes.v1_1_8.contextRows": "修复滚动后展开的会话上下文行位置错乱、遮挡其他消息的问题。",
+  "dialog.releaseNotes.v1_1_8.timelineSteps":
+    "助手工具活动现在会归入可折叠步骤，并提供本地化摘要，让较长的回合更容易浏览。",
+  "dialog.releaseNotes.v1_1_8.desktopUpdater":
+    "桌面版发布现在会发布并公开验证内置更新器所需的更新源。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",
