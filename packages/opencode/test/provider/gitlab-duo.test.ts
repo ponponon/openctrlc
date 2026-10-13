@@ -153,7 +153,7 @@ export {}
 //             gitlab: {
 //               options: {
 //                 instanceUrl: "https://gitlab.company.internal",
-//                 apiKey: "glpat-internal-token",
+//                 apiKey: "YOUR_GITLAB_TOKEN",
 //               },
 //             },
 //           },
