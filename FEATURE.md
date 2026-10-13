@@ -899,7 +899,7 @@ bun run desktop:mac
 - 同一回合只显示一个「显示步骤」入口；它批量开合该回合所有过程段，每个过程段仍保留独立稳定行 ID 和原始时间位置，因此展开后可见文本与工具/推理仍按发生顺序交错显示。新追加的过程段继承回合级开合状态。
 - `AssistantSteps` 展开后，过程说明文本按时间顺序直接可读；只有连续的普通工具调用才聚合成活动摘要（命令、编辑、委派任务或其他工具）。上下文探索继续复用已有的上下文组。活动摘要默认收起，展开后复用每个工具 Part 自己的折叠状态，因此命令输出仍可单独展开。
 - 折叠状态按 session 缓存在时间线缓存中；回合从运行态切换到完成态时自动收起，并在虚拟列表中触发尺寸重测，避免留下空白或遮挡后续内容。
-- 第一级回合折叠和第二级活动组折叠分别保存；完成或中断回合默认收起第一级，用户重新展开后只直接显示过程说明，活动组仍默认收起，手动设置的开合状态保留。运行中的回合保持展开，当前活动组默认展开。外层摘要始终使用稳定的“处理中/已处理/已中断 + 用时”，不随开合切换为“显示/隐藏步骤”。MiMo-Code 的层级摘要启发了交互结构；OpenCtrlC 保留自身时间线样式，不复刻其 CLI 外观。
+- 第一级回合折叠和第二级活动组折叠分别保存；完成或中断回合默认收起第一级，用户重新展开后只直接显示过程说明，活动组仍默认收起，手动设置的开合状态保留。运行中的回合保持展开；依据工具 Part 的 `pending`/`running` 状态，只默认展开时间顺序上最后一个包含未完成工具的活动组，先前活动组保持收起。完成态自动收起时必须同时重置回合级 key 和各步骤行级 key。外层摘要始终使用稳定的“处理中/已处理/已中断 + 用时”，不随开合切换为“显示/隐藏步骤”。MiMo-Code 的层级摘要启发了交互结构；OpenCtrlC 保留自身时间线样式，不复刻其 CLI 外观。
 - 中断回合也折叠明确过程，且中断分隔线保留在原有时间顺序中；没有可见答复的普通工具-only/独立 shell 回合仍展示唯一结果，避免默认收起后整轮只剩空白。工具子折叠状态和搜索高亮逻辑继续复用现有实现。
 - 折叠触发器复用现有 UI `Collapsible`、步骤多语言文案和回合时长格式，不新增硬编码界面文案。
 
@@ -916,7 +916,7 @@ bun run desktop:mac
 - `packages/app/src/utils/session-message.ts`、`pages/session/timeline/rows.ts`、`timeline-row.ts`：API 消息映射、按语义分组和稳定的步骤行身份。
 - `packages/app/src/pages/session/timeline/message-timeline.tsx`：折叠状态、触发器、自动收起和虚拟列表测量。
 - `packages/llm/test/provider/openai-responses.test.ts`、`packages/opencode/test/v2/session-message-updater.test.ts`、`packages/app/src/pages/session/timeline/rows-current.test.ts`：协议 channel、持久化和语义折叠回归测试。
-- `packages/app/e2e/regression/session-timeline-collapse-state.spec.ts`：两级折叠、单回合单入口、默认状态和虚拟列表间距回归测试。
+- `packages/app/e2e/regression/session-timeline-collapse-state.spec.ts`、`session-timeline-lifecycle-state.spec.ts`：两级折叠、单回合单入口、活动组默认状态、完成态自动收起和虚拟列表间距回归测试。
 
 ### 验证方式
 

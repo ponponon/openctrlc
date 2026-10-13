@@ -9,6 +9,7 @@ import {
   shell,
   status,
   textPart,
+  toolPart,
   userMessage,
 } from "../performance/timeline-stability/fixture"
 
@@ -35,6 +36,63 @@ for (const expanded of [false, true]) {
     await expect(trigger).toHaveAttribute("aria-expanded", String(!expanded))
   })
 }
+
+test("resets the turn-level collapse state when an expanded running turn completes", async ({ page }) => {
+  const finalTextID = "prt_turn_collapse_final"
+  const assistant = assistantMessage(
+    [shell("prt_turn_collapse", "running"), textPart(finalTextID, "Final response")],
+    { completed: false },
+  )
+  const timeline = await setupTimeline(page, { messages: [userMessage(), assistant] })
+  const row = page.locator('[data-timeline-row="AssistantSteps"]')
+  const turn = row.locator('[data-slot="session-turn-steps"]')
+  const trigger = turn.locator(':scope > [data-slot="collapsible-trigger"]')
+  const content = turn.locator('[data-slot="session-turn-steps-content"]')
+
+  await expect(row).toHaveCount(1)
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await trigger.click()
+  await expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await trigger.click()
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+
+  await timeline.send(messageUpdated(completedAssistantInfo(assistant.info)))
+  await timeline.send(partUpdated(textPart(finalTextID, "Final response updated")))
+  await expect(page.getByText("Final response updated", { exact: true })).toBeVisible()
+  await timeline.send(status("idle"))
+
+  await expect(trigger).toHaveAttribute("aria-expanded", "false")
+  await expect(content).toHaveCount(0)
+  await trigger.click()
+  await expect(trigger).toHaveAttribute("aria-expanded", "true")
+  await expect(content).toBeVisible()
+})
+
+test("defaults only the currently running tool activity group to open", async ({ page }) => {
+  const activeToolID = "prt_activity_c_current"
+  const timeline = await setupTimeline(page, {
+    messages: [
+      userMessage(),
+      assistantMessage(
+        [
+          shell("prt_activity_a_previous", "completed"),
+          toolPart("prt_activity_b_separator", "read", "completed", { filePath: "src/session.ts" }),
+          shell(activeToolID, "running"),
+        ],
+        { completed: false },
+      ),
+    ],
+  })
+  const groups = page.locator('[data-slot="session-turn-step-group"]')
+  const triggers = groups.locator(':scope > [data-slot="collapsible-trigger"]')
+
+  await expect(groups).toHaveCount(2)
+  await expect(triggers.nth(0)).toHaveAttribute("aria-expanded", "false")
+  await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "true")
+
+  await timeline.send(partUpdated(shell(activeToolID, "completed", "done")))
+  await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "false")
+})
 
 test("shows and expands a running shell command without shimmering it", async ({ page }) => {
   const id = "prt_shell_running_command"

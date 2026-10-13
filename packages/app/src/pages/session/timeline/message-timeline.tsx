@@ -606,6 +606,7 @@ export function MessageTimeline(props: {
   createEffect(() => {
     const currentWorkingMessageID = sessionStatus().type === "idle" ? undefined : activeMessageID()
     if (previousWorkingMessageID && previousWorkingMessageID !== currentWorkingMessageID) {
+      setStepsOpen(assistantStepsTurnKey(previousWorkingMessageID), false)
       timelineRows().forEach((row) => {
         if (row._tag === "AssistantSteps" && row.userMessageID === previousWorkingMessageID)
           setStepsOpen(TimelineRow.key(row), false)
@@ -1553,6 +1554,7 @@ export function MessageTimeline(props: {
   const renderAssistantStepGroup = (
     group: Accessor<AssistantStepGroup>,
     userMessageID: () => string,
+    activeActivityKey: () => string | undefined,
     onSizeChange?: () => void,
   ) => {
     const partRow = createMemo(() => {
@@ -1578,7 +1580,7 @@ export function MessageTimeline(props: {
     )
     const open = createMemo(() => {
       const value = group()
-      return value.type === "activity" && (stepGroupsOpen[value.key] ?? workingTurn(userMessageID()))
+      return value.type === "activity" && (stepGroupsOpen[value.key] ?? (activeActivityKey() === value.key))
     })
     const title = createMemo(() => {
       const commands = toolParts().filter((part) => part.tool === "bash" || part.tool === "shell").length
@@ -1660,6 +1662,18 @@ export function MessageTimeline(props: {
     const turnOpen = createMemo(() => stepsOpen[turnKey()] ?? workingTurn(userMessageID()))
     const duration = createMemo(() => (row().showDuration ? turnDurationLabel(userMessageID()) : undefined))
     const groups = createMemo(() => assistantStepGroups(row().groups, getMsgPart))
+    const activeActivityKey = createMemo(() => {
+      if (!workingTurn(userMessageID())) return
+      return groups().findLast(
+        (group) =>
+          group.type === "activity" &&
+          group.groups.some((item) => {
+            if (item.type !== "part") return false
+            const part = getMsgPart(item.ref.messageID, item.ref.partID)
+            return part?.type === "tool" && (part.state.status === "pending" || part.state.status === "running")
+          }),
+      )?.key
+    })
     const status = createMemo(() => {
       if (workingTurn(userMessageID())) return language.t("ui.sessionTurn.steps.processing")
       const messages = assistantMessagesByParent().get(userMessageID()) ?? emptyAssistantMessages
@@ -1678,7 +1692,9 @@ export function MessageTimeline(props: {
     }
     const content = () => (
       <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
-        <Index each={groups()}>{(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}</Index>
+        <Index each={groups()}>
+          {(group) => renderAssistantStepGroup(group, userMessageID, activeActivityKey, onSizeChange)}
+        </Index>
       </div>
     )
 
