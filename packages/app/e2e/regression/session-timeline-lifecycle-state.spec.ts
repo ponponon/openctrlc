@@ -30,7 +30,9 @@ for (const expanded of [false, true]) {
     await timeline.send(status("busy"), 100)
     await timeline.send(status("idle"), 250)
     await page.locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first().click()
-    const activityTrigger = page.locator('[data-slot="session-turn-step-group"] [data-slot="collapsible-trigger"]').first()
+    const activityTrigger = page
+      .locator('[data-slot="session-turn-step-group"] [data-slot="collapsible-trigger"]')
+      .first()
     await expect(activityTrigger).toHaveAttribute("aria-expanded", "false")
     await activityTrigger.click()
     await expect(trigger).toHaveAttribute("aria-expanded", String(!expanded))
@@ -39,10 +41,9 @@ for (const expanded of [false, true]) {
 
 test("resets the turn-level collapse state when an expanded running turn completes", async ({ page }) => {
   const finalTextID = "prt_turn_collapse_final"
-  const assistant = assistantMessage(
-    [shell("prt_turn_collapse", "running"), textPart(finalTextID, "Final response")],
-    { completed: false },
-  )
+  const assistant = assistantMessage([shell("prt_turn_collapse", "running"), textPart(finalTextID, "Final response")], {
+    completed: false,
+  })
   const timeline = await setupTimeline(page, { messages: [userMessage(), assistant] })
   const row = page.locator('[data-timeline-row="AssistantSteps"]')
   const turn = row.locator('[data-slot="session-turn-steps"]')

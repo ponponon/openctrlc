@@ -1598,30 +1598,37 @@ export function MessageTimeline(props: {
     )
     const open = createMemo(() => {
       const value = group()
-      return value.type === "activity" && (stepGroupsOpen[value.key] ?? (activeActivityKey() === value.key))
+      return value.type === "activity" && (stepGroupsOpen[value.key] ?? activeActivityKey() === value.key)
     })
     const title = createMemo(() => {
       const commands = toolParts().filter((part) => part.tool === "bash" || part.tool === "shell").length
       const edits = toolParts().filter((part) => ["edit", "write", "patch", "apply_patch"].includes(part.tool)).length
       const tasks = toolParts().filter((part) => part.tool === "task").length
       const otherTools = toolParts().filter((part) => !summarizedAssistantTools.has(part.tool))
-      const names = [...new Set(
-        otherTools.map((part) =>
-          getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined).title,
+      const names = [
+        ...new Set(
+          otherTools.map(
+            (part) =>
+              getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined)
+                .title,
+          ),
         ),
-      )].join(" · ")
+      ].join(" · ")
       const labels = [
         commands > 0 ? language.plural("ui.sessionTurn.activity.commands", commands) : "",
         edits > 0 ? language.plural("ui.sessionTurn.activity.edits", edits) : "",
         tasks > 0 ? language.plural("ui.sessionTurn.activity.tasks", tasks) : "",
-        otherTools.length > 0 ? language.plural("ui.sessionTurn.activity.tools", otherTools.length, { tools: names }) : "",
+        otherTools.length > 0
+          ? language.plural("ui.sessionTurn.activity.tools", otherTools.length, { tools: names })
+          : "",
       ]
       return labels.filter((label) => label.length > 0).join(" · ")
     })
     const icon = createMemo(() => {
       const part = toolParts()[0]
       if (!part) return "mcp" as const
-      return getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined).icon
+      return getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined)
+        .icon
     })
     createEffect(() => {
       open()

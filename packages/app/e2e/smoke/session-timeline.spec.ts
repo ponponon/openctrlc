@@ -723,7 +723,11 @@ async function expandSteps(page: Page, options: { visibleOnly?: boolean } = {}) 
       const timelineRow = page.locator(`[data-timeline-key="${timelineKey}"]`)
       if (!(await timelineRow.count())) continue
       const outer = timelineRow.locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first()
-      if ((await outer.count()) && (await outer.isVisible()) && (await outer.getAttribute("aria-expanded")) === "false") {
+      if (
+        (await outer.count()) &&
+        (await outer.isVisible()) &&
+        (await outer.getAttribute("aria-expanded")) === "false"
+      ) {
         if (options.visibleOnly && !(await inViewport(outer))) continue
         await outer.click()
         expanded = true

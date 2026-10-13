@@ -165,7 +165,10 @@ test.describe("regression: session timeline local row state", () => {
 
   test("collapses the turn, activity group, and tool details independently", async ({ page }) => {
     const events: EventPayload[] = []
-    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, commentaryPart, streamedTextPart] }])
+    await mockServer(page, events, [
+      userMessage,
+      { ...assistantMessage, parts: [editPart, commentaryPart, streamedTextPart] },
+    ])
     await configurePage(page, { editToolPartsExpanded: false })
 
     await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
@@ -177,7 +180,9 @@ test.describe("regression: session timeline local row state", () => {
     await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
 
     await steps.locator('[data-slot="collapsible-trigger"]').first().click()
-    await expect(page.locator(`[data-timeline-part-id="${commentaryPart.id}"]`).first()).toContainText(commentaryPart.text)
+    await expect(page.locator(`[data-timeline-part-id="${commentaryPart.id}"]`).first()).toContainText(
+      commentaryPart.text,
+    )
     await expect(page.locator(`[data-timeline-part-id="${commentaryPart.id}"]`).first()).toBeVisible()
     const activity = steps.locator('[data-slot="session-turn-step-group"]').first()
     const activityTrigger = activity.locator(':scope > [data-slot="collapsible-trigger"]')
@@ -214,7 +219,10 @@ test.describe("regression: session timeline local row state", () => {
   test("keeps nested step controls keyboard-usable on a narrow timeline", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     const events: EventPayload[] = []
-    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, commentaryPart, streamedTextPart] }])
+    await mockServer(page, events, [
+      userMessage,
+      { ...assistantMessage, parts: [editPart, commentaryPart, streamedTextPart] },
+    ])
     await configurePage(page, { editToolPartsExpanded: false })
 
     await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
@@ -235,7 +243,9 @@ test.describe("regression: session timeline local row state", () => {
     const edit = page.locator(`[data-timeline-part-id="${editPartID}"]`).first()
     await expect(edit).toBeVisible()
     await edit.scrollIntoViewIfNeeded()
-    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+      .toBe(true)
   })
 
   test("uses one turn-level trigger and summarizes adjacent tools", async ({ page }) => {
