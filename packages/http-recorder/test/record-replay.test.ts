@@ -625,7 +625,10 @@ describe("http-recorder", () => {
     await run(
       Effect.gen(function* () {
         const exit = yield* Effect.exit(
-          post("https://example.test/echo?api_key=secret-value", { step: 3, token: "sk-test-not-a-real-api-key-000000" }),
+          post("https://example.test/echo?api_key=secret-value", {
+            step: 3,
+            token: "sk-test-not-a-real-api-key-000000",
+          }),
         )
         const message = failureText(exit)
         expect(message).toContain("url:")
