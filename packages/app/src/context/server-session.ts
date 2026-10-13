@@ -1447,6 +1447,7 @@ export function createServerSession(
           messages?.filter((message) => message.id !== props.messageID),
         )
         const load = messageLoads.get(props.sessionID)
+        load?.touchedSource.add(props.messageID)
         load?.touchedMessages.add(props.messageID)
         load?.removedMessages.add(props.messageID)
         load?.clearedMessageParts.add(props.messageID)

@@ -927,6 +927,7 @@ describe("server session", () => {
     await loading
 
     expect(store.data.message.child).toEqual([kept])
+    expect(store.data.session_message.child?.map((message) => message.id)).toEqual([kept.id])
     expect(store.data.part[kept.id]).toBeUndefined()
   })
 
