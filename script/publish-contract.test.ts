@@ -8,7 +8,14 @@ type Workflow = {
   on?: { push?: unknown; workflow_dispatch?: unknown }
   jobs?: Record<
     string,
-    { "runs-on"?: unknown; needs?: unknown; if?: string; strategy?: unknown; steps?: Array<Record<string, unknown>> }
+    {
+      "runs-on"?: unknown
+      needs?: unknown
+      if?: string
+      strategy?: unknown
+      permissions?: unknown
+      steps?: Array<Record<string, unknown>>
+    }
   >
 }
 
@@ -27,8 +34,11 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
     "build-desktop-macos",
     "build-desktop-windows",
     "build-desktop-linux",
+    "finalize-update-feed",
     "publish",
+    "verify-update-feed",
     "sync-downloads",
+    "sync-release-versions",
   ])
 
   for (const name of ["version", "ensure-tag", "build-cli", "publish"]) {
@@ -50,7 +60,6 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
     "docker",
     "aur",
     "homebrew",
-    "script/publish.ts",
     "npm publish",
     "sign-cli-windows",
     "build-electron",
@@ -106,6 +115,52 @@ test("GitHub release workflow is manual and publishes CLI plus Desktop", async (
   expect(linuxSource).toContain("--${{ matrix.arch }}")
   expect(linuxSource).toContain("openctrlc-linux-${{ matrix.arch }}")
   expect(linuxSource).toContain('[ "$source" != "$target" ]')
+
+  expect(desktopSource).toContain("rewrite-update-feed.ts")
+  expect(windowsSource).toContain("rewrite-update-feed.ts")
+  expect(linuxSource).toContain("rewrite-update-feed.ts")
+
+  // upload-artifact keeps hierarchy from the wildcard segment, so the download
+  // lands at <path>/<artifact name>/ and matches finalize's latest-yml-<triple>/ dirs
+  const stepIndex = (job: string, name: string) =>
+    (workflow.jobs?.[job]?.steps ?? []).findIndex((step) => step.name === name)
+  const uploadPath = (job: string) => {
+    const step = (workflow.jobs?.[job]?.steps ?? []).find((entry) => entry.name === "Upload update feed file")
+    return ((step?.with ?? {}) as { path?: string }).path ?? ""
+  }
+
+  expect(uploadPath("build-desktop-macos")).toMatch(/\/\*\.yml$/)
+  expect(uploadPath("build-desktop-windows")).toMatch(/\/\*\.yml$/)
+  expect(uploadPath("build-desktop-linux")).toMatch(/\/\*\.yml$/)
+
+  expect(stepIndex("build-desktop-macos", "Prepare update feed file")).toBeGreaterThan(
+    stepIndex("build-desktop-macos", "Build and notarize macOS Desktop"),
+  )
+  expect(stepIndex("build-desktop-windows", "Prepare update feed file")).toBeGreaterThan(
+    stepIndex("build-desktop-windows", "Build and package Windows Desktop"),
+  )
+  expect(stepIndex("build-desktop-linux", "Prepare update feed file")).toBeGreaterThan(
+    stepIndex("build-desktop-linux", "Build and package Linux Desktop"),
+  )
+
+  const finalize = workflow.jobs?.["finalize-update-feed"]
+  expect(finalize?.needs).toEqual(["version", "build-desktop-macos", "build-desktop-windows", "build-desktop-linux"])
+  expect(finalize?.["runs-on"]).toBe("ubuntu-24.04")
+  const finalizeSource = JSON.stringify(finalize?.steps ?? [])
+  expect(finalizeSource).toContain("latest-yml-*")
+  expect(finalizeSource).toContain("finalize-latest-yml.ts")
+  expect(finalizeSource).toContain("RELEASE_TAG")
+  expect(finalizeSource).toContain("GH_TOKEN")
+
+  expect(publish?.needs).toContain("finalize-update-feed")
+
+  const verify = workflow.jobs?.["verify-update-feed"]
+  expect(verify?.needs).toEqual(["version", "publish"])
+  expect(verify?.["runs-on"]).toBe("ubuntu-24.04")
+  expect(verify?.permissions).toEqual({ contents: "read" })
+  const verifySource = JSON.stringify(verify?.steps ?? [])
+  expect(verifySource).toContain("verify-update-feed.ts")
+  expect(verifySource).not.toContain("secrets.GITHUB_TOKEN")
 })
 
 test("macOS CLI signing gates publication and replaces unsigned archives", async () => {
@@ -213,4 +268,10 @@ test("local tag sync persists all-tag fetch behavior", async () => {
   expect(source).toContain('git config --local "remote.${remote}.tagOpt" --tags')
   expect(source).toContain('git fetch "$remote" --tags --force')
   expect(source).toContain('git rev-parse "${tag}^{commit}"')
+})
+
+test("update feed channel file lists stay in sync", async () => {
+  const { REQUIRED_CHANNEL_FILES } = await import("../packages/desktop/scripts/finalize-latest-yml")
+  const { CHANNEL_FILES } = await import("./verify-update-feed")
+  expect([...REQUIRED_CHANNEL_FILES].sort()).toEqual([...CHANNEL_FILES].sort())
 })

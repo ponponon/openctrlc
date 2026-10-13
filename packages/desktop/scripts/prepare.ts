@@ -1,5 +1,16 @@
 #!/usr/bin/env bun
 import { Script } from "@openctrlc/script"
+import { resolveChannel } from "./utils"
+
+if (resolveChannel() === "prod" && !process.env.OPENCTRLC_VERSION) {
+  console.warn(
+    [
+      "WARNING: OPENCTRLC_CHANNEL=prod without OPENCTRLC_VERSION.",
+      `The build will embed ${Script.version} (derived from npm latest +1), not the intended release version.`,
+      "Set OPENCTRLC_VERSION before packaging a publishable build (CI sets it automatically).",
+    ].join("\n"),
+  )
+}
 
 await import("./prebuild")
 

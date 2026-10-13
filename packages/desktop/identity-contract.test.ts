@@ -19,7 +19,7 @@ test("keeps OpenCtrlC CI, artifact, and channel contracts aligned", async () => 
   expect(builder).toContain('artifactName: "openctrlc-')
   expect(finalizeJson).toContain("process.env.OPENCTRLC_VERSION")
   expect(finalizeJson).toContain("process.env.OPENCTRLC_RELEASE")
-  expect(finalizeYml).toContain("process.env.OPENCTRLC_VERSION")
+  expect(finalizeYml).toContain("process.env.RELEASE_TAG")
 })
 
 test("keeps renderer deep links and channel declarations on OpenCtrlC names", async () => {
@@ -81,6 +81,6 @@ test("uses the OpenCtrlC renderer title and README copy", async () => {
   expect(renderer).toContain("<title>OpenCtrlC</title>")
   expect(renderer).not.toContain("<title>OpenCode</title>")
   expect(readme).toContain("# OpenCtrlC Desktop")
-  expect(readme).toContain("The OpenCtrlC Desktop app")
+  expect(readme).toContain("The native OpenCtrlC desktop client")
   expect(readme).not.toContain("# OpenCode Desktop")
 })

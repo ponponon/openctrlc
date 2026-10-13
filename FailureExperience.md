@@ -1908,6 +1908,14 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 
 2026-10-11，Linux/Windows 发布 E2E 在 158 条连续 `message.removed` 事件后，默认 10 秒断言先超时；录屏中的消息数仍在下降，不能据此断言 SSE 丢事件。压力用例目标是验证虚拟时间线滚动和删除，Context 侧栏会额外扫描全部消息更新统计，放大 CI 渲染负载。此类用例应关闭无关侧栏，只验证时间线；如果测试本身失败，先看录屏与应用状态确认是仍在处理、实际丢失还是断言选择器不准，再决定代码修复或调整等待。不要把尚未完成的 UI 更新说成数据丢失。
 
+## 发布链路要同时验证“生成了”和“上传了”
+
+2026-10-12 用户报障 electron-updater 404：`Cannot find latest-linux.yml ... releases/download/v1.1.7/latest-linux.yml`。根因是 `publish.yml` 的 `--publish never` 只关闭 electron-builder 的上传，`dist/latest*.yml` 照常生成却无人上传——发布只搬了安装包，漏了更新器的 feed；唯一会上传 yml 的 `finalize-latest-yml.ts` 在 CI 中被 `OPENCTRLC_SYNC_VERSIONS_ONLY=1` 短路，`LATEST_YML_DIR` 全仓库无人设置，死代码从未执行。Windows/macOS 同样缺失，三平台自动更新全部失效，却因为“更新说明弹窗”（另一条 `changelog.json` 链路）正常而长期无人察觉。
+
+教训：(1) 关闭工具的自动发布（`--publish never`）时，必须盘点它同时跳过了哪些**必要产物**，把缺的那部分接回手工上传链路，不能只看安装包传没传；(2) 发布产物要在公开后从**匿名公网视角**验证（现由 `verify-update-feed` job 自动化，含 3 次重试防资产可见性延迟假红），job 绿灯不等于用户路径可用；(3) `script/publish-contract.test.ts` 当时既是红的（job 白名单缺 `sync-release-versions`）又没有任何 workflow 执行它——发布契约测试必须接入 CI（现挂在 `test.yml`，并覆盖 `packages/desktop/scripts/` 与 `electron-builder.config.test.ts`），否则等于没有契约；(4) 界面版本 v1.18.18 与 feed tag v1.1.7 对不上，是打包路径未注入 `OPENCTRLC_VERSION` 的陈旧版本（现由 `prepare.ts` 与 `electron-builder.config.ts` 双层警告兜底），排障时不要用界面版本推断 feed 版本。
+
+实现期补充教训：`Bun.write(path, data, { append: true })` 的未知 options 会被静默忽略且默认覆盖写入，追加写必须用 `node:fs/promises` 的 `appendFile`（`$GITHUB_STEP_SUMMARY` 曾因此会覆盖前序 step 的内容）；YAML 解析用 `parseDocument` + `doc.errors` 收集错误而非 try/catch，且对外抛错必须带文件名前缀，否则 CI 里多个 channel file 无法定位是哪一个坏了；`as T` 类型断言替代不了运行时校验，门禁脚本必须对上游产出做结构 fail-closed（空 `files`、缺 `size` 曾可绿灯放行）。
+
 ## 取消类错误的拦截必须收敛到错误提示入口
 
 2026-10-12，会话明明加载成功，桌面端仍弹「无法重新加载 crawler_console / Request was cancelled」。此前已记录过“客户端中断不能进入项目级 bootstrap 失败分支”，bootstrap 路径也确实用 `runOptionalMcpTask` 和逐点 `isClientAbortError` 过滤了，但那次修复只护住了当时列出的调用点：`server-sync` 的 `onMcp` 刷新路径调 `loadCommands` 后仍直接 `showProjectReloadError`，同一类 499 于是从另一个入口再次冒出来。

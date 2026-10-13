@@ -1,16 +1,10 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
+import { readdir } from "node:fs/promises"
 import path from "path"
 
-const dir = process.env.LATEST_YML_DIR!
-if (!dir) throw new Error("LATEST_YML_DIR is required")
-
-const repo = process.env.GH_REPO
-if (!repo) throw new Error("GH_REPO is required")
-
-const version = process.env.OPENCTRLC_VERSION
-if (!version) throw new Error("OPENCTRLC_VERSION is required")
+export const REQUIRED_CHANNEL_FILES = ["latest.yml", "latest-mac.yml", "latest-linux.yml", "latest-linux-arm64.yml"]
 
 type FileEntry = {
   url: string
@@ -58,6 +52,8 @@ function parse(content: string): LatestYml {
   return { version, files, releaseDate }
 }
 
+// Hand-rolled whitelist serializer: only version/files/releaseDate are emitted.
+// Unknown top-level fields (e.g. a future releaseNotes config) are dropped.
 function serialize(data: LatestYml) {
   const lines = [`version: ${data.version}`, "files:"]
   for (const file of data.files) {
@@ -70,55 +66,78 @@ function serialize(data: LatestYml) {
   return lines.join("\n") + "\n"
 }
 
-async function read(subdir: string, filename: string): Promise<LatestYml | undefined> {
+async function read(dir: string, subdir: string, filename: string): Promise<LatestYml | undefined> {
   const file = Bun.file(path.join(dir, subdir, filename))
   if (!(await file.exists())) return undefined
-  return parse(await file.text())
+  const data = parse(await file.text())
+  if (!data.version || data.files.length === 0)
+    throw new Error(`${subdir}/${filename}: empty or unparseable channel file`)
+  return data
 }
 
-const output: Record<string, string> = {}
+async function listEntries(dir: string) {
+  return (await readdir(dir)).join(", ")
+}
 
-// Windows: merge arm64 + x64 into single file
-const winX64 = await read("latest-yml-x86_64-pc-windows-msvc", "latest.yml")
-const winArm64 = await read("latest-yml-aarch64-pc-windows-msvc", "latest.yml")
-if (winX64 || winArm64) {
-  const base = winArm64 ?? winX64!
+export async function buildOutputs(dir: string): Promise<Record<string, string>> {
+  const output: Record<string, string> = {}
+
+  // Windows: merge arm64 + x64 into single file; both arches are required
+  const winX64 = await read(dir, "latest-yml-x86_64-pc-windows-msvc", "latest.yml")
+  const winArm64 = await read(dir, "latest-yml-aarch64-pc-windows-msvc", "latest.yml")
+  if (!winX64 || !winArm64)
+    throw new Error(
+      `windows channel sources incomplete: expected latest-yml-x86_64-pc-windows-msvc and latest-yml-aarch64-pc-windows-msvc, available: ${await listEntries(dir)}`,
+    )
   output["latest.yml"] = serialize({
-    version: base.version,
-    files: [...(winArm64?.files ?? []), ...(winX64?.files ?? [])],
-    releaseDate: base.releaseDate,
+    version: winArm64.version,
+    files: [...winArm64.files, ...winX64.files],
+    releaseDate: winArm64.releaseDate,
   })
+
+  // Linux x64: pass through
+  const linuxX64 = await read(dir, "latest-yml-x86_64-unknown-linux-gnu", "latest-linux.yml")
+  if (linuxX64) output["latest-linux.yml"] = serialize(linuxX64)
+
+  // Linux arm64: pass through
+  const linuxArm64 = await read(dir, "latest-yml-aarch64-unknown-linux-gnu", "latest-linux-arm64.yml")
+  if (linuxArm64) output["latest-linux-arm64.yml"] = serialize(linuxArm64)
+
+  // macOS: merge arm64 + x64 into single file
+  const macX64 = await read(dir, "latest-yml-x86_64-apple-darwin", "latest-mac.yml")
+  const macArm64 = await read(dir, "latest-yml-aarch64-apple-darwin", "latest-mac.yml")
+  if (macX64 || macArm64) {
+    const base = macArm64 ?? macX64!
+    output["latest-mac.yml"] = serialize({
+      version: base.version,
+      files: [...(macArm64?.files ?? []), ...(macX64?.files ?? [])],
+      releaseDate: base.releaseDate,
+    })
+  }
+
+  const missing = REQUIRED_CHANNEL_FILES.filter((name) => !(name in output))
+  if (missing.length > 0)
+    throw new Error(`missing channel files: ${missing.join(", ")}; available: ${await listEntries(dir)}`)
+  return output
 }
 
-// Linux x64: pass through
-const linuxX64 = await read("latest-yml-x86_64-unknown-linux-gnu", "latest-linux.yml")
-if (linuxX64) output["latest-linux.yml"] = serialize(linuxX64)
+if (import.meta.main) {
+  const dir = process.env.LATEST_YML_DIR
+  if (!dir) throw new Error("LATEST_YML_DIR is required")
+  const repo = process.env.GH_REPO
+  if (!repo) throw new Error("GH_REPO is required")
+  const tag = process.env.RELEASE_TAG
+  if (!tag) throw new Error("RELEASE_TAG is required")
 
-// Linux arm64: pass through
-const linuxArm64 = await read("latest-yml-aarch64-unknown-linux-gnu", "latest-linux-arm64.yml")
-if (linuxArm64) output["latest-linux-arm64.yml"] = serialize(linuxArm64)
+  const output = await buildOutputs(dir)
+  const tmp = process.env.RUNNER_TEMP ?? "/tmp"
 
-// macOS: merge arm64 + x64 into single file
-const macX64 = await read("latest-yml-x86_64-apple-darwin", "latest-mac.yml")
-const macArm64 = await read("latest-yml-aarch64-apple-darwin", "latest-mac.yml")
-if (macX64 || macArm64) {
-  const base = macArm64 ?? macX64!
-  output["latest-mac.yml"] = serialize({
-    version: base.version,
-    files: [...(macArm64?.files ?? []), ...(macX64?.files ?? [])],
-    releaseDate: base.releaseDate,
-  })
+  for (const [filename, content] of Object.entries(output)) {
+    const filepath = path.join(tmp, filename)
+    await Bun.write(filepath, content)
+    await $`gh release upload ${tag} ${filepath} --clobber --repo ${repo}`
+    console.log(`uploaded ${filename}`)
+  }
+
+  console.log("finalized latest yml files")
 }
-
-// Upload to release
-const tag = process.env.OPENCTRLC_CHANNEL === "beta" ? "beta" : `v${version}`
-const tmp = process.env.RUNNER_TEMP ?? "/tmp"
-
-for (const [filename, content] of Object.entries(output)) {
-  const filepath = path.join(tmp, filename)
-  await Bun.write(filepath, content)
-  await $`gh release upload ${tag} ${filepath} --clobber --repo ${repo}`
-  console.log(`uploaded ${filename}`)
-}
-
-console.log("finalized latest yml files")
