@@ -94,6 +94,36 @@ test("defaults only the currently running tool activity group to open", async ({
   await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "false")
 })
 
+test("defaults only the last active group open across process rows in one turn", async ({ page }) => {
+  const firstActiveToolID = "prt_activity_split_01_first"
+  const textPartID = "prt_activity_split_02_text"
+  const lastActiveToolID = "prt_activity_split_03_last"
+  await setupTimeline(page, {
+    messages: [
+      userMessage(),
+      assistantMessage(
+        [
+          shell(firstActiveToolID, "running"),
+          textPart(textPartID, "Visible update between concurrent tools."),
+          shell(lastActiveToolID, "running"),
+        ],
+        { completed: false },
+      ),
+    ],
+  })
+  const processRows = page.locator('[data-timeline-row="AssistantSteps"]')
+  const groups = processRows.locator('[data-slot="session-turn-step-group"]')
+  const triggers = groups.locator(':scope > [data-slot="collapsible-trigger"]')
+
+  await expect(processRows).toHaveCount(2)
+  await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`)).toBeVisible()
+  await expect(groups).toHaveCount(2)
+  await expect(triggers.nth(0)).toHaveAttribute("aria-expanded", "false")
+  await expect(triggers.nth(1)).toHaveAttribute("aria-expanded", "true")
+  await expect(page.locator(`[data-timeline-part-id="${firstActiveToolID}"]`)).toHaveCount(0)
+  await expect(page.locator(`[data-timeline-part-id="${lastActiveToolID}"]`)).toBeVisible()
+})
+
 test("shows and expands a running shell command without shimmering it", async ({ page }) => {
   const id = "prt_shell_running_command"
   const command = "sleep 10 && echo done"

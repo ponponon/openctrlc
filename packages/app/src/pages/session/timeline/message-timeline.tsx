@@ -1372,6 +1372,24 @@ export function MessageTimeline(props: {
   }
 
   const workingTurn = (userMessageID: string) => sessionStatus().type !== "idle" && activeMessageID() === userMessageID
+  const activeActivityKey = createMemo(() => {
+    const userMessageID = activeMessageID()
+    if (!userMessageID || !workingTurn(userMessageID)) return
+    return timelineRows()
+      .flatMap((row) => {
+        if (row._tag !== "AssistantSteps" || row.userMessageID !== userMessageID) return []
+        return assistantStepGroups(row.groups, getMsgPart)
+      })
+      .findLast(
+        (group) =>
+          group.type === "activity" &&
+          group.groups.some((item) => {
+            if (item.type !== "part") return false
+            const part = getMsgPart(item.ref.messageID, item.ref.partID)
+            return part?.type === "tool" && (part.state.status === "pending" || part.state.status === "running")
+          }),
+      )?.key
+  })
 
   const turnDurationMs = (userMessageID: string) => {
     const message = messageByID().get(userMessageID)
@@ -1662,18 +1680,6 @@ export function MessageTimeline(props: {
     const turnOpen = createMemo(() => stepsOpen[turnKey()] ?? workingTurn(userMessageID()))
     const duration = createMemo(() => (row().showDuration ? turnDurationLabel(userMessageID()) : undefined))
     const groups = createMemo(() => assistantStepGroups(row().groups, getMsgPart))
-    const activeActivityKey = createMemo(() => {
-      if (!workingTurn(userMessageID())) return
-      return groups().findLast(
-        (group) =>
-          group.type === "activity" &&
-          group.groups.some((item) => {
-            if (item.type !== "part") return false
-            const part = getMsgPart(item.ref.messageID, item.ref.partID)
-            return part?.type === "tool" && (part.state.status === "pending" || part.state.status === "running")
-          }),
-      )?.key
-    })
     const status = createMemo(() => {
       if (workingTurn(userMessageID())) return language.t("ui.sessionTurn.steps.processing")
       const messages = assistantMessagesByParent().get(userMessageID()) ?? emptyAssistantMessages
