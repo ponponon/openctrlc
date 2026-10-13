@@ -146,17 +146,12 @@
       }
 
       [data-slot="session-turn-step-group-title"] {
+        flex: 1 1 auto;
         min-width: 0;
         overflow: hidden;
         color: var(--text-weak);
         text-overflow: ellipsis;
         white-space: nowrap;
-      }
-
-      [data-slot="session-turn-step-group-count"] {
-        flex: none;
-        color: var(--text-weaker);
-        font-variant-numeric: tabular-nums;
       }
 
       [data-slot="session-turn-step-group-content"] {

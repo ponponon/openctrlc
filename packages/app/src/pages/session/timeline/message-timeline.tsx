@@ -126,7 +126,7 @@ type TimelineRowByTag<T extends TimelineRow.TimelineRow["_tag"]> = Extract<Timel
 type HistoryAnchor = { restore: (done: boolean) => void; cancel: () => void }
 type AssistantStepGroup =
   | { type: "activity"; key: string; groups: PartGroup[] }
-  | { type: "context"; key: string; group: PartGroup }
+  | { type: "part"; key: string; group: PartGroup }
 
 const timelineFallbackItemSize = 60
 const timelineCache = new Map<
@@ -139,10 +139,16 @@ const timelineCache = new Map<
   }
 >()
 
-function assistantStepGroups(groups: PartGroup[]): AssistantStepGroup[] {
+const summarizedAssistantTools = new Set(["bash", "shell", "edit", "write", "patch", "apply_patch", "task"])
+
+function assistantStepGroups(
+  groups: PartGroup[],
+  getPart: (messageID: string, partID: string) => PartType | undefined,
+): AssistantStepGroup[] {
   return groups.reduce<AssistantStepGroup[]>((result, group) => {
-    if (group.type === "context") {
-      result.push({ type: "context", key: group.key, group })
+    const part = group.type === "part" ? getPart(group.ref.messageID, group.ref.partID) : undefined
+    if (group.type === "context" || part?.type !== "tool") {
+      result.push({ type: "part", key: group.key, group })
       return result
     }
 
@@ -781,8 +787,29 @@ export function MessageTimeline(props: {
           match: searchMatch,
         })
         const part = partID ? getMsgPart(searchMatch.messageID, partID) : undefined
-        if (part?.type === "tool" && partID && !(toolOpen[partID] ?? partDefaultOpen(part))) {
-          setToolOpen(partID, true)
+        if (part?.type === "tool" && partID) {
+          const stepGroup =
+            row?._tag === "AssistantSteps"
+              ? assistantStepGroups(row.groups, getMsgPart).find((group) => {
+                  if (group.type === "activity")
+                    return group.groups.some(
+                      (item) =>
+                        item.type === "part" &&
+                        item.ref.messageID === searchMatch.messageID &&
+                        item.ref.partID === partID,
+                    )
+                  if (group.group.type !== "context") return false
+                  return group.group.refs.some(
+                    (ref) => ref.messageID === searchMatch.messageID && ref.partID === partID,
+                  )
+                })
+              : undefined
+          if (stepGroup?.type === "activity") setStepGroupsOpen(stepGroup.key, true)
+          if (stepGroup?.type === "part" && stepGroup.group.type === "context") {
+            setToolOpen(`context:${stepGroup.key}`, true)
+          } else if (!(toolOpen[partID] ?? partDefaultOpen(part))) {
+            setToolOpen(partID, true)
+          }
         }
       }
       virtualizer.scrollToIndex(index, { align: "center" })
@@ -1524,36 +1551,57 @@ export function MessageTimeline(props: {
   }
 
   const renderAssistantStepGroup = (
-    group: AssistantStepGroup,
+    group: Accessor<AssistantStepGroup>,
     userMessageID: () => string,
     onSizeChange?: () => void,
   ) => {
-    if (group.type === "context") {
-      return renderAssistantPartGroup(
-        () => ({
-          userMessageID: userMessageID(),
-          group: group.group,
-          previousAssistantPart: false,
-        }),
-        onSizeChange,
-      )
-    }
-
-    const open = createMemo(() => stepGroupsOpen[group.key] ?? true)
+    const partRow = createMemo(() => {
+      const value = group()
+      if (value.type !== "part") return
+      return {
+        userMessageID: userMessageID(),
+        group: value.group,
+        previousAssistantPart: false,
+      }
+    })
+    const activityGroups = createMemo(() => {
+      const value = group()
+      if (value.type !== "activity") return []
+      return value.groups
+    })
+    const toolParts = createMemo(() =>
+      activityGroups().flatMap((item) => {
+        if (item.type !== "part") return []
+        const part = getMsgPart(item.ref.messageID, item.ref.partID)
+        return part?.type === "tool" ? [part] : []
+      }),
+    )
+    const open = createMemo(() => {
+      const value = group()
+      return value.type === "activity" && (stepGroupsOpen[value.key] ?? workingTurn(userMessageID()))
+    })
     const title = createMemo(() => {
-      const names = group.groups
-        .flatMap((item) => {
-          if (item.type !== "part") return []
-          const part = getMsgPart(item.ref.messageID, item.ref.partID)
-          if (part?.type !== "tool") return []
-          return [
-            getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined)
-              .title,
-          ]
-        })
-        .filter((name, index, names) => names.indexOf(name) === index)
-
-      return names.length > 0 ? names.join(" · ") : language.t("ui.sessionTurn.status.thinking")
+      const commands = toolParts().filter((part) => part.tool === "bash" || part.tool === "shell").length
+      const edits = toolParts().filter((part) => ["edit", "write", "patch", "apply_patch"].includes(part.tool)).length
+      const tasks = toolParts().filter((part) => part.tool === "task").length
+      const otherTools = toolParts().filter((part) => !summarizedAssistantTools.has(part.tool))
+      const names = [...new Set(
+        otherTools.map((part) =>
+          getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined).title,
+        ),
+      )].join(" · ")
+      const labels = [
+        commands > 0 ? language.plural("ui.sessionTurn.activity.commands", commands) : "",
+        edits > 0 ? language.plural("ui.sessionTurn.activity.edits", edits) : "",
+        tasks > 0 ? language.plural("ui.sessionTurn.activity.tasks", tasks) : "",
+        otherTools.length > 0 ? language.plural("ui.sessionTurn.activity.tools", otherTools.length, { tools: names }) : "",
+      ]
+      return labels.filter((label) => label.length > 0).join(" · ")
+    })
+    const icon = createMemo(() => {
+      const part = toolParts()[0]
+      if (!part) return "mcp" as const
+      return getToolInfo(part.tool, part.state.input ?? {}, "metadata" in part.state ? part.state.metadata : undefined).icon
     })
     createEffect(() => {
       open()
@@ -1561,38 +1609,46 @@ export function MessageTimeline(props: {
     })
 
     return (
-      <Collapsible
-        open={open()}
-        onOpenChange={(value) => setStepGroupsOpen(group.key, value)}
-        variant="ghost"
-        data-slot="session-turn-step-group"
-      >
-        <Collapsible.Trigger>
-          <div data-slot="session-turn-step-group-trigger">
-            <span data-slot="session-turn-step-group-title">{title()}</span>
-            <span data-slot="session-turn-step-group-count">{group.groups.length}</span>
-            <Collapsible.Arrow />
-          </div>
-        </Collapsible.Trigger>
-        <Show when={open()}>
-          <Collapsible.Content>
-            <div data-slot="session-turn-step-group-content" class="flex flex-col gap-3">
-              <For each={group.groups}>
-                {(item) =>
-                  renderAssistantPartGroup(
-                    () => ({
-                      userMessageID: userMessageID(),
-                      group: item,
-                      previousAssistantPart: false,
-                    }),
-                    onSizeChange,
-                  )
-                }
-              </For>
-            </div>
-          </Collapsible.Content>
+      <>
+        <Show when={partRow()}>{(row) => renderAssistantPartGroup(row, onSizeChange)}</Show>
+        <Show when={group().type === "activity"}>
+          <Collapsible
+            open={open()}
+            onOpenChange={(value) => {
+              const current = group()
+              if (current.type === "activity") setStepGroupsOpen(current.key, value)
+            }}
+            variant="ghost"
+            data-slot="session-turn-step-group"
+          >
+            <Collapsible.Trigger>
+              <div data-slot="session-turn-step-group-trigger">
+                <Icon name={icon()} size="small" class="shrink-0 text-icon-weaker" />
+                <span data-slot="session-turn-step-group-title">{title()}</span>
+                <Collapsible.Arrow />
+              </div>
+            </Collapsible.Trigger>
+            <Show when={open()}>
+              <Collapsible.Content>
+                <div data-slot="session-turn-step-group-content" class="flex flex-col gap-3">
+                  <Index each={activityGroups()}>
+                    {(item) =>
+                      renderAssistantPartGroup(
+                        () => ({
+                          userMessageID: userMessageID(),
+                          group: item(),
+                          previousAssistantPart: false,
+                        }),
+                        onSizeChange,
+                      )
+                    }
+                  </Index>
+                </div>
+              </Collapsible.Content>
+            </Show>
+          </Collapsible>
         </Show>
-      </Collapsible>
+      </>
     )
   }
 
@@ -1603,7 +1659,13 @@ export function MessageTimeline(props: {
     const open = createMemo(() => stepsOpen[key()] ?? stepsOpen[turnKey()] ?? workingTurn(userMessageID()))
     const turnOpen = createMemo(() => stepsOpen[turnKey()] ?? workingTurn(userMessageID()))
     const duration = createMemo(() => (row().showDuration ? turnDurationLabel(userMessageID()) : undefined))
-    const groups = createMemo(() => assistantStepGroups(row().groups))
+    const groups = createMemo(() => assistantStepGroups(row().groups, getMsgPart))
+    const status = createMemo(() => {
+      if (workingTurn(userMessageID())) return language.t("ui.sessionTurn.steps.processing")
+      const messages = assistantMessagesByParent().get(userMessageID()) ?? emptyAssistantMessages
+      if (messages.at(-1)?.error?.name === "MessageAbortedError") return language.t("ui.message.interrupted")
+      return language.t("ui.sessionTurn.steps.processed")
+    })
     createEffect(() => {
       open()
       onSizeChange?.()
@@ -1616,7 +1678,7 @@ export function MessageTimeline(props: {
     }
     const content = () => (
       <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
-        <For each={groups()}>{(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}</For>
+        <Index each={groups()}>{(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}</Index>
       </div>
     )
 
@@ -1626,13 +1688,10 @@ export function MessageTimeline(props: {
       <Collapsible open={turnOpen()} onOpenChange={onOpenChange} variant="ghost" data-slot="session-turn-steps">
         <Collapsible.Trigger>
           <div data-slot="session-turn-steps-trigger">
+            <span data-slot="session-turn-steps-label">{status()}</span>
             <Show when={duration()}>
               <span data-slot="session-turn-steps-duration">{duration()}</span>
             </Show>
-            <Show when={duration()}>·</Show>
-            <span data-slot="session-turn-steps-label">
-              {turnOpen() ? language.t("ui.sessionTurn.steps.hide") : language.t("ui.sessionTurn.steps.show")}
-            </span>
             <Collapsible.Arrow />
           </div>
         </Collapsible.Trigger>

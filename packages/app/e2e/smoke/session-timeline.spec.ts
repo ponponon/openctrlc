@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "@playwright/test"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import { fixture, pageMessages } from "./session-timeline.fixture"
 import { trackPageErrors, expectNoSmokeErrors } from "../utils/errors"
@@ -711,41 +711,56 @@ async function expectSessionTimelineReady(
 
 async function expandSteps(page: Page, options: { visibleOnly?: boolean } = {}) {
   const rows = page.locator('[data-timeline-row="AssistantSteps"]')
-  while (await rows.count()) {
+  while (true) {
     let expanded = false
-    const count = await rows.count()
-    for (let index = 0; index < count; index++) {
-      const row = rows.nth(index)
-      const toggle = row.getByRole("button", { name: /Show steps/ })
-      if (!(await toggle.count()) || !(await toggle.isVisible())) continue
-      const timelineKey = await row.evaluate(
-        (element) => element.closest<HTMLElement>("[data-timeline-key]")?.dataset.timelineKey,
-      )
-      expect(timelineKey).toBeTruthy()
-      if (options.visibleOnly) {
-        const inViewport = await toggle.evaluate((element) => {
-          const scroller = element.closest<HTMLElement>(".scroll-view__viewport")
-          if (!scroller) return false
-          const bounds = element.getBoundingClientRect()
-          const viewport = scroller.getBoundingClientRect()
-          return (
-            bounds.bottom > viewport.top &&
-            bounds.top < viewport.bottom &&
-            bounds.right > viewport.left &&
-            bounds.left < viewport.right
-          )
-        })
-        if (!inViewport) continue
-      }
-      await toggle.click()
+    const keys = await rows.evaluateAll((elements) =>
+      elements.flatMap((element) => {
+        const key = element.closest<HTMLElement>("[data-timeline-key]")?.dataset.timelineKey
+        return key ? [key] : []
+      }),
+    )
+    for (const timelineKey of new Set(keys)) {
       const timelineRow = page.locator(`[data-timeline-key="${timelineKey}"]`)
-      const content = page.locator(`[data-timeline-key="${timelineKey}"] [data-slot="session-turn-steps-content"]`)
-      await expect.poll(async () => !(await timelineRow.count()) || (await content.isVisible())).toBe(true)
-      expanded = true
-      break
+      if (!(await timelineRow.count())) continue
+      const outer = timelineRow.locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first()
+      if ((await outer.count()) && (await outer.isVisible()) && (await outer.getAttribute("aria-expanded")) === "false") {
+        if (options.visibleOnly && !(await inViewport(outer))) continue
+        await outer.click()
+        expanded = true
+        break
+      }
+
+      const activities = timelineRow.locator('[data-slot="session-turn-step-group"]')
+      const activityCount = await activities.count()
+      for (let activityIndex = 0; activityIndex < activityCount; activityIndex++) {
+        const group = activities.nth(activityIndex)
+        const activity = group.locator(':scope > [data-slot="collapsible-trigger"]')
+        if ((await activity.getAttribute("aria-expanded")) !== "false") continue
+        if (!(await activity.isVisible())) continue
+        if (options.visibleOnly && !(await inViewport(activity))) continue
+        await activity.click()
+        expanded = true
+        break
+      }
+      if (expanded) break
     }
     if (!expanded) return
   }
+}
+
+async function inViewport(locator: Locator) {
+  return locator.evaluate((element) => {
+    const scroller = element.closest<HTMLElement>(".scroll-view__viewport")
+    if (!scroller) return false
+    const bounds = element.getBoundingClientRect()
+    const viewport = scroller.getBoundingClientRect()
+    return (
+      bounds.bottom > viewport.top &&
+      bounds.top < viewport.bottom &&
+      bounds.right > viewport.left &&
+      bounds.left < viewport.right
+    )
+  })
 }
 
 function expectCompleteScroll(

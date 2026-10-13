@@ -93,6 +93,13 @@ const streamedTextPart = {
   text: "Streaming added a later assistant text part.",
 }
 
+const commentaryPart = {
+  ...streamedTextPart,
+  id: "prt_0003_commentary",
+  channel: "commentary",
+  text: "Checking the edit before answering.",
+}
+
 const followUpTextPart = {
   ...streamedTextPart,
   id: "prt_9999_followup",
@@ -146,7 +153,8 @@ test.describe("regression: session timeline local row state", () => {
     })
 
     await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toBeVisible({ timeout: 10_000 })
-    await page.getByRole("button", { name: "Show steps" }).click()
+    await page.locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first().click()
+    await page.locator('[data-slot="session-turn-step-group"] [data-slot="collapsible-trigger"]').first().click()
 
     expect(await readToolState(page)).toEqual({
       expanded: false,
@@ -155,10 +163,10 @@ test.describe("regression: session timeline local row state", () => {
     })
   })
 
-  test("supports two-level assistant step collapse without leaving a virtual height gap", async ({ page }) => {
+  test("collapses the turn, activity group, and tool details independently", async ({ page }) => {
     const events: EventPayload[] = []
-    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, streamedTextPart] }])
-    await configurePage(page)
+    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, commentaryPart, streamedTextPart] }])
+    await configurePage(page, { editToolPartsExpanded: false })
 
     await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
     await expectSessionTitle(page, title)
@@ -169,9 +177,20 @@ test.describe("regression: session timeline local row state", () => {
     await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
 
     await steps.locator('[data-slot="collapsible-trigger"]').first().click()
+    await expect(page.locator(`[data-timeline-part-id="${commentaryPart.id}"]`).first()).toContainText(commentaryPart.text)
+    await expect(page.locator(`[data-timeline-part-id="${commentaryPart.id}"]`).first()).toBeVisible()
     const activity = steps.locator('[data-slot="session-turn-step-group"]').first()
     const activityTrigger = activity.locator(':scope > [data-slot="collapsible-trigger"]')
-    await expect(activityTrigger).toHaveAttribute("aria-expanded", "true")
+    await expect(activityTrigger).toHaveAttribute("aria-expanded", "false")
+    await expect(activityTrigger).toContainText("Made 1 edit")
+    await expect(page.locator(`[data-timeline-part-id="${editPartID}"]`).first()).toHaveCount(0)
+    await activityTrigger.click()
+    const edit = page.locator(`[data-timeline-part-id="${editPartID}"]`).first()
+    await expect(edit).toBeVisible()
+    await expect(edit.locator('[data-component="edit-content"]')).toHaveCount(0)
+    await edit.locator('[data-slot="collapsible-trigger"]').first().click()
+    await expect(edit.locator('[data-component="edit-content"]')).toBeVisible()
+
     await activityTrigger.click()
     await expect(activityTrigger).toHaveAttribute("aria-expanded", "false")
     await expect(activity.locator('[data-slot="session-turn-step-group-content"]')).toHaveCount(0)
@@ -192,7 +211,34 @@ test.describe("regression: session timeline local row state", () => {
       .toBeLessThan(24)
   })
 
-  test("uses one turn-level trigger for process groups split by visible text", async ({ page }) => {
+  test("keeps nested step controls keyboard-usable on a narrow timeline", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const events: EventPayload[] = []
+    await mockServer(page, events, [userMessage, { ...assistantMessage, parts: [editPart, commentaryPart, streamedTextPart] }])
+    await configurePage(page, { editToolPartsExpanded: false })
+
+    await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
+    await expectSessionTitle(page, title)
+
+    const steps = page.locator('[data-slot="session-turn-steps"]').first()
+    const outer = steps.locator(':scope > [data-slot="collapsible-trigger"]')
+    await outer.focus()
+    await expect(outer).toBeFocused()
+    await outer.press("Enter")
+    await expect(outer).toHaveAttribute("aria-expanded", "true")
+
+    const activity = steps.locator('[data-slot="session-turn-step-group"]').first()
+    const activityTrigger = activity.locator(':scope > [data-slot="collapsible-trigger"]')
+    await activityTrigger.focus()
+    await expect(activityTrigger).toBeFocused()
+    await activityTrigger.press("Enter")
+    const edit = page.locator(`[data-timeline-part-id="${editPartID}"]`).first()
+    await expect(edit).toBeVisible()
+    await edit.scrollIntoViewIfNeeded()
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+  })
+
+  test("uses one turn-level trigger and summarizes adjacent tools", async ({ page }) => {
     const events: EventPayload[] = []
     await mockServer(page, events, [
       userMessage,
@@ -204,29 +250,29 @@ test.describe("regression: session timeline local row state", () => {
     await expectSessionTitle(page, title)
 
     const steps = page.locator('[data-slot="session-turn-steps"]')
-    const trigger = page.getByRole("button", { name: "Show steps" })
+    const trigger = steps.locator('[data-slot="collapsible-trigger"]').first()
     const processRows = page.locator('[data-timeline-row="AssistantSteps"]')
     await expectAppVisible(trigger)
     await expect(steps).toHaveCount(1)
-    await expect(processRows).toHaveCount(2)
     await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
     await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(streamedTextPart.text)
-    await expect
-      .poll(() => processRows.nth(1).evaluate((element) => element.getBoundingClientRect().height))
-      .toBe(0)
 
     await trigger.click()
 
-    await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(2)
+    await expect(processRows).toHaveCount(1)
+    await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(1)
+    const activityTrigger = page.locator('[data-slot="session-turn-step-group"] [data-slot="collapsible-trigger"]')
+    await expect(activityTrigger).toHaveCount(1)
+    await expect(activityTrigger).toHaveAttribute("aria-expanded", "false")
+    await expect(activityTrigger).toContainText("Made 2 edits")
+    await activityTrigger.click()
     await expect(page.locator(`[data-timeline-part-id="${editPartID}"]`).first()).toBeVisible()
     await expect(page.locator(`[data-timeline-part-id="${secondEditPart.id}"]`).first()).toBeVisible()
     await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(streamedTextPart.text)
 
-    await page.getByRole("button", { name: "Hide steps" }).click()
+    await trigger.click()
     await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
-    await expect
-      .poll(() => processRows.nth(1).evaluate((element) => element.getBoundingClientRect().height))
-      .toBe(0)
+    await expect(page.locator('[data-slot="session-turn-step-group"]')).toHaveCount(0)
   })
 
   test("collapses interrupted process while keeping assistant text visible", async ({ page }) => {
@@ -251,6 +297,7 @@ test.describe("regression: session timeline local row state", () => {
     await expect(trigger).toHaveAttribute("aria-expanded", "false")
     await expect(steps.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
     await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(streamedTextPart.text)
+    await expect(steps.locator('[data-slot="session-turn-steps-label"]')).toContainText("Interrupted")
 
     await trigger.click()
     await expect(trigger).toHaveAttribute("aria-expanded", "true")
@@ -264,7 +311,8 @@ test.describe("regression: session timeline local row state", () => {
 
     await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
     await expectSessionTitle(page, title)
-    await page.getByRole("button", { name: "Show steps" }).click()
+    await page.locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first().click()
+    await page.locator('[data-slot="session-turn-step-group"] [data-slot="collapsible-trigger"]').first().click()
 
     const wrapper = page.locator(`[data-timeline-part-id="${editPartID}"]`).first()
     await expectAppVisible(wrapper)
@@ -375,8 +423,8 @@ test.describe("regression: session timeline local row state", () => {
   })
 })
 
-async function configurePage(page: Page) {
-  await page.addInitScript(() => {
+async function configurePage(page: Page, general: Record<string, boolean> = {}) {
+  await page.addInitScript((general) => {
     localStorage.setItem(
       "settings.v3",
       JSON.stringify({
@@ -384,10 +432,11 @@ async function configurePage(page: Page) {
           editToolPartsExpanded: true,
           shellToolPartsExpanded: true,
           showReasoningSummaries: true,
+          ...general,
         },
       }),
     )
-  })
+  }, general)
 }
 
 async function expectExpanded(locator: Locator, expected: boolean) {

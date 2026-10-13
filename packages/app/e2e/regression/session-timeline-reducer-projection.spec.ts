@@ -25,13 +25,16 @@ test("groups singleton and separated context operations at correct boundaries", 
 
   const steps = page.locator('[data-timeline-row="AssistantSteps"]')
   await expect(steps).toHaveCount(2)
-  await steps.nth(0).getByRole("button", { name: "Show steps" }).click()
-  await steps.nth(1).getByRole("button", { name: "Show steps" }).click()
+  await steps.nth(0).locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first().click()
 
   await expect(page.locator('[data-timeline-part-ids="prt_boundary_01_read"]')).toBeVisible()
   await expect(page.locator('[data-timeline-part-ids="prt_boundary_03_glob,prt_boundary_04_grep"]')).toBeVisible()
   await expect(page.locator('[data-timeline-part-ids="prt_boundary_06_list"]')).toBeVisible()
   await expect(page.locator('[data-timeline-part-id="prt_boundary_02_text"]')).toBeVisible()
+  const shellActivity = steps.nth(1).locator('[data-slot="session-turn-step-group"]').first()
+  await expect(shellActivity.locator(':scope > [data-slot="collapsible-trigger"]')).toContainText("Ran 1 command")
+  await expect(page.locator('[data-timeline-part-id="prt_boundary_05_shell"]')).toHaveCount(0)
+  await shellActivity.locator(':scope > [data-slot="collapsible-trigger"]').click()
   await expect(page.locator('[data-timeline-part-id="prt_boundary_05_shell"]')).toBeVisible()
   await expect(steps).toHaveCount(2)
 })

@@ -37,6 +37,8 @@ export const dict = {
 
   "ui.sessionTurn.steps.show": "단계 표시",
   "ui.sessionTurn.steps.hide": "단계 숨기기",
+  "ui.sessionTurn.steps.processing": "처리 중",
+  "ui.sessionTurn.steps.processed": "처리 완료",
   "ui.sessionTurn.summary.response": "응답",
   "ui.sessionTurn.diff.showMore": "변경 사항 더 보기 ({{count}})",
 
@@ -78,6 +80,14 @@ export const dict = {
   "ui.messagePart.context.search.other": "{{count}}개 검색",
   "ui.messagePart.context.list.one": "{{count}}개 목록",
   "ui.messagePart.context.list.other": "{{count}}개 목록",
+  "ui.sessionTurn.activity.commands.one": "명령 {{count}}개 실행",
+  "ui.sessionTurn.activity.commands.other": "명령 {{count}}개 실행",
+  "ui.sessionTurn.activity.edits.one": "편집 {{count}}건 수행",
+  "ui.sessionTurn.activity.edits.other": "편집 {{count}}건 수행",
+  "ui.sessionTurn.activity.tasks.one": "작업 {{count}}개 위임",
+  "ui.sessionTurn.activity.tasks.other": "작업 {{count}}개 위임",
+  "ui.sessionTurn.activity.tools.one": "{{tools}} 도구 {{count}}회 실행",
+  "ui.sessionTurn.activity.tools.other": "{{tools}} 도구 {{count}}회 실행",
   "ui.messagePart.diagnostic.error": "오류",
   "ui.messagePart.title.edit": "편집",
   "ui.messagePart.title.write": "작성",
