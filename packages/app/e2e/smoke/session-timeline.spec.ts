@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import { fixture, pageMessages } from "./session-timeline.fixture"
 import { trackPageErrors, expectNoSmokeErrors } from "../utils/errors"
@@ -325,13 +325,20 @@ test.describe("smoke: session timeline", () => {
 
   test("renders seeded timeline in order while paging through history", async ({ page }) => {
     const errors = trackPageErrors(page)
+    const historyPages: { sessionID: string; before?: string; cursor?: string }[] = []
+    const messageReads: { sessionID: string; before?: string; phase: "start" | "end" }[] = []
     await mockOpenCodeServer(page, {
       protocol: "v1",
       sessions: fixture.sessions,
       provider: fixture.provider,
       directory: fixture.directory,
       project: fixture.project,
-      pageMessages,
+      pageMessages: (sessionID, limit, before) => {
+        const result = pageMessages(sessionID, limit, before)
+        historyPages.push({ sessionID, before, cursor: result.cursor })
+        return result
+      },
+      onMessages: (input) => messageReads.push(input),
     })
     await configureSmokePage(page, fixture.directory)
 
@@ -341,7 +348,12 @@ test.describe("smoke: session timeline", () => {
     await navigateToSession(page, fixture.directory, fixture.targetID, fixture.expected.targetTitle)
     const expectedPartIDs = fixture.expected.targetPartIDs
     const expectedMessageIDs = fixture.expected.targetMessageIDs
+    await loadTimelineHistory(page, historyPages, messageReads)
     await expectSessionTimelineReady(page, expectedPartIDs, expectedMessageIDs, errors)
+    await timelineScroller(page).evaluate((element) => {
+      element.scrollTop = element.scrollHeight
+    })
+    await waitForTimelineStable(page)
     await expectCanScrollToStart(page, expectedPartIDs, expectedMessageIDs, errors)
 
     const shell = page.locator(`[data-timeline-part-id="${fixture.expected.expandedShellPartID}"]`)
@@ -554,6 +566,38 @@ async function expectCanScrollToStart(
   expectCompleteScroll(current, expectedPartIDs, expectedMessageIDs, seenParts, seenMessages, samples)
 }
 
+async function loadTimelineHistory(
+  page: Page,
+  historyPages: { sessionID: string; before?: string; cursor?: string }[],
+  messageReads: { sessionID: string; before?: string; phase: "start" | "end" }[],
+) {
+  await expect.poll(() => historyPages.some((item) => item.sessionID === fixture.targetID && !item.before)).toBe(true)
+  await waitForTimelineStable(page)
+  const initialHeight = await timelineScroller(page).evaluate((element) => element.scrollHeight)
+  await pointAtTimeline(page)
+
+  for (let attempt = 0; attempt < 120; attempt++) {
+    const complete = historyPages.find((item) => item.sessionID === fixture.targetID && item.before && !item.cursor)
+    if (
+      complete &&
+      messageReads.some(
+        (item) => item.sessionID === complete.sessionID && item.before === complete.before && item.phase === "end",
+      )
+    ) {
+      await expect
+        .poll(() => timelineScroller(page).evaluate((element) => element.scrollHeight))
+        .toBeGreaterThan(initialHeight)
+      return
+    }
+
+    const state = await timelineState(page)
+    await page.mouse.wheel(0, -Math.max(160, Math.round(state.clientHeight * 0.6)))
+    await page.waitForTimeout(20)
+  }
+
+  throw new Error("Timed out loading the complete timeline history")
+}
+
 async function timelineState(page: Page) {
   return page.evaluate(
     () =>
@@ -584,48 +628,9 @@ async function pointAtTimeline(page: Page) {
 }
 
 async function scrollTimelineUp(page: Page, before: SmokeState) {
-  return page.evaluate(
-    (prev) =>
-      new Promise<boolean>((resolve) => {
-        const scroller = [...document.querySelectorAll<HTMLElement>(".scroll-view__viewport")].find((el) =>
-          el.querySelector("[data-timeline-row], [data-session-title]"),
-        )
-        if (!scroller) {
-          resolve(false)
-          return
-        }
-
-        scroller.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: -1, deltaMode: 0 }))
-        scroller.scrollTop = Math.max(0, scroller.scrollTop - Math.max(80, Math.round(scroller.clientHeight * 0.45)))
-
-        const read = () => (window as SmokeWindow).__timelineSmokeState?.().signature ?? ""
-        let frames = 0
-        let stableFrames = 0
-        let last = ""
-        let changed = false
-        const check = () => {
-          const current = read()
-          if (current !== prev) changed = true
-          if (current === last) stableFrames++
-          else {
-            stableFrames = 0
-            last = current
-          }
-          if (changed && stableFrames >= 2) {
-            resolve(true)
-            return
-          }
-          frames++
-          if (frames >= 30) {
-            resolve(changed)
-            return
-          }
-          requestAnimationFrame(check)
-        }
-        requestAnimationFrame(check)
-      }),
-    before.signature,
-  )
+  await page.mouse.wheel(0, -Math.max(80, Math.round(before.clientHeight * 0.45)))
+  await page.waitForTimeout(20)
+  return (await timelineState(page)).signature !== before.signature
 }
 
 function expectOrderedIDs(expected: string[], actual: string[], label: string) {
@@ -698,7 +703,7 @@ async function expectSessionTimelineReady(
   expectedMessageIDs: string[],
   errors: string[],
 ) {
-  await expandSteps(page, { visibleOnly: true })
+  await expandSteps(page)
   await waitForTimelineStable(page)
   for (const text of forbiddenText) await expect(page.getByText(text)).toHaveCount(0)
   const currentState = await timelineState(page)
@@ -709,62 +714,45 @@ async function expectSessionTimelineReady(
   expectOrderedIDs(expectedMessageIDs, unique(currentState.visibleMessageIds), "visible message")
 }
 
-async function expandSteps(page: Page, options: { visibleOnly?: boolean } = {}) {
+async function expandSteps(page: Page) {
   const rows = page.locator('[data-timeline-row="AssistantSteps"]')
   while (true) {
-    let expanded = false
-    const keys = await rows.evaluateAll((elements) =>
-      elements.flatMap((element) => {
-        const key = element.closest<HTMLElement>("[data-timeline-key]")?.dataset.timelineKey
-        return key ? [key] : []
-      }),
+    const turns = await rows.evaluateAll((elements) =>
+      elements.reduce((count, row) => {
+        const trigger = row.querySelector<HTMLElement>(
+          '[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]',
+        )
+        if (!trigger || trigger.getAttribute("aria-expanded") !== "false") return count
+        trigger.click()
+        return count + 1
+      }, 0),
     )
-    for (const timelineKey of new Set(keys)) {
-      const timelineRow = page.locator(`[data-timeline-key="${timelineKey}"]`)
-      if (!(await timelineRow.count())) continue
-      const outer = timelineRow.locator('[data-slot="session-turn-steps"] [data-slot="collapsible-trigger"]').first()
-      if (
-        (await outer.count()) &&
-        (await outer.isVisible()) &&
-        (await outer.getAttribute("aria-expanded")) === "false"
-      ) {
-        if (options.visibleOnly && !(await inViewport(outer))) continue
-        await outer.click()
-        expanded = true
-        break
-      }
-
-      const activities = timelineRow.locator('[data-slot="session-turn-step-group"]')
-      const activityCount = await activities.count()
-      for (let activityIndex = 0; activityIndex < activityCount; activityIndex++) {
-        const group = activities.nth(activityIndex)
-        const activity = group.locator(':scope > [data-slot="collapsible-trigger"]')
-        if ((await activity.getAttribute("aria-expanded")) !== "false") continue
-        if (!(await activity.isVisible())) continue
-        if (options.visibleOnly && !(await inViewport(activity))) continue
-        await activity.click()
-        expanded = true
-        break
-      }
-      if (expanded) break
+    if (turns > 0) {
+      await waitForTimelineStable(page)
+      continue
     }
-    if (!expanded) return
-  }
-}
-
-async function inViewport(locator: Locator) {
-  return locator.evaluate((element) => {
-    const scroller = element.closest<HTMLElement>(".scroll-view__viewport")
-    if (!scroller) return false
-    const bounds = element.getBoundingClientRect()
-    const viewport = scroller.getBoundingClientRect()
-    return (
-      bounds.bottom > viewport.top &&
-      bounds.top < viewport.bottom &&
-      bounds.right > viewport.left &&
-      bounds.left < viewport.right
+    const activities = await rows.evaluateAll((elements) =>
+      elements.reduce(
+        (count, row) =>
+          count +
+          [...row.querySelectorAll<HTMLElement>('[data-slot="session-turn-step-group"]')].reduce(
+            (groupCount, group) => {
+              const trigger = group.querySelector<HTMLElement>(':scope > [data-slot="collapsible-trigger"]')
+              if (!trigger || trigger.getAttribute("aria-expanded") !== "false") return groupCount
+              trigger.click()
+              return groupCount + 1
+            },
+            0,
+          ),
+        0,
+      ),
     )
-  })
+    if (activities > 0) {
+      await waitForTimelineStable(page)
+      continue
+    }
+    return
+  }
 }
 
 function expectCompleteScroll(

@@ -60,6 +60,10 @@ test("transitions shell and question through running error outcomes", async ({ p
     250,
   )
 
+  const activity = page.locator('[data-slot="session-turn-step-group"]').first()
+  const activityTrigger = activity.locator(':scope > [data-slot="collapsible-trigger"]')
+  await expect(activityTrigger).toHaveAttribute("aria-expanded", "false")
+  await activityTrigger.click()
   await expect(page.locator(`[data-timeline-part-id="${shellID}"] [data-kind="tool-error-card"]`)).toBeVisible()
   await expect(page.locator(`[data-timeline-part-id="${questionID}"]`)).toContainText(/dismissed/i)
 })
