@@ -896,9 +896,10 @@ bun run desktop:mac
 - assistant text Part 可选持久化 `channel: analysis | commentary | final`。没有该字段表示 `unknown`；旧消息和没有可靠协议标记的普通文本必须保持可见。
 - OpenAI Responses 适配器只从输出 message item 的结构化 `phase` 映射 channel（`analysis`、`commentary`、`final_answer`）；Chat Completions、Anthropic 等没有可靠文本语义标记的输出不猜测分类。provider 的未知 phase 同样降级为 `unknown`。
 - 有可见答复的回合只折叠非 text 活动以及显式 `analysis`/`commentary` 文本；`final` 和 `unknown` 文本始终独立、可见。按原始顺序将连续过程分组为 `AssistantSteps`，文本与过程交错时分成多个稳定步骤行，不再把过程之前的文本一并折叠。
+- 同一回合只显示一个「显示步骤」入口；它批量开合该回合所有过程段，每个过程段仍保留独立稳定行 ID 和原始时间位置，因此展开后可见文本与工具/推理仍按发生顺序交错显示。新追加的过程段继承回合级开合状态。
 - `AssistantSteps` 展开后，连续的普通工具/思考步骤会再聚合成活动明细组；上下文探索继续复用已有的上下文组，用户可以独立收起第二级明细。
 - 折叠状态按 session 缓存在时间线缓存中；回合从运行态切换到完成态时自动收起，并在虚拟列表中触发尺寸重测，避免留下空白或遮挡后续内容。
-- 第一级回合折叠和第二级活动组折叠分别保存；完成回合默认只显示第一级摘要，用户重新展开回合时第二级默认可见，手动收起的活动组保持原状态。
+- 第一级回合折叠和第二级活动组折叠分别保存；完成回合默认只显示第一级摘要，用户重新展开回合时第二级默认可见，手动收起的活动组保持原状态。MiMo-Code TUI 的全局工具明细开关启发了“统一控制入口”；OpenCtrlC 将控制范围收敛到单个回合，不复刻其 CLI 外观。
 - 中断回合也折叠明确过程，且中断分隔线保留在原有时间顺序中；没有可见答复的普通工具-only/独立 shell 回合仍展示唯一结果，避免默认收起后整轮只剩空白。工具子折叠状态和搜索高亮逻辑继续复用现有实现。
 - 折叠触发器复用现有 UI `Collapsible`、步骤多语言文案和回合时长格式，不新增硬编码界面文案。
 
@@ -915,7 +916,7 @@ bun run desktop:mac
 - `packages/app/src/utils/session-message.ts`、`pages/session/timeline/rows.ts`、`timeline-row.ts`：API 消息映射、按语义分组和稳定的步骤行身份。
 - `packages/app/src/pages/session/timeline/message-timeline.tsx`：折叠状态、触发器、自动收起和虚拟列表测量。
 - `packages/llm/test/provider/openai-responses.test.ts`、`packages/opencode/test/v2/session-message-updater.test.ts`、`packages/app/src/pages/session/timeline/rows-current.test.ts`：协议 channel、持久化和语义折叠回归测试。
-- `packages/app/e2e/regression/session-timeline-collapse-state.spec.ts`：两级折叠、默认状态和虚拟列表间距回归测试。
+- `packages/app/e2e/regression/session-timeline-collapse-state.spec.ts`：两级折叠、单回合单入口、默认状态和虚拟列表间距回归测试。
 
 ### 验证方式
 

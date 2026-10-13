@@ -129,6 +129,10 @@ describe("current session timeline rows", () => {
       true,
       false,
     ])
+    expect(result.rows.filter((row) => row._tag === "AssistantSteps").map((row) => row.showTrigger)).toEqual([
+      true,
+      false,
+    ])
   })
 
   test("keeps explicit process folding enabled for interrupted responses", () => {

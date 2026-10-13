@@ -30,6 +30,7 @@ export type TimelineRowMap = {
     userMessageID: string
     stepID: string
     showDuration: boolean
+    showTrigger: boolean
     groups: PartGroup[]
   }
   Thinking: { userMessageID: string; reasoningHeading?: string }
@@ -140,10 +141,11 @@ export namespace Timeline {
     const assistantGroups = groupParts(assistantPartRefs)
     const assistantItems: (
       | { type: "part"; group: PartGroup }
-      | { type: "steps"; groups: PartGroup[]; stepID: string; showDuration: boolean }
+      | { type: "steps"; groups: PartGroup[]; stepID: string; showDuration: boolean; showTrigger: boolean }
       | { type: "interrupted" }
     )[] = []
     let showDuration = true
+    let showTrigger = true
     const appendGroups = (groups: PartGroup[]) => {
       let processGroups: PartGroup[] = []
       const flushProcessGroups = () => {
@@ -153,9 +155,11 @@ export namespace Timeline {
           groups: processGroups,
           stepID: processGroups[0]!.key,
           showDuration,
+          showTrigger,
         })
         processGroups = []
         showDuration = false
+        showTrigger = false
       }
       groups.forEach((group) => {
         if (collapseProcess && isAssistantProcessGroup(group, getMessageParts)) {
@@ -218,6 +222,7 @@ export namespace Timeline {
             userMessageID: userMessage.id,
             stepID: item.stepID,
             showDuration: item.showDuration,
+            showTrigger: item.showTrigger,
             groups: item.groups,
           }),
         )

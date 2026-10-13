@@ -157,6 +157,8 @@ function assistantStepGroups(groups: PartGroup[]): AssistantStepGroup[] {
   }, [])
 }
 
+const assistantStepsTurnKey = (userMessageID: string) => `assistant-turn-steps:${userMessageID}`
+
 const taskDescription = (part: PartType, sessionID: string) => {
   if (part.type !== "tool" || part.tool !== "task") return
   const metadata = "metadata" in part.state ? part.state.metadata : undefined
@@ -763,9 +765,13 @@ export function MessageTimeline(props: {
 
       const row = searchIndex >= 0 ? timelineRows()[searchIndex] : undefined
       if (row?._tag === "AssistantSteps") {
-        const key = TimelineRow.key(row)
-        const open = stepsOpen[key] ?? (sessionStatus().type !== "idle" && activeMessageID() === row.userMessageID)
-        if (!open) setStepsOpen(key, true)
+        const turnKey = assistantStepsTurnKey(row.userMessageID)
+        if (!stepsOpen[turnKey]) {
+          setStepsOpen(turnKey, true)
+          timelineRows()
+            .filter((item) => item._tag === "AssistantSteps" && item.userMessageID === row.userMessageID)
+            .forEach((item) => setStepsOpen(TimelineRow.key(item), true))
+        }
       }
       // 工具命中默认收起：先展开目标工具，输出区才有可测的命中节点。
       if (searchMatch) {
@@ -1593,7 +1599,9 @@ export function MessageTimeline(props: {
   const renderAssistantSteps = (row: Accessor<TimelineRowMap["AssistantSteps"]>, onSizeChange?: () => void) => {
     const userMessageID = () => row().userMessageID
     const key = () => `assistant-steps:${userMessageID()}:${row().stepID}`
-    const open = createMemo(() => stepsOpen[key()] ?? workingTurn(userMessageID()))
+    const turnKey = () => assistantStepsTurnKey(userMessageID())
+    const open = createMemo(() => stepsOpen[key()] ?? stepsOpen[turnKey()] ?? workingTurn(userMessageID()))
+    const turnOpen = createMemo(() => stepsOpen[turnKey()] ?? workingTurn(userMessageID()))
     const duration = createMemo(() => (row().showDuration ? turnDurationLabel(userMessageID()) : undefined))
     const groups = createMemo(() => assistantStepGroups(row().groups))
     createEffect(() => {
@@ -1601,11 +1609,21 @@ export function MessageTimeline(props: {
       onSizeChange?.()
     })
     const onOpenChange = (value: boolean) => {
-      setStepsOpen(key(), value)
+      setStepsOpen(turnKey(), value)
+      timelineRows()
+        .filter((item) => item._tag === "AssistantSteps" && item.userMessageID === userMessageID())
+        .forEach((item) => setStepsOpen(TimelineRow.key(item), value))
     }
+    const content = () => (
+      <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
+        <For each={groups()}>{(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}</For>
+      </div>
+    )
+
+    if (!row().showTrigger) return <Show when={open()}>{content()}</Show>
 
     return (
-      <Collapsible open={open()} onOpenChange={onOpenChange} variant="ghost" data-slot="session-turn-steps">
+      <Collapsible open={turnOpen()} onOpenChange={onOpenChange} variant="ghost" data-slot="session-turn-steps">
         <Collapsible.Trigger>
           <div data-slot="session-turn-steps-trigger">
             <Show when={duration()}>
@@ -1613,17 +1631,13 @@ export function MessageTimeline(props: {
             </Show>
             <Show when={duration()}>·</Show>
             <span data-slot="session-turn-steps-label">
-              {open() ? language.t("ui.sessionTurn.steps.hide") : language.t("ui.sessionTurn.steps.show")}
+              {turnOpen() ? language.t("ui.sessionTurn.steps.hide") : language.t("ui.sessionTurn.steps.show")}
             </span>
             <Collapsible.Arrow />
           </div>
         </Collapsible.Trigger>
         <Show when={open()}>
-          <Collapsible.Content>
-            <div data-slot="session-turn-steps-content" class="flex flex-col gap-3">
-              <For each={groups()}>{(group) => renderAssistantStepGroup(group, userMessageID, onSizeChange)}</For>
-            </div>
-          </Collapsible.Content>
+          <Collapsible.Content>{content()}</Collapsible.Content>
         </Show>
       </Collapsible>
     )

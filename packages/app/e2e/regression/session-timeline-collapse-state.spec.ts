@@ -73,6 +73,18 @@ const editPart = {
   },
 }
 
+const secondEditPart = {
+  ...editPart,
+  id: "prt_0002_edit",
+  callID: "call_second_edit_regression",
+  state: {
+    ...editPart.state,
+    input: { filePath: "src/second-regression.ts" },
+    output: "Edited src/second-regression.ts",
+    title: "src/second-regression.ts",
+  },
+}
+
 const streamedTextPart = {
   id: textPartID,
   sessionID,
@@ -178,6 +190,43 @@ test.describe("regression: session timeline local row state", () => {
         }, textPartID),
       )
       .toBeLessThan(24)
+  })
+
+  test("uses one turn-level trigger for process groups split by visible text", async ({ page }) => {
+    const events: EventPayload[] = []
+    await mockServer(page, events, [
+      userMessage,
+      { ...assistantMessage, parts: [editPart, streamedTextPart, secondEditPart] },
+    ])
+    await configurePage(page)
+
+    await page.goto(`/${base64Encode(directory)}/session/${sessionID}`)
+    await expectSessionTitle(page, title)
+
+    const steps = page.locator('[data-slot="session-turn-steps"]')
+    const trigger = page.getByRole("button", { name: "Show steps" })
+    const processRows = page.locator('[data-timeline-row="AssistantSteps"]')
+    await expectAppVisible(trigger)
+    await expect(steps).toHaveCount(1)
+    await expect(processRows).toHaveCount(2)
+    await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
+    await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(streamedTextPart.text)
+    await expect
+      .poll(() => processRows.nth(1).evaluate((element) => element.getBoundingClientRect().height))
+      .toBe(0)
+
+    await trigger.click()
+
+    await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(2)
+    await expect(page.locator(`[data-timeline-part-id="${editPartID}"]`).first()).toBeVisible()
+    await expect(page.locator(`[data-timeline-part-id="${secondEditPart.id}"]`).first()).toBeVisible()
+    await expect(page.locator(`[data-timeline-part-id="${textPartID}"]`).first()).toContainText(streamedTextPart.text)
+
+    await page.getByRole("button", { name: "Hide steps" }).click()
+    await expect(page.locator('[data-slot="session-turn-steps-content"]')).toHaveCount(0)
+    await expect
+      .poll(() => processRows.nth(1).evaluate((element) => element.getBoundingClientRect().height))
+      .toBe(0)
   })
 
   test("collapses interrupted process while keeping assistant text visible", async ({ page }) => {

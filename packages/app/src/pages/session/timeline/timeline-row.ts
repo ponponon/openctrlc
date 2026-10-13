@@ -28,6 +28,7 @@ export namespace TimelineRow {
     userMessageID: string
     stepID: string
     showDuration: boolean
+    showTrigger: boolean
     groups: PartGroup[]
   }> {}
   export class Thinking extends Data.TaggedClass("Thinking")<{
