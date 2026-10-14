@@ -188,8 +188,9 @@ export function createAutoScroll(options: AutoScrollOptions) {
     }
 
     if (distanceFromBottom(el) < threshold()) {
-      pendingIntentAt = undefined
-      if (store.userScrolled && shouldResumeOnScroll()) setStore("userScrolled", false)
+      const resume = shouldResumeOnScroll()
+      if (resume) pendingIntentAt = undefined
+      if (store.userScrolled && resume) setStore("userScrolled", false)
       return
     }
 

@@ -553,10 +553,13 @@ export function MessageTimeline(props: {
     if (readingAnchorFrame !== undefined) return
     readingAnchorFrame = requestAnimationFrame(() => {
       readingAnchorFrame = undefined
-      if (props.shouldAnchorBottom() || readingCorrection) {
+      if (props.shouldAnchorBottom()) {
         readingAnchor = undefined
         return
       }
+      if (readingCorrection) return
+      const root = listRoot()
+      if (!root || root.scrollHeight - root.clientHeight - root.scrollTop <= 2) return
       const snapshot = snapshotPrependAnchor("normal")
       if (snapshot.anchor) readingAnchor = snapshot
     })
@@ -581,10 +584,10 @@ export function MessageTimeline(props: {
     // 只有在“确实被夹到最底部”时才还原，避免误伤正常的滚动。
     if (root.scrollHeight - root.clientHeight - root.scrollTop > 2) return false
 
-    readingAnchor = undefined
     cancelReadingCorrection()
     readingCorrection = restorePrependAnchor(snapshot, true, () => {
       readingCorrection = undefined
+      if (readingAnchor === snapshot) rememberReadingAnchor()
     })
     return true
   }
@@ -2285,10 +2288,11 @@ export function MessageTimeline(props: {
         onPointerMove={handleListPointerMove}
         onThumbPointerDown={(event) => {
           anchorRegistry.cancelCorrections()
+          cancelReadingCorrection()
           const root = listRoot()
           if (!root) return
           pointerGestureY = event.clientY
-          props.onMarkScrollGesture(root, null)
+          markScrollGesture(root, null)
           props.onPauseAutoScroll()
         }}
         onKeyDownCapture={handleListKeyDownCapture}
