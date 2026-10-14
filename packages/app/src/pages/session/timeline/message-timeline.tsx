@@ -362,6 +362,8 @@ export function MessageTimeline(props: {
   let readingAnchor: HistoryAnchorSnapshot | undefined
   let readingCorrection: (() => void) | undefined
   let readingAnchorFrame: number | undefined
+  let lastScrollGestureDirection: "up" | "down" | undefined
+  let readingAnchorIntentDirection: "up" | "down" | undefined
   // 最近一次向上手势的时间。触控板反向抖动可能被识别成向下手势，
   // 但只要它没有实际把视口带到底部，就不能抹掉仍有效的回看意图。
   let lastUpGestureAt = 0
@@ -542,6 +544,8 @@ export function MessageTimeline(props: {
   const clearReadingAnchor = () => {
     readingAnchor = undefined
     lastUpGestureAt = 0
+    lastScrollGestureDirection = undefined
+    readingAnchorIntentDirection = undefined
     cancelReadingCorrection()
   }
   /**
@@ -575,7 +579,9 @@ export function MessageTimeline(props: {
     // 正在跟随（含“跳到最新”）时落到底部是预期行为。
     if (props.shouldAnchorBottom()) return false
     if (readingCorrection || anchorRegistry.hasCorrecting()) return false
-    // 只要最近仍有向上回看意图就允许修复夹紧；真实滚到底时会先清掉该意图。
+    // 只恢复仍然有效的向上意图；实际向下位移优先于旧意图，无位移的方向抖动不覆盖它。
+    if (readingAnchorIntentDirection !== "up") return false
+    if (props.hasScrollGesture() && lastScrollGestureDirection === "down") return false
     if (!lastUpGestureAt) return false
     if (Date.now() - lastUpGestureAt > readingAnchorWindowMs) return false
 
@@ -871,6 +877,8 @@ export function MessageTimeline(props: {
       const index = searchIndex >= 0 ? searchIndex : (userMessageRowIndex().get(id) ?? messageRowIndex().get(id))
       if (index === undefined) return
 
+      // 搜索、hash 和其他消息定位都是显式跳转，旧回看锚点不能撤销新落点。
+      clearReadingAnchor()
       const row = searchIndex >= 0 ? timelineRows()[searchIndex] : undefined
       if (row?._tag === "AssistantSteps") {
         const turnKey = assistantStepsTurnKey(row.userMessageID)
@@ -1025,7 +1033,13 @@ export function MessageTimeline(props: {
    * 直接转发给会话层的 markScrollGesture，避免两处判定不一致。
    */
   const markScrollGesture = (target?: EventTarget | null, direction?: "up" | "down" | null) => {
-    if (direction === "up") lastUpGestureAt = Date.now()
+    if (direction === "up") {
+      lastUpGestureAt = Date.now()
+      lastScrollGestureDirection = "up"
+      readingAnchorIntentDirection = "up"
+    }
+    if (direction === "down") lastScrollGestureDirection = "down"
+    if (direction === null) lastScrollGestureDirection = undefined
     props.onMarkScrollGesture(target, direction)
   }
 
@@ -1139,6 +1153,9 @@ export function MessageTimeline(props: {
     const previousScrollTop = lastScrollTop
     lastScrollTop = root.scrollTop
     const distanceFromBottom = root.scrollHeight - root.clientHeight - root.scrollTop
+    const movedDownDuringGesture =
+      previousScrollTop !== undefined && root.scrollTop > previousScrollTop + 1 && props.hasScrollGesture()
+    if (movedDownDuringGesture && lastScrollGestureDirection === "down") readingAnchorIntentDirection = "down"
     // 只有用户手势确实把 scrollTop 向下带到物理底部，才代表用户回到底部。
     // 这样不会把触控板上没有产生实际位移的反向抖动误当成“放弃回看”。
     if (
