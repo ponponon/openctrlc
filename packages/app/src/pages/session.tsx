@@ -1113,6 +1113,21 @@ export default function Page() {
 
   const scrollGestureWindowMs = 250
   let scrollIntentDirection: "up" | "down" | undefined
+  // 用户向上滚动的“最近一次意图”。吸底门禁不能只信 userScrolled / 持久化 follow：
+  // 虚拟列表测量塌缩时 canScroll 会瞬时为 false，暂停与持久化都可能写不进去，
+  // 而虚拟列表内部（anchorTo/followOnAppend/resizeItem）和输入框 dock 的
+  // ResizeObserver 都会各自吸底。这里用一个统一的时间戳兜住这段窗口。
+  let timelineUpIntentAt = 0
+  const timelineUpIntentWindowMs = 5000
+
+  const markTimelineUpIntent = () => {
+    timelineUpIntentAt = Date.now()
+    autoScroll.markUserIntent()
+  }
+  const hasTimelineUpIntent = () => Date.now() - timelineUpIntentAt < timelineUpIntentWindowMs
+  const clearTimelineUpIntent = () => {
+    timelineUpIntentAt = 0
+  }
 
   const markScrollGesture = (target?: EventTarget | null, direction?: "up" | "down" | null) => {
     const root = scroller
@@ -1123,6 +1138,7 @@ export default function Page() {
     if (nested && nested !== root) return
 
     if (direction !== undefined) scrollIntentDirection = direction ?? undefined
+    if (direction === "up") markTimelineUpIntent()
     setUi("scrollGesture", Date.now())
   }
 
@@ -1740,6 +1756,9 @@ export default function Page() {
     bottomThreshold: 2,
     isUserInteracting: hasScrollGesture,
     shouldResumeOnScroll: () => hasScrollGesture() && scrollIntentDirection === "down",
+    // 吸底必须统一走会话级判定（持久化 follow + 用户向上意图），
+    // 否则塌缩窗口里 userScrolled 尚未置位时 ResizeObserver 会把视口拉回底部。
+    shouldFollow: () => followBottom(),
   })
   // The session's persisted `follow` flag is the source of truth for "stay pinned to
   // the newest message". `autoScroll.userScrolled` mirrors it, but it is only synced
@@ -1747,7 +1766,30 @@ export default function Page() {
   // for a frame after a tab switch. Consulting the stored flag keeps the answer stable
   // from the very first evaluation during a mount, which is what prevents the restore
   // from being overwritten by an immediate jump to the bottom.
-  const followBottom = () => !autoScroll.userScrolled() && view().scroll("timeline")?.follow !== false
+  // 函数声明而非 const 箭头：autoScroll 的 shouldFollow 会在构造时引用它。
+  function followBottom() {
+    return (
+      !autoScroll.userScrolled() &&
+      !autoScroll.hasPendingIntent() &&
+      !hasTimelineUpIntent() &&
+      view().scroll("timeline")?.follow !== false
+    )
+  }
+
+  // 开发期可观测性：滚动状态机平时不可见，出问题时用
+  // `__timelineScroll()` 直接读出各门禁的取值。
+  if (import.meta.env?.DEV) {
+    ;(globalThis as Record<string, unknown>).__timelineScroll = () => ({
+      userScrolled: autoScroll.userScrolled(),
+      pendingIntent: autoScroll.hasPendingIntent(),
+      upIntent: hasTimelineUpIntent(),
+      followFlag: view().scroll("timeline")?.follow,
+      followBottom: followBottom(),
+      scrollTop: scroller?.scrollTop,
+      scrollHeight: scroller?.scrollHeight,
+      clientHeight: scroller?.clientHeight,
+    })
+  }
   const saveTimelineScroll = (el = scroller, follow = !autoScroll.userScrolled()) => {
     if (!el || scrollerOwner !== params.id) return
     view().setScroll("timeline", { x: el.scrollLeft, y: el.scrollTop, follow })
@@ -1802,6 +1844,7 @@ export default function Page() {
   const resumeScroll = () => {
     setStore("messageId", undefined)
     scrollIntentDirection = undefined
+    clearTimelineUpIntent()
     autoScroll.resume()
     scrollToEnd()
     saveTimelineScroll(scroller, true)
@@ -1817,6 +1860,7 @@ export default function Page() {
       autoScroll.userScrolled,
       (scrolled) => {
         if (scrolled) return
+        clearTimelineUpIntent()
         setStore("messageId", undefined)
         clearMessageHash()
       },
@@ -1942,7 +1986,9 @@ export default function Page() {
       fillFrame = undefined
 
       if (!params.id || !messagesReady()) return
-      if (autoScroll.userScrolled() || historyLoading()) return
+      // 只在“确实跟随底部”时补历史页；用户已回看时补页会持续触发行高重测量，
+      // 正是把视口反复吸回底部的 churn 来源。
+      if (!followBottom() || historyLoading()) return
 
       const el = scroller
       if (!el) return
@@ -2288,7 +2334,9 @@ export default function Page() {
       if (next === dockHeight) return
 
       const el = scroller
-      const stick = !!el && !hasScrollGesture() && !autoScroll.userScrolled()
+      // 输入框/待办区高度变化是独立吸底入口：必须走同一份跟随意图，
+      // 只看瞬时 userScrolled 会在塌缩窗口里把正在回看的视口拉回底部。
+      const stick = !!el && !hasScrollGesture() && followBottom()
 
       dockHeight = next
 
@@ -2465,6 +2513,7 @@ export default function Page() {
                     onPauseAutoScroll={pauseTimelineFollow}
                     onMarkScrollGesture={markScrollGesture}
                     hasScrollGesture={hasScrollGesture}
+                    onMarkUserScrollUp={markTimelineUpIntent}
                     onUserScroll={markUserScroll}
                     onHistoryScroll={onHistoryScroll}
                     onAutoScrollInteraction={autoScroll.handleInteraction}

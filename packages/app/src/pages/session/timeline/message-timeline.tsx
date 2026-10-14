@@ -113,6 +113,7 @@ import {
   markPointerScrollGesture,
   startHistoryAnchorCorrection,
   type HistoryAnchorKind,
+  type HistoryAnchorSnapshot,
 } from "./history-anchor"
 
 const emptyMessages: MessageType[] = []
@@ -332,11 +333,12 @@ export function MessageTimeline(props: {
   onMarkScrollGesture: (target?: EventTarget | null, direction?: "up" | "down" | null) => void
   hasScrollGesture: () => boolean
   onUserScroll: () => void
+  onMarkUserScrollUp: () => void
   onHistoryScroll: () => void
   onAutoScrollInteraction: (event: MouseEvent) => void
   autoScrollPaused: () => boolean
   hasExplicitAnchor: () => boolean
-  onNavigateMessage: (message: UserMessage) => void
+  onNavigateMessage: (message: UserMessage, behavior?: ScrollBehavior) => void
   shouldAnchorBottom: () => boolean
   centered: boolean
   setContentRef: (el: HTMLDivElement) => void
@@ -352,6 +354,18 @@ export function MessageTimeline(props: {
 }) {
   let touchGesture: number | undefined
   let pointerGestureY: number | undefined
+  let lastScrollTop: number | undefined
+  // 回看位置锚点：视口最上方那一行 + 它在视口内的偏移。
+  // 视口上方内容忽然变矮（删行、行高重测量收缩）会让 scrollHeight 骤降，
+  // 浏览器把 scrollTop 夹到新的 max —— 视口正好落到最底部，表现为“上滑一点就弹回底部”。
+  // 用户向上只滚一点时 distanceFromBottom 很小，最容易被夹到，所以短距离回看最容易复现。
+  let readingAnchor: HistoryAnchorSnapshot | undefined
+  let readingCorrection: (() => void) | undefined
+  let readingAnchorFrame: number | undefined
+  // 最近一次“被计数”的滚动手势方向/时间，用来区分“用户自己滚到底”和“被夹到底”。
+  let lastUpGestureAt = 0
+  // 与会话层向上意图窗口保持一致：这段时间内发生的手势才算“用户仍在回看”。
+  const readingAnchorWindowMs = 5000
 
   const navigate = useNavigate()
   const global = useGlobal()
@@ -516,6 +530,58 @@ export function MessageTimeline(props: {
       },
     })
   }
+  const cancelReadingCorrection = () => {
+    readingCorrection?.()
+    readingCorrection = undefined
+    if (readingAnchorFrame !== undefined) {
+      cancelAnimationFrame(readingAnchorFrame)
+      readingAnchorFrame = undefined
+    }
+  }
+  /**
+   * 记住当前“视口最上方那一行 + 视口内偏移”，作为回看位置的锚点。
+   * 只在回看（非跟随）时记录：跟随时吸底是正确行为，不需要还原。
+   * 用 rAF 节流，避免在每个 scroll 事件里做一次全量布局读取。
+   */
+  const rememberReadingAnchor = () => {
+    if (readingAnchorFrame !== undefined) return
+    readingAnchorFrame = requestAnimationFrame(() => {
+      readingAnchorFrame = undefined
+      if (props.shouldAnchorBottom() || readingCorrection) {
+        readingAnchor = undefined
+        return
+      }
+      const snapshot = snapshotPrependAnchor("normal")
+      if (snapshot.anchor) readingAnchor = snapshot
+    })
+  }
+  /**
+   * 无用户手势地停在了最底部，说明回看位置被 scrollHeight 收缩夹掉了
+   * （见 readingAnchor 的注释），把锚点行还原回原来的视口偏移。
+   * 返回 true 表示已触发还原，本次 scroll 事件不应再走后续的跟随判定。
+   */
+  const restoreClampedReadingAnchor = () => {
+    const snapshot = readingAnchor
+    if (!snapshot?.anchor) return false
+    // 正在跟随（含“跳到最新”）时落到底部是预期行为。
+    if (props.shouldAnchorBottom()) return false
+    if (readingCorrection || anchorRegistry.hasCorrecting()) return false
+    // 用户自己向下滚到底：手势方向或时间窗口对不上就不介入。
+    if (lastUpGestureAt === 0) return false
+    if (Date.now() - lastUpGestureAt > readingAnchorWindowMs) return false
+
+    const root = listRoot()
+    if (!root) return false
+    // 只有在“确实被夹到最底部”时才还原，避免误伤正常的滚动。
+    if (root.scrollHeight - root.clientHeight - root.scrollTop > 2) return false
+
+    readingAnchor = undefined
+    cancelReadingCorrection()
+    readingCorrection = restorePrependAnchor(snapshot, true, () => {
+      readingCorrection = undefined
+    })
+    return true
+  }
   const anchorRegistry = createHistoryAnchorRegistry({
     snapshot: snapshotPrependAnchor,
     restore: restorePrependAnchor,
@@ -537,6 +603,31 @@ export function MessageTimeline(props: {
   let resizePinnedIndexes: number[] = []
   let resizePinFrame: number | undefined
   let virtualContent: HTMLDivElement | undefined
+  // 所有虚拟列表的滚动写入都汇流到 scrollToFn。测量补偿（行高从估算变实测）
+  // 也会写 scrollTop，属于正常行为；真正要抓的是“非跟随状态下被要求吸到底部”。
+  // 因此只追踪显式的 scrollToEnd 意图，命中时打印调用栈，回归现场即可自证。
+  let virtualScrollIntent: string | undefined
+  const traceScrollEndWhilePaused = (offset: number) => {
+    if (!import.meta.env?.DEV) return
+    if (virtualScrollIntent !== "scrollToEnd") return
+    const root = listRoot()
+    if (!root) return
+    if (props.shouldAnchorBottom()) return
+    if (offset - root.scrollTop <= 200) return
+
+    const store = globalThis as { __timelineScrollWrites?: unknown[] }
+    const entry = {
+      at: new Date().toISOString(),
+      previous: Math.round(root.scrollTop),
+      next: Math.round(offset),
+      distanceFromBottom: Math.round(root.scrollHeight - root.clientHeight - root.scrollTop),
+      stack: String(new Error().stack).split("\n").slice(2, 9).join("\n"),
+    }
+    store.__timelineScrollWrites ??= []
+    store.__timelineScrollWrites.push(entry)
+    if (store.__timelineScrollWrites.length > 50) store.__timelineScrollWrites.shift()
+    console.error("[timeline] 非跟随状态下被执行吸底写入", entry)
+  }
   // measurementsCache 不是响应式 store，用 onChange tick 拉起“新输出”重算。
   const [measureTick, setMeasureTick] = createSignal(0)
   const virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
@@ -556,6 +647,7 @@ export function MessageTimeline(props: {
     scrollToFn: (offset, options, instance) => {
       // Expose the computed range before core writes an anchor correction so the browser does not clamp it to the old height.
       if (virtualContent) virtualContent.style.height = `${instance.getTotalSize()}px`
+      traceScrollEndWhilePaused(offset)
       elementScroll(offset, options, instance)
     },
     get getItemKey() {
@@ -841,7 +933,18 @@ export function MessageTimeline(props: {
       }
       requestAnimationFrame(() => requestAnimationFrame(centerActiveHit))
     })
-    props.setScrollToEnd?.(() => virtualizer.scrollToEnd())
+    props.setScrollToEnd?.(() => {
+      // 显式“跳到最新”：回看锚点作废，否则随后的还原会把它重新拽回去。
+      readingAnchor = undefined
+      lastUpGestureAt = 0
+      cancelReadingCorrection()
+      virtualScrollIntent = "scrollToEnd"
+      try {
+        virtualizer.scrollToEnd()
+      } finally {
+        virtualScrollIntent = undefined
+      }
+    })
     props.setHistoryAnchor?.({ capture: (kind) => anchorRegistry.capture(kind) })
   })
 
@@ -878,6 +981,8 @@ export function MessageTimeline(props: {
 
   onCleanup(() => {
     anchorRegistry.cleanup()
+    cancelReadingCorrection()
+    readingAnchor = undefined
     timelineCache.delete(ownerSessionKey)
     timelineCache.set(ownerSessionKey, {
       measurements: virtualizer.takeSnapshot(),
@@ -908,6 +1013,15 @@ export function MessageTimeline(props: {
   })
   let more: HTMLButtonElement | undefined
 
+  /**
+   * 统一的手势登记入口：只有真的被判定为用户手势时才更新方向时间戳。
+   * 直接转发给会话层的 markScrollGesture，避免两处判定不一致。
+   */
+  const markScrollGesture = (target?: EventTarget | null, direction?: "up" | "down" | null) => {
+    if (direction === "up") lastUpGestureAt = Date.now()
+    props.onMarkScrollGesture(target, direction)
+  }
+
   const bindListRoot = (root: HTMLDivElement) => {
     if (root === listRoot()) return
     setListRoot(root)
@@ -916,6 +1030,7 @@ export function MessageTimeline(props: {
 
   const handleListWheel = (event: WheelEvent & { currentTarget: HTMLDivElement }) => {
     anchorRegistry.cancelCorrections()
+    cancelReadingCorrection()
     const root = event.currentTarget
     const delta = normalizeWheelDelta({
       deltaY: event.deltaY,
@@ -927,7 +1042,7 @@ export function MessageTimeline(props: {
       root,
       target: event.target,
       delta,
-      onMarkScrollGesture: props.onMarkScrollGesture,
+      onMarkScrollGesture: markScrollGesture,
       onPauseAutoScroll: props.onPauseAutoScroll,
       shouldResumeAutoScroll: props.autoScrollPaused,
       onResumeAutoScroll: props.onResumeScroll,
@@ -936,11 +1051,13 @@ export function MessageTimeline(props: {
 
   const handleListTouchStart = (event: TouchEvent) => {
     anchorRegistry.cancelCorrections()
+    cancelReadingCorrection()
     touchGesture = event.touches[0]?.clientY
   }
 
   const handleListTouchMove = (event: TouchEvent & { currentTarget: HTMLDivElement }) => {
     anchorRegistry.cancelCorrections()
+    cancelReadingCorrection()
     const next = event.touches[0]?.clientY
     const prev = touchGesture
     touchGesture = next
@@ -953,7 +1070,7 @@ export function MessageTimeline(props: {
       root: event.currentTarget,
       target: event.target,
       delta,
-      onMarkScrollGesture: props.onMarkScrollGesture,
+      onMarkScrollGesture: markScrollGesture,
       onPauseAutoScroll: props.onPauseAutoScroll,
       shouldResumeAutoScroll: props.autoScrollPaused,
       onResumeAutoScroll: props.onResumeScroll,
@@ -968,7 +1085,7 @@ export function MessageTimeline(props: {
     pointerGestureY = event.clientY
     markPointerScrollGesture({
       target: event.target,
-      onMark: (target) => props.onMarkScrollGesture(target, null),
+      onMark: (target) => markScrollGesture(target, null),
     })
   }
 
@@ -978,7 +1095,8 @@ export function MessageTimeline(props: {
       pointerGestureY = event.clientY
       if (delta) {
         const direction = delta > 0 ? "down" : "up"
-        props.onMarkScrollGesture(event.target, direction)
+        cancelReadingCorrection()
+        markScrollGesture(event.target, direction)
         const root = listRoot()
         if (
           direction === "down" &&
@@ -990,7 +1108,7 @@ export function MessageTimeline(props: {
         }
       }
     }
-    markPointerScrollGesture({ target: event.target, buttons: event.buttons, onMark: props.onMarkScrollGesture })
+    markPointerScrollGesture({ target: event.target, buttons: event.buttons, onMark: markScrollGesture })
   }
 
   const handleListKeyDownCapture = (event: KeyboardEvent) => {
@@ -1000,8 +1118,9 @@ export function MessageTimeline(props: {
     const root = listRoot()
     if (!root || scrollKeyOwner(root, event.target, key) !== root) return
     anchorRegistry.cancelCorrections()
+    cancelReadingCorrection()
     const direction = key === "up" || key === "page-up" || key === "home" ? "up" : "down"
-    props.onMarkScrollGesture(root, direction)
+    markScrollGesture(root, direction)
     if (root.scrollTop > 0 && direction === "up") props.onPauseAutoScroll()
     if (direction === "down" && props.autoScrollPaused() && root.scrollHeight - root.clientHeight - root.scrollTop <= 2)
       props.onResumeScroll()
@@ -1010,19 +1129,37 @@ export function MessageTimeline(props: {
   const handleListScroll = (event: Event & { currentTarget: HTMLDivElement }) => {
     if (anchorRegistry.hasPending()) anchorRegistry.updatePending()
     const root = event.currentTarget
+    const previousScrollTop = lastScrollTop
+    lastScrollTop = root.scrollTop
+    // 视口在“没有向下手势”的情况下被夹到最底部，说明回看位置被 scrollHeight 收缩吃掉了。
+    // 先还原再走后续逻辑，否则“已到底部”会让跟随判定误以为用户想回到最新。
+    if (restoreClampedReadingAnchor()) return
     props.onScheduleScrollState(root)
     props.onHistoryScroll()
     // 始终同步“是否在底部”，滚轮以外的滚动条、触控板惯性、键盘和虚拟列表校正也要能粘性暂停跟随。
     props.onAutoScrollHandleScroll()
+    // 未暂停时出现的向上位移（滚动条拖动、惯性滚动等不走滚轮手势路径）同样是回看意图。
+    // 注意这里是“已经离开底部”才成立：内容收缩把 scrollTop 夹到底部时 scrollTop 同样会变小，
+    // 但那不是用户意图，所以用距底距离把它排除掉。
+    if (
+      previousScrollTop !== undefined &&
+      root.scrollTop < previousScrollTop - 1 &&
+      root.scrollHeight - root.clientHeight - root.scrollTop > 24 &&
+      !anchorRegistry.hasCorrecting() &&
+      !readingCorrection
+    ) {
+      props.onMarkUserScrollUp()
+    }
     if (props.hasScrollGesture()) {
       props.onUserScroll()
-      props.onMarkScrollGesture(root)
+      markScrollGesture(root)
     }
     view.setScroll("timeline", {
       x: root.scrollLeft,
       y: root.scrollTop,
       follow: !props.autoScrollPaused(),
     })
+    rememberReadingAnchor()
   }
 
   onCleanup(() => {
@@ -2044,7 +2181,9 @@ export function MessageTimeline(props: {
         viewport={listRoot}
         onNavigate={(id) => {
           const message = props.userMessages.find((item) => item.id === id)
-          if (message) props.onNavigateMessage(message)
+          // 用瞬时落点而不是 smooth：smooth 动画会被虚拟列表测量校正的瞬时
+          // scrollTop 写入打断，长距离跳转看起来像“没生效”。
+          if (message) props.onNavigateMessage(message, "auto")
         }}
       />
       <div
