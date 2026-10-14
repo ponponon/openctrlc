@@ -64,10 +64,17 @@ export function SessionTimelineNavigator(props: {
     const entries = props.entries()
     if (entries.length === 0) return undefined
 
+    const top = scrollTop()
     const viewport = props.viewport()
     if (!viewport) return entries.at(-1)?.id
 
-    const target = scrollTop() + viewport.clientHeight * 0.25
+    // 吸底（或内容不足一屏）时直接取最新一条：按“行起点 ≤ scrollTop + 25% 视口高”
+    // 推断会把当前位置退回更早的轮次——最后一轮的起点通常仍低于该目标值，
+    // 因为它下面还有同一轮的回复内容和 paddingEnd。打开老会话时长轮次会一路退到很早。
+    const max = viewport.scrollHeight - viewport.clientHeight
+    if (max <= 1 || top >= max - 1) return entries.at(-1)?.id
+
+    const target = top + viewport.clientHeight * 0.25
     return entries.reduce((current, entry) => (entry.offset <= target ? entry.id : current), entries[0].id)
   })
 

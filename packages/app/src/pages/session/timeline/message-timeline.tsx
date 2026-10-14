@@ -362,8 +362,11 @@ export function MessageTimeline(props: {
   let readingAnchor: HistoryAnchorSnapshot | undefined
   let readingCorrection: (() => void) | undefined
   let readingAnchorFrame: number | undefined
-  // 最近一次“被计数”的滚动手势方向/时间，用来区分“用户自己滚到底”和“被夹到底”。
-  let lastUpGestureAt = 0
+  // 最近一次“被计数”的滚动手势方向与时间。只有最后一次手势是“向上”时，
+  // 停在底部才可能是被收缩夹下去的；用户自己滚回底部时方向是“向下”，不能还原。
+  // 只记“最近一次向上”会导致上滑后又主动回到底部时被误判为夹紧。
+  let lastGestureDirection: "up" | "down" | undefined
+  let lastGestureAt = 0
   // 与会话层向上意图窗口保持一致：这段时间内发生的手势才算“用户仍在回看”。
   const readingAnchorWindowMs = 5000
 
@@ -566,9 +569,9 @@ export function MessageTimeline(props: {
     // 正在跟随（含“跳到最新”）时落到底部是预期行为。
     if (props.shouldAnchorBottom()) return false
     if (readingCorrection || anchorRegistry.hasCorrecting()) return false
-    // 用户自己向下滚到底：手势方向或时间窗口对不上就不介入。
-    if (lastUpGestureAt === 0) return false
-    if (Date.now() - lastUpGestureAt > readingAnchorWindowMs) return false
+    // 用户自己向下滚到底：最后一次手势方向/时间对不上就不介入。
+    if (lastGestureDirection !== "up") return false
+    if (Date.now() - lastGestureAt > readingAnchorWindowMs) return false
 
     const root = listRoot()
     if (!root) return false
@@ -936,7 +939,8 @@ export function MessageTimeline(props: {
     props.setScrollToEnd?.(() => {
       // 显式“跳到最新”：回看锚点作废，否则随后的还原会把它重新拽回去。
       readingAnchor = undefined
-      lastUpGestureAt = 0
+      lastGestureDirection = undefined
+      lastGestureAt = 0
       cancelReadingCorrection()
       virtualScrollIntent = "scrollToEnd"
       try {
@@ -1018,7 +1022,10 @@ export function MessageTimeline(props: {
    * 直接转发给会话层的 markScrollGesture，避免两处判定不一致。
    */
   const markScrollGesture = (target?: EventTarget | null, direction?: "up" | "down" | null) => {
-    if (direction === "up") lastUpGestureAt = Date.now()
+    if (direction) {
+      lastGestureDirection = direction
+      lastGestureAt = Date.now()
+    }
     props.onMarkScrollGesture(target, direction)
   }
 
