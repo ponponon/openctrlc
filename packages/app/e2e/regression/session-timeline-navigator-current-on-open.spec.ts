@@ -19,19 +19,16 @@ test.describe("regression: session timeline navigator current on open", () => {
     const scroller = timelineScroller(page)
     await expect(scroller.locator("[data-timeline-row]").first()).toBeVisible()
     // 等待初始吸底稳定，确保断言的是“跟随底部打开”这一场景。
-    await expect
-      .poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 })
-      .toBeLessThanOrEqual(2)
+    await expect.poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 }).toBeLessThanOrEqual(2)
 
     const markers = page.locator(".session-timeline-navigator__marker")
     const count = await markers.count()
     expect(count, "导航器应渲染出多条轮次标记").toBeGreaterThan(1)
 
     const current = await currentMarkerIndex(page)
-    expect(
-      current,
-      `当前位置落在第 ${current} 条（共 ${count} 条），期望最新一条（第 ${count - 1} 条）`,
-    ).toBe(count - 1)
+    expect(current, `当前位置落在第 ${current} 条（共 ${count} 条），期望最新一条（第 ${count - 1} 条）`).toBe(
+      count - 1,
+    )
   })
 })
 

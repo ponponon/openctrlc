@@ -1515,8 +1515,10 @@ export const dict = {
   "dialog.releaseNotes.v1_1_8.timelineSteps":
     "助手工具活动现在会归入可折叠步骤，并提供本地化摘要，让较长的回合更容易浏览。",
   "dialog.releaseNotes.v1_1_8.desktopUpdater": "桌面版发布现在会发布并公开验证内置更新器所需的更新源。",
-  "dialog.releaseNotes.v1_1_9.navigatorCurrent": "打开长会话并停留在底部时，时间线导航器现在会将当前位置标记在最新一轮。",
-  "dialog.releaseNotes.v1_1_9.readingPosition": "浏览历史消息时，即使历史继续加载或行高发生变化，也会保留当前阅读位置。",
+  "dialog.releaseNotes.v1_1_9.navigatorCurrent":
+    "打开长会话并停留在底部时，时间线导航器现在会将当前位置标记在最新一轮。",
+  "dialog.releaseNotes.v1_1_9.readingPosition":
+    "浏览历史消息时，即使历史继续加载或行高发生变化，也会保留当前阅读位置。",
   "dialog.releaseNotes.v1_1_9.explicitNavigation": "修复跳转到消息或 hash 目标后，又被旧阅读位置拉回的问题。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",

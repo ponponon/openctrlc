@@ -99,7 +99,9 @@ test.describe("regression: session timeline shrink clamp", () => {
 
     const clamped = await snapshot(page)
     await page.mouse.wheel(0, -80)
-    await expect.poll(async () => (await snapshot(page)).distanceFromBottom).toBeGreaterThan(clamped.distanceFromBottom + 2)
+    await expect
+      .poll(async () => (await snapshot(page)).distanceFromBottom)
+      .toBeGreaterThan(clamped.distanceFromBottom + 2)
   })
 })
 
