@@ -48,13 +48,58 @@ test.describe("regression: session timeline shrink clamp", () => {
       messages.slice(0, 100).map((message) => event("message.removed", { sessionID, messageID: message.info.id })),
     )
 
-    await page.waitForTimeout(2000)
+    await expect
+      .poll(async () => {
+        const current = await snapshot(page)
+        return current.scrollHeight < before.scrollHeight - 100 && current.distanceFromBottom > 80
+      })
+      .toBeTruthy()
     const after = await snapshot(page)
 
     expect(
       after.distanceFromBottom,
       `viewport was clamped back to the bottom: before=${JSON.stringify(before)} after=${JSON.stringify(after)}`,
     ).toBeGreaterThan(80)
+  })
+
+  test("does not restore an old up anchor after actual downward movement", async ({ page }) => {
+    const messages = history(60)
+    const timeline = await setupTimeline(page, {
+      messages,
+      viewport: { width: 1400, height: 700 },
+      reducedMotion: true,
+    })
+
+    const scroller = timelineScroller(page)
+    await expect(scroller.locator("[data-timeline-row]").first()).toBeVisible()
+    await expect.poll(async () => (await snapshot(page)).distanceFromBottom, { timeout: 30_000 }).toBeLessThanOrEqual(2)
+
+    await scrollUpSmall(page, 240)
+    const beforeDown = await snapshot(page)
+    expect(beforeDown.distanceFromBottom).toBeGreaterThan(80)
+
+    const box = await scroller.boundingBox()
+    if (!box) throw new Error("Timeline scroller is not visible")
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.wheel(0, 80)
+    await expect.poll(async () => (await snapshot(page)).distanceFromBottom).toBeLessThan(beforeDown.distanceFromBottom)
+    const beforeShrink = await snapshot(page)
+    expect(beforeShrink.distanceFromBottom).toBeGreaterThan(2)
+
+    await timeline.transport.burst(
+      messages.slice(0, 100).map((message) => event("message.removed", { sessionID, messageID: message.info.id })),
+    )
+
+    await expect
+      .poll(async () => {
+        const current = await snapshot(page)
+        return current.scrollHeight < beforeShrink.scrollHeight - 100 && current.distanceFromBottom <= 2
+      })
+      .toBeTruthy()
+
+    const clamped = await snapshot(page)
+    await page.mouse.wheel(0, -80)
+    await expect.poll(async () => (await snapshot(page)).distanceFromBottom).toBeGreaterThan(clamped.distanceFromBottom + 2)
   })
 })
 

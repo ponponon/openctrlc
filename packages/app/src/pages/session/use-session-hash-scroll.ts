@@ -20,6 +20,7 @@ export const useSessionHashScroll = (input: {
   scroller: () => HTMLDivElement | undefined
   anchor: (id: string) => string
   revealMessage?: (id: string) => void
+  clearReadingAnchor: () => void
   scheduleScrollState: (el: HTMLDivElement) => void
   consumePendingMessage: (key: string) => string | undefined
 }) => {
@@ -135,6 +136,7 @@ export const useSessionHashScroll = (input: {
     const target = document.getElementById(hash)
     if (target) {
       input.autoScroll.pause()
+      input.clearReadingAnchor()
       scrollToElement(target, behavior)
       return
     }

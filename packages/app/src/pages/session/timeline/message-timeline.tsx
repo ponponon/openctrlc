@@ -345,6 +345,7 @@ export function MessageTimeline(props: {
   userMessages: UserMessage[]
   anchor: (id: string) => string
   setRevealMessage?: (fn: (id: string, searchMatch?: { messageID: string; start: number; end: number }) => void) => void
+  setClearReadingAnchor?: (fn: () => void) => void
   activeSearchMessageID?: string
   searchQuery?: string
   searchScope?: SessionSearchScope
@@ -870,6 +871,7 @@ export function MessageTimeline(props: {
   }
 
   createEffect(() => {
+    props.setClearReadingAnchor?.(clearReadingAnchor)
     props.setRevealMessage?.((id, searchMatch) => {
       const searchMessageID = searchMatch?.messageID
       const searchIndex = findSearchRowIndex(searchMatch)
@@ -1009,6 +1011,7 @@ export function MessageTimeline(props: {
     if (resizePinFrame !== undefined) cancelAnimationFrame(resizePinFrame)
     if (overscanFrame !== undefined) cancelAnimationFrame(overscanFrame)
     props.setRevealMessage?.(() => {})
+    props.setClearReadingAnchor?.(() => {})
     props.setScrollToEnd?.(() => {})
     props.setHistoryAnchor?.()
   })

@@ -1107,6 +1107,7 @@ export default function Page() {
   let scrollerOwner: string | undefined
   let content: HTMLDivElement | undefined
   let revealMessage = (_id: string, _searchMatch?: { messageID: string; start: number; end: number }) => {}
+  let clearTimelineReadingAnchor = () => {}
   let scrollToEnd = () => {}
   let scrollMark = 0
   let messageMark = 0
@@ -2370,6 +2371,7 @@ export default function Page() {
     scroller: () => scroller,
     anchor,
     revealMessage: (id) => revealMessage(id),
+    clearReadingAnchor: () => clearTimelineReadingAnchor(),
 
     scheduleScrollState,
     consumePendingMessage: layout.pendingMessage.consume,
@@ -2547,6 +2549,9 @@ export default function Page() {
                     anchor={anchor}
                     setRevealMessage={(fn) => {
                       revealMessage = fn
+                    }}
+                    setClearReadingAnchor={(fn) => {
+                      clearTimelineReadingAnchor = fn
                     }}
                     setScrollToEnd={(fn) => {
                       scrollToEnd = fn
