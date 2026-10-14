@@ -581,6 +581,12 @@ export const dict = {
     "Grouped assistant tool activity into collapsible steps with localized summaries, making long turns easier to scan.",
   "dialog.releaseNotes.v1_1_8.desktopUpdater":
     "Desktop releases now publish and publicly verify the update feeds used by the built-in updater.",
+  "dialog.releaseNotes.v1_1_9.navigatorCurrent":
+    "The session navigator now marks the newest turn when a long conversation opens at the bottom.",
+  "dialog.releaseNotes.v1_1_9.readingPosition":
+    "Kept your place while reviewing earlier messages as history loads and row heights change.",
+  "dialog.releaseNotes.v1_1_9.explicitNavigation":
+    "Explicit message and hash navigation no longer snaps back to a previous reading position.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

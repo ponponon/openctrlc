@@ -1896,6 +1896,8 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 
 2026-10-12，v1.1.8 候选再次被同一清单门禁拦住：新增 `e2e/smoke/session-context-expand.spec.ts` 使用了 server 与 tabs 两项持久化键，却没有登记到 `expectedPersistence`，使 App 单测 939 过、1 失败。新增 smoke/E2E 文件时，除了判断它是否零持久化，也要把实际初始化的键精确登记到映射表，并在推送前运行 App 单测；新增回归覆盖本身不代表清单已同步。
 
+2026-10-14，v1.1.9 候选又漏登 3 个时间线 E2E 文件，导致同一清单测试再次失败。每次新增 E2E 后，必须在提交前运行 `identity-residuals.test.ts`，不能依靠上一版本曾经通过来推断新清单完整。
+
 ## Windows 测试读取 Markdown 必须先统一换行符
 
 2026-10-11，Windows unit CI 的 release highlights 测试把 `v1.1.4` 的 bullet 解析成空列表。Windows checkout 使用 CRLF，而测试辅助函数只按 `\n` 拆 Markdown 行；JavaScript 正则 `^## (.+)$` 不会跨过行尾 `\r`，导致标题没有转换成 `<h2>`，后续运行时解析也就没有 highlights。测试需在读取文本时先将 `\r\n` 和单独的 `\r` 统一成 `\n`，再执行模拟 Markdown 到 HTML 的转换。凡测试依赖文本行结构，不能默认跨平台 checkout 的换行格式相同。

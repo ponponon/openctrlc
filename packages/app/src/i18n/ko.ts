@@ -1175,6 +1175,12 @@ export const dict = {
     "어시스턴트 도구 활동을 접을 수 있는 단계로 묶고 현지화된 요약을 표시해 긴 턴을 더 쉽게 살펴볼 수 있습니다.",
   "dialog.releaseNotes.v1_1_8.desktopUpdater":
     "데스크톱 릴리스에서 기본 업데이트 프로그램이 사용하는 업데이트 피드를 게시하고 공개 접근 가능 여부까지 확인합니다.",
+  "dialog.releaseNotes.v1_1_9.navigatorCurrent":
+    "긴 대화를 맨 아래에서 열면 타임라인 탐색기가 최신 턴을 현재 위치로 표시합니다.",
+  "dialog.releaseNotes.v1_1_9.readingPosition":
+    "이전 메시지를 읽는 동안 기록이 더 로드되거나 행 높이가 바뀌어도 현재 위치를 유지합니다.",
+  "dialog.releaseNotes.v1_1_9.explicitNavigation":
+    "메시지나 해시 대상으로 이동한 뒤 이전 읽기 위치로 되돌아가는 문제를 수정했습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

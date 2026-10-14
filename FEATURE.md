@@ -2308,6 +2308,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 - 时间线滚动事件始终同步位置，但自动恢复跟随需要明确的向下滚动意图；向上回看后，虚拟列表或布局校正即使暂时把视口放到底部，也不能清除暂停状态。滚轮、触屏、键盘和滚动条向下到最新时可恢复，点击“跳转到最新”仍强制恢复。
 - 回看时记录视口锚点；视口上方内容收缩把位置夹到底部后，最近的上滑意图可恢复原位置。实际向下位移会暂停旧锚点恢复，后续新上滑重新启用；搜索、消息 hash 和通用 DOM hash 定位都会先清理旧锚点。
+- 长会话吸底打开时，时间线导航器的当前位置标记落在最新轮次；用户显式跳转后，旧回看锚点不会撤销新位置。
 - 虚拟列表的 `anchorTo` / `followOnAppend` 跟随 `shouldAnchorBottom()`：只有仍在底部时才 end 吸底并在 append 时滚到底；离开底部后改为 start 锚定，仅对视口上方的行高变化做阅读位置补偿。
 - “跳转到最新”按钮在离开底部超过 32px 时显示（原先要超过一屏），方便暂停跟随时随时回底。
 - 距底吸底容差从 80px 收紧到 24px，减少“只上滑一点就被拽回”的边界体感。
@@ -2333,6 +2334,7 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 - 在 `packages/app` 执行 `bun typecheck`、`bun run typecheck:e2e`、`session-search`/`pending-output` 单测与 i18n parity 测试。
 - 在 `packages/app` 执行 `bun run test:e2e e2e/regression/session-timeline-follow-pause.spec.ts e2e/regression/session-search-tool-hit.spec.ts`。
 - 在 `packages/app` 执行 `bun test --conditions=browser --preload ./happydom.ts ./test-browser/use-session-hash-scroll.test.tsx` 与 `bun run test:e2e e2e/regression/session-timeline-read-position-shrink.spec.ts`，覆盖通用 hash 锚点清理和真实下滑后的收缩取舍。
+- 在 `packages/app` 执行 `bun run test:e2e e2e/regression/session-timeline-read-position.spec.ts e2e/regression/session-timeline-navigator-current-on-open.spec.ts`，覆盖历史加载期间的位置保持和长会话初始当前位置。
 - 手动验证：长回复流式输出时向上滚到历史区，新 Shell/文本到达后视口不动；按钮出现新输出计数；滚回底部或点“跳转到最新”后恢复跟随；`scope=all` 搜到工具 command/output 时自动展开并高亮当前词。
 
 ## 产品界面与公开文档仅支持四种语言

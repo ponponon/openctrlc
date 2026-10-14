@@ -163,6 +163,14 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "Fixed expanded session context rows appearing at the wrong position or overlapping other messages after scrolling.":
       "dialog.releaseNotes.v1_1_8.contextRows",
   },
+  "1.1.9": {
+    "The session navigator now marks the newest turn when a long conversation opens at the bottom.":
+      "dialog.releaseNotes.v1_1_9.navigatorCurrent",
+    "Kept your place while reviewing earlier messages as history loads and row heights change.":
+      "dialog.releaseNotes.v1_1_9.readingPosition",
+    "Explicit message and hash navigation no longer snaps back to a previous reading position.":
+      "dialog.releaseNotes.v1_1_9.explicitNavigation",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {

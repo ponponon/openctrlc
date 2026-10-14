@@ -1460,6 +1460,12 @@ export const dict = {
     "アシスタントのツール操作を折りたたみ可能なステップにまとめ、ローカライズされた概要を表示することで、長いターンを確認しやすくしました。",
   "dialog.releaseNotes.v1_1_8.desktopUpdater":
     "デスクトップ版のリリースで、内蔵アップデーターが利用する更新フィードを公開し、一般公開状態まで検証するようになりました。",
+  "dialog.releaseNotes.v1_1_9.navigatorCurrent":
+    "長い会話を最下部で開いたとき、タイムラインナビゲーターが最新のターンを現在位置として表示するようになりました。",
+  "dialog.releaseNotes.v1_1_9.readingPosition":
+    "過去のメッセージを確認している間に履歴が読み込まれたり行の高さが変わったりしても、表示位置を維持します。",
+  "dialog.releaseNotes.v1_1_9.explicitNavigation":
+    "メッセージや hash への明示的な移動後、以前の閲覧位置へ戻される問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
