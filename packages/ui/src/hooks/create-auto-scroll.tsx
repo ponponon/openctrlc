@@ -150,8 +150,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
   /** 会话层在确认用户向上滚动后调用：即使当下内容无法滚动也要记下意图。 */
   const markUserIntent = () => recordUserIntent(store.scrollRef)
 
-  const hasPendingIntent = () =>
-    pendingIntentAt !== undefined && Date.now() - pendingIntentAt <= pendingIntentWindowMs
+  const hasPendingIntent = () => pendingIntentAt !== undefined && Date.now() - pendingIntentAt <= pendingIntentWindowMs
 
   const stop = () => {
     const el = store.scrollRef
