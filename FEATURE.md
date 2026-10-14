@@ -3437,6 +3437,13 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 - 文案：`packages/app/src/i18n/{en,zh,ja,ko}.ts` 的 `error.chain.requestCancelled`。
 - 测试：`packages/app/src/utils/project-reload-error.test.ts`（取消不弹、真实失败仍弹）；`packages/app` test:unit 940/940，i18n parity 与 server-errors 通过，`bun typecheck` 通过。
 
+## 时间线导航相邻轮次标记独立命中
+
+长会话左侧时间线导航器继续按每轮用户消息的真实时间线位置绘制标记。相邻轮次可能间隔小于标记按钮的 24px 命中高度，导致后绘制的按钮覆盖前一个按钮。鼠标悬停预览与鼠标/触控点击现在根据指针纵坐标选择中心最近的轮次标记；重叠区域不再由 DOM 绘制顺序决定选中项。键盘激活仍使用当前聚焦按钮对应的轮次。
+
+- 代码：`packages/app/src/pages/session/timeline/session-timeline-navigator-view.tsx`。
+- 验证：`packages/app` 类型检查通过。生产时间线基准在 40 条历史轮次、32 个流式增量、事件批量 8、CPU 未限速配置下，修改前/后完成时间分别为 11.55s/11.54s，RAF 间隔 P95 均为 9.1ms，长任务均为 0。默认 30 倍限速、160 个增量的首轮采样约 100 秒仍未完成，已中断且不计入结果；重叠标记的实际鼠标点击仍需在真实桌面界面确认。
+
 ## 服务端日志按大小轮转与天数保留
 
 `~/.local/share/openctrlc/log/openctrlc.log` 原先用 `Logger.toFile(..., { flag: "a" })` 无限追加：45 天涨到 40MB、157 个 run 混在一个文件里。`fileLogger` 改用 `Logger.batched` + 同步追加，每次 flush 前检查大小：单文件 ≥10MB 轮转成 `openctrlc.log.1` / `.2`（最多保留 2 份），logger 创建时删除 7 天前的轮转文件；待轮转文件超过 15MB 属于旧版本遗留的超大日志，直接删除而不是永远顺位后挪。flush 前检查保证长驻进程单次运行也不会无界增长，桌面「查看日志 / 导出日志」入口不变，轮转文件仍会被一并收集。

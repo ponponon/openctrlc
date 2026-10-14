@@ -12,6 +12,7 @@ export function SessionTimelineNavigator(props: {
   const language = useLanguage()
   const [hoveredID, setHoveredID] = createSignal<string>()
   const [scrollTop, setScrollTop] = createSignal(0)
+  let navigatorElement: HTMLElement | undefined
   let hideTimer: ReturnType<typeof setTimeout> | undefined
 
   const clearHideTimer = () => {
@@ -23,6 +24,29 @@ export function SessionTimelineNavigator(props: {
   const showPreview = (id: string) => {
     clearHideTimer()
     setHoveredID(id)
+  }
+
+  const entryAtPointer = (clientY: number, fallback: SessionTimelineNavigatorEntry) => {
+    const element = navigatorElement
+    if (!element) return fallback
+
+    const entries = props.entries()
+    if (entries.length === 0) return fallback
+
+    const top = element.getBoundingClientRect().top
+    const height = element.clientHeight
+    return entries.reduce((closest, entry) => {
+      const closestY = top + closest.position * height
+      const entryY = top + entry.position * height
+      return Math.abs(clientY - entryY) < Math.abs(clientY - closestY) ? entry : closest
+    }, fallback)
+  }
+
+  const showPreviewAtPointer = (event: PointerEvent, fallback: SessionTimelineNavigatorEntry) => {
+    if (event.pointerType === "touch") return
+    const entry = entryAtPointer(event.clientY, fallback)
+    if (hoveredID() === entry.id && hideTimer === undefined) return
+    showPreview(entry.id)
   }
 
   const hidePreview = () => {
@@ -97,7 +121,13 @@ export function SessionTimelineNavigator(props: {
 
   return (
     <Show when={props.entries().length > 1}>
-      <nav class="session-timeline-navigator" aria-label={language.t("session.tab.session")}>
+      <nav
+        ref={(element) => {
+          navigatorElement = element
+        }}
+        class="session-timeline-navigator"
+        aria-label={language.t("session.tab.session")}
+      >
         <button
           type="button"
           class="session-timeline-navigator__edge-button session-timeline-navigator__edge-button--start"
@@ -126,10 +156,8 @@ export function SessionTimelineNavigator(props: {
               <div
                 class="session-timeline-navigator__entry"
                 style={{ top: `${entry.position * 100}%` }}
-                onPointerEnter={(event) => {
-                  if (event.pointerType === "touch") return
-                  showPreview(entry.id)
-                }}
+                onPointerEnter={(event) => showPreviewAtPointer(event, entry)}
+                onPointerMove={(event) => showPreviewAtPointer(event, entry)}
                 onPointerLeave={hidePreview}
               >
                 <button
@@ -142,11 +170,7 @@ export function SessionTimelineNavigator(props: {
                   aria-current={currentID() === entry.id ? "location" : undefined}
                   aria-describedby={hoveredID() === entry.id ? previewID : undefined}
                   aria-label={entry.prompt || language.t("session.messages.jumpToLatest")}
-                  onClick={() => {
-                    clearHideTimer()
-                    setHoveredID(undefined)
-                    props.onNavigate(entry.id)
-                  }}
+                  onClick={(event) => navigateToEntry(event.detail === 0 ? entry : entryAtPointer(event.clientY, entry))}
                 />
                 <Show when={hoveredID() === entry.id && (entry.prompt || entry.response)}>
                   <div
