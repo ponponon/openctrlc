@@ -44,6 +44,7 @@ export function SessionTimelineNavigator(props: {
 
   const showPreviewAtPointer = (event: PointerEvent, fallback: SessionTimelineNavigatorEntry) => {
     if (event.pointerType === "touch") return
+    if (event.target instanceof Element && event.target.closest(".session-timeline-navigator__preview")) return
     const entry = entryAtPointer(event.clientY, fallback)
     if (hoveredID() === entry.id && hideTimer === undefined) return
     showPreview(entry.id)
