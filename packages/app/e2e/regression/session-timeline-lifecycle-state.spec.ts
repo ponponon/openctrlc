@@ -154,7 +154,8 @@ test("separates a continued process group from preceding assistant text", async 
   const gap = async () => {
     const textBounds = await textRow.boundingBox()
     const triggerBounds = await continuedTrigger.boundingBox()
-    if (!textBounds || !triggerBounds) throw new Error("Expected the text row and continued activity to have layout bounds")
+    if (!textBounds || !triggerBounds)
+      throw new Error("Expected the text row and continued activity to have layout bounds")
     return triggerBounds.y - (textBounds.y + textBounds.height)
   }
   expect(await gap()).toBeGreaterThanOrEqual(11)

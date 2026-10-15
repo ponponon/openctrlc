@@ -171,7 +171,9 @@ export function SessionTimelineNavigator(props: {
                   aria-current={currentID() === entry.id ? "location" : undefined}
                   aria-describedby={hoveredID() === entry.id ? previewID : undefined}
                   aria-label={entry.prompt || language.t("session.messages.jumpToLatest")}
-                  onClick={(event) => navigateToEntry(event.detail === 0 ? entry : entryAtPointer(event.clientY, entry))}
+                  onClick={(event) =>
+                    navigateToEntry(event.detail === 0 ? entry : entryAtPointer(event.clientY, entry))
+                  }
                 />
                 <Show when={hoveredID() === entry.id && (entry.prompt || entry.response)}>
                   <div
