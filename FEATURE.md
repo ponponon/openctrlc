@@ -3451,3 +3451,10 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/core/src/observability/logging.ts`（`MAX_LOG_BYTES` 10MB、`KEEP_ROTATED_LOGS` 2、`MAX_LOG_AGE_DAYS` 7）。
 - 测试：`packages/core/test/effect/observability.test.ts` 新增 4 条（超大文件首轮转、遗留超大文件丢弃、过期轮转文件清理、运行中批量写入后轮转）；`packages/core` 1112/1112 通过，`bun typecheck` 通过。
+
+## 标题栏手机访问与更新入口留出间距
+
+新布局标题栏将手机访问和更新入口放进独立操作组，固定保留 8px 间距；右侧其他通过 `opencode-titlebar-right` 挂载的操作保持原有布局，避免修复这两个按钮时改变整组控件的间距。
+
+- 代码：`packages/app/src/components/titlebar.tsx`（`TitlebarV2Right`）。
+- 验证：`packages/app` 类型检查和 Vite 静态构建通过；按 `packages/app/AGENTS.md` 不重启应用/服务，运行中窗口的实时视觉状态未确认。

@@ -658,24 +658,26 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
       data-slot="titlebar-v2-actions"
       class="relative z-20 flex shrink-0 items-center justify-end gap-0 overflow-visible"
     >
-      <Show when={props.state.remoteAccess}>
-        {(remoteAccess) => (
-          <TooltipV2 placement="bottom" value={remoteAccess().label} class="shrink-0">
-            <IconButtonV2
-              type="button"
-              variant="ghost-muted"
-              size="large"
-              class="titlebar-mobile-access shrink-0"
-              icon={<IconV2 name="smartphone" />}
-              onClick={remoteAccess().open}
-              aria-label={remoteAccess().label}
-            />
-          </TooltipV2>
-        )}
-      </Show>
-      <Show when={props.state.update.visible}>
-        <TitlebarUpdateIconButton state={props.state.update} />
-      </Show>
+      <div class="flex shrink-0 items-center gap-2">
+        <Show when={props.state.remoteAccess}>
+          {(remoteAccess) => (
+            <TooltipV2 placement="bottom" value={remoteAccess().label} class="shrink-0">
+              <IconButtonV2
+                type="button"
+                variant="ghost-muted"
+                size="large"
+                class="titlebar-mobile-access shrink-0"
+                icon={<IconV2 name="smartphone" />}
+                onClick={remoteAccess().open}
+                aria-label={remoteAccess().label}
+              />
+            </TooltipV2>
+          )}
+        </Show>
+        <Show when={props.state.update.visible}>
+          <TitlebarUpdateIconButton state={props.state.update} />
+        </Show>
+      </div>
       <div id="opencode-titlebar-right" class="flex shrink-0 items-center justify-end gap-0" />
     </div>
   )
