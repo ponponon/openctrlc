@@ -1472,8 +1472,7 @@ export const dict = {
     "プレビュー上にポインターを移動すると、タイムラインプレビューが隣のターンへ切り替わる問題を修正しました。",
   "dialog.releaseNotes.v1_1_10.activitySpacing":
     "セッションタイムラインで、アシスタントのテキストと続くアクティビティ概要の間隔を適切に戻しました。",
-  "dialog.releaseNotes.v1_1_10.titlebarActions":
-    "タイトルバーのモバイルアクセスボタンと更新ボタンの間隔を広げました。",
+  "dialog.releaseNotes.v1_1_10.titlebarActions": "タイトルバーのモバイルアクセスボタンと更新ボタンの間隔を広げました。",
   "dialog.releaseNotes.v1_1_10.newSessionWordmark":
     "新規セッションの背景に表示される古いワードマークを置き換えました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",

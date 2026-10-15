@@ -180,8 +180,7 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
       "dialog.releaseNotes.v1_1_10.activitySpacing",
     "Added clear spacing between the mobile access and update buttons in the title bar.":
       "dialog.releaseNotes.v1_1_10.titlebarActions",
-    "Replaced the outdated wordmark in the new-session background.":
-      "dialog.releaseNotes.v1_1_10.newSessionWordmark",
+    "Replaced the outdated wordmark in the new-session background.": "dialog.releaseNotes.v1_1_10.newSessionWordmark",
   },
 }
 
