@@ -3458,3 +3458,10 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/app/src/components/titlebar.tsx`（`TitlebarV2Right`）。
 - 验证：`packages/app` 类型检查和 Vite 静态构建通过；按 `packages/app/AGENTS.md` 不重启应用/服务，运行中窗口的实时视觉状态未确认。
+
+## 新会话背景字标统一为 OpenCtrlC
+
+新会话页面的淡化背景字标改为 OpenCtrlC，并复用项目 Logo 使用的 IBM Plex Mono 字体栈；原有大小、渐隐遮罩和低对比度效果保留。
+
+- 代码：`packages/ui/src/v2/components/wordmark-v2.tsx`，由 `packages/app/src/pages/new-session/new-session-view.tsx` 使用。
+- 验证：`packages/app` 类型检查和 Vite 静态构建通过；按 `packages/app/AGENTS.md` 不重启应用/服务，运行中窗口的实时视觉状态未确认。
