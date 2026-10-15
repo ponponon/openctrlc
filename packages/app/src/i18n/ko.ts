@@ -1181,6 +1181,15 @@ export const dict = {
     "이전 메시지를 읽는 동안 기록이 더 로드되거나 행 높이가 바뀌어도 현재 위치를 유지합니다.",
   "dialog.releaseNotes.v1_1_9.explicitNavigation":
     "메시지나 해시 대상으로 이동한 뒤 이전 읽기 위치로 되돌아가는 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_10.timelineMarkers":
+    "타임라인 탐색기가 포인터 이동과 클릭 시 가장 가까운 표시를 선택해 간격이 좁은 턴도 쉽게 탐색할 수 있습니다.",
+  "dialog.releaseNotes.v1_1_10.timelinePreview":
+    "포인터를 미리보기 위로 옮길 때 타임라인 미리보기가 인접한 턴으로 바뀌는 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_10.activitySpacing":
+    "세션 타임라인에서 어시스턴트 텍스트와 이어지는 활동 요약 사이의 간격을 복원했습니다.",
+  "dialog.releaseNotes.v1_1_10.titlebarActions":
+    "제목 표시줄의 모바일 액세스 버튼과 업데이트 버튼 사이 간격을 넓혔습니다.",
+  "dialog.releaseNotes.v1_1_10.newSessionWordmark": "새 세션 배경에 표시되던 이전 워드마크를 교체했습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

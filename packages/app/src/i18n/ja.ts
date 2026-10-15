@@ -1466,6 +1466,16 @@ export const dict = {
     "過去のメッセージを確認している間に履歴が読み込まれたり行の高さが変わったりしても、表示位置を維持します。",
   "dialog.releaseNotes.v1_1_9.explicitNavigation":
     "メッセージや hash への明示的な移動後、以前の閲覧位置へ戻される問題を修正しました。",
+  "dialog.releaseNotes.v1_1_10.timelineMarkers":
+    "タイムラインナビゲーターがポインター移動やクリック時に最も近いマーカーを選ぶようになり、間隔の狭いターンも操作しやすくなりました。",
+  "dialog.releaseNotes.v1_1_10.timelinePreview":
+    "プレビュー上にポインターを移動すると、タイムラインプレビューが隣のターンへ切り替わる問題を修正しました。",
+  "dialog.releaseNotes.v1_1_10.activitySpacing":
+    "セッションタイムラインで、アシスタントのテキストと続くアクティビティ概要の間隔を適切に戻しました。",
+  "dialog.releaseNotes.v1_1_10.titlebarActions":
+    "タイトルバーのモバイルアクセスボタンと更新ボタンの間隔を広げました。",
+  "dialog.releaseNotes.v1_1_10.newSessionWordmark":
+    "新規セッションの背景に表示される古いワードマークを置き換えました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

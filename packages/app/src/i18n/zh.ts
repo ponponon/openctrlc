@@ -1520,6 +1520,12 @@ export const dict = {
   "dialog.releaseNotes.v1_1_9.readingPosition":
     "浏览历史消息时，即使历史继续加载或行高发生变化，也会保留当前阅读位置。",
   "dialog.releaseNotes.v1_1_9.explicitNavigation": "修复跳转到消息或 hash 目标后，又被旧阅读位置拉回的问题。",
+  "dialog.releaseNotes.v1_1_10.timelineMarkers":
+    "时间线导航器现在会根据鼠标移动和点击定位最近的标记，让间距很近的回合也更容易选择。",
+  "dialog.releaseNotes.v1_1_10.timelinePreview": "修复鼠标移到预览内容上时，时间线预览跳到相邻回合的问题。",
+  "dialog.releaseNotes.v1_1_10.activitySpacing": "恢复会话时间线中助手文本与后续活动摘要之间的间距。",
+  "dialog.releaseNotes.v1_1_10.titlebarActions": "拉开标题栏手机访问按钮与更新按钮之间的距离。",
+  "dialog.releaseNotes.v1_1_10.newSessionWordmark": "替换新会话背景中显示的旧字标。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",

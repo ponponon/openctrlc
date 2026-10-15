@@ -171,6 +171,18 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "Explicit message and hash navigation no longer snaps back to a previous reading position.":
       "dialog.releaseNotes.v1_1_9.explicitNavigation",
   },
+  "1.1.10": {
+    "The session timeline navigator now targets the nearest marker on pointer movement and clicks, making closely spaced turns easier to navigate.":
+      "dialog.releaseNotes.v1_1_10.timelineMarkers",
+    "Fixed the timeline preview switching to an adjacent turn when the pointer moved over the preview.":
+      "dialog.releaseNotes.v1_1_10.timelinePreview",
+    "Restored spacing between assistant text and continued activity summaries in the session timeline.":
+      "dialog.releaseNotes.v1_1_10.activitySpacing",
+    "Added clear spacing between the mobile access and update buttons in the title bar.":
+      "dialog.releaseNotes.v1_1_10.titlebarActions",
+    "Replaced the outdated wordmark in the new-session background.":
+      "dialog.releaseNotes.v1_1_10.newSessionWordmark",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {
