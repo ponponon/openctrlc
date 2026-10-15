@@ -125,6 +125,51 @@ test("defaults only the last active group open across process rows in one turn",
   await expect(page.locator(`[data-timeline-part-id="${lastActiveToolID}"]`)).toBeVisible()
 })
 
+test("separates a continued process group from preceding assistant text", async ({ page }) => {
+  const textPartID = "prt_activity_spacing_02_text"
+  await setupTimeline(page, {
+    messages: [
+      userMessage(),
+      assistantMessage(
+        [
+          shell("prt_activity_spacing_01_first", "completed"),
+          textPart(textPartID, "This explanation should not touch the next activity."),
+          shell("prt_activity_spacing_03_last", "completed"),
+        ],
+        { completed: false },
+      ),
+    ],
+  })
+  const processRows = page.locator('[data-timeline-row="AssistantSteps"]')
+  const textRow = page
+    .locator('[data-timeline-row="AssistantPart"]')
+    .filter({ has: page.locator(`[data-timeline-part-id="${textPartID}"]`) })
+  const continuedTrigger = processRows
+    .nth(1)
+    .locator('[data-slot="session-turn-step-group"] > [data-slot="collapsible-trigger"]')
+
+  await expect(processRows).toHaveCount(2)
+  await expect(textRow).toBeVisible()
+  await expect(continuedTrigger).toBeVisible()
+  const gap = async () => {
+    const textBounds = await textRow.boundingBox()
+    const triggerBounds = await continuedTrigger.boundingBox()
+    if (!textBounds || !triggerBounds) throw new Error("Expected the text row and continued activity to have layout bounds")
+    return triggerBounds.y - (textBounds.y + textBounds.height)
+  }
+  expect(await gap()).toBeGreaterThanOrEqual(11)
+  if (process.env.SESSION_TIMELINE_SPACING_SCREENSHOT)
+    await page.screenshot({ path: process.env.SESSION_TIMELINE_SPACING_SCREENSHOT })
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(continuedTrigger).toBeVisible()
+  expect(await gap()).toBeGreaterThanOrEqual(11)
+  await continuedTrigger.focus()
+  await expect(continuedTrigger).toBeFocused()
+  await continuedTrigger.press("Space")
+  await expect(continuedTrigger).toHaveAttribute("aria-expanded", "true")
+})
+
 test("shows and expands a running shell command without shimmering it", async ({ page }) => {
   const id = "prt_shell_running_command"
   const command = "sleep 10 && echo done"

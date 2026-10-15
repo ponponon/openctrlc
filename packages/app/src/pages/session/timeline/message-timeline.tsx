@@ -1911,9 +1911,10 @@ export function MessageTimeline(props: {
       const row = input.row()
       return row._tag === "CommentStrip" || (row._tag === "UserMessage" && row.anchor)
     }
-    const previousAssistantPart = () => {
+    const needsAssistantRowGap = () => {
       const row = input.row()
-      return row._tag === "AssistantPart" && row.previousAssistantPart
+      if (row._tag === "AssistantPart") return row.previousAssistantPart
+      return row._tag === "AssistantSteps" && !row.showTrigger
     }
     const searchActive = () => {
       const row = input.row()
@@ -1930,7 +1931,7 @@ export function MessageTimeline(props: {
           "min-w-0 w-full max-w-full": true,
           "md:max-w-200 2xl:max-w-[1000px]": props.centered,
           "md:mx-auto": props.centered,
-          "pt-3": previousAssistantPart(),
+          "pt-3": needsAssistantRowGap(),
         }}
       >
         <div data-component="session-turn" class="min-w-0 w-full relative" style={{ height: "auto" }}>
