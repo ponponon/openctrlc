@@ -744,12 +744,15 @@ const layer = Layer.effect(
               Effect.map((items) => Object.entries(items ?? {})),
               // Fault isolation: a defect from one server (SDK internals, malformed
               // response, auth weirdness) must not sink the whole collection.
-              Effect.catchCause((cause) =>
-                Effect.logWarning(`failed to collect ${label}`, {
+              // Interruptions (caller abort/timeout) are re-propagated, matching
+              // the pattern used for server creation above.
+              Effect.catchCause((cause) => {
+                if (Cause.hasInterruptsOnly(cause)) return Effect.interrupt
+                return Effect.logWarning(`failed to collect ${label}`, {
                   clientName,
                   error: Cause.pretty(cause),
-                }).pipe(Effect.as([] as [string, T & { client: string }][])),
-              ),
+                }).pipe(Effect.as([] as [string, T & { client: string }][]))
+              }),
             ),
           { concurrency: "unbounded" },
         ).pipe(Effect.map((results) => Object.fromEntries<T & { client: string }>(results.flat())))
