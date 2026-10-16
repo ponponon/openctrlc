@@ -1190,6 +1190,12 @@ export const dict = {
   "dialog.releaseNotes.v1_1_10.titlebarActions":
     "제목 표시줄의 모바일 액세스 버튼과 업데이트 버튼 사이 간격을 넓혔습니다.",
   "dialog.releaseNotes.v1_1_10.newSessionWordmark": "새 세션 배경에 표시되던 이전 워드마크를 교체했습니다.",
+  "dialog.releaseNotes.v1_1_11.mcpDiscovery":
+    "MCP 목록 수집이 누락된 목록과 개별 서버 오류를 허용하므로, 잘못된 응답을 보내거나 권한이 없는 서버 하나가 명령, 프롬프트, 리소스 또는 도구 목록 전체를 실패시키지 않습니다.",
+  "dialog.releaseNotes.v1_1_11.mcpCancellation":
+    "취소되거나 시간이 초과된 MCP 목록 요청은 이제 정상적으로 중단되며, 일반 서버 오류는 서버별로 격리됩니다.",
+  "dialog.releaseNotes.v1_1_11.timelineRail":
+    "하위 세션에서 타임라인 탐색 레일이 왼쪽에 고정되지 않고 콘텐츠 위쪽으로 이동하던 문제를 수정했습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

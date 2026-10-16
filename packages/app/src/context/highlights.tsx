@@ -182,6 +182,14 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
       "dialog.releaseNotes.v1_1_10.titlebarActions",
     "Replaced the outdated wordmark in the new-session background.": "dialog.releaseNotes.v1_1_10.newSessionWordmark",
   },
+  "1.1.11": {
+    "MCP discovery now tolerates missing lists and isolated server failures, so one malformed or unauthorized server no longer breaks command, prompt, resource, or tool listings.":
+      "dialog.releaseNotes.v1_1_11.mcpDiscovery",
+    "Canceled or timed-out MCP list requests now stop promptly while ordinary failures remain isolated per server.":
+      "dialog.releaseNotes.v1_1_11.mcpCancellation",
+    "Fixed the session timeline navigation rail appearing above the content instead of staying along the left side in child sessions.":
+      "dialog.releaseNotes.v1_1_11.timelineRail",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {

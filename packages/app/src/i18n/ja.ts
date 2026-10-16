@@ -1475,6 +1475,12 @@ export const dict = {
   "dialog.releaseNotes.v1_1_10.titlebarActions": "タイトルバーのモバイルアクセスボタンと更新ボタンの間隔を広げました。",
   "dialog.releaseNotes.v1_1_10.newSessionWordmark":
     "新規セッションの背景に表示される古いワードマークを置き換えました。",
+  "dialog.releaseNotes.v1_1_11.mcpDiscovery":
+    "MCP カタログの取得で一覧の欠落や個別サーバーの障害を許容するようになり、異常または未認可のサーバーがコマンド、プロンプト、リソース、ツール一覧全体を失敗させなくなりました。",
+  "dialog.releaseNotes.v1_1_11.mcpCancellation":
+    "キャンセルまたはタイムアウトした MCP 一覧リクエストは適切に中断され、通常のサーバーエラーはサーバーごとに分離されます。",
+  "dialog.releaseNotes.v1_1_11.timelineRail":
+    "子セッションでタイムラインのナビゲーションレールがコンテンツ上部に移動し、左側に固定されない問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

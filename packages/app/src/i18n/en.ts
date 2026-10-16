@@ -596,6 +596,12 @@ export const dict = {
   "dialog.releaseNotes.v1_1_10.titlebarActions":
     "Added clear spacing between the mobile access and update buttons in the title bar.",
   "dialog.releaseNotes.v1_1_10.newSessionWordmark": "Replaced the outdated wordmark in the new-session background.",
+  "dialog.releaseNotes.v1_1_11.mcpDiscovery":
+    "MCP discovery now tolerates missing lists and isolated server failures, so one malformed or unauthorized server no longer breaks command, prompt, resource, or tool listings.",
+  "dialog.releaseNotes.v1_1_11.mcpCancellation":
+    "Canceled or timed-out MCP list requests now stop promptly while ordinary failures remain isolated per server.",
+  "dialog.releaseNotes.v1_1_11.timelineRail":
+    "Fixed the session timeline navigation rail appearing above the content instead of staying along the left side in child sessions.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

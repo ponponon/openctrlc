@@ -1526,6 +1526,10 @@ export const dict = {
   "dialog.releaseNotes.v1_1_10.activitySpacing": "恢复会话时间线中助手文本与后续活动摘要之间的间距。",
   "dialog.releaseNotes.v1_1_10.titlebarActions": "拉开标题栏手机访问按钮与更新按钮之间的距离。",
   "dialog.releaseNotes.v1_1_10.newSessionWordmark": "替换新会话背景中显示的旧字标。",
+  "dialog.releaseNotes.v1_1_11.mcpDiscovery":
+    "MCP 目录收集现在能容忍缺失列表并隔离单个服务器故障；一个异常或未授权的服务器不会再导致命令、提示词、资源或工具列表整体失败。",
+  "dialog.releaseNotes.v1_1_11.mcpCancellation": "取消或超时的 MCP 列表请求现在会正确中断，普通服务器故障仍按服务器隔离。",
+  "dialog.releaseNotes.v1_1_11.timelineRail": "修复子会话中的时间线导航轨道跑到内容上方、无法固定在左侧的问题。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",
