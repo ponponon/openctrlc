@@ -108,7 +108,7 @@ const layer = Layer.effect(
         ),
       )
 
-      for (const [name, prompt] of Object.entries(prompts)) {
+      for (const [name, prompt] of Object.entries(prompts ?? {})) {
         commands[name] = {
           name,
           source: "mcp",

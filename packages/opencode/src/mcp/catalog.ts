@@ -104,7 +104,7 @@ export function fetch<T extends { name: string }>(
       // Escape both the separator and escape marker so `server:uri` keys remain unambiguous.
       const resourceClient = clientName.replaceAll("%", "%25").replaceAll(":", "%3A")
       return Object.fromEntries(
-        items.map((item) => [
+        (items ?? []).map((item) => [
           key ? resourceClient + ":" + key(item) : sanitizedClient + ":" + sanitize(item.name),
           { ...item, client: clientName },
         ]),
@@ -122,7 +122,9 @@ export function prompts(client: Client, timeout?: number) {
   if (!client.getServerCapabilities()?.prompts) return Promise.resolve([])
   return paginate(
     (cursor) => client.listPrompts(cursor === undefined ? undefined : { cursor }, { timeout }),
-    (result) => result.prompts,
+    // Some servers (e.g. unauthorized or half-initialized remote MCP) reply with a
+    // malformed page where `prompts` is undefined; never let that escape as a defect.
+    (result) => result.prompts ?? [],
   )
 }
 
@@ -130,7 +132,7 @@ export function resources(client: Client, timeout?: number) {
   if (!client.getServerCapabilities()?.resources) return Promise.resolve([])
   return paginate(
     (cursor) => client.listResources(cursor === undefined ? undefined : { cursor }, { timeout }),
-    (result) => result.resources,
+    (result) => result.resources ?? [],
   )
 }
 
@@ -138,7 +140,7 @@ export function resourceTemplates(client: Client, timeout?: number) {
   if (!client.getServerCapabilities()?.resources) return Promise.resolve([])
   return paginate(
     (cursor) => client.listResourceTemplates(cursor === undefined ? undefined : { cursor }, { timeout }),
-    (result) => result.resourceTemplates,
+    (result) => result.resourceTemplates ?? [],
   )
 }
 
@@ -155,7 +157,7 @@ function listTools(client: Client, timeout: number) {
             return client.request({ method: "tools/list", params }, TolerantListToolsResultSchema, { timeout })
           }
         },
-        (result) => result.tools,
+        (result) => result.tools ?? [],
       ),
     catch: (error) => (error instanceof Error ? error : new Error(String(error))),
   })

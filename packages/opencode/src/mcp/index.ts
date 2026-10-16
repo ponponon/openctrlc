@@ -740,7 +740,17 @@ const layer = Layer.effect(
               (c) => listFn(c, requestTimeout(s, clientName, cfg.mcp?.[clientName], cfg.experimental?.mcp_timeout)),
               label,
               key,
-            ).pipe(Effect.map((items) => Object.entries(items ?? {}))),
+            ).pipe(
+              Effect.map((items) => Object.entries(items ?? {})),
+              // Fault isolation: a defect from one server (SDK internals, malformed
+              // response, auth weirdness) must not sink the whole collection.
+              Effect.catchCause((cause) =>
+                Effect.logWarning(`failed to collect ${label}`, {
+                  clientName,
+                  error: Cause.pretty(cause),
+                }).pipe(Effect.as([] as [string, T & { client: string }][])),
+              ),
+            ),
           { concurrency: "unbounded" },
         ).pipe(Effect.map((results) => Object.fromEntries<T & { client: string }>(results.flat())))
       })
