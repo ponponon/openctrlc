@@ -7,24 +7,20 @@
   grid-template-columns: 56px minmax(0, 1fr);
 }
 
-.session-timeline--navigable > .session-timeline-navigator {
-  grid-column: 1;
-  grid-row: 1;
-}
-
 .session-timeline--navigable > :not(.session-timeline-navigator) {
   grid-column: 2;
   grid-row: 1;
 }
 
 .session-timeline-navigator {
-  position: relative;
-  grid-column: 1;
-  grid-row: 1;
-  align-self: stretch;
-  justify-self: center;
-  min-height: 0;
-  margin-block: 80px 72px;
+  /* Overlay pinned to the left edge of .session-timeline instead of a grid
+     placement: grid auto-placement can otherwise demote the rail to a flow
+     row above the content (observed in subagent sessions), moving the whole
+     rail to the top. Absolute pinning keeps it on the left unconditionally. */
+  position: absolute;
+  top: 80px;
+  bottom: 72px;
+  left: 7px;
   z-index: 45;
   width: 42px;
   pointer-events: none;
