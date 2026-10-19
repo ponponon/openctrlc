@@ -254,10 +254,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     | undefined
   // 在途会话创建记录：请求结果可能迟到（超时后才返回），若其参数组已被放弃而会话又真的建了出来，
   // 必须回收，否则用户换选项重建会同时留下两个会话。
-  const inflightSessionCreates = new Map<
-    SessionID,
-    { consumed: boolean; abandoned: boolean; result?: Session }
-  >()
+  const inflightSessionCreates = new Map<SessionID, { consumed: boolean; abandoned: boolean; result?: Session }>()
   const reapAbandonedCreate = (id: SessionID, record: { consumed: boolean; abandoned: boolean; result?: Session }) => {
     if (!record.abandoned || record.consumed || !record.result) return
     inflightSessionCreates.delete(id)
@@ -452,15 +449,13 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     let session = input.info()
     let createFailedNotified = false
     if (!session && isNewSession) {
-      const createInput =
-        pendingSessionCreate ??=
-          {
-            id: SessionID.create(),
-            agent: currentAgent.name,
-            model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
-            directory: sessionDirectory,
-            worktreeSelection,
-          }
+      const createInput = (pendingSessionCreate ??= {
+        id: SessionID.create(),
+        agent: currentAgent.name,
+        model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
+        directory: sessionDirectory,
+        worktreeSelection,
+      })
       const inflight = { consumed: false, abandoned: false, result: undefined as Session | undefined }
       inflightSessionCreates.set(createInput.id, inflight)
       const createRequest = sdk()
@@ -478,8 +473,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         },
         () => inflightSessionCreates.delete(createInput.id),
       )
-      const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS)
-        .catch((err: unknown) => {
+      const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS).catch(
+        (err: unknown) => {
           if (isDefinitiveSessionCreateFailure(err)) {
             const failed = pendingSessionCreate
             pendingSessionCreate = undefined
@@ -498,11 +493,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           createFailedNotified = true
           const timedOut = isTimeoutError(err)
           showToast({
-            title: language.t(timedOut ? "prompt.toast.sessionCreateTimeout.title" : "prompt.toast.sessionCreateFailed.title"),
+            title: language.t(
+              timedOut ? "prompt.toast.sessionCreateTimeout.title" : "prompt.toast.sessionCreateFailed.title",
+            ),
             description: timedOut ? language.t("prompt.toast.sessionCreateTimeout.description") : errorMessage(err),
           })
           return undefined
-        })
+        },
+      )
       if (created) {
         inflight.consumed = true
         inflightSessionCreates.delete(createInput.id)
@@ -798,7 +796,8 @@ export function isDefinitiveSessionCreateFailure(error: unknown) {
           ? response.status
           : undefined
 
-    if (status !== undefined && status >= 400 && status < 500 && ![408, 409, 425, 429, 499].includes(status)) return true
+    if (status !== undefined && status >= 400 && status < 500 && ![408, 409, 425, 429, 499].includes(status))
+      return true
     if (
       value._tag === "InvalidRequestError" ||
       value._tag === "UnauthorizedError" ||

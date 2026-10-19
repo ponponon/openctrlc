@@ -672,7 +672,11 @@ describe("isDefinitiveSessionCreateFailure", () => {
 
     // V2 未声明状态：ClientError("UnexpectedStatus", { cause: { status } })
     const clientError = (status: number) =>
-      Object.assign(new Error("UnexpectedStatus"), { name: "ClientError", reason: "UnexpectedStatus", cause: { status } })
+      Object.assign(new Error("UnexpectedStatus"), {
+        name: "ClientError",
+        reason: "UnexpectedStatus",
+        cause: { status },
+      })
     expect(isDefinitiveSessionCreateFailure(clientError(400))).toBe(true)
     expect(isDefinitiveSessionCreateFailure(clientError(404))).toBe(true)
     expect(isDefinitiveSessionCreateFailure(clientError(403))).toBe(true)
@@ -692,7 +696,11 @@ describe("isDefinitiveSessionCreateFailure", () => {
     // 网络失败：结果不确定，不应判为明确失败
     expect(
       isDefinitiveSessionCreateFailure(
-        Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport", cause: new TypeError("fetch failed") }),
+        Object.assign(new Error("fetch failed"), {
+          name: "ClientError",
+          reason: "Transport",
+          cause: new TypeError("fetch failed"),
+        }),
       ),
     ).toBe(false)
 
@@ -824,7 +832,10 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+    )
 
     await submit.handleSubmit(event)
     expect(toasts.map((item) => item.title)).toEqual(["prompt.toast.sessionCreateTimeout.title"])
