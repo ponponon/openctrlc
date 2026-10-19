@@ -436,6 +436,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         })
         .then(normalizeSessionInfo)
         .catch((err) => {
+          if (isDefinitiveSessionCreateFailure(err)) pendingSessionCreate = undefined
           showToast({
             title: language.t("prompt.toast.sessionCreateFailed.title"),
             description: errorMessage(err),
@@ -688,4 +689,32 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     creatingSession: () => state.creatingSession,
     handleSubmit,
   }
+}
+
+function isDefinitiveSessionCreateFailure(error: unknown) {
+  const pending = [error]
+  const seen = new Set<object>()
+
+  while (pending.length > 0) {
+    const current = pending.pop()
+    if (!current || typeof current !== "object" || seen.has(current)) continue
+    seen.add(current)
+
+    const value = current as Record<string, unknown>
+    const response = value.response
+    const status =
+      typeof value.status === "number"
+        ? value.status
+        : response && typeof response === "object" && "status" in response && typeof response.status === "number"
+          ? response.status
+          : undefined
+
+    if (status !== undefined && status >= 400 && status < 500 && ![408, 409, 425, 429, 499].includes(status)) return true
+    if (value._tag === "InvalidRequestError" || value._tag === "UnauthorizedError" || value.name === "BadRequest")
+      return true
+
+    pending.push(value.cause, value.reason)
+  }
+
+  return false
 }
