@@ -253,16 +253,29 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       }
     | undefined
   // 在途会话创建记录：请求结果可能迟到（超时后才返回），若其参数组已被放弃而会话又真的建了出来，
-  // 必须回收，否则用户换选项重建会同时留下两个会话。
-  const inflightSessionCreates = new Map<
-    SessionID,
-    { consumed: boolean; abandoned: boolean; result?: Session }
-  >()
-  const reapAbandonedCreate = (id: SessionID, record: { consumed: boolean; abandoned: boolean; result?: Session }) => {
+  // 必须回收，否则用户换选项重建会同时留下两个会话。同一 Session ID 可能并存多条在途重试，
+  // 按请求尝试分别记录，回调只允许清理自己那条——按 ID 删键会误删其它在途记录，
+  // 改选项时就找不到要放弃的请求，迟到成功也不会回收。
+  type InflightSessionCreate = { consumed: boolean; abandoned: boolean; result?: Session }
+  const inflightSessionCreates = new Map<SessionID, Set<InflightSessionCreate>>()
+  const trackInflightCreate = (id: SessionID, record: InflightSessionCreate) => {
+    const records = inflightSessionCreates.get(id) ?? new Set<InflightSessionCreate>()
+    records.add(record)
+    inflightSessionCreates.set(id, records)
+  }
+  const untrackInflightCreate = (id: SessionID, record: InflightSessionCreate) => {
+    const records = inflightSessionCreates.get(id)
+    if (!records) return
+    records.delete(record)
+    if (records.size === 0) inflightSessionCreates.delete(id)
+  }
+  const reapAbandonedCreate = (id: SessionID, record: InflightSessionCreate) => {
     if (!record.abandoned || record.consumed || !record.result) return
-    inflightSessionCreates.delete(id)
+    untrackInflightCreate(id, record)
+    // 回收必须带上会话所在目录：V1 兼容层按 directory 路由删除请求，不传会回落到
+    // SDK 默认目录，worktree 里迟到建出的会话会被发到主工作区而漏删。
     void sdk()
-      .api.session.remove({ sessionID: record.result.id })
+      .api.session.remove({ sessionID: record.result.id, directory: record.result.directory })
       .catch(() => {})
   }
   const navigate = useNavigate()
@@ -398,8 +411,12 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     ) {
       const dropped = inflightSessionCreates.get(pendingSessionCreate.id)
       if (dropped) {
-        dropped.abandoned = true
-        reapAbandonedCreate(pendingSessionCreate.id, dropped)
+        // 同一 Session ID 的所有在途重试都属于这组参数，全部标记放弃并按结果回收。
+        const droppedID = pendingSessionCreate.id
+        for (const record of [...dropped]) {
+          record.abandoned = true
+          reapAbandonedCreate(droppedID, record)
+        }
       }
       pendingSessionCreate = undefined
     }
@@ -461,8 +478,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
             directory: sessionDirectory,
             worktreeSelection,
           }
-      const inflight = { consumed: false, abandoned: false, result: undefined as Session | undefined }
-      inflightSessionCreates.set(createInput.id, inflight)
+      const inflight: InflightSessionCreate = { consumed: false, abandoned: false }
+      trackInflightCreate(createInput.id, inflight)
       const createRequest = sdk()
         .api.session.create({
           id: createInput.id,
@@ -476,7 +493,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           inflight.result = value
           reapAbandonedCreate(createInput.id, inflight)
         },
-        () => inflightSessionCreates.delete(createInput.id),
+        () => untrackInflightCreate(createInput.id, inflight),
       )
       const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS)
         .catch((err: unknown) => {
@@ -505,7 +522,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         })
       if (created) {
         inflight.consumed = true
-        inflightSessionCreates.delete(createInput.id)
+        untrackInflightCreate(createInput.id, inflight)
         seed(sessionDirectory, created)
         session = created
         await startTransition(() => {

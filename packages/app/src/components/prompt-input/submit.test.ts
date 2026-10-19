@@ -38,6 +38,7 @@ const toasts: Array<{ title: string; description?: string }> = []
 const sessionCreateErrors: unknown[] = []
 const sessionCreateGates: Array<Promise<void> | undefined> = []
 const removedSessions: string[] = []
+const removedSessionInputs: Array<{ sessionID: string; directory?: string }> = []
 const removedWorktrees: string[] = []
 let sessionCounter = 0
 let serverSessionSyncs = 0
@@ -103,8 +104,9 @@ const clientFor = (directory: string) => {
             location: { directory: location },
           }
         },
-        remove: async (input: { sessionID: string }) => {
+        remove: async (input: { sessionID: string; directory?: string }) => {
           removedSessions.push(input.sessionID)
+          removedSessionInputs.push({ sessionID: input.sessionID, directory: input.directory })
           return { data: undefined }
         },
         prompt: async (input: unknown) => {
@@ -333,6 +335,7 @@ beforeEach(() => {
   sessionCreateErrors.length = 0
   sessionCreateGates.length = 0
   removedSessions.length = 0
+  removedSessionInputs.length = 0
   removedWorktrees.length = 0
   sessionCounter = 0
   for (const key of Object.keys(storedSessions)) delete storedSessions[key]
@@ -839,6 +842,7 @@ describe("prompt submit session create retry", () => {
 
     expect(removedSessions).toEqual(["session-1"])
     expect(removedSessions).not.toContain("session-2")
+    expect(removedSessionInputs).toEqual([{ sessionID: "session-1", directory: "/repo/worktree-a" }])
   })
 
   test("timeout then an unchanged retry reuses the same id and never reaps", async () => {
@@ -861,5 +865,72 @@ describe("prompt submit session create retry", () => {
 
     expect(removedSessions).toEqual([])
     expect(createdSessions).toEqual(["/repo/worktree-a", "/repo/worktree-a"])
+  })
+
+  test("a late rejection from an earlier same-id create keeps the in-flight retry tracked", async () => {
+    let releaseFirst = () => {}
+    let releaseRetry = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        releaseFirst = resolve
+      }),
+    )
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        releaseRetry = resolve
+      }),
+    )
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+
+    // 同一 Session ID 先后有两个在途创建：原请求超时后重试
+    await submit.handleSubmit(event)
+    await submit.handleSubmit(event)
+    expect(sessionCreateInputs[0]?.id).toBe(sessionCreateInputs[1]?.id)
+
+    // 前一个请求迟到拒绝：只允许清理它自己的记录，不得把在途重试的记录一起删掉
+    sessionCreateErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+    releaseFirst()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 此时用户改选项放弃这组参数，必须仍能找到在途重试并标记 abandoned
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+    expect(createdSessions).toEqual(["/repo/worktree-a"])
+    expect(sessionCreateInputs[2]?.id).not.toBe(sessionCreateInputs[0]?.id)
+
+    // 重试的请求迟到成功：参数组已放弃，必须回收，否则会留下两个会话
+    releaseRetry()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(removedSessions).toEqual(["session-2"])
+    expect(removedSessions).not.toContain("session-3")
+  })
+
+  test("reaps a late orphan session against its own directory", async () => {
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    const submit = makeSubmit(undefined, 5)
+
+    // 迟到会话建在 worktree-a
+    await submit.handleSubmit(event)
+    expect(toasts.map((item) => item.title)).toEqual(["prompt.toast.sessionCreateTimeout.title"])
+
+    // 用户切到另一个 worktree 重建，新会话建在 worktree-b
+    selected = "/repo/worktree-b"
+    await submit.handleSubmit(event)
+    expect(createdSessions).toEqual(["/repo/worktree-b"])
+
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 清理请求必须带上创建结果中的会话目录：V1 兼容层按 directory 路由删除，
+    // 不传会回落到 SDK 默认目录，worktree-a 里的孤儿会话会被发到主工作区而漏删。
+    expect(removedSessionInputs).toEqual([{ sessionID: "session-1", directory: "/repo/worktree-a" }])
+    expect(removedSessions).toEqual(["session-1"])
   })
 })
