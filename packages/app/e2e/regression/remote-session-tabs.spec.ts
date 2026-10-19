@@ -55,7 +55,6 @@ test("remote home keeps desktop session tabs closed until a history session is s
   await page.addInitScript(
     ({ remoteSessionID, snapshot }) => {
       localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
-      localStorage.setItem("openctrlc.window.browser.dat:tabs", JSON.stringify([]))
       localStorage.setItem(`openctrlc.remote-workspace:${remoteSessionID}`, JSON.stringify(snapshot))
     },
     { remoteSessionID, snapshot },

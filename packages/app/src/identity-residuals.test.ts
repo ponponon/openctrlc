@@ -188,6 +188,7 @@ test("all E2E TypeScript fixtures use the expected persistence namespace", async
     "e2e/regression/prompt-input-v2-command-draft.spec.ts",
     "e2e/regression/prompt-thinking-level.spec.ts",
     "e2e/regression/remote-peer-channel.spec.ts",
+    "e2e/regression/remote-session-tabs.spec.ts",
     "e2e/regression/review-image-flash.spec.ts",
     "e2e/regression/review-line-comment.spec.ts",
     "e2e/regression/session-search-tool-hit.spec.ts",
