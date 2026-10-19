@@ -326,7 +326,7 @@ export const dict = {
   "prompt.toast.worktreeCreateFailed.title": "Failed to create worktree",
   "prompt.toast.sessionCreateFailed.title": "Failed to create session",
   "prompt.toast.sessionCreateTimeout.title": "Session creation timed out",
-  "prompt.toast.sessionCreateTimeout.description": "Creating the session timed out. Retrying will not create a duplicate.",
+  "prompt.toast.sessionCreateTimeout.description": "Creating the session timed out and the result is still uncertain. You can retry later.",
   "prompt.toast.shellSendFailed.title": "Failed to send shell command",
   "prompt.toast.commandSendFailed.title": "Failed to send command",
   "prompt.toast.promptSendFailed.title": "Failed to send prompt",

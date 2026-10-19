@@ -36,7 +36,10 @@ const sentCommands: unknown[] = []
 const commands: Array<{ name: string }> = []
 const toasts: Array<{ title: string; description?: string }> = []
 const sessionCreateErrors: unknown[] = []
+const sessionCreateGates: Array<Promise<void> | undefined> = []
+const removedSessions: string[] = []
 const removedWorktrees: string[] = []
+let sessionCounter = 0
 let serverSessionSyncs = 0
 
 let params: { id?: string } = {}
@@ -81,14 +84,15 @@ const clientFor = (directory: string) => {
     api: {
       session: {
         create: async (input: (typeof sessionCreateInputs)[number]) => {
-          await createSessionGate
-          const location = input.location?.directory ?? directory
+          const id = `session-${++sessionCounter}`
           sessionCreateInputs.push(input)
+          await (sessionCreateGates.shift() ?? createSessionGate)
+          const location = input.location?.directory ?? directory
           const failure = sessionCreateErrors.shift()
           if (failure) throw failure
           createdSessions.push(location)
           return {
-            id: `session-${createdSessions.length}`,
+            id,
             projectID: "project",
             agent: input.agent,
             model: input.model,
@@ -98,6 +102,10 @@ const clientFor = (directory: string) => {
             title: `New session ${createdSessions.length}`,
             location: { directory: location },
           }
+        },
+        remove: async (input: { sessionID: string }) => {
+          removedSessions.push(input.sessionID)
+          return { data: undefined }
         },
         prompt: async (input: unknown) => {
           sentPrompts.push(directory)
@@ -323,7 +331,10 @@ beforeEach(() => {
   serverSessionSyncs = 0
   toasts.length = 0
   sessionCreateErrors.length = 0
+  sessionCreateGates.length = 0
+  removedSessions.length = 0
   removedWorktrees.length = 0
+  sessionCounter = 0
   for (const key of Object.keys(storedSessions)) delete storedSessions[key]
 })
 
@@ -694,7 +705,7 @@ describe("isDefinitiveSessionCreateFailure", () => {
 })
 
 describe("prompt submit session create retry", () => {
-  const makeSubmit = (model?: ModelSelection) =>
+  const makeSubmit = (model?: ModelSelection, createTimeoutMs?: number) =>
     createPromptSubmit({
       prompt,
       info: () => undefined,
@@ -714,6 +725,7 @@ describe("prompt submit session create retry", () => {
       onNewSessionWorktreeReset: () => undefined,
       onSubmit: () => undefined,
       model,
+      createTimeoutMs,
     })
 
   const event = { preventDefault: () => undefined } as unknown as Event
@@ -801,5 +813,53 @@ describe("prompt submit session create retry", () => {
     expect(sessionCreateInputs[1]?.location?.directory).toBe("/repo/main/new")
     expect(createdSessions).toEqual(["/repo/main/new"])
     expect(removedWorktrees).toEqual(["/repo/main/new"])
+  })
+
+  test("timeout then a changed option reaps the late orphan session", async () => {
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+
+    await submit.handleSubmit(event)
+    expect(toasts.map((item) => item.title)).toEqual(["prompt.toast.sessionCreateTimeout.title"])
+
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+    expect(createdSessions).toEqual(["/repo/worktree-a"])
+
+    // 原请求迟到成功时其参数组已被放弃，必须回收，否则会留下两个会话
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(removedSessions).toEqual(["session-1"])
+    expect(removedSessions).not.toContain("session-2")
+  })
+
+  test("timeout then an unchanged retry reuses the same id and never reaps", async () => {
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    const submit = makeSubmit(undefined, 5)
+
+    await submit.handleSubmit(event)
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs[0]?.id).toBe(sessionCreateInputs[1]?.id)
+
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(removedSessions).toEqual([])
+    expect(createdSessions).toEqual(["/repo/worktree-a", "/repo/worktree-a"])
   })
 })

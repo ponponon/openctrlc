@@ -441,7 +441,7 @@ export const dict = {
   "prompt.toast.worktreeCreateFailed.title": "创建工作区失败",
   "prompt.toast.sessionCreateFailed.title": "创建会话失败",
   "prompt.toast.sessionCreateTimeout.title": "创建会话超时",
-  "prompt.toast.sessionCreateTimeout.description": "创建会话请求超时，可直接重试，不会重复创建。",
+  "prompt.toast.sessionCreateTimeout.description": "创建会话请求超时，结果尚不确定，可稍后重试。",
   "prompt.toast.shellSendFailed.title": "发送 shell 命令失败",
   "prompt.toast.commandSendFailed.title": "发送命令失败",
   "prompt.toast.promptSendFailed.title": "发送提示失败",

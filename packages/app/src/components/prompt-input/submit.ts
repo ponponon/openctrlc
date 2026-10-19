@@ -237,6 +237,7 @@ type PromptSubmitInput = {
   onAbort?: () => void
   onSubmit?: () => void
   model?: ModelSelection
+  createTimeoutMs?: number
 }
 
 export function createPromptSubmit(input: PromptSubmitInput) {
@@ -251,6 +252,19 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         worktreeSelection: string
       }
     | undefined
+  // 在途会话创建记录：请求结果可能迟到（超时后才返回），若其参数组已被放弃而会话又真的建了出来，
+  // 必须回收，否则用户换选项重建会同时留下两个会话。
+  const inflightSessionCreates = new Map<
+    SessionID,
+    { consumed: boolean; abandoned: boolean; result?: Session }
+  >()
+  const reapAbandonedCreate = (id: SessionID, record: { consumed: boolean; abandoned: boolean; result?: Session }) => {
+    if (!record.abandoned || record.consumed || !record.result) return
+    inflightSessionCreates.delete(id)
+    void sdk()
+      .api.session.remove({ sessionID: record.result.id })
+      .catch(() => {})
+  }
   const navigate = useNavigate()
   const sdk = useSDK()
   const sync = useSync()
@@ -382,6 +396,11 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         pendingSessionCreate.model.variant !== variant ||
         pendingSessionCreate.worktreeSelection !== worktreeSelection)
     ) {
+      const dropped = inflightSessionCreates.get(pendingSessionCreate.id)
+      if (dropped) {
+        dropped.abandoned = true
+        reapAbandonedCreate(pendingSessionCreate.id, dropped)
+      }
       pendingSessionCreate = undefined
     }
     const retryingSessionCreate = isNewSession && pendingSessionCreate
@@ -442,17 +461,24 @@ export function createPromptSubmit(input: PromptSubmitInput) {
             directory: sessionDirectory,
             worktreeSelection,
           }
-      const created = await withTimeout(
-        sdk()
-          .api.session.create({
-            id: createInput.id,
-            agent: createInput.agent,
-            model: createInput.model,
-            location: { directory: createInput.directory },
-          })
-          .then(normalizeSessionInfo),
-        SESSION_CREATE_TIMEOUT_MS,
+      const inflight = { consumed: false, abandoned: false, result: undefined as Session | undefined }
+      inflightSessionCreates.set(createInput.id, inflight)
+      const createRequest = sdk()
+        .api.session.create({
+          id: createInput.id,
+          agent: createInput.agent,
+          model: createInput.model,
+          location: { directory: createInput.directory },
+        })
+        .then(normalizeSessionInfo)
+      void createRequest.then(
+        (value) => {
+          inflight.result = value
+          reapAbandonedCreate(createInput.id, inflight)
+        },
+        () => inflightSessionCreates.delete(createInput.id),
       )
+      const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS)
         .catch((err: unknown) => {
           if (isDefinitiveSessionCreateFailure(err)) {
             const failed = pendingSessionCreate
@@ -478,6 +504,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           return undefined
         })
       if (created) {
+        inflight.consumed = true
+        inflightSessionCreates.delete(createInput.id)
         seed(sessionDirectory, created)
         session = created
         await startTransition(() => {
