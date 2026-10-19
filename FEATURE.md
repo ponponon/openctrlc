@@ -3010,7 +3010,7 @@ Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并�
 - V2 首屏有数据的会话只走原有 V2 请求；判定为空的纯 V2 会话会缓存判定，强制刷新期间不再重复访问 V1。
 - 同一服务进程需运行包含此兼容逻辑的新桌面构建；本次只改代码并做单测/类型检查，未重启桌面或 Relay、未部署，也未发版。发布前还要用浏览器验收旧会话历史、发新提示、实时消息更新、重新加载及纯 V2 会话。
 
-## 桌面冷启动量化与 predev/窗口/shell 缓存
+## 桌面冷启动量化与 predev/窗口/shell 环境读取
 
 ### 实测数据（2026-10-06，本机 `bun run dev:desktop`）
 
@@ -3020,7 +3020,7 @@ Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并�
 | electron-vite 就绪 + app starting                     | ~13s                                                | ~13s                             |
 | server ready                                          | +3–5s                                               | +3s                              |
 | 窗口创建                                              | 等 sidecar loading task 结束后才 restoreMainWindows | 与 sidecar 并行，先开窗口        |
-| shell env `zsh -il`                                   | 每次启动探测（日志可见 20s 级间隔）                 | 24h 文件缓存                     |
+| shell env `zsh -il`                                   | 日志中的 20s 级启动区间未单独测量 shell 探测耗时     | 每次启动读取；单次探测超时 5s，不持久化环境变量 |
 | `GET /session/:id`                                    | 4–20ms                                              | 未变                             |
 | 渲染层热加载到会话内容                                | ~1s                                                 | 未变                             |
 | **冷启动后会话正文可见**                              | **实测 120s+ 仍骨架**                               | **仍可复现卡在 SessionSkeleton** |
@@ -3029,18 +3029,19 @@ Relay 部署脚本在已有安装中读取持久化目录的数字 UID/GID 并�
 
 - `packages/desktop/scripts/predev.ts`：递归比较构建相关源码文件与配置文件的 mtime，只有产物确实新鲜时才跳过 plugin build、`build-node`（内嵌整站 UI）和 CLI 下载；缺少内嵌 `index.html` 或主 bundle 时会重建。`OPENCTRLC_PREDEV_FORCE=1` 强制重建。`build-node` 会 `bun run --cwd packages/app build` 打出 1MB `session-route-view`，是 predev 大头。
 - `packages/desktop/src/main/index.ts`：`restoreMainWindows()` 提前到 `Fiber.await(loadingTask)` 之前，避免 sidecar 启动期间桌面无窗口。
-- `packages/desktop/src/main/server.ts`：shell env 缓存仍为 24h，但只使用 Electron `safeStorage` 加密后写入 `userData/shell-env-cache.json`；Linux 没有可用系统密钥环时不落盘。启动后先等待 Electron ready，再读取系统加密服务。旧版本写出的明文缓存会被忽略并删除。
+- `packages/desktop/src/main/server.ts`：移除 shell env 持久缓存及 Electron `safeStorage` 调用；每次启动仍读取 shell 环境变量，并清理旧版 `userData/shell-env-cache.json`。桌面启动不再因缓存环境变量访问 macOS Keychain。
 
 ### 验证方式
 
 - 冷启动计时脚本见会话记录（spawn → vite_ready → app_starting → server_ready → CDP eval 轮询 `main` 文本）。
 - `packages/desktop` `bun run typecheck` 通过。
+- 本次移除 shell env 缓存后再次运行 `packages/desktop` `bun run typecheck` 通过，`git diff --check` 通过；未在 macOS 上做安装包启动验收。
 - 重启后 predev 日志应出现 `up to date, skipping`。
 
 ### 本轮审查补强
 
 - 目录自身 mtime 不会随已有文件内容修改而更新；增量构建现递归检查相关源码文件，并纳入内嵌 UI、workspace 依赖和构建配置，避免桌面端继续复用旧网页 bundle。
-- 之前的 24h shell 环境缓存会把模型 API 凭据等完整环境变量明文写入文件。本轮改成系统密钥环加密；若系统加密不可用，回退为每次启动读取 shell，不缓存明文。
+- shell 环境探测本身有 5 秒单次超时；此前日志里的 20 秒级间隔是应用启动阶段，不能据此认定读取环境变量耗时 20 秒。没有独立测量证明持久缓存有必要，因此移除整份环境变量缓存，避免首次启动触发 Keychain 授权弹窗。
 
 ### 未解决（需继续查）
 
