@@ -903,8 +903,8 @@ function RemoteTabsHydrator() {
     platform.remoteAccess.updateWorkspace(snapshot)
   })
 
-  // The snapshot already restores all desktop tabs. Keep this fallback only for
-  // older or direct links that have an active session but no workspace snapshot.
+  // A direct session URL still needs a local tab entry. Workspace snapshots do not
+  // restore this browser's open session tabs.
   createEffect(() => {
     if (platform.platform !== "web" || !tabs.ready()) return
     if (tabs.store.some((tab) => tab.type === "session")) return

@@ -3472,4 +3472,5 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/app/src/context/tabs.tsx`、`packages/app/src/app.tsx`、`packages/app/src/entry.tsx`。
 - 历史会话：沿用首页从服务器加载的会话索引与点击打开流程，不依赖 Desktop 的活动标签集合。
-- 验证：静态检查确认首页远程工作区刷新仍同步项目，但不再同步会话标签或重定向到 Desktop 当前会话；未运行测试或重启应用。
+- 回归：`packages/app/e2e/regression/remote-session-tabs.spec.ts` 确认首页显示历史会话、忽略快照中的 Desktop 标签，并且只有点击历史记录后才打开对应会话。
+- 验证：在 `packages/app` 执行 `bun run typecheck:e2e` 和 `bun run test:e2e e2e/regression/remote-session-tabs.spec.ts` 均通过（1 条）；E2E 使用临时本机 Vite 服务，未重启已有应用或服务。
