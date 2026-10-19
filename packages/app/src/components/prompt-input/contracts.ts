@@ -7,6 +7,7 @@ export type PromptInputState = ReturnType<typeof usePrompt>
 
 export type PromptInputSubmission = {
   abort: () => Promise<void> | void
+  creatingSession: () => boolean
   handleSubmit: (event: Event) => Promise<void> | void
 }
 

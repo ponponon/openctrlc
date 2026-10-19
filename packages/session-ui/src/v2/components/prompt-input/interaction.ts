@@ -39,6 +39,7 @@ export type PromptInputV2ViewConfig = {
   submit: {
     stopping: Accessor<boolean>
     working?: Accessor<boolean>
+    creatingSession?: Accessor<boolean>
     onSubmit: () => void
     onStop: () => void
   }
@@ -330,6 +331,7 @@ export function createPromptInputV2Controller(input: {
       draft.removeAttachment(id)
     },
     canSubmit() {
+      if (input.view.submit.creatingSession?.()) return false
       const persisted = draft.state
       if (persisted.prompt.some((part) => part.type === "image")) return true
       if (persisted.context.items.some((item) => !!item.comment?.trim())) return true

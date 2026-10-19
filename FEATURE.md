@@ -3474,3 +3474,10 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 - 历史会话：沿用首页从服务器加载的会话索引与点击打开流程，不依赖 Desktop 的活动标签集合。
 - 回归：`packages/app/e2e/regression/remote-session-tabs.spec.ts` 确认首页显示历史会话、忽略快照中的 Desktop 标签，并且只有点击历史记录后才打开对应会话。
 - 验证：在 `packages/app` 执行 `bun run typecheck:e2e` 和 `bun run test:e2e e2e/regression/remote-session-tabs.spec.ts` 均通过（1 条）；E2E 使用临时本机 Vite 服务，未重启已有应用或服务。
+
+## 新会话发送防止重复创建并保留多任务排队
+
+新会话首次提交时，前端在异步创建会话期间同步拦截重复触发，并暂时禁用发送按钮和编辑区。创建请求使用客户端生成的稳定 Session ID；请求结果不确定时，重试会复用相同 ID 和创建参数，服务端因此返回已有会话。创建成功并完成会话路由切换后立即恢复输入，不等待模型任务结束。已有会话不使用这把锁，每次后续提交仍沿用原有多任务排队逻辑。
+
+- 代码：`packages/app/src/components/prompt-input/submit.ts`、`contracts.ts`、`prompt-input.tsx`、`prompt-input-v2.tsx`；`packages/session-ui/src/v2/components/prompt-input/{interaction.ts,index.tsx}`。
+- 验证：`packages/app` 与 `packages/session-ui` 的 `bun run typecheck` 通过；未运行测试。源码检查确认锁只覆盖没有会话 ID 的首次提交，已有会话仍走 `queueEnabled` / `queueFollowup`。

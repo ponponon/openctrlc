@@ -112,6 +112,8 @@ export function PromptInputV2(props: PromptInputV2Props) {
         data-component="prompt-input-v2"
         data-dock-border-underlay={props.borderUnderlay ? "v2" : undefined}
         class="group/prompt-input relative min-h-[96px] w-full overflow-clip rounded-xl bg-v2-background-bg-base"
+        inert={view.submit.creatingSession?.() || undefined}
+        aria-busy={view.submit.creatingSession?.() || undefined}
         classList={{
           "shadow-[var(--v2-elevation-raised)]": !props.borderUnderlay,
           "border border-v2-icon-icon-info border-dashed": state.drag === "active",
@@ -155,14 +157,18 @@ export function PromptInputV2(props: PromptInputV2Props) {
             role="textbox"
             aria-multiline="true"
             aria-label={i18n.t("ui.promptInput.label")}
-            contenteditable={!props.disabled && !props.readOnly}
+            contenteditable={!props.disabled && !props.readOnly && !view.submit.creatingSession?.()}
+            aria-disabled={view.submit.creatingSession?.() || undefined}
             autocapitalize={state.mode === "normal" ? "sentences" : "off"}
             autocorrect={state.mode === "normal" ? "on" : "off"}
             spellcheck={state.mode === "normal"}
             // @ts-expect-error
             autocomplete="off"
             class="relative z-10 block min-h-[60px] max-h-[180px] w-full overflow-y-auto whitespace-pre-wrap bg-transparent px-4 pt-4 pb-2 text-[13px] font-[440] leading-5 text-v2-text-text-base focus:outline-none empty:before:content-['\200B'] [&_[data-mention=file]]:text-syntax-property [&_[data-mention=agent]]:text-syntax-type [&_[data-mention=reference]]:text-syntax-keyword"
-            classList={{ "font-mono!": state.mode === "shell", "opacity-50": props.disabled }}
+            classList={{
+              "font-mono!": state.mode === "shell",
+              "opacity-50": props.disabled || view.submit.creatingSession?.(),
+            }}
             onInput={(event) => {
               const cursor = promptInputV2Cursor(event.currentTarget)
               const prompt = parsePromptInputV2Editor(event.currentTarget)

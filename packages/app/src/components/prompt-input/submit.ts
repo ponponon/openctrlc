@@ -4,6 +4,8 @@ import { base64Encode } from "@openctrlc/core/util/encode"
 import { Binary } from "@openctrlc/core/util/binary"
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router"
 import { batch, startTransition, type Accessor } from "solid-js"
+import { createStore } from "solid-js/store"
+import { SessionID } from "@openctrlc/schema/session-id"
 import { useTabs } from "@/context/tabs"
 import { useServerSync, type ServerSync } from "@/context/server-sync"
 import { useLanguage } from "@/context/language"
@@ -236,6 +238,16 @@ type PromptSubmitInput = {
 }
 
 export function createPromptSubmit(input: PromptSubmitInput) {
+  const [state, setState] = createStore({ creatingSession: false })
+  let newSessionSubmitInFlight = false
+  let pendingSessionCreate:
+    | {
+        id: SessionID
+        agent: string
+        model: { id: string; providerID: string; variant?: string }
+        directory: string
+      }
+    | undefined
   const navigate = useNavigate()
   const sdk = useSDK()
   const sync = useSync()
@@ -319,9 +331,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     })
   }
 
-  const handleSubmit = async (event: Event) => {
-    event.preventDefault()
-
+  const submit = async () => {
     const target = prompt.capture()
     const submission = createPromptSubmissionState({
       target,
@@ -359,11 +369,16 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     const isNewSession = !params.id
     const shouldAutoAccept = isNewSession && input.autoAccept()
     const worktreeSelection = input.newSessionWorktree?.() || "main"
+    const retryingSessionCreate = isNewSession && pendingSessionCreate
 
     let sessionDirectory = projectDirectory
     let client = sdk().client
 
-    if (isNewSession) {
+    if (retryingSessionCreate) {
+      sessionDirectory = retryingSessionCreate.directory
+    }
+
+    if (isNewSession && !retryingSessionCreate) {
       if (worktreeSelection === "create") {
         const createdWorktree = await client.worktree
           .create({ directory: projectDirectory })
@@ -404,11 +419,20 @@ export function createPromptSubmit(input: PromptSubmitInput) {
 
     let session = input.info()
     if (!session && isNewSession) {
+      const createInput =
+        pendingSessionCreate ??=
+          {
+            id: SessionID.create(),
+            agent: currentAgent.name,
+            model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
+            directory: sessionDirectory,
+          }
       const created = await sdk()
         .api.session.create({
-          agent: currentAgent.name,
-          model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
-          location: { directory: sessionDirectory },
+          id: createInput.id,
+          agent: createInput.agent,
+          model: createInput.model,
+          location: { directory: createInput.directory },
         })
         .then(normalizeSessionInfo)
         .catch((err) => {
@@ -435,6 +459,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           else navigate(`/${base64Encode(sessionDirectory)}/session/${session.id}`)
           submission.retarget(prompt.capture({ dir: base64Encode(sessionDirectory), id: session.id }))
         })
+        pendingSessionCreate = undefined
+        setState("creatingSession", false)
       }
     }
     if (!session) {
@@ -643,8 +669,23 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     })
   }
 
+  const handleSubmit = async (event: Event) => {
+    event.preventDefault()
+    if (params.id) return submit()
+    if (newSessionSubmitInFlight) return
+    newSessionSubmitInFlight = true
+    setState("creatingSession", true)
+    try {
+      await submit()
+    } finally {
+      newSessionSubmitInFlight = false
+      setState("creatingSession", false)
+    }
+  }
+
   return {
     abort,
+    creatingSession: () => state.creatingSession,
     handleSubmit,
   }
 }

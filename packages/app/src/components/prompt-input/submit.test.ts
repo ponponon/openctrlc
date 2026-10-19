@@ -8,6 +8,7 @@ let createPromptSubmit: typeof import("./submit").createPromptSubmit
 const createdClients: string[] = []
 const createdSessions: string[] = []
 const sessionCreateInputs: Array<{
+  id?: string
   agent?: string
   model?: { id: string; providerID: string; variant?: string }
   location?: { directory: string }
@@ -336,11 +337,13 @@ describe("prompt submit worktree selection", () => {
     expect(createdSessions).toEqual(["/repo/worktree-a", "/repo/worktree-b"])
     expect(sessionCreateInputs).toEqual([
       {
+        id: expect.stringMatching(/^ses_/),
         agent: "agent",
         model: { id: "model", providerID: "provider", variant: undefined },
         location: { directory: "/repo/worktree-a" },
       },
       {
+        id: expect.stringMatching(/^ses_/),
         agent: "agent",
         model: { id: "model", providerID: "provider", variant: undefined },
         location: { directory: "/repo/worktree-b" },

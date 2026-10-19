@@ -1203,7 +1203,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     return permission.isAutoAccepting(id, sdk().directory)
   })
 
-  const { abort, handleSubmit } =
+  const { abort, creatingSession, handleSubmit } =
     props.submission ??
     createPromptSubmit({
       prompt,
@@ -1467,6 +1467,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       />
       <DockShellForm
         data-dock-border-underlay="legacy"
+        inert={creatingSession() || undefined}
+        aria-busy={creatingSession() || undefined}
         onSubmit={handleSubmit}
         classList={{
           "group/prompt-input": true,
@@ -1524,7 +1526,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
               role="textbox"
               aria-multiline="true"
               aria-label={placeholder()}
-              contenteditable="true"
+              contenteditable={!creatingSession()}
+              aria-disabled={creatingSession() || undefined}
               autocapitalize={store.mode === "normal" ? "sentences" : "off"}
               autocorrect={store.mode === "normal" ? "on" : "off"}
               spellcheck={store.mode === "normal"}
@@ -1544,6 +1547,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 "[&_[data-type=file]]:text-syntax-property": true,
                 "[&_[data-type=agent]]:text-syntax-type": true,
                 "font-mono!": store.mode === "shell",
+                "opacity-50": creatingSession(),
               }}
               style={{ "padding-bottom": space }}
             />
@@ -1585,7 +1589,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 <IconButton
                   data-action="prompt-submit"
                   type="submit"
-                  disabled={!working() && blank()}
+                  disabled={creatingSession() || (!working() && blank())}
                   tabIndex={store.mode === "normal" ? undefined : -1}
                   icon={stopping() ? "stop" : store.mode === "shell" ? "arrow-undo-down" : "arrow-up"}
                   variant="primary"
