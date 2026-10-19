@@ -33,6 +33,8 @@ type PendingPrompt = {
 
 const pending = new Map<string, PendingPrompt>()
 
+const SESSION_CREATE_TIMEOUT_MS = 30_000
+
 export type FollowupDraft = {
   sessionID: string
   sessionDirectory: string
@@ -246,6 +248,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         agent: string
         model: { id: string; providerID: string; variant?: string }
         directory: string
+        worktreeSelection: string
       }
     | undefined
   const navigate = useNavigate()
@@ -369,6 +372,18 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     const isNewSession = !params.id
     const shouldAutoAccept = isNewSession && input.autoAccept()
     const worktreeSelection = input.newSessionWorktree?.() || "main"
+    // 待重试参数只在用户没改智能体/模型/工作区选择时才复用；任何一项变了都是新意图，
+    // 丢弃后按当前选择全新创建，避免重试被旧目录/旧模型钉死。
+    if (
+      pendingSessionCreate &&
+      (pendingSessionCreate.agent !== currentAgent.name ||
+        pendingSessionCreate.model.id !== currentModel.id ||
+        pendingSessionCreate.model.providerID !== currentModel.provider.id ||
+        pendingSessionCreate.model.variant !== variant ||
+        pendingSessionCreate.worktreeSelection !== worktreeSelection)
+    ) {
+      pendingSessionCreate = undefined
+    }
     const retryingSessionCreate = isNewSession && pendingSessionCreate
 
     let sessionDirectory = projectDirectory
@@ -413,11 +428,10 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         })
         serverSync().child(sessionDirectory)
       }
-
-      input.onNewSessionWorktreeReset?.()
     }
 
     let session = input.info()
+    let createFailedNotified = false
     if (!session && isNewSession) {
       const createInput =
         pendingSessionCreate ??=
@@ -426,20 +440,40 @@ export function createPromptSubmit(input: PromptSubmitInput) {
             agent: currentAgent.name,
             model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
             directory: sessionDirectory,
+            worktreeSelection,
           }
-      const created = await sdk()
-        .api.session.create({
-          id: createInput.id,
-          agent: createInput.agent,
-          model: createInput.model,
-          location: { directory: createInput.directory },
-        })
-        .then(normalizeSessionInfo)
-        .catch((err) => {
-          if (isDefinitiveSessionCreateFailure(err)) pendingSessionCreate = undefined
+      const created = await withTimeout(
+        sdk()
+          .api.session.create({
+            id: createInput.id,
+            agent: createInput.agent,
+            model: createInput.model,
+            location: { directory: createInput.directory },
+          })
+          .then(normalizeSessionInfo),
+        SESSION_CREATE_TIMEOUT_MS,
+      )
+        .catch((err: unknown) => {
+          if (isDefinitiveSessionCreateFailure(err)) {
+            const failed = pendingSessionCreate
+            pendingSessionCreate = undefined
+            // 明确失败意味着服务端没有建成会话，为这次创建新建的 worktree 没有用途，
+            // 及时回收避免每次失败都遗留一个孤儿 worktree。
+            if (failed?.worktreeSelection === "create") {
+              WorktreeState.failed(sdk().scope, failed.directory, "session create failed")
+              void sdk()
+                .client.worktree.remove({
+                  directory: projectDirectory,
+                  worktreeRemoveInput: { directory: failed.directory },
+                })
+                .catch(() => {})
+            }
+          }
+          createFailedNotified = true
+          const timedOut = isTimeoutError(err)
           showToast({
-            title: language.t("prompt.toast.sessionCreateFailed.title"),
-            description: errorMessage(err),
+            title: language.t(timedOut ? "prompt.toast.sessionCreateTimeout.title" : "prompt.toast.sessionCreateFailed.title"),
+            description: timedOut ? language.t("prompt.toast.sessionCreateTimeout.description") : errorMessage(err),
           })
           return undefined
         })
@@ -461,14 +495,18 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           submission.retarget(prompt.capture({ dir: base64Encode(sessionDirectory), id: session.id }))
         })
         pendingSessionCreate = undefined
-        setState("creatingSession", false)
+        // 创建成功才重置工作区选择器；失败时保留用户选择，重试才能推导出正确目录。
+        input.onNewSessionWorktreeReset?.()
       }
     }
     if (!session) {
-      showToast({
-        title: language.t("prompt.toast.promptSendFailed.title"),
-        description: language.t("prompt.toast.promptSendFailed.description"),
-      })
+      // 创建失败已弹过提示时不再重复报“发送失败”。
+      if (!createFailedNotified) {
+        showToast({
+          title: language.t("prompt.toast.promptSendFailed.title"),
+          description: language.t("prompt.toast.promptSendFailed.description"),
+        })
+      }
       return
     }
 
@@ -691,12 +729,35 @@ export function createPromptSubmit(input: PromptSubmitInput) {
   }
 }
 
-function isDefinitiveSessionCreateFailure(error: unknown) {
-  const pending = [error]
+class SessionCreateTimeoutError extends Error {
+  readonly name = "SessionCreateTimeoutError"
+}
+
+const isTimeoutError = (error: unknown): error is SessionCreateTimeoutError =>
+  error instanceof Error && error.name === "SessionCreateTimeoutError"
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new SessionCreateTimeoutError("session create timed out")), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
+}
+
+export function isDefinitiveSessionCreateFailure(error: unknown) {
+  const queue = [error]
   const seen = new Set<object>()
 
-  while (pending.length > 0) {
-    const current = pending.pop()
+  while (queue.length > 0) {
+    const current = queue.pop()
     if (!current || typeof current !== "object" || seen.has(current)) continue
     seen.add(current)
 
@@ -710,10 +771,17 @@ function isDefinitiveSessionCreateFailure(error: unknown) {
           : undefined
 
     if (status !== undefined && status >= 400 && status < 500 && ![408, 409, 425, 429, 499].includes(status)) return true
-    if (value._tag === "InvalidRequestError" || value._tag === "UnauthorizedError" || value.name === "BadRequest")
+    if (
+      value._tag === "InvalidRequestError" ||
+      value._tag === "UnauthorizedError" ||
+      value._tag === "BadRequest" ||
+      value.name === "BadRequest"
+    )
       return true
 
-    pending.push(value.cause, value.reason)
+    for (const next of [value.cause, value.reason, value.error]) {
+      if (next && typeof next === "object") queue.push(next)
+    }
   }
 
   return false

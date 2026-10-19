@@ -4,6 +4,7 @@ import type { Prompt, PromptStore } from "@/context/prompt"
 import type { ModelSelection } from "@/context/local"
 
 let createPromptSubmit: typeof import("./submit").createPromptSubmit
+let isDefinitiveSessionCreateFailure: typeof import("./submit").isDefinitiveSessionCreateFailure
 
 const createdClients: string[] = []
 const createdSessions: string[] = []
@@ -33,6 +34,9 @@ const sentPrompts: string[] = []
 const promptInputs: unknown[] = []
 const sentCommands: unknown[] = []
 const commands: Array<{ name: string }> = []
+const toasts: Array<{ title: string; description?: string }> = []
+const sessionCreateErrors: unknown[] = []
+const removedWorktrees: string[] = []
 let serverSessionSyncs = 0
 
 let params: { id?: string } = {}
@@ -79,8 +83,10 @@ const clientFor = (directory: string) => {
         create: async (input: (typeof sessionCreateInputs)[number]) => {
           await createSessionGate
           const location = input.location?.directory ?? directory
-          createdSessions.push(location)
           sessionCreateInputs.push(input)
+          const failure = sessionCreateErrors.shift()
+          if (failure) throw failure
+          createdSessions.push(location)
           return {
             id: `session-${createdSessions.length}`,
             projectID: "project",
@@ -112,6 +118,10 @@ const clientFor = (directory: string) => {
     },
     worktree: {
       create: async () => ({ data: { directory: `${directory}/new` } }),
+      remove: async (input: { worktreeRemoveInput?: { directory?: string } }) => {
+        removedWorktrees.push(input.worktreeRemoveInput?.directory ?? "")
+        return { data: undefined }
+      },
     },
   }
 }
@@ -136,6 +146,14 @@ beforeAll(async () => {
   mock.module("@openctrlc/ui/toast", () => ({
     Toast: { Region: () => null },
     showToast: () => 0,
+    toaster: { show: () => 0, dismiss: () => undefined, promise: () => 0 },
+  }))
+
+  mock.module("@/utils/toast", () => ({
+    showToast: (options: { title: string; description?: string }) => {
+      toasts.push(options)
+      return 0
+    },
   }))
 
   mock.module("@openctrlc/core/util/encode", () => ({
@@ -277,6 +295,7 @@ beforeAll(async () => {
 
   const mod = await import("./submit")
   createPromptSubmit = mod.createPromptSubmit
+  isDefinitiveSessionCreateFailure = mod.isDefinitiveSessionCreateFailure
 })
 
 beforeEach(() => {
@@ -302,6 +321,9 @@ beforeEach(() => {
   permissionServer = "server-a"
   createSessionGate = undefined
   serverSessionSyncs = 0
+  toasts.length = 0
+  sessionCreateErrors.length = 0
+  removedWorktrees.length = 0
   for (const key of Object.keys(storedSessions)) delete storedSessions[key]
 })
 
@@ -626,5 +648,158 @@ describe("prompt submit worktree selection", () => {
     expect(storedSessions["/repo/worktree-a"]).toHaveLength(1)
     expect(storedSessions["/repo/worktree-a"]?.[0]).toMatchObject({ id: "session-1", title: "New session 1" })
     expect(optimisticSeeded).toEqual([true])
+  })
+})
+
+describe("isDefinitiveSessionCreateFailure", () => {
+  test("classifies the real client error shapes", () => {
+    // V2 已声明错误体（Schema.TaggedErrorClass 编码为 {_tag}）
+    expect(isDefinitiveSessionCreateFailure({ _tag: "InvalidRequestError", message: "bad" })).toBe(true)
+    expect(isDefinitiveSessionCreateFailure({ _tag: "UnauthorizedError", message: "auth" })).toBe(true)
+    expect(isDefinitiveSessionCreateFailure({ _tag: "BadRequest" })).toBe(true)
+    expect(isDefinitiveSessionCreateFailure({ name: "BadRequest" })).toBe(true)
+
+    // V2 未声明状态：ClientError("UnexpectedStatus", { cause: { status } })
+    const clientError = (status: number) =>
+      Object.assign(new Error("UnexpectedStatus"), { name: "ClientError", reason: "UnexpectedStatus", cause: { status } })
+    expect(isDefinitiveSessionCreateFailure(clientError(400))).toBe(true)
+    expect(isDefinitiveSessionCreateFailure(clientError(404))).toBe(true)
+    expect(isDefinitiveSessionCreateFailure(clientError(403))).toBe(true)
+    expect(isDefinitiveSessionCreateFailure(clientError(500))).toBe(false)
+    expect(isDefinitiveSessionCreateFailure(clientError(503))).toBe(false)
+    expect(isDefinitiveSessionCreateFailure(clientError(429))).toBe(false)
+    expect(isDefinitiveSessionCreateFailure(clientError(409))).toBe(false)
+    expect(isDefinitiveSessionCreateFailure(clientError(408))).toBe(false)
+
+    // V1 legacy：wrapClientError 包装出 Error + cause: { body, status, kind }
+    const v1Wrapped = (status: number) =>
+      new Error("boom", { cause: { body: { name: "Whatever" }, status, kind: "server", request: {} } })
+    expect(isDefinitiveSessionCreateFailure(v1Wrapped(400))).toBe(true)
+    expect(isDefinitiveSessionCreateFailure(v1Wrapped(500))).toBe(false)
+    expect(isDefinitiveSessionCreateFailure(v1Wrapped(429))).toBe(false)
+
+    // 网络失败：结果不确定，不应判为明确失败
+    expect(
+      isDefinitiveSessionCreateFailure(
+        Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport", cause: new TypeError("fetch failed") }),
+      ),
+    ).toBe(false)
+
+    // 循环引用与字符串 reason 不应导致异常或误判
+    const cyclic: Record<string, unknown> = { _tag: "Nope", reason: "UnexpectedStatus" }
+    cyclic.cause = cyclic
+    expect(isDefinitiveSessionCreateFailure(cyclic)).toBe(false)
+    expect(isDefinitiveSessionCreateFailure(undefined)).toBe(false)
+  })
+})
+
+describe("prompt submit session create retry", () => {
+  const makeSubmit = (model?: ModelSelection) =>
+    createPromptSubmit({
+      prompt,
+      info: () => undefined,
+      imageAttachments: () => [],
+      commentCount: () => 0,
+      autoAccept: () => false,
+      mode: () => "shell",
+      working: () => false,
+      editor: () => undefined,
+      queueScroll: () => undefined,
+      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
+      addToHistory: () => undefined,
+      resetHistoryNavigation: () => undefined,
+      setMode: () => undefined,
+      setPopover: () => undefined,
+      newSessionWorktree: () => selected,
+      onNewSessionWorktreeReset: () => undefined,
+      onSubmit: () => undefined,
+      model,
+    })
+
+  const event = { preventDefault: () => undefined } as unknown as Event
+
+  test("definitive failure keeps the selected worktree on retry and issues a fresh id", async () => {
+    const submit = makeSubmit()
+    sessionCreateErrors.push({ _tag: "InvalidRequestError", message: "bad model" })
+
+    await submit.handleSubmit(event)
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs.map((input) => input.location?.directory)).toEqual([
+      "/repo/worktree-a",
+      "/repo/worktree-a",
+    ])
+    expect(sessionCreateInputs[0]?.id).toMatch(/^ses_/)
+    expect(sessionCreateInputs[1]?.id).toMatch(/^ses_/)
+    expect(sessionCreateInputs[0]?.id).not.toBe(sessionCreateInputs[1]?.id)
+    expect(createdSessions).toEqual(["/repo/worktree-a"])
+    // 创建失败只提示一次，不再重复报“发送失败”
+    expect(toasts.map((item) => item.title)).toEqual(["prompt.toast.sessionCreateFailed.title"])
+  })
+
+  test("uncertain failure reuses the same id and directory on retry", async () => {
+    const submit = makeSubmit()
+    sessionCreateErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+
+    await submit.handleSubmit(event)
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs.map((input) => input.location?.directory)).toEqual([
+      "/repo/worktree-a",
+      "/repo/worktree-a",
+    ])
+    expect(sessionCreateInputs[0]?.id).toBe(sessionCreateInputs[1]?.id)
+    expect(createdSessions).toEqual(["/repo/worktree-a"])
+    expect(toasts.map((item) => item.title)).toEqual(["prompt.toast.sessionCreateFailed.title"])
+  })
+
+  test("changing the worktree after an uncertain failure starts a fresh create there", async () => {
+    const submit = makeSubmit()
+    sessionCreateErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+
+    await submit.handleSubmit(event)
+    selected = "/repo/worktree-b"
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs.map((input) => input.location?.directory)).toEqual([
+      "/repo/worktree-a",
+      "/repo/worktree-b",
+    ])
+    expect(sessionCreateInputs[0]?.id).not.toBe(sessionCreateInputs[1]?.id)
+  })
+
+  test("changing the model after an uncertain failure starts a fresh create with the new model", async () => {
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const model = {
+      current: () => current,
+      variant: { current: () => undefined },
+    } as unknown as ModelSelection
+    const submit = makeSubmit(model)
+    sessionCreateErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs[0]?.model?.id).toBe("model-a")
+    expect(sessionCreateInputs[1]?.model?.id).toBe("model-b")
+    expect(sessionCreateInputs[0]?.id).not.toBe(sessionCreateInputs[1]?.id)
+  })
+
+  test("definitive failure in create mode reclaims the orphan worktree", async () => {
+    selected = "create"
+    const submit = makeSubmit()
+    sessionCreateErrors.push({ _tag: "InvalidRequestError", message: "bad model" })
+
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs[0]?.location?.directory).toBe("/repo/main/new")
+    expect(removedWorktrees).toEqual(["/repo/main/new"])
+
+    await submit.handleSubmit(event)
+
+    expect(sessionCreateInputs[1]?.location?.directory).toBe("/repo/main/new")
+    expect(createdSessions).toEqual(["/repo/main/new"])
+    expect(removedWorktrees).toEqual(["/repo/main/new"])
   })
 })

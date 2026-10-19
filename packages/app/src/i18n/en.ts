@@ -325,6 +325,8 @@ export const dict = {
   "prompt.toast.modelAgentRequired.description": "Choose an agent and model before sending a prompt.",
   "prompt.toast.worktreeCreateFailed.title": "Failed to create worktree",
   "prompt.toast.sessionCreateFailed.title": "Failed to create session",
+  "prompt.toast.sessionCreateTimeout.title": "Session creation timed out",
+  "prompt.toast.sessionCreateTimeout.description": "Creating the session timed out. Retrying will not create a duplicate.",
   "prompt.toast.shellSendFailed.title": "Failed to send shell command",
   "prompt.toast.commandSendFailed.title": "Failed to send command",
   "prompt.toast.promptSendFailed.title": "Failed to send prompt",
