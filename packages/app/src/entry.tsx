@@ -12,7 +12,6 @@ import { authFromToken } from "@/utils/server"
 import pkg from "../package.json"
 import { ServerConnection } from "./context/server"
 import { Brand } from "@openctrlc/identity"
-import { sessionHref } from "./utils/session-route"
 import { currentRemoteSessionID, takeRemoteWorkspaceSnapshot } from "./utils/remote-workspace"
 import { RemotePeerClient } from "./utils/remote-peer"
 
@@ -178,10 +177,6 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 }
 
 if (root instanceof HTMLElement) {
-  if (remoteWorkspace?.activeSessionID && location.pathname === "/") {
-    const server = ServerConnection.Key.make(getCurrentUrl())
-    history.replaceState(null, "", sessionHref(server, remoteWorkspace.activeSessionID))
-  }
   if (typeof document === "object") {
     document.cookie = "__Host-oc_remote_boot=; Path=/; Max-Age=0; Secure; SameSite=Strict"
   }

@@ -5,7 +5,7 @@ import { Persist, persisted, removePersisted, draftPersistedKeys } from "@/utils
 import { ServerConnection, useServer } from "./server"
 import { createEffect, getOwner, onCleanup, startTransition } from "solid-js"
 import { useLocation, useNavigate, useParams } from "@solidjs/router"
-import { usePlatform, type RemoteWorkspaceSnapshot } from "./platform"
+import { usePlatform } from "./platform"
 import { uuid } from "@/utils/uuid"
 import { SessionTabsRemovedDetail } from "@/components/titlebar-session-events"
 import { sessionHref } from "@/utils/session-route"
@@ -53,7 +53,7 @@ export function sessionHasOpenTab(tabs: Tab[], server: ServerConnection.Key, ses
 export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
   name: "Tabs",
   gate: false,
-  init: (props: { remoteWorkspace?: RemoteWorkspaceSnapshot }) => {
+  init: () => {
     const server = useServer()
     const platform = usePlatform()
     const fallback = server.key
@@ -67,23 +67,6 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
     const [recent, setRecent, , recentReady] = persisted(Persist.window("tabs.recent"), createStore<RecentTab>({}))
     const [info, setInfo] = persisted(Persist.window("tabs.info"), createStore<Record<string, TabInfo>>({}))
     const [closed, setClosed, , closedReady] = persisted(Persist.window("tabs.closed"), createStore<ClosedTab[]>([]))
-
-    if (platform.platform === "web" && props.remoteWorkspace) {
-      const active = props.remoteWorkspace.activeSessionID
-      const sessionIDs = [...new Set(props.remoteWorkspace.sessionIDs)]
-      if (active && !sessionIDs.includes(active)) sessionIDs.push(active)
-      const sessions = sessionIDs.map((sessionId) => ({ type: "session" as const, server: fallback, sessionId }))
-      setStore(sessions)
-      setInfo({})
-      for (const item of props.remoteWorkspace.sessionInfo ?? []) {
-        const tab = sessions.find((session) => session.sessionId === item.sessionID)
-        if (!tab) continue
-        if (typeof item.title === "string") setInfo(tabKey(tab), "title", item.title)
-        if (typeof item.directory === "string") setInfo(tabKey(tab), "directory", item.directory)
-      }
-      const activeTab = sessions.find((session) => session.sessionId === active)
-      if (activeTab) setRecent("key", tabKey(activeTab))
-    }
 
     const params = useParams()
     const navigate = useNavigate()
@@ -217,44 +200,6 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
             tabs.splice(0, tabs.length, ...next)
           }),
         )
-      },
-      syncRemoteWorkspace(snapshot: RemoteWorkspaceSnapshot) {
-        if (platform.platform !== "web") return
-        const previousTabs = store.map((tab) => tab)
-        const sessions = [...new Set(snapshot.sessionIDs)].map((sessionId) => ({
-          type: "session" as const,
-          server: fallback,
-          sessionId,
-        }))
-        if (snapshot.activeSessionID && !sessions.some((tab) => tab.sessionId === snapshot.activeSessionID)) {
-          sessions.push({ type: "session", server: fallback, sessionId: snapshot.activeSessionID })
-        }
-        const current = store.find(
-          (tab): tab is SessionTab =>
-            tab.type === "session" && tab.server === fallback && location.pathname.includes(tab.sessionId),
-        )
-        if (current && !sessions.some((tab) => tab.sessionId === current.sessionId)) sessions.push(current)
-        const next = [...sessions, ...store.filter((tab): tab is DraftTab => tab.type === "draft")]
-        const same = next.length === store.length && next.every((tab, index) => tabKey(tab) === tabKey(store[index]!))
-        const keys = new Set(next.map(tabKey))
-        for (const tab of previousTabs) {
-          if (tab.type !== "session" || keys.has(tabKey(tab))) continue
-          removeInfo(tabKey(tab))
-        }
-        if (!same) setStore(() => next)
-        for (const item of snapshot.sessionInfo ?? []) {
-          const tab = sessions.find((session) => session.sessionId === item.sessionID)
-          if (!tab) continue
-          const key = tabKey(tab)
-          const previous = info[key]
-          const title = item.title ?? previous?.title
-          const directory = item.directory ?? previous?.directory
-          if (previous?.title === title && previous.directory === directory) continue
-          setInfo(key, {
-            ...(typeof title === "string" ? { title } : {}),
-            ...(typeof directory === "string" ? { directory } : {}),
-          })
-        }
       },
       draft(draftID: string) {
         const tab = store.find((item) => item.type === "draft" && item.draftID === draftID)

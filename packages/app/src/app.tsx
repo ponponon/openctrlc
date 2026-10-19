@@ -705,7 +705,7 @@ export function AppInterface(props: {
               <Dynamic
                 component={props.router ?? Router}
                 root={(routerProps) => (
-                  <TabsProvider remoteWorkspace={props.remoteWorkspace}>
+                  <TabsProvider>
                     <RemoteWorkspaceHydrator remoteWorkspace={props.remoteWorkspace} />
                     <RemoteTabsHydrator />
                     <PermissionProvider>
@@ -742,7 +742,6 @@ function RemoteWorkspaceHydrator(props: { remoteWorkspace?: RemoteWorkspaceSnaps
   const platform = usePlatform()
   const server = useServer()
   const global = useGlobal()
-  const tabs = useTabs()
   const [hasRemoteWorkspace, setHasRemoteWorkspace] = createSignal(Boolean(props.remoteWorkspace))
 
   onMount(() => {
@@ -755,7 +754,7 @@ function RemoteWorkspaceHydrator(props: { remoteWorkspace?: RemoteWorkspaceSnaps
     let inFlight = false
     let etag: string | undefined
     const refresh = async () => {
-      if (!active || inFlight || !tabs.ready() || document.visibilityState === "hidden") return
+      if (!active || inFlight || document.visibilityState === "hidden") return
       inFlight = true
       try {
         const response = await fetch(new URL("/_remote/workspace", location.origin), {
@@ -790,7 +789,6 @@ function RemoteWorkspaceHydrator(props: { remoteWorkspace?: RemoteWorkspaceSnaps
             context.projects.move(project.worktree, index)
           })
           if (snapshot.lastProject && projects.has(snapshot.lastProject)) context.projects.touch(snapshot.lastProject)
-          tabs.syncRemoteWorkspace(snapshot)
         })
       } catch {
         // Keep the last known project list while the Relay is temporarily unavailable.

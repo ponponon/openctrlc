@@ -3465,3 +3465,11 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/ui/src/v2/components/wordmark-v2.tsx`，由 `packages/app/src/pages/new-session/new-session-view.tsx` 使用。
 - 验证：`packages/app` 类型检查和 Vite 静态构建通过；按 `packages/app/AGENTS.md` 不重启应用/服务，运行中窗口的实时视觉状态未确认。
+
+## 远程浏览器独立维护会话标签
+
+远程手机浏览器不再从 Desktop 的工作区快照恢复已打开标签，也不再由桌面当前会话自动改写首页路由。手机端刷新后保留该浏览器自己的标签状态；用户可在首页历史会话列表中选择要打开的会话。远程快照继续用于项目列表和逐会话协议兼容信息。
+
+- 代码：`packages/app/src/context/tabs.tsx`、`packages/app/src/app.tsx`、`packages/app/src/entry.tsx`。
+- 历史会话：沿用首页从服务器加载的会话索引与点击打开流程，不依赖 Desktop 的活动标签集合。
+- 验证：静态检查确认首页远程工作区刷新仍同步项目，但不再同步会话标签或重定向到 Desktop 当前会话；未运行测试或重启应用。
