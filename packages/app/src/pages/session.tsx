@@ -621,10 +621,7 @@ export default function Page() {
         const active = current.active()
         if (active && active !== "review" && active !== "context") return
 
-        const hasPanelTab =
-          active === "review" ||
-          active === "context" ||
-          current.all().includes("context")
+        const hasPanelTab = active === "review" || active === "context" || current.all().includes("context")
         if (!view().reviewPanel.autoOpen(hasPanelTab)) return
         if (layout.fileTree.opened() && layout.fileTree.tab() !== "all") layout.fileTree.setTab("all")
         void tabs().open("context")

@@ -330,9 +330,12 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       reviewPanelSource: "other" as ReviewPanelSource,
       sessionTabPreview: {} as Record<string, string | undefined>,
     })
-    const layoutReady = Object.assign(createMemo(() => ready() && panelReady()), {
-      promise: Promise.all([ready.promise, panelReady.promise]),
-    })
+    const layoutReady = Object.assign(
+      createMemo(() => ready() && panelReady()),
+      {
+        promise: Promise.all([ready.promise, panelReady.promise]),
+      },
+    )
     const reviewPanelOpened = createMemo(
       () => panelState.opened ?? store.review?.panelOpened ?? DEFAULT_REVIEW_PANEL_OPENED,
     )

@@ -1500,7 +1500,8 @@ export const dict = {
     "アプリの同じウィンドウ内でセッションを切り替えたりレイアウトを復元したりしても、閉じたセッションサイドパネルは閉じたままになります。",
   "dialog.releaseNotes.v1_1_12.jumpToLatest":
     "「最新へ移動」は、最後のユーザーメッセージがすでに表示されていても、アシスタントの最新出力までスクロールします。",
-  "dialog.releaseNotes.v1_1_12.outputDetailLevel": "出力の詳細度を選択すると、コントロールの表示がすぐに更新されるようになりました。",
+  "dialog.releaseNotes.v1_1_12.outputDetailLevel":
+    "出力の詳細度を選択すると、コントロールの表示がすぐに更新されるようになりました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
