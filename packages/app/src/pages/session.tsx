@@ -624,7 +624,6 @@ export default function Page() {
         const hasPanelTab =
           active === "review" ||
           active === "context" ||
-          current.all().includes("review") ||
           current.all().includes("context")
         if (!view().reviewPanel.opened() && hasPanelTab) return
 
