@@ -772,6 +772,8 @@ describe("prompt submit session create retry", () => {
     expect(removedSessions).toEqual(["session-1"])
     expect(removedSessions).not.toContain("session-2")
     expect(removedSessionInputs).toEqual([{ sessionID: "session-1", directory: "/repo/worktree-a" }])
+    // 用户自选的 worktree 不是本次自动建出的，不随会话回收
+    expect(removedWorktrees).toEqual([])
   })
 
   test("timeout then an unchanged retry reuses the same id and never reaps", async () => {
@@ -861,5 +863,85 @@ describe("prompt submit session create retry", () => {
     // 不传会回落到 SDK 默认目录，worktree-a 里的孤儿会话会被发到主工作区而漏删。
     expect(removedSessionInputs).toEqual([{ sessionID: "session-1", directory: "/repo/worktree-a" }])
     expect(removedSessions).toEqual(["session-1"])
+  })
+
+  test("reaps the auto-created worktree together with its late orphan session", async () => {
+    selected = "create"
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+
+    // 旧请求为“创建工作区”模式自动建出 worktree，超时后原请求仍在途
+    await submit.handleSubmit(event)
+    expect(sessionCreateInputs[0]?.location?.directory).toBe("/repo/main/new")
+
+    // 用户改选项重建：旧参数组被放弃，新请求又自动建出一个 worktree
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+    expect(createdSessions).toEqual(["/repo/main/new"])
+
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 迟到会话被回收后，为它自动建出的 worktree 必须一并回收，
+    // 否则旧 worktree 一直留在项目里，再选“创建工作区”还会再建一个
+    expect(removedSessions).toEqual(["session-1"])
+    expect(removedWorktrees).toEqual(["/repo/main/new"])
+  })
+
+  test("reclaims the abandoned auto-created worktree on a definitive late failure", async () => {
+    selected = "create"
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    // 明确失败说明服务端没建成会话，worktree 无用途，迟到时也应随放弃的参数组回收
+    sessionCreateErrors.push({ _tag: "InvalidRequestError", message: "bad model" })
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(removedSessions).toEqual([])
+    expect(removedWorktrees).toEqual(["/repo/main/new"])
+  })
+
+  test("keeps the abandoned auto-created worktree on an uncertain late failure", async () => {
+    selected = "create"
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    // 不确定失败（网络中断）意味着服务端可能已建好会话，结果未知不回收
+    sessionCreateErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(removedSessions).toEqual([])
+    expect(removedWorktrees).toEqual([])
   })
 })

@@ -241,6 +241,9 @@ type PromptSubmitInput = {
 export function createPromptSubmit(input: PromptSubmitInput) {
   const [state, setState] = createStore({ creatingSession: false })
   let newSessionSubmitInFlight = false
+  // “create”模式下为这次创建自动建出的 worktree；参数组放弃后随会话一并回收，
+  // reclaimed 保证同一组只删一次。用户自选的 worktree 不在此列，永不触碰。
+  type AutoWorktree = { directory: string; reclaimed: boolean }
   let pendingSessionCreate:
     | {
         id: SessionID
@@ -248,13 +251,19 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         model: { id: string; providerID: string; variant?: string }
         directory: string
         worktreeSelection: string
+        autoWorktree?: AutoWorktree
       }
     | undefined
   // 在途会话创建记录：请求结果可能迟到（超时后才返回），若其参数组已被放弃而会话又真的建了出来，
   // 必须回收，否则用户换选项重建会同时留下两个会话。同一 Session ID 可能并存多条在途重试，
   // 按请求尝试分别记录，回调只允许清理自己那条——按 ID 删键会误删其它在途记录，
   // 改选项时就找不到要放弃的请求，迟到成功也不会回收。
-  type InflightSessionCreate = { consumed: boolean; abandoned: boolean; result?: Session }
+  type InflightSessionCreate = {
+    consumed: boolean
+    abandoned: boolean
+    result?: Session
+    autoWorktree?: AutoWorktree
+  }
   const inflightSessionCreates = new Map<SessionID, Set<InflightSessionCreate>>()
   const trackInflightCreate = (id: SessionID, record: InflightSessionCreate) => {
     const records = inflightSessionCreates.get(id) ?? new Set<InflightSessionCreate>()
@@ -267,6 +276,22 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     records.delete(record)
     if (records.size === 0) inflightSessionCreates.delete(id)
   }
+  // 会话回收成功后（或明确失败时）回收本次自动建出的 worktree：否则用户改选项重建后，
+  // 旧请求的 worktree 仍留在项目里，再选“创建工作区”又会新建一个，越积越多。
+  const reclaimAutoWorktree = (id: SessionID, record: InflightSessionCreate) => {
+    const auto = record.autoWorktree
+    if (!auto || auto.reclaimed) return
+    // 同组还有在途请求时不删：它们可能还会在这个目录建出会话，等组内收尾再回收。
+    if (inflightSessionCreates.has(id)) return
+    auto.reclaimed = true
+    WorktreeState.failed(sdk().scope, auto.directory, "session create abandoned")
+    void sdk()
+      .client.worktree.remove({
+        directory: sdk().directory,
+        worktreeRemoveInput: { directory: auto.directory },
+      })
+      .catch(() => {})
+  }
   const reapAbandonedCreate = (id: SessionID, record: InflightSessionCreate) => {
     if (!record.abandoned || record.consumed || !record.result) return
     untrackInflightCreate(id, record)
@@ -274,6 +299,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     // SDK 默认目录，worktree 里迟到建出的会话会被发到主工作区而漏删。
     void sdk()
       .api.session.remove({ sessionID: record.result.id, directory: record.result.directory })
+      .then(() => reclaimAutoWorktree(id, record))
       .catch(() => {})
   }
   const navigate = useNavigate()
@@ -470,8 +496,13 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
         directory: sessionDirectory,
         worktreeSelection,
+        autoWorktree: worktreeSelection === "create" ? { directory: sessionDirectory, reclaimed: false } : undefined,
       })
-      const inflight: InflightSessionCreate = { consumed: false, abandoned: false }
+      const inflight: InflightSessionCreate = {
+        consumed: false,
+        abandoned: false,
+        autoWorktree: createInput.autoWorktree,
+      }
       trackInflightCreate(createInput.id, inflight)
       const createRequest = sdk()
         .api.session.create({
@@ -486,7 +517,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           inflight.result = value
           reapAbandonedCreate(createInput.id, inflight)
         },
-        () => untrackInflightCreate(createInput.id, inflight),
+        (err: unknown) => {
+          untrackInflightCreate(createInput.id, inflight)
+          // 明确失败说明服务端没建成会话，参数组已被放弃时 worktree 一并回收；
+          // 不确定失败保留 worktree，以防服务端已建好会话（结果未知不回收）。
+          if (inflight.abandoned && isDefinitiveSessionCreateFailure(err)) {
+            reclaimAutoWorktree(createInput.id, inflight)
+          }
+        },
       )
       const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS).catch(
         (err: unknown) => {
