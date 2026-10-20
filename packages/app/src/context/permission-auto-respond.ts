@@ -45,36 +45,36 @@ export function convergeAutoAccept(
   sessionID: string | undefined,
   directory: string,
   enabled: boolean,
-  sessions: { id: string; parentID?: string }[] = [],
+  sessions: { id: string; parentID?: string }[],
 ) {
   const next = { ...autoAccept, [directoryAcceptKey(directory)]: enabled }
   if (!sessionID) return next
   delete next[acceptKey(sessionID, directory)]
   delete next[sessionID]
-  const inherited = sessionLineage(sessions, sessionID)
+  const lineage = sessionLineage(sessions, sessionID)
+  const inherited = lineage.ids
     .slice(1)
     .map((id) => accepted(autoAccept, id, directory))
     .find((item): item is boolean => item !== undefined)
-  if (inherited !== undefined && inherited !== enabled) next[acceptKey(sessionID, directory)] = enabled
+  if ((inherited !== undefined && inherited !== enabled) || (inherited === undefined && !lineage.complete)) {
+    next[acceptKey(sessionID, directory)] = enabled
+  }
   return next
 }
 
 function sessionLineage(session: { id: string; parentID?: string }[], sessionID: string) {
-  const parent = session.reduce((acc, item) => {
-    if (item.parentID) acc.set(item.id, item.parentID)
-    return acc
-  }, new Map<string, string>())
+  const byID = new Map(session.map((item) => [item.id, item]))
   const seen = new Set([sessionID])
   const ids = [sessionID]
 
   for (const id of ids) {
-    const parentID = parent.get(id)
+    const parentID = byID.get(id)?.parentID
     if (!parentID || seen.has(parentID)) continue
     seen.add(parentID)
     ids.push(parentID)
   }
 
-  return ids
+  return { ids, complete: ids.every((id) => byID.has(id)) }
 }
 
 export function autoRespondsPermission(
@@ -94,7 +94,7 @@ export function sessionAutoAccept(
   permission: { sessionID: string },
   directory?: string,
 ) {
-  return sessionLineage(session, permission.sessionID)
+  return sessionLineage(session, permission.sessionID).ids
     .map((id) => accepted(autoAccept, id, directory))
     .find((item): item is boolean => item !== undefined)
 }

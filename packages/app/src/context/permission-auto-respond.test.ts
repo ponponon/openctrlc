@@ -164,7 +164,7 @@ describe("convergeAutoAccept", () => {
       [`${base64Encode("/tmp/other")}/*`]: true,
     }
 
-    const next = convergeAutoAccept(autoAccept, "ses_1", directory, false)
+    const next = convergeAutoAccept(autoAccept, "ses_1", directory, false, [session({ id: "ses_1" })])
 
     expect(next[`${base64Encode(directory)}/*`]).toBe(false)
     expect(next[`${base64Encode(directory)}/other`]).toBe(true)
@@ -178,24 +178,102 @@ describe("convergeAutoAccept", () => {
       [`${base64Encode(directory)}/ses_1`]: true,
     }
 
-    const next = convergeAutoAccept(autoAccept, "ses_1", directory, false)
+    const next = convergeAutoAccept(autoAccept, "ses_1", directory, false, sessions)
 
     expect(next[`${base64Encode(directory)}/ses_1`]).toBeUndefined()
     expect(autoRespondsPermission(next, sessions, permission("ses_1"), directory)).toBe(false)
   })
 
   test("clears the legacy bare session key", () => {
-    const next = convergeAutoAccept({ ses_1: true }, "ses_1", directory, true)
+    const next = convergeAutoAccept({ ses_1: true }, "ses_1", directory, true, [session({ id: "ses_1" })])
 
     expect(next.ses_1).toBeUndefined()
     expect(next[`${base64Encode(directory)}/*`]).toBe(true)
   })
 
   test("only writes the directory key without a session", () => {
-    const next = convergeAutoAccept({ [`${base64Encode(directory)}/ses_1`]: true }, undefined, directory, false)
+    const next = convergeAutoAccept({ [`${base64Encode(directory)}/ses_1`]: true }, undefined, directory, false, [])
 
     expect(next[`${base64Encode(directory)}/*`]).toBe(false)
     expect(next[`${base64Encode(directory)}/ses_1`]).toBe(true)
     expect(isDirectoryAutoAccepting(next, directory)).toBe(false)
+  })
+
+  test("preserves a child choice when it conflicts with a parent and leaves siblings unchanged", () => {
+    const sessions = [
+      session({ id: "parent" }),
+      session({ id: "child", parentID: "parent" }),
+      session({ id: "sibling", parentID: "parent" }),
+    ]
+    const autoAccept = {
+      [`${base64Encode(directory)}/parent`]: true,
+      [`${base64Encode(directory)}/child`]: true,
+    }
+
+    const next = convergeAutoAccept(autoAccept, "child", directory, false, sessions)
+
+    expect(next[`${base64Encode(directory)}/*`]).toBe(false)
+    expect(next[`${base64Encode(directory)}/parent`]).toBe(true)
+    expect(next[`${base64Encode(directory)}/child`]).toBe(false)
+    expect(autoRespondsPermission(next, sessions, permission("child"), directory)).toBe(false)
+    expect(autoRespondsPermission(next, sessions, permission("sibling"), directory)).toBe(true)
+  })
+
+  test("removes a child override when it matches the nearest inherited value", () => {
+    const sessions = [session({ id: "parent" }), session({ id: "child", parentID: "parent" })]
+    const autoAccept = {
+      [`${base64Encode(directory)}/parent`]: false,
+      [`${base64Encode(directory)}/child`]: true,
+    }
+
+    const next = convergeAutoAccept(autoAccept, "child", directory, false, sessions)
+
+    expect(next[`${base64Encode(directory)}/child`]).toBeUndefined()
+    expect(autoRespondsPermission(next, sessions, permission("child"), directory)).toBe(false)
+  })
+
+  test("uses the nearest override in a three-level parent chain", () => {
+    const sessions = [
+      session({ id: "root" }),
+      session({ id: "parent", parentID: "root" }),
+      session({ id: "child", parentID: "parent" }),
+    ]
+    const autoAccept = {
+      [`${base64Encode(directory)}/root`]: true,
+      [`${base64Encode(directory)}/parent`]: false,
+    }
+
+    const next = convergeAutoAccept(autoAccept, "child", directory, true, sessions)
+
+    expect(next[`${base64Encode(directory)}/child`]).toBe(true)
+    expect(next[`${base64Encode(directory)}/parent`]).toBe(false)
+    expect(next[`${base64Encode(directory)}/root`]).toBe(true)
+    expect(autoRespondsPermission(next, sessions, permission("child"), directory)).toBe(true)
+  })
+
+  test("respects a legacy parent key when converging a child choice", () => {
+    const sessions = [session({ id: "parent" }), session({ id: "child", parentID: "parent" })]
+
+    const next = convergeAutoAccept({ parent: true }, "child", directory, false, sessions)
+
+    expect(next.parent).toBe(true)
+    expect(next[`${base64Encode(directory)}/child`]).toBe(false)
+    expect(autoRespondsPermission(next, sessions, permission("child"), directory)).toBe(false)
+  })
+
+  test("keeps the requested choice when the parent snapshot is incomplete", () => {
+    const sessions = [session({ id: "child", parentID: "unloaded-parent" })]
+
+    const next = convergeAutoAccept(
+      { [`${base64Encode(directory)}/*`]: true },
+      "child",
+      directory,
+      false,
+      sessions,
+    )
+
+    expect(next[`${base64Encode(directory)}/*`]).toBe(false)
+    expect(next[`${base64Encode(directory)}/child`]).toBe(false)
+    expect(autoRespondsPermission(next, sessions, permission("child"), directory)).toBe(false)
   })
 })

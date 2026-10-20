@@ -450,9 +450,10 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
 
   function setAutoAccept(sessionID: string | undefined, directory: string, enabled: boolean) {
     if (meta.disposed) return
+    const sessionList = sessions(directory)
     setStore(
       produce((draft) => {
-        draft.autoAccept = convergeAutoAccept(draft.autoAccept, sessionID, directory, enabled, sessions(directory))
+        draft.autoAccept = convergeAutoAccept(draft.autoAccept, sessionID, directory, enabled, sessionList)
       }),
     )
     if (enabled) reconcileDirectory(directory)
