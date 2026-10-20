@@ -1537,6 +1537,17 @@ export const dict = {
   "dialog.releaseNotes.v1_1_11.mcpCancellation":
     "取消或超时的 MCP 列表请求现在会正确中断，普通服务器故障仍按服务器隔离。",
   "dialog.releaseNotes.v1_1_11.timelineRail": "修复子会话中的时间线导航轨道跑到内容上方、无法固定在左侧的问题。",
+  "dialog.releaseNotes.v1_1_12.remoteSessionTabs":
+    "远程浏览器现在独立管理已打开的会话标签；桌面端切换标签不会再在其他浏览器中重新打开或关闭会话。",
+  "dialog.releaseNotes.v1_1_12.permissionAutoAccept":
+    "设置页与输入框中的权限自动接受开关现在保持同步，子会话也可以覆盖继承的选择。",
+  "dialog.releaseNotes.v1_1_12.sessionCreationRetries":
+    "新会话重试现在会阻止重复提交并保留原工作区选择；迟到创建的会话及其自动创建的 worktree 也会安全清理。",
+  "dialog.releaseNotes.v1_1_12.sessionSidePanel":
+    "在同一应用窗口中切换会话或恢复布局后，已关闭的会话侧栏仍保持关闭。",
+  "dialog.releaseNotes.v1_1_12.jumpToLatest":
+    "“跳到最新”现在会滚动到助手最新输出，即使最后一条用户消息已经在视口中也一样。",
+  "dialog.releaseNotes.v1_1_12.outputDetailLevel": "选择回复详略程度后，控件现在会立即更新显示状态。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",

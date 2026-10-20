@@ -1205,6 +1205,17 @@ export const dict = {
     "취소되거나 시간이 초과된 MCP 목록 요청은 이제 정상적으로 중단되며, 일반 서버 오류는 서버별로 격리됩니다.",
   "dialog.releaseNotes.v1_1_11.timelineRail":
     "하위 세션에서 타임라인 탐색 레일이 왼쪽에 고정되지 않고 콘텐츠 위쪽으로 이동하던 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_12.remoteSessionTabs":
+    "원격 브라우저는 열린 세션 탭을 별도로 관리하므로 데스크톱에서 탭을 변경해도 다른 브라우저의 세션 탭이 다시 열리거나 닫히지 않습니다.",
+  "dialog.releaseNotes.v1_1_12.permissionAutoAccept":
+    "설정과 프롬프트 입력창의 권한 자동 허용 상태가 항상 동기화되며, 하위 세션에서 상속된 선택을 재정의할 수 있습니다.",
+  "dialog.releaseNotes.v1_1_12.sessionCreationRetries":
+    "새 세션 재시도에서 중복 제출을 막고 기존 작업 공간 선택을 유지합니다. 늦게 생성된 세션과 자동 생성된 worktree도 안전하게 정리합니다.",
+  "dialog.releaseNotes.v1_1_12.sessionSidePanel":
+    "같은 앱 창에서 세션을 전환하거나 레이아웃을 복원해도 닫아 둔 세션 사이드 패널이 계속 닫힌 상태로 유지됩니다.",
+  "dialog.releaseNotes.v1_1_12.jumpToLatest":
+    "'최신으로 이동'을 누르면 마지막 사용자 메시지가 이미 보여도 어시스턴트의 최신 출력까지 스크롤합니다.",
+  "dialog.releaseNotes.v1_1_12.outputDetailLevel": "출력 상세도를 선택하면 컨트롤 표시가 즉시 업데이트됩니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

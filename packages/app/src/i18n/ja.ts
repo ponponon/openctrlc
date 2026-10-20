@@ -1490,6 +1490,17 @@ export const dict = {
     "キャンセルまたはタイムアウトした MCP 一覧リクエストは適切に中断され、通常のサーバーエラーはサーバーごとに分離されます。",
   "dialog.releaseNotes.v1_1_11.timelineRail":
     "子セッションでタイムラインのナビゲーションレールがコンテンツ上部に移動し、左側に固定されない問題を修正しました。",
+  "dialog.releaseNotes.v1_1_12.remoteSessionTabs":
+    "リモートブラウザーは開いているセッションタブを個別に管理するようになり、デスクトップ側のタブ変更で別のブラウザーのセッションが再度開いたり閉じたりしなくなりました。",
+  "dialog.releaseNotes.v1_1_12.permissionAutoAccept":
+    "設定と入力欄の権限自動承認は常に同期され、子セッションでは継承した設定を上書きできます。",
+  "dialog.releaseNotes.v1_1_12.sessionCreationRetries":
+    "新規セッションの再試行で重複送信を防ぎ、元のワークスペース選択を維持します。遅れて作成されたセッションと自動作成された worktree も安全にクリーンアップします。",
+  "dialog.releaseNotes.v1_1_12.sessionSidePanel":
+    "アプリの同じウィンドウ内でセッションを切り替えたりレイアウトを復元したりしても、閉じたセッションサイドパネルは閉じたままになります。",
+  "dialog.releaseNotes.v1_1_12.jumpToLatest":
+    "「最新へ移動」は、最後のユーザーメッセージがすでに表示されていても、アシスタントの最新出力までスクロールします。",
+  "dialog.releaseNotes.v1_1_12.outputDetailLevel": "出力の詳細度を選択すると、コントロールの表示がすぐに更新されるようになりました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

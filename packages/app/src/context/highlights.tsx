@@ -190,6 +190,20 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "Fixed the session timeline navigation rail appearing above the content instead of staying along the left side in child sessions.":
       "dialog.releaseNotes.v1_1_11.timelineRail",
   },
+  "1.1.12": {
+    "Remote browsers now keep their own open session tabs; desktop tab changes no longer reopen or close sessions in another browser.":
+      "dialog.releaseNotes.v1_1_12.remoteSessionTabs",
+    "Permission auto-accept now stays in sync between Settings and the composer, and child sessions can override inherited choices.":
+      "dialog.releaseNotes.v1_1_12.permissionAutoAccept",
+    "New-session retries now prevent duplicate submissions and preserve the original workspace selection; late-created sessions and auto-created worktrees are cleaned up safely.":
+      "dialog.releaseNotes.v1_1_12.sessionCreationRetries",
+    "A closed session side panel stays closed for that app window across session changes and restored layouts.":
+      "dialog.releaseNotes.v1_1_12.sessionSidePanel",
+    "Jump to latest now scrolls to the newest assistant output, even when the last user message is already visible.":
+      "dialog.releaseNotes.v1_1_12.jumpToLatest",
+    "The output detail-level control now updates immediately after a selection change.":
+      "dialog.releaseNotes.v1_1_12.outputDetailLevel",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {
