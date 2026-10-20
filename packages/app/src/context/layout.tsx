@@ -322,9 +322,44 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         },
       }),
     )
+    const [panelState, setPanelState, , panelReady] = persisted(
+      Persist.window("review-panel"),
+      createStore<{ opened?: boolean }>({}),
+    )
     const [ephemeral, setEphemeral] = createStore({
       reviewPanelSource: "other" as ReviewPanelSource,
       sessionTabPreview: {} as Record<string, string | undefined>,
+    })
+    const layoutReady = Object.assign(createMemo(() => ready() && panelReady()), {
+      promise: Promise.all([ready.promise, panelReady.promise]),
+    })
+    const reviewPanelOpened = createMemo(
+      () => panelState.opened ?? store.review?.panelOpened ?? DEFAULT_REVIEW_PANEL_OPENED,
+    )
+    let panelWrite = 0
+
+    function setReviewPanelOpened(next: boolean, source: ReviewPanelSource) {
+      const nextSource = next ? source : "other"
+      if (panelState.opened === next) {
+        if (ephemeral.reviewPanelSource !== nextSource) setEphemeral("reviewPanelSource", nextSource)
+        return
+      }
+
+      const write = ++panelWrite
+      batch(() => {
+        setPanelState("opened", next)
+        setEphemeral("reviewPanelSource", nextSource)
+      })
+      if (!panelReady()) {
+        void panelReady.promise?.then(() => {
+          if (write === panelWrite) setPanelState("opened", next)
+        })
+      }
+    }
+
+    createEffect(() => {
+      if (!layoutReady() || panelState.opened !== undefined || store.review?.panelOpened !== true) return
+      setReviewPanelOpened(true, "other")
     })
 
     const MAX_SESSION_KEYS = 50
@@ -614,7 +649,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
 
     return {
       route,
-      ready,
+      ready: layoutReady,
       home: {
         selection: createMemo(() => store.home.selection),
         setSelection(selection: HomeProjectSelection) {
@@ -819,7 +854,6 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
           if (typeof file === "string") return file
         })
         const terminalOpened = createMemo(() => store.terminal?.opened ?? false)
-        const reviewPanelOpened = createMemo(() => store.review?.panelOpened ?? DEFAULT_REVIEW_PANEL_OPENED)
         const reviewPanelSource = createMemo(() => (reviewPanelOpened() ? ephemeral.reviewPanelSource : "other"))
 
         function setTerminalOpened(next: boolean) {
@@ -832,28 +866,6 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
           const value = current.opened ?? false
           if (value === next) return
           setStore("terminal", "opened", next)
-        }
-
-        function setReviewPanelOpened(next: boolean, source: ReviewPanelSource) {
-          const nextSource = next ? source : "other"
-          const current = store.review
-          if (!current) {
-            batch(() => {
-              setStore("review", { diffStyle: "split" as ReviewDiffStyle, panelOpened: next })
-              setEphemeral("reviewPanelSource", nextSource)
-            })
-            return
-          }
-
-          const value = current.panelOpened ?? DEFAULT_REVIEW_PANEL_OPENED
-          if (value === next) {
-            if (ephemeral.reviewPanelSource !== nextSource) setEphemeral("reviewPanelSource", nextSource)
-            return
-          }
-          batch(() => {
-            setStore("review", "panelOpened", next)
-            setEphemeral("reviewPanelSource", nextSource)
-          })
         }
 
         return {
@@ -890,6 +902,15 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
           reviewPanel: {
             opened: reviewPanelOpened,
             source: reviewPanelSource,
+            autoOpen(hasPanelTab: boolean) {
+              if (panelState.opened === false) return false
+              if (!reviewPanelOpened() && hasPanelTab) {
+                setReviewPanelOpened(false, "other")
+                return false
+              }
+              setReviewPanelOpened(true, "context-button")
+              return true
+            },
             open(source: ReviewPanelSource = "other") {
               setReviewPanelOpened(true, source)
             },

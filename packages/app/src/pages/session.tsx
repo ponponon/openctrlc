@@ -625,9 +625,7 @@ export default function Page() {
           active === "review" ||
           active === "context" ||
           current.all().includes("context")
-        if (!view().reviewPanel.opened() && hasPanelTab) return
-
-        view().reviewPanel.open("context-button")
+        if (!view().reviewPanel.autoOpen(hasPanelTab)) return
         if (layout.fileTree.opened() && layout.fileTree.tab() !== "all") layout.fileTree.setTab("all")
         void tabs().open("context")
         tabs().setActive("context")
