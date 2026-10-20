@@ -8,6 +8,7 @@ export function SessionTimelineNavigator(props: {
   entries: Accessor<SessionTimelineNavigatorEntry[]>
   viewport: Accessor<HTMLDivElement | undefined>
   onNavigate: (id: string) => void
+  onNavigateToLatest: () => void
 }) {
   const language = useLanguage()
   const [hoveredID, setHoveredID] = createSignal<string>()
@@ -66,10 +67,12 @@ export function SessionTimelineNavigator(props: {
     props.onNavigate(entry.id)
   }
 
-  const navigateToBoundary = (boundary: "start" | "end") => {
-    const entries = props.entries()
-    const entry = boundary === "start" ? entries[0] : entries.at(-1)
-    navigateToEntry(entry)
+  const navigateToStart = () => navigateToEntry(props.entries()[0])
+
+  const navigateToLatest = () => {
+    clearHideTimer()
+    setHoveredID(undefined)
+    props.onNavigateToLatest()
   }
 
   createEffect(
@@ -135,7 +138,7 @@ export function SessionTimelineNavigator(props: {
           disabled={isAtStart()}
           aria-label={props.entries()[0]?.prompt || language.t("session.tab.session")}
           title={props.entries()[0]?.prompt || language.t("session.tab.session")}
-          onClick={() => navigateToBoundary("start")}
+          onClick={navigateToStart}
         >
           <Icon name="arrow-up" size="small" />
         </button>
@@ -211,7 +214,7 @@ export function SessionTimelineNavigator(props: {
           disabled={isAtEnd()}
           aria-label={language.t("session.messages.jumpToLatest")}
           title={language.t("session.messages.jumpToLatest")}
-          onClick={() => navigateToBoundary("end")}
+          onClick={navigateToLatest}
         >
           <Icon name="arrow-up" size="small" class="session-timeline-navigator__direction-icon--down" />
         </button>

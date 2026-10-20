@@ -3509,3 +3509,10 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/app/src/pages/session.tsx` 的默认上下文初始化 effect。
 - 验证：`packages/app` 类型检查；受当前仓库禁止重启运行中应用的约束，未现场确认桌面窗口交互。
+
+## 时间线导航末尾按钮滚动到最新内容
+
+会话左侧导航轨道的末尾按钮现在调用会话已有的“跳转到最新”操作，滚动到当前对话物理底部并恢复跟随。最后一轮的导航标记仍定位到该轮用户消息，两个操作不再共用“最后一条用户消息”作为末尾按钮的跳转目标。
+
+- 代码：`packages/app/src/pages/session/timeline/session-timeline-navigator-view.tsx`、`packages/app/src/pages/session/timeline/message-timeline.tsx`。
+- 验证：`packages/app` 的 `bun typecheck` 通过。未重启应用或服务，桌面端点击效果和性能基准未现场复测。

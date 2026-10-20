@@ -2218,6 +2218,7 @@ export function MessageTimeline(props: {
       <SessionTimelineNavigator
         entries={navigatorEntries}
         viewport={listRoot}
+        onNavigateToLatest={props.onResumeScroll}
         onNavigate={(id) => {
           const message = props.userMessages.find((item) => item.id === id)
           // 用瞬时落点而不是 smooth：smooth 动画会被虚拟列表测量校正的瞬时
