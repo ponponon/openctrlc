@@ -2086,26 +2086,38 @@ Header 临时几何标记、旧版纯字标和应用图标同时存在。
 
 ### 功能目标
 
-新进入的目录和新创建的会话默认自动接受权限请求，减少用户在每个会话中重复开启权限自动接受的操作。
+新进入的目录和新创建的会话默认自动接受权限请求，减少用户在每个会话中重复开启权限自动接受的操作；设置开关、输入框权限按钮、命令面板（mod+shift+a）三处入口显示同一有效状态，切换后行为一致。
 
 ### 实现范围
 
 - 目录没有显式保存权限开关时，自动接受状态默认为开启。
 - 首次进入目录时将默认开启状态写入当前服务器的持久化权限配置。
 - 用户显式关闭目录自动接受后保留关闭状态，不会被默认值重新覆盖。
-- 会话级显式关闭仍然优先于目录级默认开启；新会话继承目录级自动接受状态。
+- 会话级显式值优先于目录级默认；新会话继承目录级自动接受状态（不再写会话级快照）。
+- 三处入口统一显示"有效状态"（`autoRespondsPermission`，即真实放行判定）：有会话时显示会话覆盖回落目录默认的结果，无会话时显示目录级状态。
+- 三处入口的切换统一走收敛写入 `setAutoAccept(sessionID, directory, enabled)`：写目录级键并清除当前会话的显式覆盖（含 legacy 裸键），使显示 = 行为 = 未来会话继承。
+- 设置对话框的开关在拿不到会话时回落目录级读写（新会话/草稿页），不再恒显示关闭并禁用。
+
+### 数据契约
+
+- 持久化于各 server scope 的 `permission` 存储（本地为 `openctrlc.global.dat:permission`，远程带 scope 前缀），schema `permission.v3`（`autoAcceptEdits` 迁移而来）。
+- 目录级键：`<base64Encode(directory)>/*`；会话级键：`<base64Encode(directory)>/<sessionID>`；legacy 裸键 `<sessionID>` 读取时回落兼容。
 
 ### 代码位置
 
-- `packages/app/src/context/permission-auto-respond.ts`：目录级默认状态与权限判定。
-- `packages/app/src/context/permission.tsx`：进入目录时初始化默认权限状态。
-- `packages/app/src/context/permission-auto-respond.test.ts`：默认开启与显式关闭优先级测试。
+- `packages/app/src/context/permission-auto-respond.ts`：目录级默认状态、有效状态判定与 `convergeAutoAccept` 收敛纯函数。
+- `packages/app/src/context/permission.tsx`：进入目录时初始化默认权限状态、`setAutoAccept` 收敛写入与自动放行。
+- `packages/app/src/components/prompt-permission-controller.ts`：输入框权限按钮的有效态控制器。
+- `packages/app/src/components/settings-v2/general-controllers.ts`：设置开关的有效态控制器（无会话回落目录级）。
+- `packages/app/src/context/permission-auto-respond.test.ts`、`packages/app/src/components/prompt-permission-integration.test.ts`：判定与收敛单测。
 
 ### 验证方式
 
 - 在 `packages/app` 执行权限自动接受单元测试。
 - 进入未配置过权限的目录，确认输入框权限按钮默认显示开启；新建会话后确认权限请求会自动接受。
 - 手动关闭目录自动接受后重新进入目录，确认仍保持关闭。
+- 在设置开关与输入框权限按钮之间来回切换，确认两处状态即时同步且权限放行行为一致。
+- E2E：`packages/app/e2e/regression/remote-session-settings.spec.ts` 覆盖新会话页开关回落目录级、混合状态（会话覆盖关 + 目录默认开）下两处入口同步。
 
 ## 499 客户端中断与 MCP bootstrap 隔离
 
