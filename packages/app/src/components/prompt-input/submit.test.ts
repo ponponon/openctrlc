@@ -14,7 +14,6 @@ const sessionCreateInputs: Array<{
   model?: { id: string; providerID: string; variant?: string }
   location?: { directory: string }
 }> = []
-const enabledAutoAccept: Array<{ server: string; sessionID: string; directory: string }> = []
 const optimistic: Array<{
   directory?: string
   sessionID?: string
@@ -46,7 +45,6 @@ let params: { id?: string } = {}
 let search: { draftId?: string } = {}
 let selected = "/repo/worktree-a"
 let variant: string | undefined
-let permissionServer = "server-a"
 let createSessionGate: Promise<void> | undefined
 
 let promptValue: Prompt = [{ type: "text", content: "ls", start: 0, end: 2 }]
@@ -185,15 +183,6 @@ beforeAll(async () => {
     }),
   }))
 
-  mock.module("@/context/permission", () => {
-    const state = (server: string) => ({
-      enableAutoAccept(sessionID: string, directory: string) {
-        enabledAutoAccept.push({ server, sessionID, directory })
-      },
-    })
-    return { usePermission: () => ({ currentServerState: () => state(permissionServer) }) }
-  })
-
   mock.module("@/context/server", () => ({
     useServer: () => ({ key: "server-key" }),
   }))
@@ -310,7 +299,6 @@ beforeEach(() => {
   createdClients.length = 0
   createdSessions.length = 0
   sessionCreateInputs.length = 0
-  enabledAutoAccept.length = 0
   optimistic.length = 0
   optimisticSeeded.length = 0
   promoted.length = 0
@@ -326,7 +314,6 @@ beforeEach(() => {
   syncedDirectories.length = 0
   selected = "/repo/worktree-a"
   variant = undefined
-  permissionServer = "server-a"
   createSessionGate = undefined
   serverSessionSyncs = 0
   toasts.length = 0
@@ -345,7 +332,6 @@ describe("prompt submit worktree selection", () => {
       info: () => undefined,
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "shell",
       working: () => false,
       editor: () => undefined,
@@ -395,67 +381,6 @@ describe("prompt submit worktree selection", () => {
     expect(syncedDirectories).toEqual(["/repo/worktree-a", "/repo/worktree-a", "/repo/worktree-b", "/repo/worktree-b"])
   })
 
-  test("applies auto-accept to newly created sessions", async () => {
-    const submit = createPromptSubmit({
-      prompt,
-      info: () => undefined,
-      imageAttachments: () => [],
-      commentCount: () => 0,
-      autoAccept: () => true,
-      mode: () => "shell",
-      working: () => false,
-      editor: () => undefined,
-      queueScroll: () => undefined,
-      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
-      addToHistory: () => undefined,
-      resetHistoryNavigation: () => undefined,
-      setMode: () => undefined,
-      setPopover: () => undefined,
-      newSessionWorktree: () => selected,
-      onNewSessionWorktreeReset: () => undefined,
-      onSubmit: () => undefined,
-    })
-
-    const event = { preventDefault: () => undefined } as unknown as Event
-
-    await submit.handleSubmit(event)
-
-    expect(enabledAutoAccept).toEqual([{ server: "server-a", sessionID: "session-1", directory: "/repo/worktree-a" }])
-  })
-
-  test("keeps auto-accept bound to the submission server", async () => {
-    let release = () => {}
-    createSessionGate = new Promise<void>((resolve) => {
-      release = resolve
-    })
-    const submit = createPromptSubmit({
-      prompt,
-      info: () => undefined,
-      imageAttachments: () => [],
-      commentCount: () => 0,
-      autoAccept: () => true,
-      mode: () => "shell",
-      working: () => false,
-      editor: () => undefined,
-      queueScroll: () => undefined,
-      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
-      addToHistory: () => undefined,
-      resetHistoryNavigation: () => undefined,
-      setMode: () => undefined,
-      setPopover: () => undefined,
-      newSessionWorktree: () => selected,
-      onNewSessionWorktreeReset: () => undefined,
-      onSubmit: () => undefined,
-    })
-
-    const result = submit.handleSubmit({ preventDefault: () => undefined } as unknown as Event)
-    permissionServer = "server-b"
-    release()
-    await result
-
-    expect(enabledAutoAccept).toEqual([{ server: "server-a", sessionID: "session-1", directory: "/repo/worktree-a" }])
-  })
-
   test("promotes drafts using the selected project's server", async () => {
     search = { draftId: "draft-1" }
     const submit = createPromptSubmit({
@@ -463,7 +388,6 @@ describe("prompt submit worktree selection", () => {
       info: () => undefined,
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "normal",
       working: () => false,
       editor: () => undefined,
@@ -492,7 +416,6 @@ describe("prompt submit worktree selection", () => {
       info: () => ({ id: "session-1" }),
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "normal",
       working: () => false,
       editor: () => undefined,
@@ -539,7 +462,6 @@ describe("prompt submit worktree selection", () => {
       info: () => ({ id: "session-1" }),
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "normal",
       working: () => false,
       editor: () => undefined,
@@ -570,7 +492,6 @@ describe("prompt submit worktree selection", () => {
       info: () => ({ id: "session-1" }),
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "normal",
       working: () => false,
       editor: () => undefined,
@@ -609,7 +530,6 @@ describe("prompt submit worktree selection", () => {
       info: () => ({ id: "session-1" }),
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "normal",
       working: () => false,
       editor: () => undefined,
@@ -637,7 +557,6 @@ describe("prompt submit worktree selection", () => {
       info: () => undefined,
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "normal",
       working: () => false,
       editor: () => undefined,
@@ -719,7 +638,6 @@ describe("prompt submit session create retry", () => {
       info: () => undefined,
       imageAttachments: () => [],
       commentCount: () => 0,
-      autoAccept: () => false,
       mode: () => "shell",
       working: () => false,
       editor: () => undefined,

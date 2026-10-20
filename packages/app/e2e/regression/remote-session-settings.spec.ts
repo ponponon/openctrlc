@@ -160,6 +160,84 @@ type PermissionResponse = {
   body: unknown
 }
 
+test("new-session settings switch reflects the directory auto-accept state", async ({ page }) => {
+  const draftID = "draft_permission_settings"
+  const permissionRequests: string[] = []
+  await mockServers(page, permissionRequests)
+  await page.addInitScript(
+    ({ serverA, directoryA, draftID, acceptKeyA }) => {
+      localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
+      localStorage.setItem(
+        "openctrlc.window.browser.dat:tabs",
+        JSON.stringify([{ type: "draft", draftID, server: serverA, directory: directoryA }]),
+      )
+      localStorage.setItem("openctrlc.global.dat:permission", JSON.stringify({ autoAccept: { [acceptKeyA]: false } }))
+    },
+    { serverA, directoryA, draftID, acceptKeyA: `${base64Encode(directoryA)}/*` },
+  )
+
+  await page.goto(`/new-session?draftId=${draftID}`)
+
+  const promptControl = page.getByRole("button", { name: "Auto-accept permissions" })
+  await expect(promptControl).toBeVisible()
+  await expect(promptControl).toHaveAttribute("aria-pressed", "false")
+
+  await page.keyboard.press("Control+,")
+  const autoAccept = page.locator(".settings-v2-dialog").locator('[data-action="settings-auto-accept-permissions"]')
+  const input = autoAccept.getByRole("switch")
+  await expect(input).toBeEnabled()
+  await expect(input).not.toBeChecked()
+
+  await autoAccept.locator('[data-slot="switch-control"]').click()
+  await expect(input).toBeChecked()
+  await page.keyboard.press("Escape")
+  await expect(promptControl).toHaveAttribute("aria-pressed", "true")
+})
+
+test("settings and prompt controls converge on the effective auto-accept state", async ({ page }) => {
+  const permissionRequests: string[] = []
+  await mockServers(page, permissionRequests)
+  await configureServers(page)
+  await page.addInitScript(
+    ({ serverB, sessionKeyB, acceptKeyB }) => {
+      // Session override off with directory default on reproduces the mixed-scope state.
+      const mixed = JSON.stringify({ autoAccept: { [sessionKeyB]: false, [acceptKeyB]: true } })
+      localStorage.setItem("openctrlc.global.dat:permission", mixed)
+      localStorage.setItem(`openctrlc.global.dat:${serverB}\u0000permission`, mixed)
+    },
+    {
+      serverB,
+      sessionKeyB: `${base64Encode(directoryB)}/${sessionB.id}`,
+      acceptKeyB: `${base64Encode(directoryB)}/*`,
+    },
+  )
+
+  await page.goto(`/server/${base64Encode(serverB)}/session/${sessionB.id}`)
+  await expect(page.locator("main").getByRole("heading", { level: 1 })).toContainText(sessionB.title)
+
+  const promptControl = page.getByRole("button", { name: "Auto-accept permissions" })
+  await expect(promptControl).toHaveAttribute("aria-pressed", "false")
+
+  await page.keyboard.press("Control+,")
+  const autoAccept = page.locator(".settings-v2-dialog").locator('[data-action="settings-auto-accept-permissions"]')
+  const input = autoAccept.getByRole("switch")
+  await expect(input).toBeEnabled()
+  await expect(input).not.toBeChecked()
+
+  await autoAccept.locator('[data-slot="switch-control"]').click()
+  await expect(input).toBeChecked()
+  await page.keyboard.press("Escape")
+  await expect(page.locator(".settings-v2-dialog")).toBeHidden()
+
+  await expect(promptControl).toHaveAttribute("aria-pressed", "true")
+  await promptControl.click()
+  await page.getByRole("menuitem", { name: "Stop auto-accepting permissions" }).click()
+  await expect(promptControl).toHaveAttribute("aria-pressed", "false")
+
+  await page.keyboard.press("Control+,")
+  await expect(input).not.toBeChecked()
+})
+
 async function configureServers(page: Page, tabs: { type: "session"; server: string; sessionId: string }[] = []) {
   await page.addInitScript(
     ({ serverB, directoryA, directoryB, tabs, acceptKeyA, acceptKeyB }) => {
