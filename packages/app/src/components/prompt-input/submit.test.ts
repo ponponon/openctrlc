@@ -39,6 +39,10 @@ const sessionCreateGates: Array<Promise<void> | undefined> = []
 const removedSessions: string[] = []
 const removedSessionInputs: Array<{ sessionID: string; directory?: string }> = []
 const removedWorktrees: string[] = []
+const sessionRemoveErrors: unknown[] = []
+let sessionRemoveAttempts = 0
+const worktreeRemoveErrors: unknown[] = []
+let worktreeRemoveAttempts = 0
 let sessionCounter = 0
 let serverSessionSyncs = 0
 
@@ -103,6 +107,9 @@ const clientFor = (directory: string) => {
           }
         },
         remove: async (input: { sessionID: string; directory?: string }) => {
+          sessionRemoveAttempts += 1
+          const failure = sessionRemoveErrors.shift()
+          if (failure) throw failure
           removedSessions.push(input.sessionID)
           removedSessionInputs.push({ sessionID: input.sessionID, directory: input.directory })
           return { data: undefined }
@@ -127,6 +134,9 @@ const clientFor = (directory: string) => {
     worktree: {
       create: async () => ({ data: { directory: `${directory}/new` } }),
       remove: async (input: { worktreeRemoveInput?: { directory?: string } }) => {
+        worktreeRemoveAttempts += 1
+        const failure = worktreeRemoveErrors.shift()
+        if (failure) throw failure
         removedWorktrees.push(input.worktreeRemoveInput?.directory ?? "")
         return { data: undefined }
       },
@@ -324,6 +334,10 @@ beforeEach(() => {
   removedSessions.length = 0
   removedSessionInputs.length = 0
   removedWorktrees.length = 0
+  sessionRemoveErrors.length = 0
+  sessionRemoveAttempts = 0
+  worktreeRemoveErrors.length = 0
+  worktreeRemoveAttempts = 0
   sessionCounter = 0
   for (const key of Object.keys(storedSessions)) delete storedSessions[key]
 })
@@ -635,7 +649,7 @@ describe("isDefinitiveSessionCreateFailure", () => {
 })
 
 describe("prompt submit session create retry", () => {
-  const makeSubmit = (model?: ModelSelection, createTimeoutMs?: number) =>
+  const makeSubmit = (model?: ModelSelection, createTimeoutMs?: number, cleanupRetryDelayMs?: number) =>
     createPromptSubmit({
       prompt,
       info: () => undefined,
@@ -655,6 +669,7 @@ describe("prompt submit session create retry", () => {
       onSubmit: () => undefined,
       model,
       createTimeoutMs,
+      cleanupRetryDelayMs,
     })
 
   const event = { preventDefault: () => undefined } as unknown as Event
@@ -943,5 +958,114 @@ describe("prompt submit session create retry", () => {
 
     expect(removedSessions).toEqual([])
     expect(removedWorktrees).toEqual([])
+  })
+
+  test("retries the session cleanup after a transient failure", async () => {
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    // 删除请求可能因网络抖动失败：失败不能静默吞掉，要保留记录做有限重试
+    sessionRemoveErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(sessionRemoveAttempts).toBe(2)
+    expect(removedSessions).toEqual(["session-1"])
+    expect(toasts.map((item) => item.title)).not.toContain("prompt.toast.sessionCleanupFailed.title")
+  })
+
+  test("reports session cleanup failure and keeps the worktree after retries are exhausted", async () => {
+    selected = "create"
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    const failure = Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" })
+    sessionRemoveErrors.push(failure, failure, failure)
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // 有限重试用尽后上报清理失败，不静默吞掉
+    expect(sessionRemoveAttempts).toBe(3)
+    expect(removedSessions).toEqual([])
+    expect(toasts.map((item) => item.title)).toContain("prompt.toast.sessionCleanupFailed.title")
+    // 会话删除未确认成功，下落不明，worktree 必须保留（结果未知不回收）
+    expect(removedWorktrees).toEqual([])
+    expect(worktreeRemoveAttempts).toBe(0)
+  })
+
+  test("retries the worktree cleanup after a transient failure", async () => {
+    selected = "create"
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    worktreeRemoveErrors.push(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    // worktree 删除失败时 reclaimed 不置位，重试成功才落账
+    expect(removedSessions).toEqual(["session-1"])
+    expect(worktreeRemoveAttempts).toBe(2)
+    expect(removedWorktrees).toEqual(["/repo/main/new"])
+    expect(toasts.map((item) => item.title)).not.toContain("prompt.toast.worktreeCleanupFailed.title")
+  })
+
+  test("reports worktree cleanup failure after retries are exhausted", async () => {
+    selected = "create"
+    let release = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        release = resolve
+      }),
+    )
+    sessionCreateGates.push(undefined)
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+
+    await submit.handleSubmit(event)
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    const failure = Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" })
+    worktreeRemoveErrors.push(failure, failure, failure)
+    release()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    expect(removedSessions).toEqual(["session-1"])
+    expect(worktreeRemoveAttempts).toBe(3)
+    expect(removedWorktrees).toEqual([])
+    expect(toasts.map((item) => item.title)).toContain("prompt.toast.worktreeCleanupFailed.title")
   })
 })

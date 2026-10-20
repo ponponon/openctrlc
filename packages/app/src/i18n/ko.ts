@@ -313,6 +313,12 @@ export const dict = {
   "prompt.toast.sessionCreateTimeout.title": "세션 생성 시간 초과",
   "prompt.toast.sessionCreateTimeout.description":
     "세션 생성 요청이 시간 초과되어 결과가 아직 확인되지 않았습니다. 나중에 다시 시도할 수 있습니다.",
+  "prompt.toast.sessionCleanupFailed.title": "세션 정리 실패",
+  "prompt.toast.sessionCleanupFailed.description":
+    "사용하지 않는 세션의 자동 정리에 실패했습니다. 나중에 세션 목록에서 직접 삭제할 수 있습니다.",
+  "prompt.toast.worktreeCleanupFailed.title": "작업 트리 정리 실패",
+  "prompt.toast.worktreeCleanupFailed.description":
+    "사용하지 않는 작업 트리의 자동 정리에 실패했습니다. 나중에 직접 삭제할 수 있습니다.",
   "prompt.toast.shellSendFailed.title": "셸 명령 전송 실패",
   "prompt.toast.commandSendFailed.title": "명령 전송 실패",
   "prompt.toast.promptSendFailed.title": "프롬프트 전송 실패",

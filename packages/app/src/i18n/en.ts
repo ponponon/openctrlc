@@ -328,6 +328,12 @@ export const dict = {
   "prompt.toast.sessionCreateTimeout.title": "Session creation timed out",
   "prompt.toast.sessionCreateTimeout.description":
     "Creating the session timed out and the result is still uncertain. You can retry later.",
+  "prompt.toast.sessionCleanupFailed.title": "Failed to clean up session",
+  "prompt.toast.sessionCleanupFailed.description":
+    "Automatic cleanup of the unused session failed. You can delete it later from the session list.",
+  "prompt.toast.worktreeCleanupFailed.title": "Failed to clean up worktree",
+  "prompt.toast.worktreeCleanupFailed.description":
+    "Automatic cleanup of the unused worktree failed. You can delete it later.",
   "prompt.toast.shellSendFailed.title": "Failed to send shell command",
   "prompt.toast.commandSendFailed.title": "Failed to send command",
   "prompt.toast.promptSendFailed.title": "Failed to send prompt",

@@ -425,6 +425,12 @@ export const dict = {
   "prompt.toast.sessionCreateTimeout.title": "セッション作成がタイムアウトしました",
   "prompt.toast.sessionCreateTimeout.description":
     "セッション作成のリクエストがタイムアウトしました。結果は未確定のため、後で再試行できます。",
+  "prompt.toast.sessionCleanupFailed.title": "セッションのクリーンアップに失敗しました",
+  "prompt.toast.sessionCleanupFailed.description":
+    "未使用セッションの自動クリーンアップに失敗しました。後でセッション一覧から手動で削除できます。",
+  "prompt.toast.worktreeCleanupFailed.title": "ワークツリーのクリーンアップに失敗しました",
+  "prompt.toast.worktreeCleanupFailed.description":
+    "未使用ワークツリーの自動クリーンアップに失敗しました。後で手動で削除できます。",
   "prompt.toast.shellSendFailed.title": "シェルコマンドの送信に失敗しました",
   "prompt.toast.commandSendFailed.title": "コマンドの送信に失敗しました",
   "prompt.toast.promptSendFailed.title": "プロンプトの送信に失敗しました",

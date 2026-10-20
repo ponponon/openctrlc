@@ -236,14 +236,16 @@ type PromptSubmitInput = {
   onSubmit?: () => void
   model?: ModelSelection
   createTimeoutMs?: number
+  cleanupRetryDelayMs?: number
 }
 
 export function createPromptSubmit(input: PromptSubmitInput) {
   const [state, setState] = createStore({ creatingSession: false })
   let newSessionSubmitInFlight = false
   // “create”模式下为这次创建自动建出的 worktree；参数组放弃后随会话一并回收，
-  // reclaimed 保证同一组只删一次。用户自选的 worktree 不在此列，永不触碰。
-  type AutoWorktree = { directory: string; reclaimed: boolean }
+  // reclaimed 只在删除成功后置位（失败要能重试），reclaiming 防并发重复发起。
+  // 用户自选的 worktree 不在此列，永不触碰。
+  type AutoWorktree = { directory: string; reclaimed: boolean; reclaiming: boolean }
   let pendingSessionCreate:
     | {
         id: SessionID
@@ -261,6 +263,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
   type InflightSessionCreate = {
     consumed: boolean
     abandoned: boolean
+    reaping: boolean
     result?: Session
     autoWorktree?: AutoWorktree
   }
@@ -276,31 +279,66 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     records.delete(record)
     if (records.size === 0) inflightSessionCreates.delete(id)
   }
+  // 清理类请求可能因网络抖动失败：不能在请求成功前就当作已完成，否则一次失败就永久丢失
+  // 重试机会。有限重试，仍失败则提示用户手动处理，不静默吞掉。
+  const CLEANUP_ATTEMPTS = 3
+  const runCleanup = async (request: () => Promise<unknown>, failedTitle: string, failedDescription: string) => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await request()
+        return true
+      } catch {
+        if (attempt >= CLEANUP_ATTEMPTS - 1) {
+          showToast({ title: language.t(failedTitle), description: language.t(failedDescription) })
+          return false
+        }
+        await new Promise<void>((resolve) => setTimeout(resolve, input.cleanupRetryDelayMs ?? 1_000))
+      }
+    }
+  }
   // 会话回收成功后（或明确失败时）回收本次自动建出的 worktree：否则用户改选项重建后，
   // 旧请求的 worktree 仍留在项目里，再选“创建工作区”又会新建一个，越积越多。
   const reclaimAutoWorktree = (id: SessionID, record: InflightSessionCreate) => {
     const auto = record.autoWorktree
-    if (!auto || auto.reclaimed) return
+    if (!auto || auto.reclaimed || auto.reclaiming) return
     // 同组还有在途请求时不删：它们可能还会在这个目录建出会话，等组内收尾再回收。
     if (inflightSessionCreates.has(id)) return
-    auto.reclaimed = true
+    auto.reclaiming = true
     WorktreeState.failed(sdk().scope, auto.directory, "session create abandoned")
-    void sdk()
-      .client.worktree.remove({
-        directory: sdk().directory,
-        worktreeRemoveInput: { directory: auto.directory },
-      })
-      .catch(() => {})
+    // reclaimed 只在删除成功后置位：删除请求可能失败，成功前就标记完成会永久丢失重试机会。
+    void runCleanup(
+      () =>
+        sdk().client.worktree.remove({
+          directory: sdk().directory,
+          worktreeRemoveInput: { directory: auto.directory },
+        }),
+      "prompt.toast.worktreeCleanupFailed.title",
+      "prompt.toast.worktreeCleanupFailed.description",
+    ).then((succeeded) => {
+      auto.reclaiming = false
+      if (succeeded) auto.reclaimed = true
+    })
   }
   const reapAbandonedCreate = (id: SessionID, record: InflightSessionCreate) => {
-    if (!record.abandoned || record.consumed || !record.result) return
-    untrackInflightCreate(id, record)
+    if (!record.abandoned || record.consumed || !record.result || record.reaping) return
+    record.reaping = true
+    const result = record.result
     // 回收必须带上会话所在目录：V1 兼容层按 directory 路由删除请求，不传会回落到
     // SDK 默认目录，worktree 里迟到建出的会话会被发到主工作区而漏删。
-    void sdk()
-      .api.session.remove({ sessionID: record.result.id, directory: record.result.directory })
-      .then(() => reclaimAutoWorktree(id, record))
-      .catch(() => {})
+    // 记录在删除成功前不移出追踪：删除失败要保留记录做有限重试，
+    // 否则孤儿会话一次网络抖动就永久失联。
+    void runCleanup(
+      () => sdk().api.session.remove({ sessionID: result.id, directory: result.directory }),
+      "prompt.toast.sessionCleanupFailed.title",
+      "prompt.toast.sessionCleanupFailed.description",
+    ).then((succeeded) => {
+      record.reaping = false
+      if (!succeeded) return
+      // 会话删除已确认成功才摘记录并回收 worktree；删除失败时会话下落不明，
+      // worktree 必须保留（结果未知不回收），记录也留在追踪里等待下次触发。
+      untrackInflightCreate(id, record)
+      reclaimAutoWorktree(id, record)
+    })
   }
   const navigate = useNavigate()
   const sdk = useSDK()
@@ -496,11 +534,12 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
         directory: sessionDirectory,
         worktreeSelection,
-        autoWorktree: worktreeSelection === "create" ? { directory: sessionDirectory, reclaimed: false } : undefined,
+        autoWorktree: worktreeSelection === "create" ? { directory: sessionDirectory, reclaimed: false, reclaiming: false } : undefined,
       })
       const inflight: InflightSessionCreate = {
         consumed: false,
         abandoned: false,
+        reaping: false,
         autoWorktree: createInput.autoWorktree,
       }
       trackInflightCreate(createInput.id, inflight)
