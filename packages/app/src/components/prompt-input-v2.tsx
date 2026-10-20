@@ -20,7 +20,6 @@ import { useComments } from "@/context/comments"
 import { useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
-import { usePermission } from "@/context/permission"
 import { type ImageAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
 import { useServerSync } from "@/context/server-sync"
@@ -38,6 +37,7 @@ import {
 export type PromptInputV2ComposerProps = {
   class?: string
   controller: PromptInputV2ComposerController
+  sessionID?: string
   borderUnderlay?: boolean
 }
 
@@ -76,7 +76,7 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
                 dialog.show(() => <DialogSelectModelUnpaidV2 model={props.controller.model.selection} />)
               }
             />
-            <PromptPermissionControl directory={sdk().directory} />
+            <PromptPermissionControl directory={sdk().directory} sessionID={props.sessionID} />
           </>
         }
       />
@@ -92,7 +92,6 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
   const comments = useComments()
   const dialog = useDialog()
   const command = useCommand()
-  const permission = usePermission()
   const language = useLanguage()
   const platform = usePlatform()
   const serverSync = useServerSync()
@@ -197,17 +196,11 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     )
   }
 
-  const accepting = createMemo(() => {
-    const id = props.controls.session.id
-    if (!id) return permission.isAutoAcceptingDirectory(sdk().directory)
-    return permission.isAutoAccepting(id, sdk().directory)
-  })
   const submission = createPromptSubmit({
     prompt,
     info,
     imageAttachments: attachments,
     commentCount,
-    autoAccept: accepting,
     mode,
     working,
     editor: () => editor,

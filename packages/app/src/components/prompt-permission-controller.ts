@@ -1,17 +1,17 @@
 export function createPromptPermissionController(input: {
-  directory: string
+  directory: () => string
+  sessionID: () => string | undefined
+  isAutoAccepting: (sessionID: string, directory: string) => boolean
   isAutoAcceptingDirectory: (directory: string) => boolean
-  enableAutoAcceptDirectory: (directory: string) => void
-  disableAutoAcceptDirectory: (directory: string) => void
+  setAutoAccept: (sessionID: string | undefined, directory: string, enabled: boolean) => void
 }) {
-  const enabled = () => input.isAutoAcceptingDirectory(input.directory)
-  const toggle = () => {
-    if (enabled()) {
-      input.disableAutoAcceptDirectory(input.directory)
-      return
-    }
-    input.enableAutoAcceptDirectory(input.directory)
+  const enabled = () => {
+    const directory = input.directory()
+    const sessionID = input.sessionID()
+    if (!sessionID) return input.isAutoAcceptingDirectory(directory)
+    return input.isAutoAccepting(sessionID, directory)
   }
+  const toggle = () => input.setAutoAccept(input.sessionID(), input.directory(), !enabled())
 
   return { enabled, toggle }
 }

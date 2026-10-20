@@ -15,6 +15,14 @@ export function usePermission() {
     isAutoAcceptingDirectory() {
       return false
     },
+    setAutoAccept(sessionID: string | undefined, directory: string, enabled: boolean) {
+      const next = key(sessionID ?? "", directory)
+      if (enabled) {
+        accepted.add(next)
+        return
+      }
+      accepted.delete(next)
+    },
     toggleAutoAccept(sessionID: string, directory?: string) {
       const next = key(sessionID, directory)
       if (accepted.has(next)) {

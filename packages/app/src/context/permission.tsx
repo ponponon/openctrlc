@@ -17,6 +17,7 @@ import { normalizePermissionRequest } from "./global-sync/utils"
 import {
   acceptKey,
   autoAcceptDirectories,
+  convergeAutoAccept,
   directoryAcceptKey,
   isDirectoryAutoAccepting,
   autoRespondsPermission,
@@ -180,6 +181,9 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       },
       enableAutoAccept(sessionID: string, directory: string) {
         selected().enableAutoAccept(sessionID, directory)
+      },
+      setAutoAccept(sessionID: string | undefined, directory: string, enabled: boolean) {
+        selected().setAutoAccept(sessionID, directory, enabled)
       },
       reconcileAutoAccept(directory?: string) {
         selected().reconcileAutoAccept(directory)
@@ -444,6 +448,16 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     )
   }
 
+  function setAutoAccept(sessionID: string | undefined, directory: string, enabled: boolean) {
+    if (meta.disposed) return
+    setStore(
+      produce((draft) => {
+        draft.autoAccept = convergeAutoAccept(draft.autoAccept, sessionID, directory, enabled)
+      }),
+    )
+    if (enabled) reconcileDirectory(directory)
+  }
+
   const api = {
     ready: () => !meta.disposed && ready(),
     respond,
@@ -492,6 +506,10 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     disableAutoAccept(sessionID: string, directory?: string) {
       if (meta.disposed) return
       disable(sessionID, directory)
+    },
+    setAutoAccept(sessionID: string | undefined, directory: string, enabled: boolean) {
+      if (meta.disposed) return
+      setAutoAccept(sessionID, directory, enabled)
     },
     isPermissionAllowAll(directory: string) {
       if (meta.disposed) return false

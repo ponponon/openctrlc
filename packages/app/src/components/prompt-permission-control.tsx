@@ -7,14 +7,15 @@ import { useLanguage } from "@/context/language"
 import { usePermission } from "@/context/permission"
 import { createPromptPermissionController } from "./prompt-permission-controller"
 
-export function PromptPermissionControl(props: { directory: string; visible?: boolean }) {
+export function PromptPermissionControl(props: { directory: string; sessionID?: string; visible?: boolean }) {
   const language = useLanguage()
   const permission = usePermission()
   const controller = createPromptPermissionController({
-    directory: props.directory,
+    directory: () => props.directory,
+    sessionID: () => props.sessionID,
+    isAutoAccepting: permission.isAutoAccepting,
     isAutoAcceptingDirectory: permission.isAutoAcceptingDirectory,
-    enableAutoAcceptDirectory: permission.enableAutoAcceptDirectory,
-    disableAutoAcceptDirectory: permission.disableAutoAcceptDirectory,
+    setAutoAccept: permission.setAutoAccept,
   })
   const accepting = controller.enabled
   const actionLabel = () =>

@@ -106,19 +106,7 @@ export const SettingsGeneral: Component = () => {
   const toggleAccept = (checked: boolean) => {
     const value = dir()
     if (!value) return
-
-    if (!params.id) {
-      if (permission.isAutoAcceptingDirectory(value) === checked) return
-      permission.toggleAutoAcceptDirectory(value)
-      return
-    }
-
-    if (checked) {
-      permission.enableAutoAccept(params.id, value)
-      return
-    }
-
-    permission.disableAutoAccept(params.id, value)
+    permission.setAutoAccept(params.id, value, checked)
   }
   const desktop = createMemo(() => platform.platform === "desktop")
 

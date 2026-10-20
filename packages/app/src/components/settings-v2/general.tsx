@@ -275,6 +275,7 @@ const LanguageSetting = () => {
 
 export const SettingsGeneralV2: Component<{
   sessionID?: string
+  directory?: string
 }> = (props) => {
   const language = useLanguage()
   const platform = usePlatform()
@@ -283,7 +284,10 @@ export const SettingsGeneralV2: Component<{
   const serverSync = useServerSync()
   const mobile = createMediaQuery("(max-width: 767px)")
   const updater = useUpdaterAction()
-  const permissionScope = createPermissionScopeController(() => props.sessionID)
+  const permissionScope = createPermissionScopeController({
+    sessionID: () => props.sessionID,
+    directory: () => props.directory,
+  })
   const shell = createShellSettingsController()
   const appearance = createAppearanceSettingsController()
   const sounds = createSoundSettingsController()
