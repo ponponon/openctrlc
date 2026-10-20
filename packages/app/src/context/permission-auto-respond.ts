@@ -40,6 +40,19 @@ export function isDirectoryAutoAccepting(autoAccept: Record<string, boolean>, di
   return autoAccept[key] ?? true
 }
 
+export function convergeAutoAccept(
+  autoAccept: Record<string, boolean>,
+  sessionID: string | undefined,
+  directory: string,
+  enabled: boolean,
+) {
+  const next = { ...autoAccept, [directoryAcceptKey(directory)]: enabled }
+  if (!sessionID) return next
+  delete next[acceptKey(sessionID, directory)]
+  delete next[sessionID]
+  return next
+}
+
 function sessionLineage(session: { id: string; parentID?: string }[], sessionID: string) {
   const parent = session.reduce((acc, item) => {
     if (item.parentID) acc.set(item.id, item.parentID)

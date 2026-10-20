@@ -11,7 +11,6 @@ import { useServerSync, type ServerSync } from "@/context/server-sync"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { useLocal, type ModelSelection } from "@/context/local"
-import { usePermission } from "@/context/permission"
 import { type ContextItem, type ImageAttachmentPart, type Prompt, type usePrompt } from "@/context/prompt"
 import { useSDK, type DirectorySDK } from "@/context/sdk"
 import { useSync, type DirectorySync } from "@/context/sync"
@@ -219,7 +218,6 @@ type PromptSubmitInput = {
   info: Accessor<{ id: string } | undefined>
   imageAttachments: Accessor<ImageAttachmentPart[]>
   commentCount: Accessor<number>
-  autoAccept: Accessor<boolean>
   mode: Accessor<"normal" | "shell">
   working: Accessor<boolean>
   editor: () => HTMLDivElement | undefined
@@ -283,7 +281,6 @@ export function createPromptSubmit(input: PromptSubmitInput) {
   const sync = useSync()
   const serverSync = useServerSync()
   const local = useLocal()
-  const permission = usePermission()
   const prompt = input.prompt
   const layout = useLayout()
   const language = useLanguage()
@@ -395,9 +392,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     input.resetHistoryNavigation()
 
     const projectDirectory = sdk().directory
-    const permissionState = permission.currentServerState()
     const isNewSession = !params.id
-    const shouldAutoAccept = isNewSession && input.autoAccept()
     const worktreeSelection = input.newSessionWorktree?.() || "main"
     // 待重试参数只在用户没改智能体/模型/工作区选择时才复用；任何一项变了都是新意图，
     // 丢弃后按当前选择全新创建，避免重试被旧目录/旧模型钉死。
@@ -469,15 +464,13 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     let session = input.info()
     let createFailedNotified = false
     if (!session && isNewSession) {
-      const createInput =
-        pendingSessionCreate ??=
-          {
-            id: SessionID.create(),
-            agent: currentAgent.name,
-            model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
-            directory: sessionDirectory,
-            worktreeSelection,
-          }
+      const createInput = (pendingSessionCreate ??= {
+        id: SessionID.create(),
+        agent: currentAgent.name,
+        model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
+        directory: sessionDirectory,
+        worktreeSelection,
+      })
       const inflight: InflightSessionCreate = { consumed: false, abandoned: false }
       trackInflightCreate(createInput.id, inflight)
       const createRequest = sdk()
@@ -495,8 +488,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         },
         () => untrackInflightCreate(createInput.id, inflight),
       )
-      const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS)
-        .catch((err: unknown) => {
+      const created = await withTimeout(createRequest, input.createTimeoutMs ?? SESSION_CREATE_TIMEOUT_MS).catch(
+        (err: unknown) => {
           if (isDefinitiveSessionCreateFailure(err)) {
             const failed = pendingSessionCreate
             pendingSessionCreate = undefined
@@ -515,11 +508,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           createFailedNotified = true
           const timedOut = isTimeoutError(err)
           showToast({
-            title: language.t(timedOut ? "prompt.toast.sessionCreateTimeout.title" : "prompt.toast.sessionCreateFailed.title"),
+            title: language.t(
+              timedOut ? "prompt.toast.sessionCreateTimeout.title" : "prompt.toast.sessionCreateFailed.title",
+            ),
             description: timedOut ? language.t("prompt.toast.sessionCreateTimeout.description") : errorMessage(err),
           })
           return undefined
-        })
+        },
+      )
       if (created) {
         inflight.consumed = true
         untrackInflightCreate(createInput.id, inflight)
@@ -527,7 +523,6 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         session = created
         await startTransition(() => {
           if (!session) return
-          if (shouldAutoAccept) permissionState.enableAutoAccept(session.id, sessionDirectory)
           local.session.promote(sessionDirectory, session.id, {
             agent: currentAgent.name,
             model: { providerID: currentModel.provider.id, modelID: currentModel.id },
@@ -815,7 +810,8 @@ export function isDefinitiveSessionCreateFailure(error: unknown) {
           ? response.status
           : undefined
 
-    if (status !== undefined && status >= 400 && status < 500 && ![408, 409, 425, 429, 499].includes(status)) return true
+    if (status !== undefined && status >= 400 && status < 500 && ![408, 409, 425, 429, 499].includes(status))
+      return true
     if (
       value._tag === "InvalidRequestError" ||
       value._tag === "UnauthorizedError" ||

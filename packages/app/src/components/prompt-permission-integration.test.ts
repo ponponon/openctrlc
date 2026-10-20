@@ -7,9 +7,11 @@ test("mounts the permission control from the active SDK directory in both prompt
   const [legacy, v2] = await Promise.all([read("./prompt-input.tsx"), read("./prompt-input-v2.tsx")])
 
   expect(legacy).toContain('import { PromptPermissionControl } from "@/components/prompt-permission-control"')
-  expect(legacy).toContain("<PromptPermissionControl directory={sdk().directory} />")
+  expect(legacy).toContain(
+    "<PromptPermissionControl directory={sdk().directory} sessionID={props.controls.session.id} />",
+  )
   expect(v2).toContain('import { PromptPermissionControl } from "@/components/prompt-permission-control"')
-  expect(v2).toContain("<PromptPermissionControl directory={sdk().directory} />")
+  expect(v2).toContain("<PromptPermissionControl directory={sdk().directory} sessionID={props.sessionID} />")
 })
 
 test("keeps the legacy permission control inside the normal-mode prompt control region", async () => {
@@ -24,29 +26,39 @@ test("keeps the legacy permission control inside the normal-mode prompt control 
   expect(source.slice(permissionControl)).toMatch(/<PromptPermissionControl[^>]+>\s*<\/Show>\s*<\/Show>/)
 })
 
-test("reports the directory state and delegates each toggle action", () => {
+test("reports the effective state and converges each toggle through setAutoAccept", () => {
   const directory = "/tmp/project"
   let enabled = false
   const actions: string[] = []
   const controller = createPromptPermissionController({
-    directory,
-    isAutoAcceptingDirectory: (value) => value === directory && enabled,
-    enableAutoAcceptDirectory: (value) => {
-      actions.push(`enable:${value}`)
-      enabled = true
-    },
-    disableAutoAcceptDirectory: (value) => {
-      actions.push(`disable:${value}`)
-      enabled = false
+    directory: () => directory,
+    sessionID: () => undefined,
+    isAutoAccepting: (sessionID) => sessionID === "ses_1" && enabled,
+    isAutoAcceptingDirectory: () => enabled,
+    setAutoAccept: (sessionID, value, next) => {
+      actions.push(`set:${sessionID ?? "none"}:${value}:${next}`)
+      enabled = next
     },
   })
 
   expect(controller.enabled()).toBe(false)
   controller.toggle()
   expect(controller.enabled()).toBe(true)
-  expect(actions).toEqual([`enable:${directory}`])
+  expect(actions).toEqual([`set:none:${directory}:true`])
 
   controller.toggle()
   expect(controller.enabled()).toBe(false)
-  expect(actions).toEqual([`enable:${directory}`, `disable:${directory}`])
+  expect(actions).toEqual([`set:none:${directory}:true`, `set:none:${directory}:false`])
+})
+
+test("prefers the session effective state over the directory state", () => {
+  const controller = createPromptPermissionController({
+    directory: () => "/tmp/project",
+    sessionID: () => "ses_1",
+    isAutoAccepting: () => false,
+    isAutoAcceptingDirectory: () => true,
+    setAutoAccept: () => undefined,
+  })
+
+  expect(controller.enabled()).toBe(false)
 })

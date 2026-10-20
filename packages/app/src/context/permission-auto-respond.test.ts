@@ -4,6 +4,7 @@ import { base64Encode } from "@openctrlc/core/util/encode"
 import {
   autoAcceptDirectories,
   autoRespondsPermission,
+  convergeAutoAccept,
   isDirectoryAutoAccepting,
   sessionAutoAccept,
 } from "./permission-auto-respond"
@@ -151,5 +152,50 @@ describe("autoAcceptDirectories", () => {
 
   test("ignores malformed persisted keys", () => {
     expect([...autoAcceptDirectories({ "not-base64/permission": true })]).toEqual([])
+  })
+})
+
+describe("convergeAutoAccept", () => {
+  const directory = "/tmp/project"
+
+  test("writes the directory key and preserves other sessions' overrides", () => {
+    const autoAccept = {
+      [`${base64Encode(directory)}/other`]: true,
+      [`${base64Encode("/tmp/other")}/*`]: true,
+    }
+
+    const next = convergeAutoAccept(autoAccept, "ses_1", directory, false)
+
+    expect(next[`${base64Encode(directory)}/*`]).toBe(false)
+    expect(next[`${base64Encode(directory)}/other`]).toBe(true)
+    expect(next[`${base64Encode("/tmp/other")}/*`]).toBe(true)
+  })
+
+  test("clears the current session override so the directory value wins", () => {
+    const sessions = [session({ id: "ses_1" })]
+    const autoAccept = {
+      [`${base64Encode(directory)}/*`]: true,
+      [`${base64Encode(directory)}/ses_1`]: true,
+    }
+
+    const next = convergeAutoAccept(autoAccept, "ses_1", directory, false)
+
+    expect(next[`${base64Encode(directory)}/ses_1`]).toBeUndefined()
+    expect(autoRespondsPermission(next, sessions, permission("ses_1"), directory)).toBe(false)
+  })
+
+  test("clears the legacy bare session key", () => {
+    const next = convergeAutoAccept({ ses_1: true }, "ses_1", directory, true)
+
+    expect(next.ses_1).toBeUndefined()
+    expect(next[`${base64Encode(directory)}/*`]).toBe(true)
+  })
+
+  test("only writes the directory key without a session", () => {
+    const next = convergeAutoAccept({ [`${base64Encode(directory)}/ses_1`]: true }, undefined, directory, false)
+
+    expect(next[`${base64Encode(directory)}/*`]).toBe(false)
+    expect(next[`${base64Encode(directory)}/ses_1`]).toBe(true)
+    expect(isDirectoryAutoAccepting(next, directory)).toBe(false)
   })
 })

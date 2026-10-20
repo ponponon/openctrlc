@@ -324,18 +324,13 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   }
 
   const toggleAutoAccept = () => {
-    const sessionID = params.id
-    if (sessionID) permission.toggleAutoAccept(sessionID, sdk().directory)
-    else permission.toggleAutoAcceptDirectory(sdk().directory)
-
-    const active = sessionID
-      ? permission.isAutoAccepting(sessionID, sdk().directory)
-      : permission.isAutoAcceptingDirectory(sdk().directory)
+    const active = isAutoAcceptActive()
+    permission.setAutoAccept(params.id, sdk().directory, !active)
     showToast({
-      title: active
+      title: !active
         ? language.t("toast.permissions.autoaccept.on.title")
         : language.t("toast.permissions.autoaccept.off.title"),
-      description: active
+      description: !active
         ? language.t("toast.permissions.autoaccept.on.description")
         : language.t("toast.permissions.autoaccept.off.description"),
     })
