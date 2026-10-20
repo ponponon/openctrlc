@@ -5,6 +5,7 @@ import type { ModelSelection } from "@/context/local"
 
 let createPromptSubmit: typeof import("./submit").createPromptSubmit
 let isDefinitiveSessionCreateFailure: typeof import("./submit").isDefinitiveSessionCreateFailure
+let isSessionAlreadyGone: typeof import("./submit").isSessionAlreadyGone
 
 const createdClients: string[] = []
 const createdSessions: string[] = []
@@ -305,6 +306,7 @@ beforeAll(async () => {
   const mod = await import("./submit")
   createPromptSubmit = mod.createPromptSubmit
   isDefinitiveSessionCreateFailure = mod.isDefinitiveSessionCreateFailure
+  isSessionAlreadyGone = mod.isSessionAlreadyGone
 })
 
 beforeEach(() => {
@@ -648,6 +650,40 @@ describe("isDefinitiveSessionCreateFailure", () => {
   })
 })
 
+describe("isSessionAlreadyGone", () => {
+  test("classifies the real not-found error shapes", () => {
+    // V2 声明 404 错误体被直接抛出（vendored promise client）
+    expect(isSessionAlreadyGone({ name: "NotFoundError", data: { message: "Session not found: ses_x" } })).toBe(true)
+    // V2 tagged error（effect client 形态）
+    expect(isSessionAlreadyGone({ _tag: "SessionNotFoundError", sessionID: "ses_x", message: "gone" })).toBe(true)
+    // V2 ClientError("UnexpectedStatus")
+    expect(
+      isSessionAlreadyGone(
+        Object.assign(new Error("UnexpectedStatus"), {
+          name: "ClientError",
+          reason: "UnexpectedStatus",
+          cause: { status: 404 },
+        }),
+      ),
+    ).toBe(true)
+    // V1 wrapClientError：404 在 cause.status
+    expect(
+      isSessionAlreadyGone(new Error("boom", { cause: { body: { name: "Whatever" }, status: 404, kind: "server", request: {} } })),
+    ).toBe(true)
+
+    // 其他失败不是“会话已不存在”
+    expect(isSessionAlreadyGone(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))).toBe(false)
+    expect(isSessionAlreadyGone(new Error("boom", { cause: { body: {}, status: 500, kind: "server", request: {} } }))).toBe(false)
+    expect(isSessionAlreadyGone({ name: "BadRequest", data: { message: "bad" } })).toBe(false)
+
+    // 循环引用与空值不导致异常或误判
+    const cyclic: Record<string, unknown> = { reason: "Transport" }
+    cyclic.cause = cyclic
+    expect(isSessionAlreadyGone(cyclic)).toBe(false)
+    expect(isSessionAlreadyGone(undefined)).toBe(false)
+  })
+})
+
 describe("prompt submit session create retry", () => {
   const makeSubmit = (model?: ModelSelection, createTimeoutMs?: number, cleanupRetryDelayMs?: number) =>
     createPromptSubmit({
@@ -851,6 +887,51 @@ describe("prompt submit session create retry", () => {
 
     expect(removedSessions).toEqual(["session-2"])
     expect(removedSessions).not.toContain("session-3")
+  })
+
+  test("treats a delete 404 from a concurrent reap of the same session as success", async () => {
+    selected = "create"
+    let releaseFirst = () => {}
+    let releaseRetry = () => {}
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        releaseFirst = resolve
+      }),
+    )
+    sessionCreateGates.push(
+      new Promise<void>((resolve) => {
+        releaseRetry = resolve
+      }),
+    )
+    let current = { id: "model-a", provider: { id: "provider" } }
+    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+
+    // 同一 Session ID 先后两条在途创建都超时
+    await submit.handleSubmit(event)
+    await submit.handleSubmit(event)
+    expect(sessionCreateInputs[0]?.id).toBe(sessionCreateInputs[1]?.id)
+
+    // 用户改选项放弃整组参数：两条记录都标记 abandoned（尚无 result，reap 暂无事可做）
+    current = { id: "model-b", provider: { id: "provider" } }
+    await submit.handleSubmit(event)
+
+    // 迟到成功一：正常删除会话
+    releaseFirst()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 迟到成功二：V2 幂等下这是同一个会话，删除收到 404（已被上一条删掉）
+    // 404 即“会话已不存在”，按删除成功处理；当作失败会重试耗尽后卡住追踪、worktree 永不回收
+    const gone = { name: "NotFoundError", data: { message: "Session not found" } }
+    sessionRemoveErrors.push(gone, gone, gone)
+    releaseRetry()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // 404 不重试、不上报；两条记录都移出追踪后自动建出的 worktree 得以回收
+    expect(sessionRemoveAttempts).toBe(2)
+    expect(removedSessions).toEqual(["session-1"])
+    expect(toasts.map((item) => item.title)).not.toContain("prompt.toast.sessionCleanupFailed.title")
+    expect(removedWorktrees).toEqual(["/repo/main/new"])
+    expect(worktreeRemoveAttempts).toBe(1)
   })
 
   test("reaps a late orphan session against its own directory", async () => {

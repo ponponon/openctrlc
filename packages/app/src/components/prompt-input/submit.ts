@@ -328,7 +328,16 @@ export function createPromptSubmit(input: PromptSubmitInput) {
     // 记录在删除成功前不移出追踪：删除失败要保留记录做有限重试，
     // 否则孤儿会话一次网络抖动就永久失联。
     void runCleanup(
-      () => sdk().api.session.remove({ sessionID: result.id, directory: result.directory }),
+      async () => {
+        try {
+          await sdk().api.session.remove({ sessionID: result.id, directory: result.directory })
+        } catch (error) {
+          // 同一 V2 会话可能已被同组另一条重试记录删掉：多条重试共享同一 Session ID，
+          // 迟到成功会各自发起删除，后到的收到 404（会话已不存在）。清理目标已达成，
+          // 按成功处理；当作失败会重试耗尽后卡住追踪，worktree 也无法回收。
+          if (!isSessionAlreadyGone(error)) throw error
+        }
+      },
       "prompt.toast.sessionCleanupFailed.title",
       "prompt.toast.sessionCleanupFailed.description",
     ).then((succeeded) => {
@@ -867,6 +876,39 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
       },
     )
   })
+}
+
+// “会话已不存在”（404）对删除类清理等价于删除成功：同一 Session ID 的多条在途重试
+// 在 V2 下会返回同一个会话，各自发起删除时先成功的会让后到的收到 404。
+// 覆盖三种真实错误形态：V2 声明错误体直接抛出（{name:"NotFoundError"}）、
+// V2 ClientError（cause.status）、V1 兼容层 wrapClientError（cause.status）。
+export function isSessionAlreadyGone(error: unknown) {
+  const queue = [error]
+  const seen = new Set<object>()
+
+  while (queue.length > 0) {
+    const current = queue.pop()
+    if (!current || typeof current !== "object" || seen.has(current)) continue
+    seen.add(current)
+
+    const value = current as Record<string, unknown>
+    const status =
+      typeof value.status === "number"
+        ? value.status
+        : value.response && typeof value.response === "object" && "status" in value.response
+          ? (value.response as { status?: unknown }).status
+          : undefined
+
+    if (status === 404) return true
+    if (value.name === "NotFoundError") return true
+    if (value._tag === "SessionNotFoundError") return true
+
+    for (const next of [value.cause, value.reason, value.error, value.body, value.data]) {
+      if (next && typeof next === "object") queue.push(next)
+    }
+  }
+
+  return false
 }
 
 export function isDefinitiveSessionCreateFailure(error: unknown) {
