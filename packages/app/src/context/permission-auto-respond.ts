@@ -45,11 +45,17 @@ export function convergeAutoAccept(
   sessionID: string | undefined,
   directory: string,
   enabled: boolean,
+  sessions: { id: string; parentID?: string }[] = [],
 ) {
   const next = { ...autoAccept, [directoryAcceptKey(directory)]: enabled }
   if (!sessionID) return next
   delete next[acceptKey(sessionID, directory)]
   delete next[sessionID]
+  const inherited = sessionLineage(sessions, sessionID)
+    .slice(1)
+    .map((id) => accepted(autoAccept, id, directory))
+    .find((item): item is boolean => item !== undefined)
+  if (inherited !== undefined && inherited !== enabled) next[acceptKey(sessionID, directory)] = enabled
   return next
 }
 
