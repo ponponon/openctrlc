@@ -2070,3 +2070,9 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 ## 时间线末尾按钮要跳到最新输出，而不是最后一条用户消息
 
 2026-10-20 用户反馈左侧导航轨道的“跳转到最新”按钮点击后没有反应。按钮实际走的是最后一条用户消息的定位路径；当用户已经看到这条提问、但助手仍在下面输出长回复时，定位会落回当前视口附近，看起来像点击失效。边界末尾按钮应调用会话已有的滚到底并恢复跟随操作；左侧轮次标记仍定位到具体用户消息。以后检查“最新”类按钮时，要确认目标是最新输出位置，而不只是最新一轮的起点。回归场景要让最后一条用户消息已在视口中、后面仍有较长助手回复，再确认点击后确实到物理底部。
+
+## OpenAI-compatible provider 的详略参数要同时检查 SDK 与原生请求链
+
+2026-10-21 用户反馈详略切到“高”后回复仍很长。会话记录显示模型走 `@ai-sdk/openai-compatible` Chat Completions；`LLMRequestPrep` 的能力门禁只放行 Responses/Mantle，所以即使 UI 已保存 `text_verbosity`，LLM 参数仍为空。修复时还发现 AI SDK 依赖本身已支持 `textVerbosity` 并序列化为顶层 `verbosity`，但本地 LLM 原生 Chat 协议只读取 `openai` 命名空间且 body schema 未定义 `verbosity`，导致只修其中一端仍会留下实验原生路径的缺口。
+
+以后增加跨 provider 的生成参数，必须从配置读取、能力门禁、AI SDK providerOptions、原生请求 lowering 到最终 wire body 逐段核对；兼容协议名称不等于请求参数会自动透传。GPT-5 Chat Completions 使用顶层 `verbosity`，Responses 使用 `text.verbosity`；不能把两种 API 的字段形状混用。对第三方兼容端点，参数是否被接受取决于其实现，不能把“客户端已发出”描述成模型必定执行。

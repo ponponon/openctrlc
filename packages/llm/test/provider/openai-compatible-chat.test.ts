@@ -90,6 +90,30 @@ describe("OpenAI-compatible Chat route", () => {
     }),
   )
 
+  it.effect("lowers provider-scoped text verbosity to the Chat Completions field", () =>
+    Effect.gen(function* () {
+      const hiart = OpenAICompatibleChat.route
+        .with({
+          provider: "hiart",
+          endpoint: { baseURL: "https://llm.example.test/v1" },
+          auth: Auth.bearer("test-key"),
+        })
+        .model({ id: "gpt-5.6-luna" })
+      const prepared = yield* LLMClient.prepare(
+        LLM.request({
+          model: hiart,
+          prompt: "Say hello.",
+          providerOptions: { hiart: { textVerbosity: "high" } },
+        }),
+      )
+
+      expect(prepared.body).toMatchObject({
+        model: "gpt-5.6-luna",
+        verbosity: "high",
+      })
+    }),
+  )
+
   it.effect("provides model helpers for compatible provider families", () =>
     Effect.gen(function* () {
       expect(

@@ -106,7 +106,9 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     modelID.includes("gpt-5.") &&
     !modelID.includes("codex") &&
     !modelID.includes("-chat") &&
-    (input.model.api.npm === "@ai-sdk/openai" || input.model.api.npm === "@ai-sdk/amazon-bedrock/mantle")
+    (input.model.api.npm === "@ai-sdk/openai" ||
+      input.model.api.npm === "@ai-sdk/openai-compatible" ||
+      input.model.api.npm === "@ai-sdk/amazon-bedrock/mantle")
   ) {
     options.textVerbosity = input.textVerbosity
   }

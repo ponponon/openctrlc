@@ -76,7 +76,8 @@ export const promptCacheKey = (request: LLMRequest) => {
 }
 
 export const textVerbosity = (request: LLMRequest) => {
-  const value = options(request)?.textVerbosity
+  const value =
+    options(request)?.textVerbosity ?? request.providerOptions?.[String(request.model.provider)]?.textVerbosity
   return isTextVerbosity(value) ? value : undefined
 }
 

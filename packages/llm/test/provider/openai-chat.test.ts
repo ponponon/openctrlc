@@ -107,6 +107,20 @@ describe("OpenAI Chat route", () => {
     }),
   )
 
+  it.effect("maps OpenAI Chat text verbosity to the top-level API field", () =>
+    Effect.gen(function* () {
+      const prepared = yield* LLMClient.prepare<OpenAIChat.OpenAIChatBody>(
+        LLM.request({
+          model: OpenAI.configure({ baseURL: "https://api.openai.test/v1/", apiKey: "test" }).chat("gpt-5.6"),
+          prompt: "think",
+          providerOptions: { openai: { textVerbosity: "low" } },
+        }),
+      )
+
+      expect(prepared.body.verbosity).toBe("low")
+    }),
+  )
+
   it.effect("adds native query params to the Chat Completions URL", () =>
     LLMClient.generate(
       LLM.updateRequest(request, {

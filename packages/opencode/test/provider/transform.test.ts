@@ -592,7 +592,7 @@ describe("ProviderTransform.options - gpt-5 textVerbosity", () => {
     expect(result.textVerbosity).toBe("low")
   })
 
-  test("openai-compatible gpt-5 models omit Responses-only reasoningSummary", () => {
+  test("openai-compatible gpt-5 models omit Responses-only reasoningSummary and default verbosity", () => {
     const model = {
       ...createGpt5Model("gpt-5.4"),
       id: "cortecs/gpt-5.4",
@@ -608,6 +608,56 @@ describe("ProviderTransform.options - gpt-5 textVerbosity", () => {
     expect(result.reasoningSummary).toBeUndefined()
     expect(result.include).toBeUndefined()
     expect(result.textVerbosity).toBeUndefined()
+  })
+
+  test("passes selected text verbosity to an OpenAI-compatible GPT-5 chat model", async () => {
+    const model = {
+      ...createGpt5Model("gpt-5.6-luna"),
+      id: "hiart/gpt-5.6-luna",
+      providerID: "hiart",
+      api: {
+        id: "gpt-5.6-luna",
+        url: "https://llm.example.test/v1",
+        npm: "@ai-sdk/openai-compatible",
+      },
+    }
+    const result = await Effect.runPromise(
+      LLMRequestPrep.prepare({
+        user: {
+          id: "msg_user-test",
+          sessionID,
+          role: "user",
+          time: { created: Date.now() },
+          agent: "test",
+          model: { providerID: "hiart", modelID: "gpt-5.6-luna" },
+        } as any,
+        sessionID,
+        model,
+        textVerbosity: "high",
+        agent: {
+          name: "test",
+          mode: "primary",
+          options: {},
+          permission: [],
+        } as any,
+        system: [],
+        messages: [{ role: "user", content: "Hello" }],
+        tools: {},
+        provider: { id: "hiart", options: {} } as any,
+        auth: undefined,
+        plugin: {
+          trigger: (_name: string, _input: unknown, output: unknown) => Effect.succeed(output),
+          list: () => Effect.succeed([]),
+          init: () => Effect.void,
+        } as any,
+        flags: { outputTokenMax: 32_000, client: "test" } as any,
+        isWorkflow: false,
+      }),
+    )
+    expect(result.params.options.textVerbosity).toBe("high")
+    expect(ProviderTransform.providerOptions(model, result.params.options)).toMatchObject({
+      hiart: { textVerbosity: "high" },
+    })
   })
 
   test("azure chat completions omit Responses-only reasoning options after variants merge", async () => {
