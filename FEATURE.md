@@ -402,9 +402,10 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 
 - 以 `7774461bbf7bd0600070cdede4fe8b9d9f301bf4` 作为内容基线，不把上游历史强行改造成 OpenCtrlC 的父提交。
 - 本轮检查至 `907b3bc518fa48e90e8ec24dd327d13eee71c36c`（2026-10-05，上游 `1.18.34`），审查新增 19 个 commit，选择性移植其中 5 项全部或部分改动；OpenCtrlC 保持独立版本 `1.18.18`。依赖升级、R2 分页重构及 Zen/Go 专属变更继续延期。
-- 2026-10-21 第二轮将审查游标推进到 `adcda1b84f6ccdc39031b9fe5998f1641472725f`（上游 `2.1.1`，OpenCtrlC `1.1.11`），范围含 418 个 first-parent commit。上游已切换到 V2/新 AI 包，本轮先按源码路径和产品边界筛选；只将可映射到本地实现的 Copilot 流式修复与 SSE 静默超时调整移植，其余新包、托管服务及产品界面不整批迁入。
+- 2026-10-21 第二轮将审查游标推进到 `adcda1b84f6ccdc39031b9fe5998f1641472725f`（上游 `2.1.1`，OpenCtrlC `1.1.11`），范围含 418 个 first-parent commit。首轮先集成了 Copilot 流式兼容与 SSE 超时两项底层修复；用户指出重点应是有价值的新功能后，重新筛选并移植了输出 token 用尽后的自动续答。上游 V2/新 AI 包及托管产品仍按本地架构逐项适配，不整批迁入。
 - 适配 `b2a3926e87`：Copilot 在单次响应中交错输出多段思考时，允许每段携带新的 `reasoning_opaque`，并在后续请求中合并思考文本、使用最新签名；新增请求回放和流式工具调用回归。
 - 适配 `d8129ca1e0`：默认 SSE chunk idle timeout 从 5 分钟调为 15 分钟，以容纳 DeepSeek 等模型长时间无 token 的思考阶段；header timeout 保持 5 分钟，显式 `chunkTimeout` 和 `false` 仍优先。
+- 适配 `a3f7f42a`：模型以 `length` 结束时自动续答，最多自动续两次；纯思考内容也能续答。续答前会把不完整工具参数标记为未执行，避免将残缺调用作为待执行工具重放；尊重 agent 步数上限，且不把原始工具参数复制进错误消息。
 - 代码审查后暂缓 `49e9786bb72`（本地 V1 Skill 扫描器不同，且上游只限制深度、没有限制超宽目录的总条目数）、`63c1a27af5`（本地 filesystem 错误契约需独立验证），以及 `d889cb2044` / `412b2b1d85` / `538f8b1da6` / `e9ac459c2e`（依赖上游 `capabilities.reasoning` 与 provider package normalization 的模型变体组）。
 - 适配 `c10134729dd`，仅让 Claude、Nova 和 Llama 4 的 Bedrock 模型保留工具结果图片，其余模型转为独立用户消息；适配 `2e018f70f2`，将超长模型名统一归一化为 `unknown`。
 - 适配 `ba341c6c`，让 Node 下的 NPM 条件导出解析为可导入的 file URL；适配 `f5ce4f88`，消除文件搜索模块对完整 `FileSystem` 命名空间的运行时依赖。
@@ -420,7 +421,7 @@ Windows 用户关闭 OpenCtrlC 窗口后，应用继续驻留系统托盘，保�
 
 - 在 `packages/opencode`、`packages/core`、`packages/app`、`packages/stats/core` 分别执行对应的单元测试和 `bun typecheck`；Gemini 同步验证 `test/provider/transform.test.ts`。
 - 2026-10-05 同步验证：在 `packages/core` 执行 `bun test test/session-runner.test.ts`（87 项）；在 `packages/opencode` 执行 `bun test test/session/llm.test.ts`（33 项）和未知模型退出 focused 测试（1 项）；在 `script` 执行 `bun test publish-contract.test.ts`（6 项），覆盖签名依赖、归档替换顺序、凭据清理及 Bash 语法。
-- 2026-10-21 同步验证：Copilot 转换测试 19 项、流式模型测试 12 项、`packages/opencode/test/provider/header-timeout.test.ts` 10 项均通过；`packages/core` 和 `packages/opencode` 的 `bun typecheck` 通过。超时测试需要允许本地随机端口监听；沙箱默认权限下的首轮失败为端口绑定受限，提权后串行重跑全绿。
+- 2026-10-21 同步验证：V2 `session-runner.test.ts` 92 项、Copilot 转换测试 19 项、流式模型测试 12 项、`packages/opencode/test/provider/header-timeout.test.ts` 10 项均通过；`packages/core` 和 `packages/opencode` 的 `bun typecheck` 通过。超时测试需要允许本地随机端口监听；沙箱默认权限下的首轮失败为端口绑定受限，提权后串行重跑全绿。
 - 对 `entitlements.plist` 执行 `plutil -lint`，在临时目录编译 Bun 测试二进制并分别验证 ad-hoc 与 hardened runtime 签名及启动，不清空正在使用的 CLI/server `dist`。真实 Developer ID 签名和跨架构执行仍需正式 CI 验证，本轮不触发发布。
 - 使用 `git diff --check` 检查空白错误，并在提交前扫描改动文件中的 API key、token、密码和私钥内容。
 - 后续同步先执行 `git fetch upstream dev`，再运行 `bash scripts/upstream-sync-report.sh`，按 `UPSTREAM.md` 的延期清单逐项复核，完成后更新游标和台账。

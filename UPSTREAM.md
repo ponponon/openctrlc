@@ -54,9 +54,11 @@ The 2026-10-21 review advanced the cursor across 418 first-parent commits to
 `adcda1b84f6c`. Upstream promoted its V2 rewrite during this range, so changes
 were triaged by source path and product boundary; only matching runtime fixes
 were candidates for selective porting. `b2a3926e87` and `d8129ca1e0` were
-reviewed at code and test level and integrated below. The V2/AI package and
-OpenCode-hosted product changes were not treated as portable just because their
-commit summaries described a general bug fix.
+reviewed at code and test level and integrated below. After a follow-up review
+focused on user-facing functionality, `a3f7f42a` was adapted to the local V2
+SessionRunner. The V2/AI package and OpenCode-hosted product changes were not
+treated as portable just because their commit summaries described a general
+bug fix.
 
 ### Runtime, provider, and session reliability
 
@@ -113,6 +115,11 @@ commit summaries described a general bug fix.
   fifteen minutes for long silent reasoning periods. Header timeout remains
   five minutes, and explicit `chunkTimeout` values or `false` still override
   the default.
+- `a3f7f42a` continues assistant responses after the provider reports the
+  output-token limit. The local V2 runner inserts a synthetic continuation
+  prompt, caps automatic follow-ups at two, respects the configured agent step
+  limit, and marks incomplete tool arguments as unexecuted before replay. Raw
+  tool arguments are not copied into the failure text.
 
 ### Statistics hardening
 

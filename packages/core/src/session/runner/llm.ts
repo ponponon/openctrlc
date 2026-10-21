@@ -29,6 +29,7 @@ import { SessionCompaction } from "../compaction"
 import { SessionEvent } from "../event"
 import { SessionHistory } from "../history"
 import { SessionInput } from "../input"
+import { SessionMessage } from "../message"
 import { SessionSchema } from "../schema"
 import { SessionStore } from "../store"
 import { type RunError, Service } from "./index"
@@ -39,6 +40,10 @@ import { MAX_STEPS_PROMPT } from "./max-steps"
 import { Snapshot } from "../../snapshot"
 import { makeLocationNode } from "../../effect/app-node"
 import { llmClient } from "../../effect/app-node-platform"
+
+const CONTINUE_AFTER_OUTPUT_LIMIT =
+  "Your last response hit the output token limit (stop reason: length). Do not apologize, recap, or repeat yourself. Break the remaining work into smaller pieces."
+const MAX_OUTPUT_LIMIT_CONTINUATIONS = 2
 
 /**
  * Runs one durable coding-agent Session until it settles.
@@ -342,9 +347,50 @@ const layer = Layer.effect(
             !publisher.hasProviderError() &&
             !publisher.hasFailure() &&
             !publisher.hasVisibleText() &&
-            !publisher.hasToolCalls()
+            !publisher.hasToolCalls() &&
+            stepSettlement?.finish !== "length"
           )
             yield* withPublication(publisher.failAssistant("Model returned an empty response"))
+          if (stream._tag === "Success" && stepSettlement?.finish === "length" && !publisher.hasFailure()) {
+            yield* withPublication(
+              publisher.failIncompleteTools("Tool call arguments were incomplete; the tool was not executed."),
+            )
+            if (!needsContinuation && !(yield* SessionInput.hasPending(db, session.id, "steer"))) {
+              const recent = entries
+                .map((entry) => entry.message)
+                .filter(
+                  (message): message is SessionMessage.User | SessionMessage.Assistant =>
+                    message.type === "user" || message.type === "assistant",
+                )
+                .slice(-MAX_OUTPUT_LIMIT_CONTINUATIONS)
+              const exhausted =
+                recent.length === MAX_OUTPUT_LIMIT_CONTINUATIONS &&
+                recent.every((message) => message.type === "assistant" && message.finish === "length")
+              if (exhausted) {
+                yield* withPublication(
+                  publisher.failAssistant(
+                    "The response was still truncated after two automatic continuations. Send a new message to continue.",
+                  ),
+                )
+              } else if (isLastStep) {
+                yield* withPublication(
+                  publisher.failAssistant(
+                    "The response was truncated by the output token limit, and the agent's step limit prevents automatic continuation. Send a new message to continue.",
+                  ),
+                )
+              } else {
+                yield* withPublication(
+                  events.publish(SessionEvent.Synthetic, {
+                    sessionID: session.id,
+                    messageID: SessionMessage.ID.create(),
+                    timestamp: yield* DateTime.now,
+                    text: CONTINUE_AFTER_OUTPUT_LIMIT,
+                  }),
+                )
+                needsContinuation = true
+              }
+            }
+          }
           if (stepSettlement && !publisher.hasProviderError() && !publisher.hasFailure()) {
             const endSnapshot = yield* snapshots.capture()
             const files =

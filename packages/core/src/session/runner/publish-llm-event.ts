@@ -233,6 +233,24 @@ export const createLLMEventPublisher = (events: EventV2.Interface, input: Input)
     }
   })
 
+  const failIncompleteTools = Effect.fn("SessionRunner.failIncompleteTools")(function* (message: string) {
+    for (const [callID, tool] of tools) {
+      if (tool.called || tool.settled) continue
+      tool.settled = true
+      yield* events.publish(SessionEvent.Tool.Failed, {
+        sessionID: input.sessionID,
+        timestamp: yield* timestamp,
+        assistantMessageID: tool.assistantMessageID,
+        callID,
+        error: { type: "unknown", message },
+        provider: {
+          executed: tool.providerExecuted,
+          ...(tool.providerMetadata === undefined ? {} : { metadata: tool.providerMetadata }),
+        },
+      })
+    }
+  })
+
   const assistantMessageIDForTool = (callID: string) => {
     const tool = tools.get(callID)
     return tool ? Effect.succeed(tool.assistantMessageID) : Effect.die(`Unknown tool call: ${callID}`)
@@ -416,6 +434,7 @@ export const createLLMEventPublisher = (events: EventV2.Interface, input: Input)
     flush,
     failAssistant,
     failUnsettledTools,
+    failIncompleteTools,
     hasActiveAssistant: () => assistantActive,
     hasAssistantStarted: () => assistantMessageID !== undefined,
     hasFailure: () => assistantFailed,

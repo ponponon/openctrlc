@@ -108,6 +108,8 @@ const recoveryModel = Model.make({
   provider: "fake",
   route: OpenAIChat.route.with({ limits: { context: 20_000, output: 1_000 } }),
 })
+const OUTPUT_LIMIT_NUDGE =
+  "Your last response hit the output token limit (stop reason: length). Do not apologize, recap, or repeat yourself. Break the remaining work into smaller pieces."
 const authorizations: Tool.Context[] = []
 const executions: string[] = []
 const permission = Layer.succeed(
@@ -3063,6 +3065,205 @@ describe("SessionRunnerLLM", () => {
           ],
         },
       ])
+    }),
+  )
+
+  for (const type of ["text", "reasoning"] as const) {
+    it.effect(`continues ${type} after an output token limit`, () =>
+      Effect.gen(function* () {
+        yield* setup
+        const session = yield* SessionV2.Service
+        yield* session.prompt({ sessionID, prompt: Prompt.make({ text: "Complete the response" }), resume: false })
+        requests.length = 0
+        const partial =
+          type === "text"
+            ? [
+                LLMEvent.textStart({ id: "partial" }),
+                LLMEvent.textDelta({ id: "partial", text: "Partial" }),
+                LLMEvent.textEnd({ id: "partial" }),
+              ]
+            : [
+                LLMEvent.reasoningStart({ id: "partial" }),
+                LLMEvent.reasoningDelta({ id: "partial", text: "Partial" }),
+                LLMEvent.reasoningEnd({ id: "partial" }),
+              ]
+        responses = [
+          [
+            LLMEvent.stepStart({ index: 0 }),
+            ...partial,
+            LLMEvent.stepFinish({ index: 0, reason: "length" }),
+            LLMEvent.finish({ reason: "length" }),
+          ],
+          [
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.textStart({ id: "finished" }),
+            LLMEvent.textDelta({ id: "finished", text: "Finished" }),
+            LLMEvent.textEnd({ id: "finished" }),
+            LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+            LLMEvent.finish({ reason: "stop" }),
+          ],
+        ]
+
+        yield* session.resume(sessionID)
+
+        expect(requests).toHaveLength(2)
+        expect(requests[1]?.messages.at(-2)).toMatchObject({
+          role: "assistant",
+          content: [expect.objectContaining({ text: "Partial" })],
+        })
+        expect(requests[1]?.messages.at(-1)).toMatchObject({
+          role: "user",
+          content: [{ type: "text", text: OUTPUT_LIMIT_NUDGE }],
+        })
+        expect(yield* session.context(sessionID)).toMatchObject([
+          { type: "user", text: "Complete the response" },
+          {
+            type: "assistant",
+            finish: "length",
+            content: [type === "text" ? { type: "text", text: "Partial" } : { type: "reasoning", text: "Partial" }],
+          },
+          { type: "synthetic", text: OUTPUT_LIMIT_NUDGE },
+          { type: "assistant", finish: "stop", content: [{ type: "text", text: "Finished" }] },
+        ])
+      }),
+    )
+  }
+
+  it.effect("caps automatic output-limit continuations and resets for new input", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const session = yield* SessionV2.Service
+      yield* session.prompt({ sessionID, prompt: Prompt.make({ text: "Keep going" }), resume: false })
+      requests.length = 0
+      const truncated = (id: string) => [
+        LLMEvent.stepStart({ index: 0 }),
+        LLMEvent.textStart({ id }),
+        LLMEvent.textDelta({ id, text: "Partial" }),
+        LLMEvent.textEnd({ id }),
+        LLMEvent.stepFinish({ index: 0, reason: "length" }),
+        LLMEvent.finish({ reason: "length" }),
+      ]
+      responses = [truncated("partial-1"), truncated("partial-2"), truncated("partial-3")]
+
+      yield* session.resume(sessionID)
+
+      expect(requests).toHaveLength(3)
+      expect((yield* session.context(sessionID)).filter((message) => message.type === "synthetic")).toHaveLength(2)
+      expect((yield* session.context(sessionID)).at(-1)).toMatchObject({
+        type: "assistant",
+        finish: "error",
+        error: {
+          message:
+            "The response was still truncated after two automatic continuations. Send a new message to continue.",
+        },
+      })
+
+      responses = [
+        truncated("partial-after-new-input"),
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.textStart({ id: "finished-after-new-input" }),
+          LLMEvent.textDelta({ id: "finished-after-new-input", text: "Finished" }),
+          LLMEvent.textEnd({ id: "finished-after-new-input" }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+      ]
+      yield* session.prompt({ sessionID, prompt: Prompt.make({ text: "Continue with a new request" }), resume: false })
+      yield* session.resume(sessionID)
+
+      expect(requests).toHaveLength(5)
+      expect((yield* session.context(sessionID)).filter((message) => message.type === "synthetic")).toHaveLength(3)
+    }),
+  )
+
+  it.effect("fails incomplete tool arguments before continuing a truncated response", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const session = yield* SessionV2.Service
+      yield* session.prompt({
+        sessionID,
+        prompt: Prompt.make({ text: "Recover the truncated tool call" }),
+        resume: false,
+      })
+      requests.length = 0
+      executions.length = 0
+      responses = [
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.toolInputStart({ id: "call-incomplete", name: "echo" }),
+          LLMEvent.toolInputDelta({ id: "call-incomplete", name: "echo", text: '{"text":"partial' }),
+          LLMEvent.stepFinish({ index: 0, reason: "length" }),
+          LLMEvent.finish({ reason: "length" }),
+        ],
+        [
+          LLMEvent.stepStart({ index: 0 }),
+          LLMEvent.textStart({ id: "finished" }),
+          LLMEvent.textDelta({ id: "finished", text: "Finished" }),
+          LLMEvent.textEnd({ id: "finished" }),
+          LLMEvent.stepFinish({ index: 0, reason: "stop" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+      ]
+
+      yield* session.resume(sessionID)
+
+      expect(requests).toHaveLength(2)
+      expect(requests[1]?.messages.some((message) => message.role === "tool")).toBe(true)
+      expect(executions).toEqual([])
+      expect(yield* session.context(sessionID)).toMatchObject([
+        { type: "user", text: "Recover the truncated tool call" },
+        {
+          type: "assistant",
+          content: [
+            {
+              type: "tool",
+              id: "call-incomplete",
+              state: {
+                status: "error",
+                error: { message: "Tool call arguments were incomplete; the tool was not executed." },
+              },
+            },
+          ],
+        },
+        { type: "synthetic", text: OUTPUT_LIMIT_NUDGE },
+        { type: "assistant", finish: "stop", content: [{ type: "text", text: "Finished" }] },
+      ])
+    }),
+  )
+
+  it.effect("does not exceed an agent's configured step limit to continue truncated output", () =>
+    Effect.gen(function* () {
+      yield* setup
+      const agents = yield* AgentV2.Service
+      yield* agents.transform((editor) =>
+        editor.update(AgentV2.ID.make("build"), (agent) => {
+          agent.steps = 1
+        }),
+      )
+      const session = yield* SessionV2.Service
+      yield* session.prompt({ sessionID, prompt: Prompt.make({ text: "Stop at the configured limit" }), resume: false })
+      requests.length = 0
+      response = [
+        LLMEvent.stepStart({ index: 0 }),
+        LLMEvent.textStart({ id: "partial" }),
+        LLMEvent.textDelta({ id: "partial", text: "Partial" }),
+        LLMEvent.textEnd({ id: "partial" }),
+        LLMEvent.stepFinish({ index: 0, reason: "length" }),
+        LLMEvent.finish({ reason: "length" }),
+      ]
+
+      yield* session.resume(sessionID)
+
+      expect(requests).toHaveLength(1)
+      expect((yield* session.context(sessionID)).at(-1)).toMatchObject({
+        type: "assistant",
+        finish: "error",
+        error: {
+          message:
+            "The response was truncated by the output token limit, and the agent's step limit prevents automatic continuation. Send a new message to continue.",
+        },
+      })
     }),
   )
 
