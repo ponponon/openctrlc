@@ -1211,7 +1211,7 @@ export const dict = {
   "settings.general.row.reasoningSummaries.description": "タイムラインにモデルの推論の要約を表示します",
   "settings.general.row.textVerbosity.title": "回答の詳しさ",
   "settings.general.row.textVerbosity.description":
-    "すべてのモデルにシステム指示を送り、対応モデルでは API パラメーターも使います。効果はモデルによって異なります",
+    "低・中・高を選ぶと、すべてのモデルにシステム指示を送り、対応モデルでは API パラメーターも使います。効果はモデルによって異なります",
   "settings.general.row.textVerbosity.option.default": "モデルの既定値",
   "settings.general.row.textVerbosity.option.low": "低",
   "settings.general.row.textVerbosity.option.medium": "中",

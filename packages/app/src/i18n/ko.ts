@@ -939,7 +939,7 @@ export const dict = {
   "settings.general.row.reasoningSummaries.description": "타임라인에 모델 추론 요약 표시",
   "settings.general.row.textVerbosity.title": "답변 상세도",
   "settings.general.row.textVerbosity.description":
-    "모든 모델에 시스템 지침을 전달하고, 지원 모델에는 API 매개변수도 사용합니다. 결과는 모델마다 다릅니다",
+    "낮음·보통·높음을 선택하면 모든 모델에 시스템 지침을 전달하고, 지원 모델에는 API 매개변수도 사용합니다. 결과는 모델마다 다릅니다",
   "settings.general.row.textVerbosity.option.default": "모델 기본값",
   "settings.general.row.textVerbosity.option.low": "낮음",
   "settings.general.row.textVerbosity.option.medium": "보통",

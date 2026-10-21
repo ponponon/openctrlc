@@ -1372,7 +1372,7 @@ export const dict = {
   "settings.general.row.reasoningSummaries.description": "Display model reasoning summaries in the timeline",
   "settings.general.row.textVerbosity.title": "Reply detail",
   "settings.general.row.textVerbosity.description":
-    "All models receive system guidance; supported models also use API parameters, so results vary by model.",
+    "Low, medium, and high add system guidance for all models; supported models also use API parameters, so results vary.",
   "settings.general.row.textVerbosity.option.default": "Model default",
   "settings.general.row.textVerbosity.option.low": "Low",
   "settings.general.row.textVerbosity.option.medium": "Medium",

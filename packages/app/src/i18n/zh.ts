@@ -1237,7 +1237,7 @@ export const dict = {
   "settings.general.row.reasoningSummaries.description": "在时间线中显示模型推理摘要",
   "settings.general.row.textVerbosity.title": "输出详细程度",
   "settings.general.row.textVerbosity.description":
-    "所有模型都会收到系统指令；支持的模型还会使用 API 参数，实际效果因模型而异",
+    "选择低/中/高后，所有模型都会收到系统指令；支持的模型还会使用 API 参数，效果因模型而异",
   "settings.general.row.textVerbosity.option.default": "模型默认",
   "settings.general.row.textVerbosity.option.low": "低",
   "settings.general.row.textVerbosity.option.medium": "中",
