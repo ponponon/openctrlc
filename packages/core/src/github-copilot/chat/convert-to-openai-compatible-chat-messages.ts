@@ -82,12 +82,11 @@ export function convertToOpenAICompatibleChatMessages(prompt: LanguageModelV3Pro
 
         for (const part of content) {
           const partMetadata = getOpenAIMetadata(part)
-          // Check for reasoningOpaque on any part (may be attached to text/tool-call)
+          // Interleaved reasoning can carry one opaque value per segment. Replay the latest one
+          // alongside the concatenated reasoning text, as Copilot expects a single assistant turn.
           const partOpaque = (part.providerOptions as { copilot?: { reasoningOpaque?: string } })?.copilot
             ?.reasoningOpaque
-          if (partOpaque && !reasoningOpaque) {
-            reasoningOpaque = partOpaque
-          }
+          if (partOpaque) reasoningOpaque = partOpaque
 
           switch (part.type) {
             case "text": {
@@ -95,7 +94,7 @@ export function convertToOpenAICompatibleChatMessages(prompt: LanguageModelV3Pro
               break
             }
             case "reasoning": {
-              if (part.text) reasoningText = part.text
+              if (part.text) reasoningText = (reasoningText ?? "") + part.text
               break
             }
             case "tool-call": {

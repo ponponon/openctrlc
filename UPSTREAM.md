@@ -9,10 +9,10 @@ source of updates.
 - Local exact tag: `base-opencode-7774461`
 - Published marker: `openctrlc-baseline-7774461`
 - Imported: 2026-08-19
-- Reviewed through upstream commit: `907b3bc518fa48e90e8ec24dd327d13eee71c36c`
-- Last selective sync: 2026-10-05
-- Upstream version at review: `1.18.34`
-- OpenCtrlC version at sync: `1.18.18`
+- Reviewed through upstream commit: `adcda1b84f6ccdc39031b9fe5998f1641472725f`
+- Last selective sync: 2026-10-21
+- Upstream version at review: `2.1.1`
+- OpenCtrlC version at sync: `1.1.11`
 
 ## Sync policy
 
@@ -49,6 +49,14 @@ The selective syncs from 2026-09-13 through 2026-10-05 integrated the following
 upstream fixes and features while preserving OpenCtrlC's independent product code.
 The latest range contains 19 commits: 5 were integrated wholly or in part; the
 remaining 14 and the statistics portion of `a79ecfe109` are recorded below.
+
+The 2026-10-21 review advanced the cursor across 418 first-parent commits to
+`adcda1b84f6c`. Upstream promoted its V2 rewrite during this range, so changes
+were triaged by source path and product boundary; only matching runtime fixes
+were candidates for selective porting. `b2a3926e87` and `d8129ca1e0` were
+reviewed at code and test level and integrated below. The V2/AI package and
+OpenCode-hosted product changes were not treated as portable just because their
+commit summaries described a general bug fix.
 
 ### Runtime, provider, and session reliability
 
@@ -96,6 +104,15 @@ remaining 14 and the statistics portion of `a79ecfe109` are recorded below.
   on OpenCode-compatible and custom providers, plus V2 compaction requests.
 - `a79ecfe109` partially integrates the CLI unknown-model subprocess test's
   serial execution fix. Its statistics site changes remain deferred below.
+- `b2a3926e87` accepts interleaved GitHub Copilot `reasoning_opaque` values:
+  a new signature no longer makes the stream fail; the parser updates the
+  signature as new segments arrive, and request replay concatenates reasoning
+  text while retaining the latest signature for the assistant turn. Added
+  streaming and replay regression tests.
+- `d8129ca1e0` increases the default SSE inter-chunk idle timeout from five to
+  fifteen minutes for long silent reasoning periods. Header timeout remains
+  five minutes, and explicit `chunkTimeout` values or `false` still override
+  the default.
 
 ### Statistics hardening
 
@@ -218,3 +235,17 @@ OpenCtrlC-specific adaptation:
 - `108b988a08`: hidden-model filtering requires a new SST secret and removes
   retired model dimensions from stored statistics. Defer with the hosted
   catalog attribution and R2 migration rather than silently changing local data.
+- `49e9786bb72`: bounded skill discovery and watcher changes target the new V2
+  scanner and do not directly fit OpenCtrlC's V1 scanner. Review found that the
+  upstream depth limit does not cap the number of entries in a very wide
+  directory, so it is not a complete workload bound; any local adaptation must
+  add and test a total-entry/file budget.
+- `63c1a27af5`: macOS sandbox/EPERM filesystem handling is relevant, but the
+  local `FSUtil` and instruction-discovery error contracts differ. Defer until
+  the fallback path identity and unreadable-root behavior can be tested against
+  OpenCtrlC's own filesystem layer.
+- `d889cb2044`, `412b2b1d85`, `538f8b1da6`, `e9ac459c2e`: model reasoning
+  variants and package-normalization fixes depend on upstream's new
+  `capabilities.reasoning` schema and native-provider package resolver. The
+  current local catalog/config schema does not expose that contract; defer the
+  feature group rather than generating variants for the wrong provider package.

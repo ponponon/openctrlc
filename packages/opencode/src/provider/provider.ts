@@ -33,6 +33,7 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderError } from "./error"
 
 const OPENAI_HEADER_TIMEOUT_DEFAULT = 300_000
+const DEFAULT_CHUNK_TIMEOUT_MS = 900_000
 
 function wrapSSE(res: Response, ms: number, ctl: AbortController) {
   if (typeof ms !== "number" || ms <= 0) return res
@@ -95,7 +96,7 @@ function timeoutController(ms: number) {
 // fetch layer, on top of `options.fetch` when a custom fetch is configured.
 function timeoutFetch(options: Record<string, any>) {
   const customFetch = options["fetch"]
-  const chunkTimeout = options["chunkTimeout"] ?? 300_000
+  const chunkTimeout = options["chunkTimeout"] ?? DEFAULT_CHUNK_TIMEOUT_MS
   const headerTimeout = options["headerTimeout"] ?? 300_000
   const timeout = options["timeout"]
 
