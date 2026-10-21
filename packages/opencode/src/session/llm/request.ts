@@ -15,6 +15,7 @@ import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
+import { SessionTextVerbosity } from "@openctrlc/core/session/text-verbosity"
 
 // ⚠️ 发往 opencode zen 的请求必须伪装成原版 opencode，且版本号必须是上游
 // 版本（>= 1.18.0）：服务端会解析 User-Agent 中的版本，用我们自己的
@@ -69,9 +70,10 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     [
       ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),
       ...input.system,
-      ...(input.user.system ? [input.user.system] : []),
+      input.user.system,
+      input.small ? undefined : SessionTextVerbosity.instruction(input.textVerbosity),
     ]
-      .filter((x) => x)
+      .filter((x): x is string => Boolean(x))
       .join("\n"),
   ]
 
@@ -101,6 +103,7 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
   const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)
   const modelID = input.model.api.id.toLowerCase()
   if (
+    !input.small &&
     input.textVerbosity !== undefined &&
     input.textVerbosity !== "default" &&
     modelID.includes("gpt-5.") &&

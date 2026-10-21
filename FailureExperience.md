@@ -2076,3 +2076,9 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 2026-10-21 用户反馈详略切到“高”后回复仍很长。会话记录显示模型走 `@ai-sdk/openai-compatible` Chat Completions；`LLMRequestPrep` 的能力门禁只放行 Responses/Mantle，所以即使 UI 已保存 `text_verbosity`，LLM 参数仍为空。修复时还发现 AI SDK 依赖本身已支持 `textVerbosity` 并序列化为顶层 `verbosity`，但本地 LLM 原生 Chat 协议只读取 `openai` 命名空间且 body schema 未定义 `verbosity`，导致只修其中一端仍会留下实验原生路径的缺口。
 
 以后增加跨 provider 的生成参数，必须从配置读取、能力门禁、AI SDK providerOptions、原生请求 lowering 到最终 wire body 逐段核对；兼容协议名称不等于请求参数会自动透传。GPT-5 Chat Completions 使用顶层 `verbosity`，Responses 使用 `text.verbosity`；不能把两种 API 的字段形状混用。对第三方兼容端点，参数是否被接受取决于其实现，不能把“客户端已发出”描述成模型必定执行。
+
+## 回复详略不能只依赖 GPT-5 原生参数
+
+2026-10-21 用户继续指出 Claude 和 Gemini 也需要受详略选择控制。排查确认 `text.verbosity` 是特定 OpenAI/GPT-5 API 字段；Anthropic 的 `output_config.effort` 和 Gemini 的 `thinkingLevel` 控制模型投入/推理，不等同于单独的可见回复长度。若 UI 对所有 provider 展示同一详略选项、服务端却只发 GPT-5 字段，其他模型选高/低就没有任何变化。
+
+以后跨 provider 的回复详略应在 V1/V2 共用请求组装层为非默认选项追加明确的系统指令，同时保留已支持模型的原生 API 参数；指令只规定最终回复长短，不修改 reasoning/thinking 参数、不用 `maxOutputTokens` 伪装长度控制。对模型的服从只能承诺为引导，不能保证固定 token 数；设置说明要写清楚原生参数与提示词引导的差异。

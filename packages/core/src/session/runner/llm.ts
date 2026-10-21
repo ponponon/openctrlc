@@ -25,6 +25,7 @@ import { ReferenceGuidance } from "../../reference/guidance"
 import { ToolRegistry } from "../../tool/registry"
 import { ToolOutputStore } from "../../tool-output-store"
 import { SessionContextEpoch } from "../context-epoch"
+import { SessionTextVerbosity } from "../text-verbosity"
 import { SessionCompaction } from "../compaction"
 import { SessionEvent } from "../event"
 import { SessionHistory } from "../history"
@@ -233,7 +234,7 @@ const layer = Layer.effect(
               : {}),
           },
         },
-        system: [agent.info?.system, system.baseline]
+        system: [agent.info?.system, system.baseline, SessionTextVerbosity.instruction(textVerbosity)]
           .filter((part): part is string => part !== undefined && part.length > 0)
           .map(SystemPart.make),
         messages: [...toLLMMessages(context, model), ...(isLastStep ? [Message.assistant(MAX_STEPS_PROMPT)] : [])],

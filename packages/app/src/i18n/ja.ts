@@ -1211,7 +1211,7 @@ export const dict = {
   "settings.general.row.reasoningSummaries.description": "タイムラインにモデルの推論の要約を表示します",
   "settings.general.row.textVerbosity.title": "回答の詳しさ",
   "settings.general.row.textVerbosity.description":
-    "GPT-5 Responses の詳細度パラメーターに対応するモデルの回答の詳しさを設定します。「モデルの既定値」ではモデル本来の動作を使用します",
+    "すべてのモデルにシステム指示を送り、対応モデルでは API パラメーターも使います。効果はモデルによって異なります",
   "settings.general.row.textVerbosity.option.default": "モデルの既定値",
   "settings.general.row.textVerbosity.option.low": "低",
   "settings.general.row.textVerbosity.option.medium": "中",
