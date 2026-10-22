@@ -3,7 +3,7 @@ import { showToast } from "@/utils/toast"
 import { base64Encode } from "@openctrlc/core/util/encode"
 import { Binary } from "@openctrlc/core/util/binary"
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router"
-import { batch, startTransition, type Accessor } from "solid-js"
+import { batch, type Accessor } from "solid-js"
 import { createStore } from "solid-js/store"
 import { SessionID } from "@openctrlc/schema/session-id"
 import { useTabs } from "@/context/tabs"
@@ -607,7 +607,10 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         untrackInflightCreate(createInput.id, inflight)
         seed(sessionDirectory, created)
         session = created
-        await startTransition(() => {
+        // Batch (not startTransition) so the tab strip and URL commit immediately:
+        // a transition would hold them until every Suspense resource in the session
+        // route (lazy chunk, session sync) settles, freezing the composer on screen.
+        batch(() => {
           if (!session) return
           local.session.promote(sessionDirectory, session.id, {
             agent: currentAgent.name,

@@ -3,8 +3,8 @@ import { createSimpleContext } from "@openctrlc/ui/context"
 import { createStore, produce } from "solid-js/store"
 import { Persist, persisted, removePersisted, draftPersistedKeys } from "@/utils/persist"
 import { ServerConnection, useServer } from "./server"
-import { createEffect, getOwner, onCleanup, startTransition } from "solid-js"
-import { useLocation, useNavigate, useParams } from "@solidjs/router"
+import { batch, createEffect, getOwner, onCleanup, startTransition } from "solid-js"
+import { useIsRouting, useLocation, useNavigate, useParams } from "@solidjs/router"
 import { usePlatform } from "./platform"
 import { uuid } from "@/utils/uuid"
 import { SessionTabsRemovedDetail } from "@/components/titlebar-session-events"
@@ -70,12 +70,32 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
 
     const params = useParams()
     const navigate = useNavigate()
+    const isRouting = useIsRouting()
     const location = useLocation()
     const memory = createTabMemory(getOwner())
 
     const closing = new Set<string>()
     let recentWrite = 0
     let recentValue: string | undefined
+    let draftPromotionStartedAt: number | undefined
+    let draftPromotionSawRouting = false
+
+    createEffect(() => {
+      const routing = isRouting()
+      if (draftPromotionStartedAt === undefined) return
+      if (routing) {
+        draftPromotionSawRouting = true
+        return
+      }
+      if (!draftPromotionSawRouting) return
+      const durationMs = performance.now() - draftPromotionStartedAt
+      console.info("[session-create] route transition completed", {
+        durationMs: Number(durationMs.toFixed(1)),
+        durationSeconds: Number((durationMs / 1000).toFixed(3)),
+      })
+      draftPromotionStartedAt = undefined
+      draftPromotionSawRouting = false
+    })
 
     const recentKey = () => (recentWrite ? recentValue : recent.key)
 
@@ -228,10 +248,17 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
       },
       promoteDraft(draftID: string, session: Omit<SessionTab, "type">) {
         // Keep the replacement and navigation atomic so /new-session never renders
-        // after its backing draft tab has been removed from the store.
+        // after its backing draft tab has been removed from the store. Batch (not
+        // startTransition) so the tab strip paints before the session route chunk
+        // and sync resources load — same reasoning as addSessionTab.
         const active = location.pathname === "/new-session" && location.query.draftId === draftID
         const next = { type: "session" as const, ...session }
-        void startTransition(() => {
+        if (active) {
+          draftPromotionStartedAt = performance.now()
+          draftPromotionSawRouting = isRouting()
+          console.info("[session-create] route transition started")
+        }
+        batch(() => {
           setStore(
             produce((tabs) => {
               const index = tabs.findIndex((tab) => tab.type === "draft" && tab.draftID === draftID)
