@@ -607,9 +607,12 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         untrackInflightCreate(createInput.id, inflight)
         seed(sessionDirectory, created)
         session = created
-        // Batch (not startTransition) so the tab strip and URL commit immediately:
-        // a transition would hold them until every Suspense resource in the session
-        // route (lazy chunk, session sync) settles, freezing the composer on screen.
+        // Batch (not startTransition) so the tab strip paints immediately: a
+        // transition would hold it until every Suspense resource in the session
+        // route (lazy chunk, session sync) settles, freezing the composer. The
+        // URL/route commit still rides the router's own transition (navigate()
+        // defers setReference behind startTransition) — see DraftRoute's
+        // isRouting guard for the promotion window that opens up there.
         batch(() => {
           if (!session) return
           local.session.promote(sessionDirectory, session.id, {

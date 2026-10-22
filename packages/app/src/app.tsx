@@ -13,6 +13,7 @@ import {
   Navigate,
   Route,
   Router,
+  useIsRouting,
   useLocation,
   useNavigate,
   useParams,
@@ -219,12 +220,18 @@ function DraftRoute() {
   const [search] = useSearchParams<{ draftId?: string }>()
   const settings = useSettings()
   const tabs = useTabs()
+  const isRouting = useIsRouting()
   return (
     <Show when={tabs.ready()}>
       <Show
         when={tabs.store.find((tab): tab is DraftTab => tab.type === "draft" && tab.draftID === search.draftId)}
         keyed
-        fallback={<Navigate href="/" />}
+        // A promoted draft leaves the tab store before the router commits the
+        // session URL (navigate() defers its commit behind a route transition).
+        // While that navigation is in flight the draft is not orphaned — showing
+        // the skeleton instead of redirecting home, whose navigate() would
+        // replace the in-flight session target and clobber the promotion.
+        fallback={isRouting() ? <SessionSkeleton /> : <Navigate href="/" />}
       >
         {(draft) => (
           <Show
