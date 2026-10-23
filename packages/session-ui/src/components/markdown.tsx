@@ -41,6 +41,7 @@ type RenderedBlock =
       key: string
       mode: "code"
       raw: string
+      src: string
       hash: string
       language: string
       complete: boolean
@@ -82,6 +83,14 @@ async function fallbackAfterWorkerFailure(markdown: string) {
 async function code(text: string, language: string | undefined, key: string, complete = false) {
   try {
     const result = await highlightStreamingCode(key, text, language ?? "text", complete)
+    // A successful worker response can still omit characters; highlighting must not hide source text.
+    if ([...result.stable, ...result.unstable].map((token) => token[0]).join("") !== text)
+      return {
+        language: result.language,
+        generation: result.generation,
+        stable: [],
+        unstable: text ? ([[text, ""]] as MarkdownToken[]) : [],
+      }
     return {
       language: result.language,
       generation: result.generation,
@@ -462,6 +471,7 @@ export function Markdown(
               key: blockKey,
               mode: block.mode,
               raw: block.raw,
+              src: block.src,
               hash: String(block.raw.length),
               complete: !!block.complete,
               ...result,
@@ -593,6 +603,7 @@ function pendingBlocks(
       key,
       mode: block.mode,
       raw: block.raw,
+      src: block.src,
       hash: String(block.raw.length),
       language: block.language ?? "text",
       complete: !!block.complete,
@@ -696,6 +707,7 @@ function updateCodeBlock(
       unstable: block.unstable,
       raw: block.raw,
     })
+    ensureCodeText(code, next, block)
     return
   }
 
@@ -718,12 +730,27 @@ function updateCodeBlock(
     unstable: block.unstable,
     raw: block.raw,
   })
+  ensureCodeText(codeElement, next, block)
   if (current) {
     disposeCopyButtons(current)
     current.replaceWith(next)
     return
   }
   container.appendChild(next)
+}
+
+function ensureCodeText(code: HTMLElement, next: HTMLDivElement, block: Extract<RenderedBlock, { mode: "code" }>) {
+  // Incremental token reconciliation can drop DOM text even when the worker returned complete tokens.
+  if (code.textContent === block.src) return
+  code.replaceChildren()
+  if (block.src) code.appendChild(createTokenSpan([block.src, ""]))
+  renderedCodeTokens.set(next, {
+    language: block.language,
+    generation: block.generation,
+    stableCount: 0,
+    unstable: block.src ? [[block.src, ""]] : [],
+    raw: block.raw,
+  })
 }
 
 function sameToken(left: MarkdownToken, right: MarkdownToken | undefined) {

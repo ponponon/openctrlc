@@ -378,6 +378,10 @@ Marked 18 的 `renderer.link` 参数中 `title` 是可选字段。自定义 rend
 以后扩展 Markdown renderer 时，必须复用 `Tokens.Link` 等库提供的精确 Token 类型，保留可选
 字段的语义，并在单包检查之外再跑一次全量 `bun turbo typecheck`，避免只在局部构建成功。
 
+## Markdown 高亮 token 必须覆盖代码块原文
+
+用户反馈助手回复中的完整 fenced code block 显示为空。解析器和原消息都包含代码文本；代码高亮 worker 若正常返回但 token 内容为空或缺字，原渲染器只在 worker 抛错时回退原文；增量 DOM 更新后也没有核对最终文本，因此静默不完整会直接变成空块。以后使用高亮结果前，既要核对稳定与不稳定 token 拼接后逐字等于源文本，也要核对 DOM 最终文本；任一不符都用无样式 token 恢复源文本，语法着色不能成为内容可见性的单点故障。
+
 ## GitHub Release 标签不会自动完整进入本地 refs
 
 线上 GitHub 已经存在 `v0.1.3`、`v0.2.0`、`v0.2.1`、`v0.2.2`，但本地 Git Graph
