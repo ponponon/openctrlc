@@ -1502,6 +1502,14 @@ export const dict = {
     "「最新へ移動」は、最後のユーザーメッセージがすでに表示されていても、アシスタントの最新出力までスクロールします。",
   "dialog.releaseNotes.v1_1_12.outputDetailLevel":
     "出力の詳細度を選択すると、コントロールの表示がすぐに更新されるようになりました。",
+  "dialog.releaseNotes.v1_1_13.outputLimitContinuation":
+    "モデルの出力トークン上限に達した長い回答は、自動的に続きが生成されるようになりました。",
+  "dialog.releaseNotes.v1_1_13.crossModelDetail":
+    "回答の詳しさ設定が、GPT-5 互換 API を含む対応モデルで利用できるようになりました。",
+  "dialog.releaseNotes.v1_1_13.streamingCompatibility":
+    "プロバイダーの思考シグネチャ処理とストリーミングのタイムアウトを修正しました。",
+  "dialog.releaseNotes.v1_1_13.newSessionTab":
+    "新しいセッションを送信するとすぐに対応するタブへ切り替わり、下書きに戻る問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",

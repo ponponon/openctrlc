@@ -1216,6 +1216,10 @@ export const dict = {
   "dialog.releaseNotes.v1_1_12.jumpToLatest":
     "'최신으로 이동'을 누르면 마지막 사용자 메시지가 이미 보여도 어시스턴트의 최신 출력까지 스크롤합니다.",
   "dialog.releaseNotes.v1_1_12.outputDetailLevel": "출력 상세도를 선택하면 컨트롤 표시가 즉시 업데이트됩니다.",
+  "dialog.releaseNotes.v1_1_13.outputLimitContinuation": "모델의 출력 토큰 한도에 도달한 긴 답변은 이제 자동으로 이어서 생성됩니다.",
+  "dialog.releaseNotes.v1_1_13.crossModelDetail": "GPT-5 호환 API를 포함해 지원되는 여러 모델에서 답변 상세 설정을 사용할 수 있습니다.",
+  "dialog.releaseNotes.v1_1_13.streamingCompatibility": "일부 제공자의 사고 서명 처리와 스트리밍 시간 초과 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_13.newSessionTab": "새 세션을 제출하면 해당 탭으로 즉시 전환되어 초안으로 되돌아가던 문제를 방지합니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

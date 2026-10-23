@@ -623,6 +623,14 @@ export const dict = {
     "Jump to latest now scrolls to the newest assistant output, even when the last user message is already visible.",
   "dialog.releaseNotes.v1_1_12.outputDetailLevel":
     "The output detail-level control now updates immediately after a selection change.",
+  "dialog.releaseNotes.v1_1_13.outputLimitContinuation":
+    "Long responses now continue automatically when a model reaches its output-token limit.",
+  "dialog.releaseNotes.v1_1_13.crossModelDetail":
+    "Reply-detail settings now work across supported models, including GPT-5-compatible APIs.",
+  "dialog.releaseNotes.v1_1_13.streamingCompatibility":
+    "Fixed provider thought-signature handling and streaming timeouts.",
+  "dialog.releaseNotes.v1_1_13.newSessionTab":
+    "Submitting a new session now switches to its tab immediately, avoiding a redirect back to the draft.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

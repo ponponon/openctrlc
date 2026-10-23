@@ -1547,6 +1547,10 @@ export const dict = {
   "dialog.releaseNotes.v1_1_12.jumpToLatest":
     "“跳到最新”现在会滚动到助手最新输出，即使最后一条用户消息已经在视口中也一样。",
   "dialog.releaseNotes.v1_1_12.outputDetailLevel": "选择回复详略程度后，控件现在会立即更新显示状态。",
+  "dialog.releaseNotes.v1_1_13.outputLimitContinuation": "长回复达到模型输出 token 上限时，现在会自动继续生成。",
+  "dialog.releaseNotes.v1_1_13.crossModelDetail": "回复详略设置现在适用于更多受支持的模型，包括兼容 GPT-5 的接口。",
+  "dialog.releaseNotes.v1_1_13.streamingCompatibility": "修复部分供应商的思考签名处理和流式响应超时问题。",
+  "dialog.releaseNotes.v1_1_13.newSessionTab": "提交新会话后，现在会立即切换到对应标签，避免路由切换时跳回草稿。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",

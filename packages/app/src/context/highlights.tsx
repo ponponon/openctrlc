@@ -204,6 +204,16 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "The output detail-level control now updates immediately after a selection change.":
       "dialog.releaseNotes.v1_1_12.outputDetailLevel",
   },
+  "1.1.13": {
+    "Long responses now continue automatically when a model reaches its output-token limit.":
+      "dialog.releaseNotes.v1_1_13.outputLimitContinuation",
+    "Reply-detail settings now work across supported models, including GPT-5-compatible APIs.":
+      "dialog.releaseNotes.v1_1_13.crossModelDetail",
+    "Fixed provider thought-signature handling and streaming timeouts.":
+      "dialog.releaseNotes.v1_1_13.streamingCompatibility",
+    "Submitting a new session now switches to its tab immediately, avoiding a redirect back to the draft.":
+      "dialog.releaseNotes.v1_1_13.newSessionTab",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {
