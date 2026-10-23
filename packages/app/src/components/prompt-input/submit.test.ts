@@ -668,12 +668,18 @@ describe("isSessionAlreadyGone", () => {
     ).toBe(true)
     // V1 wrapClientError：404 在 cause.status
     expect(
-      isSessionAlreadyGone(new Error("boom", { cause: { body: { name: "Whatever" }, status: 404, kind: "server", request: {} } })),
+      isSessionAlreadyGone(
+        new Error("boom", { cause: { body: { name: "Whatever" }, status: 404, kind: "server", request: {} } }),
+      ),
     ).toBe(true)
 
     // 其他失败不是“会话已不存在”
-    expect(isSessionAlreadyGone(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" }))).toBe(false)
-    expect(isSessionAlreadyGone(new Error("boom", { cause: { body: {}, status: 500, kind: "server", request: {} } }))).toBe(false)
+    expect(
+      isSessionAlreadyGone(Object.assign(new Error("fetch failed"), { name: "ClientError", reason: "Transport" })),
+    ).toBe(false)
+    expect(
+      isSessionAlreadyGone(new Error("boom", { cause: { body: {}, status: 500, kind: "server", request: {} } })),
+    ).toBe(false)
     expect(isSessionAlreadyGone({ name: "BadRequest", data: { message: "bad" } })).toBe(false)
 
     // 循环引用与空值不导致异常或误判
@@ -863,7 +869,10 @@ describe("prompt submit session create retry", () => {
       }),
     )
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+    )
 
     // 同一 Session ID 先后有两个在途创建：原请求超时后重试
     await submit.handleSubmit(event)
@@ -904,7 +913,11 @@ describe("prompt submit session create retry", () => {
       }),
     )
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+      1,
+    )
 
     // 同一 Session ID 先后两条在途创建都超时
     await submit.handleSubmit(event)
@@ -971,7 +984,10 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+    )
 
     // 旧请求为“创建工作区”模式自动建出 worktree，超时后原请求仍在途
     await submit.handleSubmit(event)
@@ -1001,7 +1017,10 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+    )
 
     await submit.handleSubmit(event)
     current = { id: "model-b", provider: { id: "provider" } }
@@ -1026,7 +1045,10 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+    )
 
     await submit.handleSubmit(event)
     current = { id: "model-b", provider: { id: "provider" } }
@@ -1050,7 +1072,11 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+      1,
+    )
 
     await submit.handleSubmit(event)
     current = { id: "model-b", provider: { id: "provider" } }
@@ -1076,7 +1102,11 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+      1,
+    )
 
     await submit.handleSubmit(event)
     current = { id: "model-b", provider: { id: "provider" } }
@@ -1106,7 +1136,11 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+      1,
+    )
 
     await submit.handleSubmit(event)
     current = { id: "model-b", provider: { id: "provider" } }
@@ -1133,7 +1167,11 @@ describe("prompt submit session create retry", () => {
     )
     sessionCreateGates.push(undefined)
     let current = { id: "model-a", provider: { id: "provider" } }
-    const submit = makeSubmit({ current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection, 5, 1)
+    const submit = makeSubmit(
+      { current: () => current, variant: { current: () => undefined } } as unknown as ModelSelection,
+      5,
+      1,
+    )
 
     await submit.handleSubmit(event)
     current = { id: "model-b", provider: { id: "provider" } }

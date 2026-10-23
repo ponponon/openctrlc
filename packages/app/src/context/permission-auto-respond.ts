@@ -94,7 +94,7 @@ export function sessionAutoAccept(
   permission: { sessionID: string },
   directory?: string,
 ) {
-  return sessionLineage(session, permission.sessionID).ids
-    .map((id) => accepted(autoAccept, id, directory))
+  return sessionLineage(session, permission.sessionID)
+    .ids.map((id) => accepted(autoAccept, id, directory))
     .find((item): item is boolean => item !== undefined)
 }

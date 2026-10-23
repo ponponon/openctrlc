@@ -264,13 +264,7 @@ describe("convergeAutoAccept", () => {
   test("keeps the requested choice when the parent snapshot is incomplete", () => {
     const sessions = [session({ id: "child", parentID: "unloaded-parent" })]
 
-    const next = convergeAutoAccept(
-      { [`${base64Encode(directory)}/*`]: true },
-      "child",
-      directory,
-      false,
-      sessions,
-    )
+    const next = convergeAutoAccept({ [`${base64Encode(directory)}/*`]: true }, "child", directory, false, sessions)
 
     expect(next[`${base64Encode(directory)}/*`]).toBe(false)
     expect(next[`${base64Encode(directory)}/child`]).toBe(false)

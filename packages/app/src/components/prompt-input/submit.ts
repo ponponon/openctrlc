@@ -543,7 +543,10 @@ export function createPromptSubmit(input: PromptSubmitInput) {
         model: { id: currentModel.id, providerID: currentModel.provider.id, variant },
         directory: sessionDirectory,
         worktreeSelection,
-        autoWorktree: worktreeSelection === "create" ? { directory: sessionDirectory, reclaimed: false, reclaiming: false } : undefined,
+        autoWorktree:
+          worktreeSelection === "create"
+            ? { directory: sessionDirectory, reclaimed: false, reclaiming: false }
+            : undefined,
       })
       const inflight: InflightSessionCreate = {
         consumed: false,
