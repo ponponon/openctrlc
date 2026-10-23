@@ -1762,7 +1762,7 @@ export type ProviderConfig = {
      */
     headerTimeout?: number | false
     /**
-     * Timeout in milliseconds between streamed SSE chunks for this provider (default: 300000). If no chunk arrives within this window, the request is aborted. Set to false to disable timeout.
+     * Timeout in milliseconds between streamed SSE chunks for this provider (default: 900000). If no chunk arrives within this window, the request is aborted. Set to false to disable timeout.
      */
     chunkTimeout?: number | false
     [key: string]: unknown | string | boolean | number | false | number | false | number | false | undefined
