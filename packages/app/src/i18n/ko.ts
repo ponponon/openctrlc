@@ -1224,6 +1224,8 @@ export const dict = {
     "일부 제공자의 사고 서명 처리와 스트리밍 시간 초과 문제를 수정했습니다.",
   "dialog.releaseNotes.v1_1_13.newSessionTab":
     "새 세션을 제출하면 해당 탭으로 즉시 전환되어 초안으로 되돌아가던 문제를 방지합니다.",
+  "dialog.releaseNotes.v1_1_14.codeBlockText":
+    "Markdown 렌더링 중 코드 블록이 비어 보이거나 일부 텍스트가 누락되던 문제를 수정했습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

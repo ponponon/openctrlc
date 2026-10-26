@@ -214,6 +214,10 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "Submitting a new session now switches to its tab immediately, avoiding a redirect back to the draft.":
       "dialog.releaseNotes.v1_1_13.newSessionTab",
   },
+  "1.1.14": {
+    "Fixed Markdown code blocks that could appear empty or lose text while rendering.":
+      "dialog.releaseNotes.v1_1_14.codeBlockText",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {

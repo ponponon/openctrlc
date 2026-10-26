@@ -631,6 +631,8 @@ export const dict = {
     "Fixed provider thought-signature handling and streaming timeouts.",
   "dialog.releaseNotes.v1_1_13.newSessionTab":
     "Submitting a new session now switches to its tab immediately, avoiding a redirect back to the draft.",
+  "dialog.releaseNotes.v1_1_14.codeBlockText":
+    "Fixed Markdown code blocks that could appear empty or lose text while rendering.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

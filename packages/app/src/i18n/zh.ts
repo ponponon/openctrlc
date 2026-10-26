@@ -1551,6 +1551,7 @@ export const dict = {
   "dialog.releaseNotes.v1_1_13.crossModelDetail": "回复详略设置现在适用于更多受支持的模型，包括兼容 GPT-5 的接口。",
   "dialog.releaseNotes.v1_1_13.streamingCompatibility": "修复部分供应商的思考签名处理和流式响应超时问题。",
   "dialog.releaseNotes.v1_1_13.newSessionTab": "提交新会话后，现在会立即切换到对应标签，避免路由切换时跳回草稿。",
+  "dialog.releaseNotes.v1_1_14.codeBlockText": "修复 Markdown 渲染期间代码块偶尔显示为空或丢失部分文本的问题。",
   "toast.project.reloadFailed.title": "无法重新加载 {{project}}",
   "toast.project.reloadFailed.action.viewLogs": "查看日志",
   "error.server.invalidConfiguration": "配置无效",
