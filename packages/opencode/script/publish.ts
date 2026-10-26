@@ -31,7 +31,9 @@ async function publish(dir: string, name: string, version: string) {
   // Remove a stale archive left by an interrupted publish before packing.
   await $`rm -f ${filename}`.cwd(dir)
   await $`bun pm pack --filename ${filename}`.cwd(dir)
-  await $`npm publish ${filename} --access public --tag ${npmPublishTag(Script.channel)} --fetch-timeout=900000`.cwd(dir)
+  await $`npm publish ${filename} --access public --tag ${npmPublishTag(Script.channel)} --fetch-timeout=900000`.cwd(
+    dir,
+  )
 }
 
 const binaries: Record<string, string> = {}
