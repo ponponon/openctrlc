@@ -1989,13 +1989,19 @@ export default function Page() {
       fillFrame = undefined
 
       if (!params.id || !messagesReady()) return
-      // 只在“确实跟随底部”时补历史页；用户已回看时补页会持续触发行高重测量，
-      // 正是把视口反复吸回底部的 churn 来源。
-      if (!followBottom() || historyLoading()) return
+      if (historyLoading()) return
 
       const el = scroller
       if (!el) return
-      if (el.scrollHeight > el.clientHeight + 1) return
+      if (el.scrollHeight > el.clientHeight + 1) {
+        // 内容已撑出滚动条时，“补历史”只在跟随底部时做：用户正在回看时补页会
+        // 持续触发行高重测量，正是把视口反复吸回底部的 churn 来源。
+        if (!followBottom()) return
+        return
+      }
+      // 首屏还没填满视口时根本不存在阅读位置，补页不会抢走视口，所以这里不能再
+      // 用 followBottom 门禁：远程首屏只有 10 条、桌面 20 条，列表撑不出滚动条，
+      // onHistoryScroll 就永远收不到 scroll 事件，会话会永久停在第一页。
       if (!historyMore()) return
 
       void loadOlder()
@@ -2013,8 +2019,8 @@ export default function Page() {
           autoScroll.userScrolled(),
           visibleUserMessages().length,
         ] as const,
-      ([id, ready, more, loading, scrolled]) => {
-        if (!id || !ready || loading || scrolled) return
+      ([id, ready, more, loading]) => {
+        if (!id || !ready || loading) return
         if (!more) return
         fill()
       },
