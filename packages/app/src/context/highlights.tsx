@@ -218,6 +218,10 @@ export const releaseDescriptionKeys: Record<string, Record<string, keyof typeof 
     "Fixed Markdown code blocks that could appear empty or lose text while rendering.":
       "dialog.releaseNotes.v1_1_14.codeBlockText",
   },
+  "1.1.15": {
+    "Fixed conversation history stopping at the first page when the loaded messages did not fill the screen.":
+      "dialog.releaseNotes.v1_1_15.historyPagination",
+  },
 }
 
 function sliceHighlights(input: { releases: ParsedRelease[]; current?: string; previous?: string }) {

@@ -1226,6 +1226,8 @@ export const dict = {
     "새 세션을 제출하면 해당 탭으로 즉시 전환되어 초안으로 되돌아가던 문제를 방지합니다.",
   "dialog.releaseNotes.v1_1_14.codeBlockText":
     "Markdown 렌더링 중 코드 블록이 비어 보이거나 일부 텍스트가 누락되던 문제를 수정했습니다.",
+  "dialog.releaseNotes.v1_1_15.historyPagination":
+    "로드된 메시지가 화면을 채우지 못할 때 대화 기록이 첫 페이지에서 멈추던 문제를 수정했습니다.",
   "toast.project.reloadFailed.title": "{{project}} 다시 불러오기 실패",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "잘못된 구성",

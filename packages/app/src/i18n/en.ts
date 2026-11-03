@@ -633,6 +633,8 @@ export const dict = {
     "Submitting a new session now switches to its tab immediately, avoiding a redirect back to the draft.",
   "dialog.releaseNotes.v1_1_14.codeBlockText":
     "Fixed Markdown code blocks that could appear empty or lose text while rendering.",
+  "dialog.releaseNotes.v1_1_15.historyPagination":
+    "Fixed conversation history stopping at the first page when the loaded messages did not fill the screen.",
   "dialog.usageExceeded.dontShowAgain": "Don't show again",
 
   "context.breakdown.title": "Context Breakdown",

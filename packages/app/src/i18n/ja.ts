@@ -1512,6 +1512,8 @@ export const dict = {
     "新しいセッションを送信するとすぐに対応するタブへ切り替わり、下書きに戻る問題を修正しました。",
   "dialog.releaseNotes.v1_1_14.codeBlockText":
     "Markdown の表示中にコードブロックが空になったり、一部のテキストが欠落したりする問題を修正しました。",
+  "dialog.releaseNotes.v1_1_15.historyPagination":
+    "読み込まれたメッセージが画面を埋めていないと、会話履歴が最初のページで止まる問題を修正しました。",
   "toast.project.reloadFailed.title": "{{project}} の再読み込みに失敗しました",
   "toast.project.reloadFailed.action.viewLogs": "View logs",
   "error.server.invalidConfiguration": "無効な設定",
