@@ -318,8 +318,7 @@ const server = Bun.serve<SocketData>({
 
     const viewer = sessionFor(request)
     if (!viewer) {
-      if (request.method === "GET" && isDocumentNavigation(request))
-        return htmlResponse(pairPage("unauthorized"))
+      if (request.method === "GET" && isDocumentNavigation(request)) return htmlResponse(pairPage("unauthorized"))
       return new Response("Remote session required", { status: 401, headers: noStore })
     }
     const session = viewer.session
