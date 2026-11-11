@@ -177,7 +177,7 @@ export function activeRemoteSessionID() {
 
 /** Switch which desktop session this browser talks to; token cookies stay per-session. */
 export function switchRemoteDesktop(sessionID: string) {
-  document.cookie = `oc_active=${sessionID}; Path=/; Secure; SameSite=Strict; max-age=${60 * 60 * 24 * 30}`
+  document.cookie = `oc_active=${sessionID}; Path=/; Secure; SameSite=Lax; max-age=${60 * 60 * 24 * 30}`
   try {
     localStorage.setItem(`${desktopsKey}.active`, sessionID)
   } catch {}

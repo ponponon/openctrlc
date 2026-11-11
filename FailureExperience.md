@@ -2103,10 +2103,14 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 
 以后判定“要不要补历史页”必须分两种状态：内容已溢出视口时才算“有阅读位置”，此时补页要受跟随/回看意图约束；内容没溢出时不存在阅读位置，补页天然安全，不能用跟随门禁，否则会出现上述死锁。`fill()` 的调用方同样不能再用 `userScrolled` 提前 return。排查这类“只加载了一屏”的问题，先看运行时 `history.more()` / `loading()`、`scrollHeight` 与 `clientHeight`，不要先怀疑虚拟列表或接口分页；虚拟列表在隐藏面板里只会按 `initialRect` 估算渲染（1 条 + overscan 10 条），面板可见后会重新测量，那个 11 行只是估算窗口，不是数据上限。回归检查要覆盖：`follow=false` 的会话重新打开、首屏条数小于视口高度、以及加载后内容溢出后仍不影响回看位置。
 
-## iPhone Chrome 打不开远程深链：先分清「没授权」与「浏览器差异」
+## iPhone Chrome 打不开远程深链：别用设备标签推断授权，先用有效 token 做对照实验
 
-2026-11-11，用户反馈 iPhone Chrome 打开 `/server/.../session/...` 只显示一行 `Remote session required`，并下载 `ses_xxx.txt (23 字节)`，安卓 Chrome 正常，怀疑 iOS 兼容问题。取证时分别用 iPhone Chrome UA、安卓 Chrome UA、curl 请求同一深链，三者响应完全相同（`401`、`content-type: text/plain;charset=utf-8`、`content-length: 23`，body 就是 `Remote session required`），直接排除了服务端 UA 分支和浏览器兼容性；桌面端 `remoteAccess.getState()` 显示已授权 5 台设备为 3 台 Android Chrome + 2 台 iPhone Safari，没有 iPhone Chrome，配额上限 10 还有空位。
+2026-11-11，用户反馈 iPhone Chrome 打开 `/server/.../session/...` 只显示一行 `Remote session required`，并下载 `ses_xxx.txt (23 字节)`，安卓 Chrome 正常。
 
-根因是 Relay 的 `sessionFor(request)` 依赖 `__Host-oc_remote_<sessionID>` 这个 `HttpOnly; Secure; SameSite=Strict` Cookie，而 iOS 上每个 App 有独立的 Cookie 容器（Apple `HTTPCookieStorage` 文档明确说明），Safari 里配对的授权不会出现在 Chrome 里；未授权时深链文档导航也返回 401 纯文本，iOS 的 WKWebView 把非 HTML MIME 的导航响应转成下载，文件名取 URL 末段并按 MIME 补 `.txt`，于是既白屏又多一个 txt 文件。根路径 `/` 因为单独走了 `pairPage("home")` 反而正常，所以只有深链会出现这个现象。
+**第一次判断错了**：我根据桌面端 `remoteAccess.getState()` 的授权设备列表（3 台 Android Chrome + 2 台 iPhone Safari）断言「iPhone Chrome 从没授权过、iOS 各 App Cookie 隔离」。实际上 `deviceLabel()` 先匹配 `/Chrome\//` 再匹配 `/Safari\//`，而 iOS Chrome 的 UA 是 `CriOS/… Safari/604.1`（不含 `Chrome/`），所有 iOS 浏览器都被标成「iPhone · Safari」。这个标签根本不能用来区分 Chrome 和 Safari；用户指出 13 点前确实授权过是对的。
 
-以后排查「某个设备/浏览器打不开」：先用不同 UA 复现同一请求，确认服务端是否分设备；再逐个核对各浏览器的授权 Cookie 是否独立（iOS 每个浏览器都要单独配对一次）；不要把「iOS 下载了一个 txt」当成根因，它只是 `401 + text/plain` 在 WKWebView 上的表现。服务端的未授权**文档导航**必须返回 HTML 引导页并保留原深链，只有 API 请求才返回机器可读的 401。另外要记住线上镜像版本可能落后于仓库（这次线上是 10-04 部署、仓库是 11-03 提交，`/_remote/capabilities` 的线上行为与本地代码已经不一致），改完代码不等于线上生效；重新部署 Relay 会断开全部已授权会话，必须先和用户确认时机。
+重新取证后的事实链：用 iPhone Chrome UA、安卓 Chrome UA、curl 请求同一深链，响应完全一致（`401` + `text/plain;charset=utf-8` + `Content-Length: 23`），排除 UA 分支；容器 10-04 启动、`RestartCount=0`，小时级快照里 `authorizedBrowsers` 只从 3 递增到 4、5，没有会话重建或撤销；持久化文件里 13:40:51 创建的 grant 仍有效，`lastSeenAt` 到 15:13:13；用该 grant 的 token 直接请求同一深链返回 **200 HTML**，不带 Cookie 才 401；附加错误 `oc_active`、错误 `_oc_remote_session` 参数、错误 `x-openctrlc-remote-session` 头都仍返回 200，排除服务端把有效 Cookie 判错。结论：**服务端授权没掉，是 15:37 那次导航没带上 Cookie**。
+
+最可能的机制是授权 Cookie 用了 `SameSite=Strict`：按 web.dev / RFC6265bis，从别的站点或 App 点链接进来时，首次跨站顶级导航不发送 Strict cookie，`Lax` 才会发送。这解释了「授权还在、15:13 还正常、15:37 点深链却白屏」，而安卓当时是直接打开或站内导航所以正常。次要可能是 iOS Chrome 的浏览数据被清、或落在另一个容器。前端删不掉这个 Cookie（`HttpOnly`，前端只删 `__Host-oc_remote_boot`、写 `oc_active`）。WKWebView 把非 HTML MIME 的导航响应转成下载，文件名取 URL 末段并按 MIME 补 `.txt`，于是白屏外还多一个 txt；根路径 `/` 单独走 `pairPage("home")` 返回 200 HTML，所以只有深链会这样。
+
+以后排查「某个设备/浏览器打不开」：先用不同 UA 复现同一请求，确认服务端是否分设备；再从持久化文件取有效 grant token 构造 Cookie 直接请求，区分「服务端授权掉了」和「浏览器没带 Cookie」；不要把汇总后的设备标签当成浏览器身份，也不要把「下载了一个 txt」当根因。修复要点：会话 Cookie 用 `SameSite=Lax`（跨站子请求和跨站 POST 仍被拦截，relay 写操作另有 `sameOrigin` 检查）、未授权文档导航返回 HTML 引导页、只有 API 返回机器可读 401。另外线上镜像版本可能落后于仓库（这次线上是 10-04 部署、`/_remote/capabilities` 行为已与仓库代码不一致），改完代码不等于线上生效；重新部署 Relay 会断开全部已授权会话，必须先和用户确认时机。

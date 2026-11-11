@@ -19,6 +19,7 @@ import { peerRouteCounts, recordPeerRoute, type PeerRouteState } from "./peer-us
 import { createPeerIceServers, removeTurnIceServers, stunServersConfigured, turnCredentialsConfigured } from "./turn"
 import { keepEventStreamAlive, ResponseHeadersTimeoutError, withResponseHeadersTimeout } from "./request-timeout"
 import { isDocumentNavigation } from "./navigation"
+import { deviceLabel } from "./device-label"
 
 type SocketData = {
   role: "host" | "viewer"
@@ -1193,7 +1194,7 @@ function workspaceBootstrapResponse(
         ...noStore,
         "content-type": "text/html; charset=utf-8",
         "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
-        "set-cookie": `__Host-oc_remote_boot=${sessionID}; Path=/; Max-Age=60; Secure; SameSite=Strict`,
+        "set-cookie": `__Host-oc_remote_boot=${sessionID}; Path=/; Max-Age=60; Secure; SameSite=Lax`,
       },
     },
   )
@@ -1252,8 +1253,8 @@ function viewerCookieName(sessionID: string) {
 
 function viewerCookie(token: string, sessionID: string) {
   return [
-    `${viewerCookieName(sessionID)}=${token}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; HttpOnly; Secure; SameSite=Strict`,
-    `__Host-oc_active=${sessionID}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; Secure; SameSite=Strict`,
+    `${viewerCookieName(sessionID)}=${token}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; HttpOnly; Secure; SameSite=Lax`,
+    `__Host-oc_active=${sessionID}; Path=/; Max-Age=${viewerCookieLifetimeSeconds}; Secure; SameSite=Lax`,
   ]
 }
 
@@ -1489,33 +1490,6 @@ function closeReason(value: unknown) {
   if (typeof value !== "string") return ""
   const bytes = new TextEncoder().encode(value)
   return new TextDecoder().decode(bytes.subarray(0, 123))
-}
-
-function deviceLabel(value: string | null) {
-  const agent = value ?? ""
-  const device = /iPhone/i.test(agent)
-    ? "iPhone"
-    : /iPad/i.test(agent)
-      ? "iPad"
-      : /Android/i.test(agent)
-        ? "Android"
-        : /Macintosh|Mac OS/i.test(agent)
-          ? "Mac"
-          : /Windows/i.test(agent)
-            ? "Windows"
-            : /Linux/i.test(agent)
-              ? "Linux"
-              : "Device"
-  const browser = /Edg\//i.test(agent)
-    ? "Edge"
-    : /Firefox\//i.test(agent)
-      ? "Firefox"
-      : /Chrome\//i.test(agent)
-        ? "Chrome"
-        : /Safari\//i.test(agent)
-          ? "Safari"
-          : "Browser"
-  return `${device} · ${browser}`
 }
 
 function sameOrigin(request: Request) {

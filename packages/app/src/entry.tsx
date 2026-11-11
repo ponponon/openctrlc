@@ -178,7 +178,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 if (root instanceof HTMLElement) {
   if (typeof document === "object") {
-    document.cookie = "__Host-oc_remote_boot=; Path=/; Max-Age=0; Secure; SameSite=Strict"
+    document.cookie = "__Host-oc_remote_boot=; Path=/; Max-Age=0; Secure; SameSite=Lax"
   }
   void loadInitialLocale().then((locale) => {
     const auth = authFromToken(new URLSearchParams(location.search).get("auth_token"))

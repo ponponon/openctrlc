@@ -3529,3 +3529,12 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/remote-relay/src/index.ts`、`navigation.ts`；单测 `navigation.test.ts`。
 - 验证：`packages/remote-relay` 的 `bun run typecheck` 通过；`bun test src/navigation.test.ts` 5 条通过；用临时端口 4199 起独立 Relay 实例实测：文档导航 200 HTML（12705 字节，含中/英引导文案与 return-to 逻辑）、API 请求仍为 401/23 字节、根路径 200 HTML。未重启桌面应用或线上 Relay；线上镜像仍是 2026-10-04 部署的版本，本次改动需下次部署才生效。
+
+## 会话 Cookie 改为 SameSite=Lax，并区分 iOS Chrome 与 Safari
+
+远程会话的三个 Cookie（授权 token `__Host-oc_remote_<sessionID>`、`__Host-oc_active`、60 秒的 `__Host-oc_remote_boot`）以及前端写入的 `oc_active` 原先都用 `SameSite=Strict`。按 web.dev / RFC6265bis，从别的站点或 App 点链接进来时，**首次跨站顶级导航不发送 Strict cookie**，于是已授权的手机点开会话深链仍被判为未授权，落到 401 纯文本/下载文件；`Lax` 会随顶级导航发送，同时仍拦截跨站子请求与跨站 POST，relay 的写操作另有 `sameOrigin` 检查，安全性不降级。现在四处统一改为 `SameSite=Lax`。
+
+`deviceLabel()` 原先先匹配 `/Chrome\//`、再匹配 `/Safari\//`，而 iOS Chrome 的 UA 是 `CriOS/… Safari/604.1`，导致所有 iOS 浏览器都被记成「iPhone · Safari」，无法从授权设备列表判断到底哪个浏览器配过对。现在优先识别 `EdgiOS/`、`FxiOS/`、`CriOS/`，分别记为 Edge / Firefox / Chrome；函数抽到独立模块 `device-label.ts` 便于单测。
+
+- 代码：`packages/remote-relay/src/index.ts`、`device-label.ts`；`packages/app/src/utils/remote-workspace.ts`、`entry.tsx`；单测 `device-label.test.ts`（5 条）。
+- 验证：`packages/remote-relay` 与 `packages/app` 的 typecheck 均通过；relay 全量单测 32/32 通过。用线上 13:40 的有效 grant token 做对照实验：带 Cookie 的深链请求返回 200 HTML、不带返回 401，证明服务端授权未失效，改动针对的是浏览器发送 Cookie 的时机。线上镜像仍是旧版本，需下次部署生效。
