@@ -3522,3 +3522,10 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 
 - 代码：`packages/app/src/pages/session/timeline/session-timeline-navigator-view.tsx`、`packages/app/src/pages/session/timeline/message-timeline.tsx`。
 - 验证：`packages/app` 的 `bun typecheck` 通过。未重启应用或服务，桌面端点击效果和性能基准未现场复测。
+
+## 未授权深链改为 HTML 引导页，并自动跳回原会话
+
+远程 Relay 原先对所有未带授权 Cookie 的请求（包括浏览器直接打开会话深链的文档导航）统一返回 `401 text/plain` 的 23 字节 `Remote session required`。根路径 `/` 会返回配对引导页，但深链只有纯文本，iOS 上的 Chrome/Safari（WKWebView）会把非 HTML MIME 的导航响应转成文件下载，页面白屏且生成 `ses_xxx.txt`，用户看不到任何重新授权提示；已授权的安卓 Chrome 正常，于是表现成「只有 iPhone 坏」。现在文档导航（GET + `Sec-Fetch-Dest: document`，不支持 Fetch Metadata 的浏览器回退到 `Accept: text/html`）在无授权时返回 200 的 HTML 引导页，沿用现有配对页样式与中/英/日/韩文案，明确说明「当前浏览器尚未授权、iOS 上每个浏览器都要单独授权、去桌面端复制配对链接」；页面把原深链写入 `sessionStorage["openctrlc.return-to"]`，`/join/` 配对成功后优先跳回该地址并清除记录，只接受同源相对路径以防开放重定向（同一标签页打开配对链接时生效，新标签页则回到首页）。fetch/XHR 等非文档请求仍返回原来的 401 纯文本，前端错误处理不变。
+
+- 代码：`packages/remote-relay/src/index.ts`、`navigation.ts`；单测 `navigation.test.ts`。
+- 验证：`packages/remote-relay` 的 `bun run typecheck` 通过；`bun test src/navigation.test.ts` 5 条通过；用临时端口 4199 起独立 Relay 实例实测：文档导航 200 HTML（12705 字节，含中/英引导文案与 return-to 逻辑）、API 请求仍为 401/23 字节、根路径 200 HTML。未重启桌面应用或线上 Relay；线上镜像仍是 2026-10-04 部署的版本，本次改动需下次部署才生效。

@@ -2102,3 +2102,11 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 根因是“自动补页”唯一不依赖滚动事件的入口 `fill()` 被 `followBottom()` 门禁挡住。`fill()` 只在内容撑不满视口时才需要工作，而这时根本没有滚动条：`scrollHeight === clientHeight`，`onHistoryScroll` 永远收不到 `scroll` 事件。只要该会话持久化的 `view().scroll("timeline")?.follow` 是 `false`（用户之前向上翻过），`followBottom()` 就恒为 `false`，`fill()` 直接 return，形成“没有滚动条 → 不触发滚动加载；不做补页 → 永远没有滚动条”的死锁。远程首屏 2026-10-07（`7fdbc5d5`）缩到 10 条后，内容几乎必然撑不满视口，于是这个死锁变成常态；2026-10-14（`21e2e759a`）把 `fill()` 的判断从 `autoScroll.userScrolled()` 换成更严格的 `followBottom()`（额外读持久化 `follow` 与向上意图），让“重开会话后卡在首屏”更容易复现。
 
 以后判定“要不要补历史页”必须分两种状态：内容已溢出视口时才算“有阅读位置”，此时补页要受跟随/回看意图约束；内容没溢出时不存在阅读位置，补页天然安全，不能用跟随门禁，否则会出现上述死锁。`fill()` 的调用方同样不能再用 `userScrolled` 提前 return。排查这类“只加载了一屏”的问题，先看运行时 `history.more()` / `loading()`、`scrollHeight` 与 `clientHeight`，不要先怀疑虚拟列表或接口分页；虚拟列表在隐藏面板里只会按 `initialRect` 估算渲染（1 条 + overscan 10 条），面板可见后会重新测量，那个 11 行只是估算窗口，不是数据上限。回归检查要覆盖：`follow=false` 的会话重新打开、首屏条数小于视口高度、以及加载后内容溢出后仍不影响回看位置。
+
+## iPhone Chrome 打不开远程深链：先分清「没授权」与「浏览器差异」
+
+2026-11-11，用户反馈 iPhone Chrome 打开 `/server/.../session/...` 只显示一行 `Remote session required`，并下载 `ses_xxx.txt (23 字节)`，安卓 Chrome 正常，怀疑 iOS 兼容问题。取证时分别用 iPhone Chrome UA、安卓 Chrome UA、curl 请求同一深链，三者响应完全相同（`401`、`content-type: text/plain;charset=utf-8`、`content-length: 23`，body 就是 `Remote session required`），直接排除了服务端 UA 分支和浏览器兼容性；桌面端 `remoteAccess.getState()` 显示已授权 5 台设备为 3 台 Android Chrome + 2 台 iPhone Safari，没有 iPhone Chrome，配额上限 10 还有空位。
+
+根因是 Relay 的 `sessionFor(request)` 依赖 `__Host-oc_remote_<sessionID>` 这个 `HttpOnly; Secure; SameSite=Strict` Cookie，而 iOS 上每个 App 有独立的 Cookie 容器（Apple `HTTPCookieStorage` 文档明确说明），Safari 里配对的授权不会出现在 Chrome 里；未授权时深链文档导航也返回 401 纯文本，iOS 的 WKWebView 把非 HTML MIME 的导航响应转成下载，文件名取 URL 末段并按 MIME 补 `.txt`，于是既白屏又多一个 txt 文件。根路径 `/` 因为单独走了 `pairPage("home")` 反而正常，所以只有深链会出现这个现象。
+
+以后排查「某个设备/浏览器打不开」：先用不同 UA 复现同一请求，确认服务端是否分设备；再逐个核对各浏览器的授权 Cookie 是否独立（iOS 每个浏览器都要单独配对一次）；不要把「iOS 下载了一个 txt」当成根因，它只是 `401 + text/plain` 在 WKWebView 上的表现。服务端的未授权**文档导航**必须返回 HTML 引导页并保留原深链，只有 API 请求才返回机器可读的 401。另外要记住线上镜像版本可能落后于仓库（这次线上是 10-04 部署、仓库是 11-03 提交，`/_remote/capabilities` 的线上行为与本地代码已经不一致），改完代码不等于线上生效；重新部署 Relay 会断开全部已授权会话，必须先和用户确认时机。
