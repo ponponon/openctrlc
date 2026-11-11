@@ -3537,4 +3537,10 @@ electron-updater 的三平台自动更新依赖 Release 上的 channel file（`l
 `deviceLabel()` 原先先匹配 `/Chrome\//`、再匹配 `/Safari\//`，而 iOS Chrome 的 UA 是 `CriOS/… Safari/604.1`，导致所有 iOS 浏览器都被记成「iPhone · Safari」，无法从授权设备列表判断到底哪个浏览器配过对。现在优先识别 `EdgiOS/`、`FxiOS/`、`CriOS/`，分别记为 Edge / Firefox / Chrome；函数抽到独立模块 `device-label.ts` 便于单测。
 
 - 代码：`packages/remote-relay/src/index.ts`、`device-label.ts`；`packages/app/src/utils/remote-workspace.ts`、`entry.tsx`；单测 `device-label.test.ts`（5 条）。
-- 验证：`packages/remote-relay` 与 `packages/app` 的 typecheck 均通过；relay 全量单测 32/32 通过。用线上 13:40 的有效 grant token 做对照实验：带 Cookie 的深链请求返回 200 HTML、不带返回 401，证明服务端授权未失效，改动针对的是浏览器发送 Cookie 的时机。线上镜像仍是旧版本，需下次部署生效。
+- 验证：`packages/remote-relay` 与 `packages/app` 的 typecheck 均通过；relay 全量单测 32/32 通过。用线上 13:40 的有效 grant token 做对照实验：带 Cookie 的深链请求返回 200 HTML、不带返回 401，证明服务端授权未失效，改动针对的是浏览器发送 Cookie 的时机。**2026-11-11 16:20 已部署上线并验证生效**：未授权深链的文档导航返回 200 HTML 引导页（12705 字节，含中文引导与 `openctrlc.return-to` 跳回逻辑），API 请求仍为 401/23 字节；5 台已授权设备与桌面隧道全部自动恢复，无需重新配对。
+
+## 部署配置保留 ACME 证书续签入口
+
+`infra/remote-relay/openresty.conf` 在 80 端口 server 块与 443 server 块各保留一段 `location ^~ /.well-known/acme-challenge`（`allow all; root /usr/share/nginx/html;`），80 端口的 `return 301` 改为放进 `location /`。1Panel 续签证书时会往站点配置插入这两段（线上 11-09 13:38 的改动就是它），而 `deploy.sh` 全量部署会用仓库版本**整份覆盖** `openctrlc-remote.quniv.cn.conf`；仓库缺这两段就会把续签入口冲掉，导致下次自动续签失败。`/_remote/refresh-workspace` 删除 boot cookie 的 `Set-Cookie` 也统一为 `SameSite=Lax`。
+
+- 验证：部署后 `nginx -t` 通过并 reload；容器内配置含 2 段 ACME location；公网 `/.well-known/acme-challenge/probe` 返回 404（由 nginx 静态目录处理，不再落到 Relay 的 401）；`openssl x509 -checkhost openctrlc-remote.quniv.cn` 匹配。

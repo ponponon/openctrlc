@@ -2113,4 +2113,12 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 
 最可能的机制是授权 Cookie 用了 `SameSite=Strict`：按 web.dev / RFC6265bis，从别的站点或 App 点链接进来时，首次跨站顶级导航不发送 Strict cookie，`Lax` 才会发送。这解释了「授权还在、15:13 还正常、15:37 点深链却白屏」，而安卓当时是直接打开或站内导航所以正常。次要可能是 iOS Chrome 的浏览数据被清、或落在另一个容器。前端删不掉这个 Cookie（`HttpOnly`，前端只删 `__Host-oc_remote_boot`、写 `oc_active`）。WKWebView 把非 HTML MIME 的导航响应转成下载，文件名取 URL 末段并按 MIME 补 `.txt`，于是白屏外还多一个 txt；根路径 `/` 单独走 `pairPage("home")` 返回 200 HTML，所以只有深链会这样。
 
-以后排查「某个设备/浏览器打不开」：先用不同 UA 复现同一请求，确认服务端是否分设备；再从持久化文件取有效 grant token 构造 Cookie 直接请求，区分「服务端授权掉了」和「浏览器没带 Cookie」；不要把汇总后的设备标签当成浏览器身份，也不要把「下载了一个 txt」当根因。修复要点：会话 Cookie 用 `SameSite=Lax`（跨站子请求和跨站 POST 仍被拦截，relay 写操作另有 `sameOrigin` 检查）、未授权文档导航返回 HTML 引导页、只有 API 返回机器可读 401。另外线上镜像版本可能落后于仓库（这次线上是 10-04 部署、`/_remote/capabilities` 行为已与仓库代码不一致），改完代码不等于线上生效；重新部署 Relay 会断开全部已授权会话，必须先和用户确认时机。
+以后排查「某个设备/浏览器打不开」：先用不同 UA 复现同一请求，确认服务端是否分设备；再从持久化文件取有效 grant token 构造 Cookie 直接请求，区分「服务端授权掉了」和「浏览器没带 Cookie」；不要把汇总后的设备标签当成浏览器身份，也不要把「下载了一个 txt」当根因。修复要点：会话 Cookie 用 `SameSite=Lax`（跨站子请求和跨站 POST 仍被拦截，relay 写操作另有 `sameOrigin` 检查）、未授权文档导航返回 HTML 引导页、只有 API 返回机器可读 401。另外线上镜像版本可能落后于仓库（这次线上是 10-04 部署，`/_remote/capabilities` 与 `healthz.persistence` 都已和仓库代码不一致），改完代码不等于线上生效；重新部署会断开进行中的 WebSocket 与请求，必须先和用户确认时机，但**不会丢已保存的浏览器授权**——`/home/pon/openctrlc-remote/data` 是外挂卷，`restoreState()` 按 version 1 快照恢复 session 和未过期的 viewers，桌面凭 hostToken 自动重连。
+
+## 部署 Relay 的三个坑（2026-11-11 16:20 实操）
+
+1. **full 模式会被自己的持久化校验拦住**。旧镜像的 `healthz.persistence` 是 `null`，且宿主机 `pon` 对 `0700`、属主 `65532` 的 `data/` 无读权限，`deploy.sh` 无法验证快照，直接报 `1 active session(s) have no verified persistent snapshot`。这时**不能盲目加 `--allow-session-reset`**：先 `docker exec ... cat /data/remote-sessions.json` 手动核对 `version=1`、`sessions` 数、hostToken/joinToken、viewer token 数与 `healthz.usage.authorizedBrowsers` 一致，确认 data 卷不会被删，再放行。本次核对为 1 session / 5 viewers / 5 个有效 token，放行后部署完仍是 1 / 5。
+2. **仓库 nginx 配置会和线上漂移**。1Panel 续签证书往站点配置插了两段 ACME location，线上 5483 字节而仓库只有 5239 字节；`deploy.sh` 会整份覆盖，直接部署等于悄悄废掉证书续签。部署前先 `diff` 线上容器内的 conf 与仓库版，把运营侧改动合回仓库再部署。
+3. **部署前必须留可回滚点**。旧镜像打 `docker tag openctrlc/remote-relay:local openctrlc/remote-relay:rollback-<stamp>`，`remote-sessions.json` 与 nginx conf 各备份一份（前者是凭据，mode 0600），部署副本目录整份 `cp -a`。本次旧镜像 `2c164aa5f533`、新镜像 `e1d708a43ec3`，两者 tag 都还在，异常时可直接回切。
+
+部署后要验证的不是一个 `/healthz`：还要分别测「带有效 grant token 的深链 → 200 HTML」「不带 Cookie 的文档导航 → 200 HTML 引导页」「不带 Cookie 的 API → 401/23 字节」、公网 HTTPS、`/_remote/capabilities`、nginx ACME location、证书 checkhost、桌面 `remoteAccess.getState()` 的授权数与 WSS 连接。已有 grant 的 `device` 标签是历史值不会被回写，设备标签修复只对**新配对**生效，别据此误判修复没上线。
