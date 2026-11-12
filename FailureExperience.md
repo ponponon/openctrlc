@@ -2122,3 +2122,13 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 3. **部署前必须留可回滚点**。旧镜像打 `docker tag openctrlc/remote-relay:local openctrlc/remote-relay:rollback-<stamp>`，`remote-sessions.json` 与 nginx conf 各备份一份（前者是凭据，mode 0600），部署副本目录整份 `cp -a`。本次旧镜像 `2c164aa5f533`、新镜像 `e1d708a43ec3`，两者 tag 都还在，异常时可直接回切。
 
 部署后要验证的不是一个 `/healthz`：还要分别测「带有效 grant token 的深链 → 200 HTML」「不带 Cookie 的文档导航 → 200 HTML 引导页」「不带 Cookie 的 API → 401/23 字节」、公网 HTTPS、`/_remote/capabilities`、nginx ACME location、证书 checkhost、桌面 `remoteAccess.getState()` 的授权数与 WSS 连接。已有 grant 的 `device` 标签是历史值不会被回写，设备标签修复只对**新配对**生效，别据此误判修复没上线。
+
+## 手机回看“一抽一抽”先分清“内容增高”和“视口漂移”，别再用单一指标判抖动
+
+2026-11-12，用户反馈远程 Web 模式在手机上向上回看时页面“一抽一抽”，正常停住后会“咔嚓一下卡到其他位置”，上拉时还会“对抗一下”。会话时间线前几轮修复（`21e2e759a`、`82e1e7c44`、`0bfa26fc7`、`63bdbefa1` 等）都是针对同一现象打的补丁，仓库里没有一条能真正复现它的自动化用例。
+
+先建了移动端触摸复现 harness：`bun run test:e2e:mobile-scroll`（`packages/app/e2e/reproduction/mobile-timeline-scroll/`，CDP `Input.dispatchTouchEvent` 模拟真实手指滑动 + 每帧采样 `scrollTop / scrollHeight / 首个可见行 key 与其视口偏移`）。四条用例（连续回看滑、历史页慢 900ms 才到、惯性甩回底部、回看中视口高度变化）在当前代码上全部通过，说明“历史 prepend 的锚点补偿”“暂停跟随后 resize 不吸底”“惯性落底”这些通用路径在合成条件下是稳的；`overflowAnchor: none` 并依赖自研补偿这件事本身没错。
+
+判断指标踩了坑：最初用 `Δrel + ΔscrollTop`（等价于“视口上方内容增长了多少”）当抖动，结果把每次正常的历史 prepend 都判成一次几百像素的抖动；换成朴素的 `Δrel` 又会把手指正常滚动判成抖动（手指上滑时 `Δrel` 与 `ΔscrollTop` 天然反向）。正确判据只有一条：**只在 `scrollTop` 没有变化的相邻两帧里看首个可见行的 `Δrel`**——滚动容器没动而内容动了，才是用户看到的“卡到别处”。写时间线滚动断言时必须用这个判据，否则会反复误报并继续叠错误补丁。
+
+按这个判据，合成场景下没有复现。仍未验证、但能从代码上确认“没有用户输入也能移动视口”的只剩三条路径，下次排查优先看它们：(1) `message-timeline.tsx` 的 `restoreClampedReadingAnchor()` 在“视口正好在物理底部 + 5 秒内有过向上意图 + 手势窗口已过期”时会把 `readingAnchor` 还原，而这个锚点在手指移动期间会被 `cancelReadingCorrection()` 反复取消、长期停在手势开始时的位置，还原等于把视口拽回旧位置；(2) 同文件 714 行在回合结束时无条件 `setStepsOpen(..., false)`，若用户正在该回合里回看，收起 steps 会让上方内容骤减上千像素；(3) 同文件 784 行用 `item.index < virtualizer.range.startIndex` 判断要不要补偿行高变化，而 `range.startIndex` 含 50 条 overscan，视口上方但仍在 overscan 带内的行变化不会被补偿。三条都需要“用户此刻是否在流式输出中 / 输入方式是手指还是触控板”这类现场信息才能定位，复现 harness 已就位，补上条件即可继续。
