@@ -148,10 +148,9 @@ test.describe("reproduction: mobile timeline scroll", () => {
     await shrinkTailRow(page, sent)
     await settle(page)
     const after = await snapshot(page)
-    expect(
-      after.distanceFromBottom,
-      JSON.stringify({ parked, rowHeight, after }, null, 2),
-    ).toBeGreaterThan(parked.distanceFromBottom - 80)
+    expect(after.distanceFromBottom, JSON.stringify({ parked, rowHeight, after }, null, 2)).toBeGreaterThan(
+      parked.distanceFromBottom - 80,
+    )
   })
 
   test("shrinking the row under a parked viewport keeps the position (collapse after the restore window)", async ({
@@ -175,10 +174,9 @@ test.describe("reproduction: mobile timeline scroll", () => {
     await shrinkTailRow(page, sent)
     await settle(page)
     const after = await snapshot(page)
-    expect(
-      after.distanceFromBottom,
-      JSON.stringify({ parked, rowHeight, after }, null, 2),
-    ).toBeGreaterThan(parked.distanceFromBottom - 80)
+    expect(after.distanceFromBottom, JSON.stringify({ parked, rowHeight, after }, null, 2)).toBeGreaterThan(
+      parked.distanceFromBottom - 80,
+    )
   })
 
   test("momentum reaching the bottom without touch events stays at the bottom", async ({ page }) => {
@@ -198,10 +196,7 @@ test.describe("reproduction: mobile timeline scroll", () => {
     expect(reached.distanceFromBottom, JSON.stringify({ parked, reached })).toBeLessThanOrEqual(2)
     await page.waitForTimeout(2_500)
     const settled = await snapshot(page)
-    expect(
-      settled.distanceFromBottom,
-      JSON.stringify({ parked, reached, settled }, null, 2),
-    ).toBeLessThanOrEqual(2)
+    expect(settled.distanceFromBottom, JSON.stringify({ parked, reached, settled }, null, 2)).toBeLessThanOrEqual(2)
   })
 })
 
@@ -432,17 +427,13 @@ async function tailRowHeight(page: Page) {
 
 async function growTailRow(page: Page, sent: unknown[][]) {
   sent.push([partUpdated(`${TAIL_MARKER} ${"lorem ipsum dolor sit amet ".repeat(800)}`, 1)])
-  await expect
-    .poll(() => tailRowHeight(page), { timeout: 15_000, intervals: [200, 300, 500] })
-    .toBeGreaterThan(3_000)
+  await expect.poll(() => tailRowHeight(page), { timeout: 15_000, intervals: [200, 300, 500] }).toBeGreaterThan(3_000)
   await settle(page)
 }
 
 async function shrinkTailRow(page: Page, sent: unknown[][]) {
   sent.push([partUpdated("zz-tail-collapsed", 2)])
-  await expect
-    .poll(() => tailRowHeight(page), { timeout: 15_000, intervals: [200, 300, 500] })
-    .toBeLessThan(600)
+  await expect.poll(() => tailRowHeight(page), { timeout: 15_000, intervals: [200, 300, 500] }).toBeLessThan(600)
 }
 
 /** Decelerating viewport movement without touch/wheel events, like chained momentum. */

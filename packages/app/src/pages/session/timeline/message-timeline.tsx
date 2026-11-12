@@ -1169,11 +1169,7 @@ export function MessageTimeline(props: {
     // 都代表用户回到了最新。滚动链惯性、滚动条拖动等路径不会产生 touch/wheel 手势标记，
     // 若只认手势标记，回看锚点会在这些路径落底后被误还原（“拉到底又被拽回去”）。
     // >1px 位移门槛继续排除触控板反向抖动这类没有实际位移的噪声。
-    if (
-      previousScrollTop !== undefined &&
-      root.scrollTop > previousScrollTop + 1 &&
-      distanceFromBottom <= 2
-    ) {
+    if (previousScrollTop !== undefined && root.scrollTop > previousScrollTop + 1 && distanceFromBottom <= 2) {
       clearReadingAnchor()
     }
     // 视口没有被用户实际下滚到底，却停在最底部，说明回看位置可能被 scrollHeight 收缩吃掉了。
