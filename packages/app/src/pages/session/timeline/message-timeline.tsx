@@ -784,7 +784,13 @@ export function MessageTimeline(props: {
   virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (item) => {
     if (props.shouldAnchorBottom()) return false
     const first = virtualizer.range?.startIndex
-    return first !== undefined && item.index < first
+    if (first === undefined) return false
+    if (item.index !== first) return item.index < first
+    // 首个可见行可能只滚过了一部分（item.start 仍在视口上方）：它的行高变化同样会让
+    // 视口下方的内容整体位移，必须按 virtual-core 默认语义补偿。否则高行（如展开的
+    // steps）在视口里收起时，下方内容会整体跳起，甚至把 scrollTop 夹到底部。
+    const root = listRoot()
+    return root !== undefined && item.start < root.scrollTop
   }
   const virtualItemByKey = createMemo(
     () =>
@@ -1159,13 +1165,14 @@ export function MessageTimeline(props: {
     const movedDownDuringGesture =
       previousScrollTop !== undefined && root.scrollTop > previousScrollTop + 1 && props.hasScrollGesture()
     if (movedDownDuringGesture && lastScrollGestureDirection === "down") readingAnchorIntentDirection = "down"
-    // 只有用户手势确实把 scrollTop 向下带到物理底部，才代表用户回到底部。
-    // 这样不会把触控板上没有产生实际位移的反向抖动误当成“放弃回看”。
+    // 只要 scrollTop 确实被向下带到物理底部（>1px 的真实位移），无论是否登记过手势，
+    // 都代表用户回到了最新。滚动链惯性、滚动条拖动等路径不会产生 touch/wheel 手势标记，
+    // 若只认手势标记，回看锚点会在这些路径落底后被误还原（“拉到底又被拽回去”）。
+    // >1px 位移门槛继续排除触控板反向抖动这类没有实际位移的噪声。
     if (
       previousScrollTop !== undefined &&
       root.scrollTop > previousScrollTop + 1 &&
-      distanceFromBottom <= 2 &&
-      props.hasScrollGesture()
+      distanceFromBottom <= 2
     ) {
       clearReadingAnchor()
     }

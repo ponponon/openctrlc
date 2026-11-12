@@ -125,6 +125,84 @@ test.describe("reproduction: mobile timeline scroll", () => {
       JSON.stringify({ parked, attempts, reached, settled }, null, 2),
     ).toBeLessThanOrEqual(2)
   })
+
+  test("shrinking the row under a parked viewport keeps the position (collapse inside the restore window)", async ({
+    page,
+  }) => {
+    const sent: unknown[][] = []
+    await boot(page, { events: () => sent.shift() ?? [] })
+    await openTimeline(page)
+    await growTailRow(page, sent)
+    await slideTowardOlder(page, 1_600)
+    await settle(page)
+    const parked = await snapshot(page)
+    const rowHeight = await tailRowHeight(page)
+    expect(rowHeight, "the grown tail row should dwarf the viewport").toBeGreaterThan(3_000)
+    expect(parked.distanceFromBottom, JSON.stringify(parked)).toBeGreaterThan(200)
+    // The park must land inside the tall tail row: the row then straddles the viewport top
+    // and its collapse is the "content shrinks under the parked reading position" case.
+    expect(parked.distanceFromBottom, JSON.stringify({ parked, rowHeight })).toBeLessThan(rowHeight)
+
+    // The turn finishes moments later and the tall row collapses under the parked viewport.
+    await page.waitForTimeout(2_000)
+    await shrinkTailRow(page, sent)
+    await settle(page)
+    const after = await snapshot(page)
+    expect(
+      after.distanceFromBottom,
+      JSON.stringify({ parked, rowHeight, after }, null, 2),
+    ).toBeGreaterThan(parked.distanceFromBottom - 80)
+  })
+
+  test("shrinking the row under a parked viewport keeps the position (collapse after the restore window)", async ({
+    page,
+  }) => {
+    const sent: unknown[][] = []
+    await boot(page, { events: () => sent.shift() ?? [] })
+    await openTimeline(page)
+    await growTailRow(page, sent)
+    await slideTowardOlder(page, 1_600)
+    await settle(page)
+    const parked = await snapshot(page)
+    const rowHeight = await tailRowHeight(page)
+    expect(rowHeight).toBeGreaterThan(3_000)
+    expect(parked.distanceFromBottom, JSON.stringify(parked)).toBeGreaterThan(200)
+    expect(parked.distanceFromBottom, JSON.stringify({ parked, rowHeight })).toBeLessThan(rowHeight)
+
+    // Same collapse, but long after the 5s up-intent window expired: a parked reading
+    // position must not become unprotected just because the user has been reading a while.
+    await page.waitForTimeout(7_000)
+    await shrinkTailRow(page, sent)
+    await settle(page)
+    const after = await snapshot(page)
+    expect(
+      after.distanceFromBottom,
+      JSON.stringify({ parked, rowHeight, after }, null, 2),
+    ).toBeGreaterThan(parked.distanceFromBottom - 80)
+  })
+
+  test("momentum reaching the bottom without touch events stays at the bottom", async ({ page }) => {
+    await boot(page)
+    await openTimeline(page)
+    await slideTowardOlder(page, 900)
+    await settle(page)
+    const parked = await snapshot(page)
+    expect(parked.distanceFromBottom).toBeGreaterThan(600)
+
+    // Scroll chaining (nested scroller exhausting its momentum onto the timeline) and
+    // scrollbar drags move the viewport without any touch/wheel event on the scroller.
+    // Simulate that decelerating movement: once it reaches the newest message the view
+    // must stay there — not snap back to the parked reading anchor.
+    await page.waitForTimeout(500)
+    const reached = await momentumToBottom(page)
+    expect(reached.distanceFromBottom, JSON.stringify({ parked, reached })).toBeLessThanOrEqual(2)
+    await page.waitForTimeout(2_500)
+    const settled = await snapshot(page)
+    expect(
+      settled.distanceFromBottom,
+      JSON.stringify({ parked, reached, settled }, null, 2),
+    ).toBeLessThanOrEqual(2)
+  })
 })
 
 function analyze(samples: Sample[]) {
@@ -318,4 +396,67 @@ async function flingTowardNewest(page: Page) {
   } finally {
     await client.detach()
   }
+}
+
+const TAIL_MARKER = "ZZTOPMARKER"
+
+function tailPart() {
+  const assistant = fixture.messages[fixture.targetID]!.filter((message) => message.info.role === "assistant").at(-1)!
+  const part = assistant.parts.find((item) => item.type === "text")!
+  return { sessionID: fixture.targetID, messageID: assistant.info.id, partID: part.id }
+}
+
+function partUpdated(text: string, seq: number) {
+  const tail = tailPart()
+  return {
+    directory: fixture.directory,
+    payload: {
+      id: `evt_part_update_${seq}`,
+      type: "message.part.updated",
+      properties: {
+        sessionID: tail.sessionID,
+        part: { id: tail.partID, sessionID: tail.sessionID, messageID: tail.messageID, type: "text", text },
+      },
+    },
+  }
+}
+
+async function tailRowHeight(page: Page) {
+  return scroller(page).evaluate((element, marker) => {
+    const row = [...element.querySelectorAll<HTMLElement>("[data-timeline-key]")].find((node) =>
+      (node.textContent ?? "").includes(marker),
+    )
+    return row ? Math.round(row.getBoundingClientRect().height) : 0
+  }, TAIL_MARKER)
+}
+
+async function growTailRow(page: Page, sent: unknown[][]) {
+  sent.push([partUpdated(`${TAIL_MARKER} ${"lorem ipsum dolor sit amet ".repeat(800)}`, 1)])
+  await expect
+    .poll(() => tailRowHeight(page), { timeout: 15_000, intervals: [200, 300, 500] })
+    .toBeGreaterThan(3_000)
+  await settle(page)
+}
+
+async function shrinkTailRow(page: Page, sent: unknown[][]) {
+  sent.push([partUpdated("zz-tail-collapsed", 2)])
+  await expect
+    .poll(() => tailRowHeight(page), { timeout: 15_000, intervals: [200, 300, 500] })
+    .toBeLessThan(600)
+}
+
+/** Decelerating viewport movement without touch/wheel events, like chained momentum. */
+async function momentumToBottom(page: Page) {
+  for (let velocity = 70; velocity > 3; velocity *= 0.88) {
+    await scroller(page).evaluate((element, step) => {
+      element.scrollTop += step
+    }, Math.round(velocity))
+    await page.waitForTimeout(16)
+    const state = await snapshot(page)
+    if (state.distanceFromBottom <= 2) return state
+  }
+  await scroller(page).evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  return snapshot(page)
 }

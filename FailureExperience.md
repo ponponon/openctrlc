@@ -2132,3 +2132,13 @@ Solid 的非 keyed `<Show>` 子节点参数是访问器。虚拟行快速卸载�
 判断指标踩了坑：最初用 `Δrel + ΔscrollTop`（等价于“视口上方内容增长了多少”）当抖动，结果把每次正常的历史 prepend 都判成一次几百像素的抖动；换成朴素的 `Δrel` 又会把手指正常滚动判成抖动（手指上滑时 `Δrel` 与 `ΔscrollTop` 天然反向）。正确判据只有一条：**只在 `scrollTop` 没有变化的相邻两帧里看首个可见行的 `Δrel`**——滚动容器没动而内容动了，才是用户看到的“卡到别处”。写时间线滚动断言时必须用这个判据，否则会反复误报并继续叠错误补丁。
 
 按这个判据，合成场景下没有复现。仍未验证、但能从代码上确认“没有用户输入也能移动视口”的只剩三条路径，下次排查优先看它们：(1) `message-timeline.tsx` 的 `restoreClampedReadingAnchor()` 在“视口正好在物理底部 + 5 秒内有过向上意图 + 手势窗口已过期”时会把 `readingAnchor` 还原，而这个锚点在手指移动期间会被 `cancelReadingCorrection()` 反复取消、长期停在手势开始时的位置，还原等于把视口拽回旧位置；(2) 同文件 714 行在回合结束时无条件 `setStepsOpen(..., false)`，若用户正在该回合里回看，收起 steps 会让上方内容骤减上千像素；(3) 同文件 784 行用 `item.index < virtualizer.range.startIndex` 判断要不要补偿行高变化，而 `range.startIndex` 含 50 条 overscan，视口上方但仍在 overscan 带内的行变化不会被补偿。三条都需要“用户此刻是否在流式输出中 / 输入方式是手指还是触控板”这类现场信息才能定位，复现 harness 已就位，补上条件即可继续。
+
+## 高行在视口里收起会把阅读位置顶飞：补偿谓词看“item.start 是否在视口上方”，别只比 index
+
+2026-11-12 深夜续查（承接上一条）。**先更正上一条的一个错误结论**：`virtualizer.range.startIndex` 不含 overscan——`calculateRange` 产出的 range 只有可见项，overscan 是 rangeExtractor 之后才扩的，所以“item.index < startIndex 漏掉 overscan 带”不成立。真正的缺口是**首个可见行只滚过一部分**（`item.start < scrollTop` 但 `item.index === startIndex`）：这类行变高/变矮时视口下方内容会整体位移，而只比较 index 的谓词会漏掉它。
+
+给复现 harness 加“尾部长行撑到 9000px → 上滑停在行内 → 行收起”用例当场实锤：停在距底 2414px（行高 9064），行收起后 distanceFromBottom 直接变 0，被夹到底部——即用户说的“停得好好的突然咔嚓卡到底部/别处”。5 秒意图窗口内 `restoreClampedReadingAnchor` 会尝试还原，但锚点偏移（行内 6000px 处）收起后已不可达，与 clamp 搏斗 180 帧后放弃；超过 5 秒窗口则干脆不还原。修法一行：`item.index === first` 时改判 `item.start < root.scrollTop`（对齐 virtual-core 默认谓词语义）。
+
+另一条独立实锤：**没有 touch/wheel 手势标记的下移落底会误触发回看锚点还原**。滚动链惯性（内层 scroller 把惯性传给时间线）、滚动条拖动等路径不产生手势标记，而 `clearReadingAnchor` 的旧条件要求 `hasScrollGesture()`，锚点因此存活；落底的 scroll 事件上 `restoreClampedReadingAnchor` 把视口拽回旧锚点（实测拽回 867px）——“拉到底又被弹回去/上拉时对抗你一下”。修法：只要 scrollTop 有 >1px 的真实下移并落到距底 ≤2px，无论有无手势标记都清锚点；>1px 门槛继续挡触控板反向抖动。
+
+三条新用例（行收起×2、无手势惯性落底）先在旧代码上失败、修复后转绿；`bun run test:e2e:mobile-scroll` 7/7，e2e/regression 全量 122/122，virtual-row-churn 通过。教训：①虚拟列表补偿谓词的判定基准是“item.start 是否在当前 scrollTop 之上”，纯 index 比较必漏部分可见首行；②“用户已回到底部=放弃回看”的判据是**位移事实**（>1px 下移到底），不是手势来源，凡是只认手势标记的判定都会在滚动链/滚动条路径上误判。
