@@ -87,7 +87,10 @@ test.describe("reproduction: mobile timeline scroll", () => {
       })
     }
     function envelope(payload: { type: string; properties: unknown }) {
-      return { directory: fixture.directory, payload: { id: `evt_${payload.type}_${connections}`, type: payload.type, properties: payload.properties } }
+      return {
+        directory: fixture.directory,
+        payload: { id: `evt_${payload.type}_${connections}`, type: payload.type, properties: payload.properties },
+      }
     }
   })
 
